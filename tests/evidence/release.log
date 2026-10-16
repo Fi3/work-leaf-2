@@ -1,0 +1,132 @@
+    Checking harness v0.1.0 (/home/user/src/work-leaf-2)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.42s
+   Compiling harness v0.1.0 (/home/user/src/work-leaf-2)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running unittests src/lib.rs (target/debug/deps/harness-454b097f4f32f61c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/harness-2ee8379501b94fb5)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/client.rs (target/debug/deps/client-f19397af46c37d1e)
+
+running 14 tests
+test client_configuration_selects_socket_and_checks_state ... ok
+test watch_stream_reports_initial_and_later_state ... ok
+test proxy_releases_watch_at_eof_without_stopping ... ok
+test proxy_rejects_duplicate_pending_ids_and_capacity_overflow ... ok
+test invalid_arguments_fail_before_connection ... ok
+test handshake_rejects_wrong_version_state_and_unsafe_socket ... ok
+test exact_wait_outcomes_map_to_exit_status ... ok
+test fragments_and_unicode_preserve_response_values ... ok
+test scripts_create_send_and_stop_without_terminal ... ok
+test wait_text_reads_complete_utf8_chunks ... ok
+test malformed_incoming_and_outgoing_records_fail ... ok
+test proxy_preserves_ids_values_out_of_order_and_drains_eof ... ok
+test sigint_interrupts_wait_and_standard_input_without_stop ... ok
+test sigint_interrupts_full_standard_output ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/protocol.rs (target/debug/deps/protocol-83f4cff325b687f8)
+
+running 4 tests
+test every_boundary_preserves_unicode_and_record_order ... ok
+test shared_contract ... ok
+test input_and_frame_limits_are_byte_limits ... ok
+test invalid_field_names_cannot_expand_error_replies ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+
+     Running tests/server.rs (target/debug/deps/server-30f9c519d17d149c)
+
+running 9 tests
+test state_identity_symlinks_and_explicit_paths_are_checked ... ok
+test two_starters_converge_and_permissions_are_private ... ok
+test partial_and_combined_frames_preserve_correlation ... ok
+test orphan_worker_keeps_storage_ownership ... ok
+test pending_wait_does_not_block_stop_and_lost_watch_is_released ... ok
+test slow_client_cannot_block_another_stop ... ok
+test pending_requests_and_watches_have_separate_limits ... ok
+test framing_validation_and_connection_limits_are_enforced ... ok
+test worker_restart_limit_and_manual_attempt_are_bounded ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.66s
+
+   Compiling harness v0.1.0 (/home/user/src/work-leaf-2)
+    Finished `release` profile [optimized] target(s) in 1.13s
+✔ atomic creation is idempotent and preserves fixed configuration after reopen (30.030753ms)
+✔ duplicate identifiers preserve input while busy and after restart; old stop cannot stop new work (78.980876ms)
+✔ watches start with complete state and converge; full answer is available as byte chunks (2699.987161ms)
+✔ explicit unsaved context is stored without changing disk and rejects escape through symbolic links (25.670837ms)
+✔ global capacity is four sessions and duplicate receipts bypass new admission checks (67.772635ms)
+✔ blocked recovery keeps shared scheduling paused for reads, duplicate inputs, waits, and stops (34.653957ms)
+Pi reported an internal failure
+✔ storage commit failure never returns false admission and committed metadata survives (8.251904ms)
+✔ stop terminates built-in bash and its ordinary descendants (49.401535ms)
+✔ provider failure appears in the public snapshot without provider diagnostic text (15.105144ms)
+✔ large metadata and escaped transcript pages remain bounded and retain all items (109.213907ms)
+✔ releasing a wait during lookup cancels only that wait (108.380527ms)
+✔ a long wait timeout is not shortened to the Node timer maximum (107.958842ms)
+✔ watch attachment during generation starts with current text and converges to the stored answer (248.987312ms)
+✔ process kill admit-before preserves atomic admission and exact outcomes (241.943545ms)
+✔ process kill admit-after preserves atomic admission and exact outcomes (235.209224ms)
+✔ process kill abort-before preserves atomic admission and exact outcomes (231.055337ms)
+✔ process kill abort-after preserves atomic admission and exact outcomes (220.422799ms)
+✔ process kill stop-before preserves atomic admission and exact outcomes (231.376946ms)
+✔ process kill stop-after preserves atomic admission and exact outcomes (230.132968ms)
+✔ process kill final-before preserves atomic admission and exact outcomes (248.066013ms)
+✔ process kill final-after preserves atomic admission and exact outcomes (230.864404ms)
+✔ shared requests use the same contract in Node and Rust (11.216672ms)
+✔ Unicode previews and chunks preserve original text for varied byte limits (3.730174ms)
+✔ cursors reject another session or query (0.300419ms)
+✔ encoded snapshot and page bounds include JSON escape expansion (20.26605ms)
+✔ SIGKILL follows Pi safe tool replay policy (268.159547ms)
+✔ SIGKILL follows Pi unsafe tool replay policy (251.150472ms)
+✔ actual worker parses split UTF-8, handles concurrent wait and stop, and preserves stop across process kill (491.177314ms)
+✔ parent EOF preserves an admitted run for recovery (545.029388ms)
+✔ database symbolic links are rejected before Pi opens storage (2.372683ms)
+✔ worker lifecycle checks keep active work during rejected idle shutdown (276.602148ms)
+✔ worker output pressure preserves receipts, stop, and idle close replies (3643.336925ms)
+✔ invalid private requests apply input backpressure until the parent drains replies (4223.462302ms)
+✔ worker SIGKILL cleans ordinary bash descendants and recovers without repeating the unsafe call (703.878669ms)
+✔ server SIGKILL cleans ordinary bash descendants and recovers without repeating the unsafe call (601.105581ms)
+✔ orphan actual Pi worker holds the database lock until it exits (596.824674ms)
+✔ stopped targets remain stopped across server restart and do not stop a later run (744.614803ms)
+✔ global blocked preflight permits terminal reads and rejects every operation that can resume pending work (1109.767564ms)
+✔ shutdown admission race has either a stored input or an idle closed server (1429.158041ms)
+✔ unsafe storage endpoint never reports readiness or admission (486.420557ms)
+✔ start retries after an orphan worker releases storage ownership (1432.392894ms)
+✔ standalone scripts use actual Pi tools, full answer text, and idle startup without a generation call (546.473281ms)
+✔ duplicate receipts survive actual worker and server restart and preserve original input (1525.232332ms)
+✔ actual watch streams and proxy EOF preserve admitted work and drain an outstanding wait (358.043186ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 44
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9412.798544
+Neovim component checks passed: lazy startup, panels, Unicode framing, context, streams, stop, reconnect and duplicate retry.Dependencies verified: Rust 3 direct + 9 transitive = 12; npm 3 direct + 88 transitive = 91; Lua 0.
+npm optional-only 0; npm development 0; Rust build/test declarations 0; reviewed Rust build scripts 7.
+{"passed": 43, "evidence": "/tmp/harness-nvim-ui-evidence-6555av0v/results.json"}
+{"passed": 40, "evidence": "/tmp/harness-nvim-ui-evidence-3lr5l2b3/results.json"}
+{"passed": 12, "evidence": "/tmp/harness-nvim-ui-evidence-lh3ucd8e/results.json"}
+    Finished `release` profile [optimized] target(s) in 0.01s
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+
+added 91 packages, and audited 92 packages in 1s
+
+5 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+Installed /tmp/harness-install-HD68tV/prefix/bin/harness
+Clean installation passed: installed Rust, Pi adapter, and Neovim runtime; no provider credentials.

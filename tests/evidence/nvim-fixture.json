@@ -1,0 +1,324 @@
+{
+  "runtimes": {
+    "neovim": "NVIM v0.12.6",
+    "node": "v26.10.0",
+    "rust": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "python": "Python 3.14.7",
+    "pi": {
+      "pi-durable": "1.3.0",
+      "pi-ai": "1.3.0",
+      "chord": "1.3.0"
+    }
+  },
+  "mode": "actual terminal and protocol fixture client",
+  "command": "python3 tests/nvim/interactive.py",
+  "groups": [
+    "all"
+  ],
+  "passed": 43,
+  "cases": [
+    {
+      "case": "forced-exit",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/forced-exit.ansi.gz",
+      "terminal_bytes": 20979,
+      "terminal_sha256": "f8556abe30abd7497dd017438f50849c6d9e6ac00016837ac39872273de24b11"
+    },
+    {
+      "case": "multiple-sessions",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/multiple-sessions.ansi.gz",
+      "terminal_bytes": 22898,
+      "terminal_sha256": "e33dc232df84583c350c04c8e5b6288415bdd57acfce7f82fed953c563d249ce"
+    },
+    {
+      "case": "prompt-completion",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/prompt-completion.ansi.gz",
+      "terminal_bytes": 22075,
+      "terminal_sha256": "d207a94a0ac0a889d5674bdeeab5beb8a74bfe3fae1c766b26ec5e7cfa21e51f"
+    },
+    {
+      "case": "prompt-new-run",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/prompt-new-run.ansi.gz",
+      "terminal_bytes": 25654,
+      "terminal_sha256": "18eb48b43d35bd8682c2c4c1bee23dbf45c34b2f75963a177e5ab3442a089d21"
+    },
+    {
+      "case": "q-empty",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/q-empty.ansi.gz",
+      "terminal_bytes": 25678,
+      "terminal_sha256": "a61db20256d8dcc52ba13e10c5eb9ed1fde1288d342279a53d7bb3bd5a220dbd"
+    },
+    {
+      "case": "q-escape",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/q-escape.ansi.gz",
+      "terminal_bytes": 25678,
+      "terminal_sha256": "a61db20256d8dcc52ba13e10c5eb9ed1fde1288d342279a53d7bb3bd5a220dbd"
+    },
+    {
+      "case": "q-invalid",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/q-invalid.ansi.gz",
+      "terminal_bytes": 25701,
+      "terminal_sha256": "fcbb2777bf180a0cd91cef11c112a960ef96d1fa311a18bb216c342178871a72"
+    },
+    {
+      "case": "q-modified",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/q-modified.ansi.gz",
+      "terminal_bytes": 26768,
+      "terminal_sha256": "a2eb55562d53673914e1bd30d50958db815a9494c860dfc65b6b1b94b11355c1"
+    },
+    {
+      "case": "q-no",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/q-no.ansi.gz",
+      "terminal_bytes": 24324,
+      "terminal_sha256": "23099093f5e37cb0848837f52409b2bc88cd35f8c6185c79e5d94802a5293f21"
+    },
+    {
+      "case": "q-space",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/q-space.ansi.gz",
+      "terminal_bytes": 25701,
+      "terminal_sha256": "a0fdc857107c2614dcd66da68f296d00e1fc4fe75d49efda2ecc2a48d0f622aa"
+    },
+    {
+      "case": "q-yes",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/q-yes.ansi.gz",
+      "terminal_bytes": 24289,
+      "terminal_sha256": "f0e87b5b15e4748fae837148f80174e3ece6dac97abe8f58de02a1083b341ad5"
+    },
+    {
+      "case": "q-yes-escape",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/q-yes-escape.ansi.gz",
+      "terminal_bytes": 25705,
+      "terminal_sha256": "7bbce0bba60f34fb4559717f4d9d004b3ef8e7b778e94fe3ac0529ae6d0f69ee"
+    },
+    {
+      "case": "qa-empty",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-empty.ansi.gz",
+      "terminal_bytes": 23900,
+      "terminal_sha256": "54843ffc6ac63d8d6cb879b4f36a3abf6aaa35e927c84c3330018dc6963bd2b8"
+    },
+    {
+      "case": "qa-escape",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-escape.ansi.gz",
+      "terminal_bytes": 23900,
+      "terminal_sha256": "54843ffc6ac63d8d6cb879b4f36a3abf6aaa35e927c84c3330018dc6963bd2b8"
+    },
+    {
+      "case": "qa-hidden-modified",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-hidden-modified.ansi.gz",
+      "terminal_bytes": 25793,
+      "terminal_sha256": "e98fad6585a1d064ae81063010abe823ebcc42a745c0f6c3f15e56169b356309"
+    },
+    {
+      "case": "qa-invalid",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-invalid.ansi.gz",
+      "terminal_bytes": 23923,
+      "terminal_sha256": "af4eb34428e635526e9b12582dae52ca7b7cdc15063dfb2ed3c56ccc67f9daca"
+    },
+    {
+      "case": "qa-modified",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-modified.ansi.gz",
+      "terminal_bytes": 25699,
+      "terminal_sha256": "f6f7948454ddc7beede721034a8d5756b9b8be5a00eee72441a86fb714fb98bd"
+    },
+    {
+      "case": "qa-no",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-no.ansi.gz",
+      "terminal_bytes": 22110,
+      "terminal_sha256": "ca807f5814bc0fc948f2c91ffc6c79fac8391e194a4b89750c56e127cdf62e75"
+    },
+    {
+      "case": "qa-space",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-space.ansi.gz",
+      "terminal_bytes": 23923,
+      "terminal_sha256": "e00f109b89ba02565c723a255414812ccd86cd1ad2382580b489c64ef0bfb2bb"
+    },
+    {
+      "case": "qa-yes",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-yes.ansi.gz",
+      "terminal_bytes": 22075,
+      "terminal_sha256": "d207a94a0ac0a889d5674bdeeab5beb8a74bfe3fae1c766b26ec5e7cfa21e51f"
+    },
+    {
+      "case": "qa-yes-escape",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/qa-yes-escape.ansi.gz",
+      "terminal_bytes": 23934,
+      "terminal_sha256": "d77c78070896538d1c7f97c536df964e8ac2910b6102304b7453bc34beeef12e"
+    },
+    {
+      "case": "stop-connection-failure",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/stop-connection-failure.ansi.gz",
+      "terminal_bytes": 25745,
+      "terminal_sha256": "277d8dc6c0c72ab80ba9afb3a1fb7c14c50a18ab03d32cce0a208c2a058b5da6"
+    },
+    {
+      "case": "unknown-exit-state",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/unknown-exit-state.ansi.gz",
+      "terminal_bytes": 22955,
+      "terminal_sha256": "6427e0bb20f5cd86ce49156916f035538ed293e7c8a2698e5922f9a0a8cc87e1"
+    },
+    {
+      "case": "window-only",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/window-only.ansi.gz",
+      "terminal_bytes": 23264,
+      "terminal_sha256": "6b20add571e7e949a189fc23a14f0fef5cd2c0263f4fc44bd1bab0b23a4e7d25"
+    },
+    {
+      "case": "wq-empty",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-empty.ansi.gz",
+      "terminal_bytes": 25994,
+      "terminal_sha256": "e5eb39ec6aba4c252c580f47cba736627341aa566881fa1a17bcd537fde9da3f"
+    },
+    {
+      "case": "wq-escape",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-escape.ansi.gz",
+      "terminal_bytes": 25994,
+      "terminal_sha256": "e5eb39ec6aba4c252c580f47cba736627341aa566881fa1a17bcd537fde9da3f"
+    },
+    {
+      "case": "wq-invalid",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-invalid.ansi.gz",
+      "terminal_bytes": 26017,
+      "terminal_sha256": "cf4a5d48c76c98a3d033113ea929c40c67e18d385385194cf0c2f1c2e060ab84"
+    },
+    {
+      "case": "wq-modified",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-modified.ansi.gz",
+      "terminal_bytes": 24733,
+      "terminal_sha256": "f1827edd48d3e16086b4df6bbaabccb02818fd209128176caaa3ff41eef02185"
+    },
+    {
+      "case": "wq-no",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-no.ansi.gz",
+      "terminal_bytes": 24518,
+      "terminal_sha256": "dce931af14d48774812f546348faf32490a5378eb7618c0e3762604425c9f031"
+    },
+    {
+      "case": "wq-space",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-space.ansi.gz",
+      "terminal_bytes": 26017,
+      "terminal_sha256": "111e64f0ce985375205d59c8840450aa167de9851527ac86ea4771ecb8a42058"
+    },
+    {
+      "case": "wq-write-failure",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-write-failure.ansi.gz",
+      "terminal_bytes": 23998,
+      "terminal_sha256": "ac40b422047937c1b4a11f288813600650189c8233b853223da1fba9b1181553"
+    },
+    {
+      "case": "wq-yes",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-yes.ansi.gz",
+      "terminal_bytes": 24483,
+      "terminal_sha256": "0373c5a6b4760b1f69ca1e45315ce0de25f74498c9d5dca9b5235245e01fa828"
+    },
+    {
+      "case": "wq-yes-escape",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wq-yes-escape.ansi.gz",
+      "terminal_bytes": 26021,
+      "terminal_sha256": "a0e45a633428fd737b0285e7bf09e38c3829b36b307f90ef5b7f4444d9db1d58"
+    },
+    {
+      "case": "wqa-empty",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-empty.ansi.gz",
+      "terminal_bytes": 23902,
+      "terminal_sha256": "4a5baf9d3c27199687460e1c9c9fc6cd8c72d679057f4e17b1126321918ba31d"
+    },
+    {
+      "case": "wqa-escape",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-escape.ansi.gz",
+      "terminal_bytes": 23902,
+      "terminal_sha256": "4a5baf9d3c27199687460e1c9c9fc6cd8c72d679057f4e17b1126321918ba31d"
+    },
+    {
+      "case": "wqa-hidden-modified",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-hidden-modified.ansi.gz",
+      "terminal_bytes": 23059,
+      "terminal_sha256": "89ba7db261a39dde51c9aa759c9ec4e76cc2fc95a23fb97a711589f6fbcd750c"
+    },
+    {
+      "case": "wqa-invalid",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-invalid.ansi.gz",
+      "terminal_bytes": 23925,
+      "terminal_sha256": "5d066ba563cc8a18195ab3c4ad497ce91e73c5d1aea02c689bad861f89d7ae1b"
+    },
+    {
+      "case": "wqa-modified",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-modified.ansi.gz",
+      "terminal_bytes": 22723,
+      "terminal_sha256": "4b858244764bd75251a8fdc751eb2c87dd444bb85d63db21a7c5629fa1b42a3d"
+    },
+    {
+      "case": "wqa-no",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-no.ansi.gz",
+      "terminal_bytes": 22112,
+      "terminal_sha256": "0c17548631417077f99aacc9dee18408f63d2a2ce37ba89c13f4e7dbdc4c02c5"
+    },
+    {
+      "case": "wqa-space",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-space.ansi.gz",
+      "terminal_bytes": 23925,
+      "terminal_sha256": "9d865d058525b3cea8abd51f16d95cbfc3d4142318884ea71512cba4f6cc6973"
+    },
+    {
+      "case": "wqa-write-failure",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-write-failure.ansi.gz",
+      "terminal_bytes": 26503,
+      "terminal_sha256": "dfb1bbb524fd34a67984c9fba6d863595b0f6ba40b332064a48f3ced93a0859f"
+    },
+    {
+      "case": "wqa-yes",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-yes.ansi.gz",
+      "terminal_bytes": 22077,
+      "terminal_sha256": "e5be9ddaec22602f43796545d4522fcf42add1275a80d1f0b3a781277f57efef"
+    },
+    {
+      "case": "wqa-yes-escape",
+      "passed": true,
+      "terminal": "nvim-terminal/fixture/wqa-yes-escape.ansi.gz",
+      "terminal_bytes": 23936,
+      "terminal_sha256": "e8b184c0de2e4681c6dd23a5ca30f21315ad46b2046cb76397a038fd5a41b527"
+    }
+  ],
+  "verified_at": "2026-10-16T16:41:35.397118+00:00",
+  "release_report": "release.json"
+}

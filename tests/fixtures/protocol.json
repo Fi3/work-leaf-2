@@ -1,0 +1,382 @@
+{
+  "valid": [
+    {
+      "jsonrpc": "2.0",
+      "id": "c0",
+      "method": "system.hello",
+      "params": {
+        "api_version": 1
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c1",
+      "method": "session.create",
+      "params": {
+        "session_id": "work",
+        "workspace": "/tmp/work"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c2",
+      "method": "session.list",
+      "params": {}
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c3",
+      "method": "session.get",
+      "params": {
+        "session_id": "work"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c4",
+      "method": "session.watch",
+      "params": {
+        "session_id": "work"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c5",
+      "method": "session.unwatch",
+      "params": {
+        "watch_id": "opaque-watch"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c6",
+      "method": "input.submit",
+      "params": {
+        "session_id": "work",
+        "request_id": "task_001",
+        "text": "Read this λ\n世界",
+        "context": [
+          {
+            "kind": "selection",
+            "path": "source.rs",
+            "text": "unsaved α\n",
+            "modified": true,
+            "changedtick": 3,
+            "start_line": 1,
+            "end_line": 1
+          }
+        ]
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c7",
+      "method": "submission.get",
+      "params": {
+        "session_id": "work",
+        "request_id": "task_001"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c8",
+      "method": "submission.wait",
+      "params": {
+        "session_id": "work",
+        "request_id": "task_001",
+        "timeout_ms": 10
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c9",
+      "method": "run.stop",
+      "params": {
+        "session_id": "work",
+        "submission_id": "opaque-submission"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c10",
+      "method": "transcript.list",
+      "params": {
+        "session_id": "work",
+        "limit": 50
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c11",
+      "method": "entry.read",
+      "params": {
+        "session_id": "work",
+        "entry_id": "opaque-entry",
+        "offset": 0,
+        "limit": 65536
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c12",
+      "method": "server.shutdown",
+      "params": {}
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "c13",
+      "method": "server.restart_worker",
+      "params": {}
+    }
+  ],
+  "invalid": [
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "bad",
+        "method": "session.get",
+        "params": {
+          "session_id": "work",
+          "surprise": true
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "bad",
+        "method": "session.get",
+        "params": {
+          "session_id": "../escape"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "bad",
+        "method": "session.list",
+        "params": {
+          "limit": 101
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "bad",
+        "method": "submission.wait",
+        "params": {
+          "session_id": "work",
+          "request_id": "x",
+          "timeout_ms": -1
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "bad",
+        "method": "entry.read",
+        "params": {
+          "session_id": "work",
+          "entry_id": "e",
+          "limit": 65537
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "bad",
+        "method": "unknown",
+        "params": {}
+      },
+      "code": -32601
+    },
+    {
+      "request": [
+        {
+          "jsonrpc": "2.0",
+          "id": "c0",
+          "method": "system.hello",
+          "params": {
+            "api_version": 1
+          }
+        }
+      ],
+      "code": -32600
+    }
+  ],
+  "snapshot": {
+    "session": {
+      "session_id": "work",
+      "workspace": "/tmp/work",
+      "provider": "faux",
+      "model": "test",
+      "instructions": "",
+      "schema_version": 1,
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "bash"
+      ]
+    },
+    "state": "idle",
+    "active_submission_id": null,
+    "assistant": {
+      "text": "Hello λ\n世界",
+      "truncated": false
+    },
+    "tools": [],
+    "entries": [
+      {
+        "entry_id": "opaque-entry",
+        "kind": "assistant",
+        "text": "Hello λ\n世界",
+        "truncated": false
+      }
+    ],
+    "history_cursor": null,
+    "truncated": false,
+    "activity": null,
+    "usage": null,
+    "error": null
+  },
+  "outcomes": [
+    {
+      "session_id": "work",
+      "request_id": "task_001",
+      "submission_id": "opaque-submission",
+      "status": "accepted"
+    },
+    {
+      "session_id": "work",
+      "request_id": "task_001",
+      "submission_id": "opaque-submission",
+      "status": "done",
+      "answer_entry_id": "opaque-entry"
+    },
+    {
+      "session_id": "work",
+      "request_id": "task_001",
+      "submission_id": "opaque-submission",
+      "status": "unanswered",
+      "reason": "cancelled",
+      "message": "Run cancelled"
+    }
+  ],
+  "watch": {
+    "watch_id": "opaque-watch",
+    "snapshot": {
+      "session": {
+        "session_id": "work",
+        "workspace": "/tmp/work",
+        "provider": "faux",
+        "model": "test",
+        "instructions": "",
+        "schema_version": 1,
+        "tools": [
+          "read",
+          "write",
+          "edit",
+          "bash"
+        ]
+      },
+      "state": "idle",
+      "active_submission_id": null,
+      "assistant": {
+        "text": "Hello λ\n世界",
+        "truncated": false
+      },
+      "tools": [],
+      "entries": [
+        {
+          "entry_id": "opaque-entry",
+          "kind": "assistant",
+          "text": "Hello λ\n世界",
+          "truncated": false
+        }
+      ],
+      "history_cursor": null,
+      "truncated": false,
+      "activity": null,
+      "usage": null,
+      "error": null
+    }
+  },
+  "notification": {
+    "jsonrpc": "2.0",
+    "method": "session.state",
+    "params": {
+      "watch_id": "opaque-watch",
+      "sequence": 1,
+      "snapshot": {
+        "session": {
+          "session_id": "work",
+          "workspace": "/tmp/work",
+          "provider": "faux",
+          "model": "test",
+          "instructions": "",
+          "schema_version": 1,
+          "tools": [
+            "read",
+            "write",
+            "edit",
+            "bash"
+          ]
+        },
+        "state": "idle",
+        "active_submission_id": null,
+        "assistant": {
+          "text": "Hello λ\n世界",
+          "truncated": false
+        },
+        "tools": [],
+        "entries": [
+          {
+            "entry_id": "opaque-entry",
+            "kind": "assistant",
+            "text": "Hello λ\n世界",
+            "truncated": false
+          }
+        ],
+        "history_cursor": null,
+        "truncated": false,
+        "activity": null,
+        "usage": null,
+        "error": null
+      }
+    }
+  },
+  "entry_chunk": {
+    "text": "Hello λ\n世界",
+    "next_offset": 15,
+    "end": true
+  },
+  "list": {
+    "items": [
+      {
+        "session_id": "work",
+        "workspace": "/tmp/work",
+        "provider": "faux",
+        "model": "test",
+        "instructions": "",
+        "schema_version": 1,
+        "tools": [
+          "read",
+          "write",
+          "edit",
+          "bash"
+        ]
+      }
+    ],
+    "next_cursor": null
+  }
+}

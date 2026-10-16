@@ -1,0 +1,3170 @@
+[
+  {
+    "path": "@earendil-works/pi-durable/dist/index.js",
+    "bytes": 1291
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/documents.js",
+    "bytes": 4329
+  },
+  {
+    "path": "@earendil-works/chord/dist/index.js",
+    "bytes": 610
+  },
+  {
+    "path": "@earendil-works/chord/dist/contract.js",
+    "bytes": 11805
+  },
+  {
+    "path": "typebox/build/index.mjs",
+    "bytes": 607
+  },
+  {
+    "path": "typebox/build/type/action/index.mjs",
+    "bytes": 1025
+  },
+  {
+    "path": "typebox/build/type/action/_add_immutable.mjs",
+    "bytes": 462
+  },
+  {
+    "path": "typebox/build/type/types/deferred.mjs",
+    "bytes": 724
+  },
+  {
+    "path": "typebox/build/system/memory/index.mjs",
+    "bytes": 40
+  },
+  {
+    "path": "typebox/build/system/memory/memory.mjs",
+    "bytes": 205
+  },
+  {
+    "path": "typebox/build/system/memory/assign.mjs",
+    "bytes": 411
+  },
+  {
+    "path": "typebox/build/system/memory/metrics.mjs",
+    "bytes": 139
+  },
+  {
+    "path": "typebox/build/system/memory/freeze.mjs",
+    "bytes": 287
+  },
+  {
+    "path": "typebox/build/system/settings/index.mjs",
+    "bytes": 44
+  },
+  {
+    "path": "typebox/build/system/settings/settings.mjs",
+    "bytes": 1035
+  },
+  {
+    "path": "typebox/build/guard/index.mjs",
+    "bytes": 231
+  },
+  {
+    "path": "typebox/build/guard/emit.mjs",
+    "bytes": 7349
+  },
+  {
+    "path": "typebox/build/guard/guard.mjs",
+    "bytes": 8720
+  },
+  {
+    "path": "typebox/build/guard/string.mjs",
+    "bytes": 6780
+  },
+  {
+    "path": "typebox/build/guard/globals.mjs",
+    "bytes": 3322
+  },
+  {
+    "path": "typebox/build/guard/native.mjs",
+    "bytes": 2133
+  },
+  {
+    "path": "typebox/build/system/memory/clone.mjs",
+    "bytes": 4357
+  },
+  {
+    "path": "typebox/build/system/memory/create.mjs",
+    "bytes": 1017
+  },
+  {
+    "path": "typebox/build/system/memory/discard.mjs",
+    "bytes": 702
+  },
+  {
+    "path": "typebox/build/system/memory/update.mjs",
+    "bytes": 1077
+  },
+  {
+    "path": "typebox/build/type/types/schema.mjs",
+    "bytes": 616
+  },
+  {
+    "path": "typebox/build/type/engine/immutable/instantiate_add.mjs",
+    "bytes": 588
+  },
+  {
+    "path": "typebox/build/type/engine/instantiate.mjs",
+    "bytes": 13545
+  },
+  {
+    "path": "typebox/build/type/engine/readonly/instantiate_add.mjs",
+    "bytes": 582
+  },
+  {
+    "path": "typebox/build/type/engine/optional/instantiate_add.mjs",
+    "bytes": 582
+  },
+  {
+    "path": "typebox/build/type/types/array.mjs",
+    "bytes": 1056
+  },
+  {
+    "path": "typebox/build/type/types/constructor.mjs",
+    "bytes": 1103
+  },
+  {
+    "path": "typebox/build/type/types/function.mjs",
+    "bytes": 1146
+  },
+  {
+    "path": "typebox/build/type/types/call.mjs",
+    "bytes": 985
+  },
+  {
+    "path": "typebox/build/type/engine/call/instantiate.mjs",
+    "bytes": 3629
+  },
+  {
+    "path": "typebox/build/type/types/ref.mjs",
+    "bytes": 711
+  },
+  {
+    "path": "typebox/build/type/types/generic.mjs",
+    "bytes": 729
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/index.mjs",
+    "bytes": 257
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/broaden.mjs",
+    "bytes": 2066
+  },
+  {
+    "path": "typebox/build/type/types/any.mjs",
+    "bytes": 682
+  },
+  {
+    "path": "typebox/build/type/types/never.mjs",
+    "bytes": 895
+  },
+  {
+    "path": "typebox/build/type/types/object.mjs",
+    "bytes": 1292
+  },
+  {
+    "path": "typebox/build/type/types/properties.mjs",
+    "bytes": 608
+  },
+  {
+    "path": "typebox/build/type/types/_optional.mjs",
+    "bytes": 753
+  },
+  {
+    "path": "typebox/build/type/action/_add_optional.mjs",
+    "bytes": 454
+  },
+  {
+    "path": "typebox/build/type/types/unknown.mjs",
+    "bytes": 679
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/compare.mjs",
+    "bytes": 1144
+  },
+  {
+    "path": "typebox/build/type/extends/index.mjs",
+    "bytes": 88
+  },
+  {
+    "path": "typebox/build/type/extends/extends.mjs",
+    "bytes": 734
+  },
+  {
+    "path": "typebox/build/type/types/cyclic.mjs",
+    "bytes": 1278
+  },
+  {
+    "path": "typebox/build/type/types/unsafe.mjs",
+    "bytes": 800
+  },
+  {
+    "path": "typebox/build/type/extends/extends_left.mjs",
+    "bytes": 5517
+  },
+  {
+    "path": "typebox/build/type/extends/any.mjs",
+    "bytes": 539
+  },
+  {
+    "path": "typebox/build/type/types/infer.mjs",
+    "bytes": 846
+  },
+  {
+    "path": "typebox/build/system/arguments/index.mjs",
+    "bytes": 46
+  },
+  {
+    "path": "typebox/build/system/arguments/arguments.mjs",
+    "bytes": 293
+  },
+  {
+    "path": "typebox/build/type/extends/extends_right.mjs",
+    "bytes": 3196
+  },
+  {
+    "path": "typebox/build/type/types/dependent.mjs",
+    "bytes": 1050
+  },
+  {
+    "path": "typebox/build/type/types/enum.mjs",
+    "bytes": 1008
+  },
+  {
+    "path": "typebox/build/type/engine/enum/typescript_enum_to_enum_values.mjs",
+    "bytes": 349
+  },
+  {
+    "path": "typebox/build/type/types/intersect.mjs",
+    "bytes": 1004
+  },
+  {
+    "path": "typebox/build/type/types/template_literal.mjs",
+    "bytes": 1621
+  },
+  {
+    "path": "typebox/build/system/system.mjs",
+    "bytes": 227
+  },
+  {
+    "path": "typebox/build/system/environment/index.mjs",
+    "bytes": 50
+  },
+  {
+    "path": "typebox/build/system/environment/environment.mjs",
+    "bytes": 32
+  },
+  {
+    "path": "typebox/build/system/environment/evaluate.mjs",
+    "bytes": 1412
+  },
+  {
+    "path": "typebox/build/system/hashing/index.mjs",
+    "bytes": 39
+  },
+  {
+    "path": "typebox/build/system/hashing/hash.mjs",
+    "bytes": 9718
+  },
+  {
+    "path": "typebox/build/system/unreachable/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/system/unreachable/unreachable.mjs",
+    "bytes": 191
+  },
+  {
+    "path": "typebox/build/system/locale/index.mjs",
+    "bytes": 41
+  },
+  {
+    "path": "typebox/build/system/locale/_locale.mjs",
+    "bytes": 1169
+  },
+  {
+    "path": "typebox/build/system/locale/_config.mjs",
+    "bytes": 309
+  },
+  {
+    "path": "typebox/build/system/locale/en_US.mjs",
+    "bytes": 3063
+  },
+  {
+    "path": "typebox/build/system/locale/ar_001.mjs",
+    "bytes": 3821
+  },
+  {
+    "path": "typebox/build/system/locale/bn_BD.mjs",
+    "bytes": 4604
+  },
+  {
+    "path": "typebox/build/system/locale/cs_CZ.mjs",
+    "bytes": 3164
+  },
+  {
+    "path": "typebox/build/system/locale/de_DE.mjs",
+    "bytes": 3280
+  },
+  {
+    "path": "typebox/build/system/locale/el_GR.mjs",
+    "bytes": 4295
+  },
+  {
+    "path": "typebox/build/system/locale/es_419.mjs",
+    "bytes": 3244
+  },
+  {
+    "path": "typebox/build/system/locale/es_AR.mjs",
+    "bytes": 3227
+  },
+  {
+    "path": "typebox/build/system/locale/es_ES.mjs",
+    "bytes": 3223
+  },
+  {
+    "path": "typebox/build/system/locale/es_MX.mjs",
+    "bytes": 3223
+  },
+  {
+    "path": "typebox/build/system/locale/fa_IR.mjs",
+    "bytes": 3960
+  },
+  {
+    "path": "typebox/build/system/locale/fil_PH.mjs",
+    "bytes": 3301
+  },
+  {
+    "path": "typebox/build/system/locale/fr_CA.mjs",
+    "bytes": 3333
+  },
+  {
+    "path": "typebox/build/system/locale/fr_FR.mjs",
+    "bytes": 3333
+  },
+  {
+    "path": "typebox/build/system/locale/ha_NG.mjs",
+    "bytes": 3384
+  },
+  {
+    "path": "typebox/build/system/locale/hi_IN.mjs",
+    "bytes": 4421
+  },
+  {
+    "path": "typebox/build/system/locale/hu_HU.mjs",
+    "bytes": 3359
+  },
+  {
+    "path": "typebox/build/system/locale/id_ID.mjs",
+    "bytes": 3204
+  },
+  {
+    "path": "typebox/build/system/locale/it_IT.mjs",
+    "bytes": 3228
+  },
+  {
+    "path": "typebox/build/system/locale/ja_JP.mjs",
+    "bytes": 3879
+  },
+  {
+    "path": "typebox/build/system/locale/ko_KR.mjs",
+    "bytes": 3538
+  },
+  {
+    "path": "typebox/build/system/locale/ms_MY.mjs",
+    "bytes": 3208
+  },
+  {
+    "path": "typebox/build/system/locale/nl_NL.mjs",
+    "bytes": 3218
+  },
+  {
+    "path": "typebox/build/system/locale/pl_PL.mjs",
+    "bytes": 3265
+  },
+  {
+    "path": "typebox/build/system/locale/pt_BR.mjs",
+    "bytes": 3194
+  },
+  {
+    "path": "typebox/build/system/locale/pt_PT.mjs",
+    "bytes": 3196
+  },
+  {
+    "path": "typebox/build/system/locale/ro_RO.mjs",
+    "bytes": 3434
+  },
+  {
+    "path": "typebox/build/system/locale/ru_RU.mjs",
+    "bytes": 4039
+  },
+  {
+    "path": "typebox/build/system/locale/sv_SE.mjs",
+    "bytes": 3124
+  },
+  {
+    "path": "typebox/build/system/locale/sw_TZ.mjs",
+    "bytes": 3172
+  },
+  {
+    "path": "typebox/build/system/locale/th_TH.mjs",
+    "bytes": 4355
+  },
+  {
+    "path": "typebox/build/system/locale/tr_TR.mjs",
+    "bytes": 3238
+  },
+  {
+    "path": "typebox/build/system/locale/uk_UA.mjs",
+    "bytes": 3970
+  },
+  {
+    "path": "typebox/build/system/locale/ur_PK.mjs",
+    "bytes": 3828
+  },
+  {
+    "path": "typebox/build/system/locale/vi_VN.mjs",
+    "bytes": 3406
+  },
+  {
+    "path": "typebox/build/system/locale/yo_NG.mjs",
+    "bytes": 3257
+  },
+  {
+    "path": "typebox/build/system/locale/zh_Hans.mjs",
+    "bytes": 2893
+  },
+  {
+    "path": "typebox/build/system/locale/zh_Hant.mjs",
+    "bytes": 2919
+  },
+  {
+    "path": "typebox/build/type/engine/patterns/template.mjs",
+    "bytes": 830
+  },
+  {
+    "path": "typebox/build/type/script/parser.mjs",
+    "bytes": 38229
+  },
+  {
+    "path": "typebox/build/type/script/mapping.mjs",
+    "bytes": 19426
+  },
+  {
+    "path": "typebox/build/type/types/index.mjs",
+    "bytes": 1689
+  },
+  {
+    "path": "typebox/build/type/types/_codec.mjs",
+    "bytes": 2402
+  },
+  {
+    "path": "typebox/build/system/index.mjs",
+    "bytes": 133
+  },
+  {
+    "path": "typebox/build/type/types/_immutable.mjs",
+    "bytes": 763
+  },
+  {
+    "path": "typebox/build/type/types/_readonly.mjs",
+    "bytes": 764
+  },
+  {
+    "path": "typebox/build/type/action/_add_readonly.mjs",
+    "bytes": 454
+  },
+  {
+    "path": "typebox/build/type/types/_refine.mjs",
+    "bytes": 1545
+  },
+  {
+    "path": "typebox/build/type/types/bigint.mjs",
+    "bytes": 892
+  },
+  {
+    "path": "typebox/build/type/types/boolean.mjs",
+    "bytes": 695
+  },
+  {
+    "path": "typebox/build/type/types/identifier.mjs",
+    "bytes": 693
+  },
+  {
+    "path": "typebox/build/type/types/integer.mjs",
+    "bytes": 897
+  },
+  {
+    "path": "typebox/build/type/types/literal.mjs",
+    "bytes": 2438
+  },
+  {
+    "path": "typebox/build/type/types/null.mjs",
+    "bytes": 672
+  },
+  {
+    "path": "typebox/build/type/types/number.mjs",
+    "bytes": 905
+  },
+  {
+    "path": "typebox/build/type/types/symbol.mjs",
+    "bytes": 686
+  },
+  {
+    "path": "typebox/build/type/types/parameter.mjs",
+    "bytes": 912
+  },
+  {
+    "path": "typebox/build/type/types/record.mjs",
+    "bytes": 2799
+  },
+  {
+    "path": "typebox/build/type/types/string.mjs",
+    "bytes": 903
+  },
+  {
+    "path": "typebox/build/type/engine/template_literal/decode.mjs",
+    "bytes": 3854
+  },
+  {
+    "path": "typebox/build/type/types/union.mjs",
+    "bytes": 965
+  },
+  {
+    "path": "typebox/build/type/engine/patterns/pattern.mjs",
+    "bytes": 445
+  },
+  {
+    "path": "typebox/build/type/engine/template_literal/is_finite.mjs",
+    "bytes": 866
+  },
+  {
+    "path": "typebox/build/type/engine/template_literal/create.mjs",
+    "bytes": 227
+  },
+  {
+    "path": "typebox/build/type/engine/record/record_create.mjs",
+    "bytes": 283
+  },
+  {
+    "path": "typebox/build/type/engine/record/instantiate.mjs",
+    "bytes": 777
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key.mjs",
+    "bytes": 2174
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_any.mjs",
+    "bytes": 209
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_boolean.mjs",
+    "bytes": 165
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_enum.mjs",
+    "bytes": 277
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/evaluate.mjs",
+    "bytes": 2422
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/distribute.mjs",
+    "bytes": 1500
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/narrow.mjs",
+    "bytes": 1436
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/composite.mjs",
+    "bytes": 2636
+  },
+  {
+    "path": "typebox/build/type/types/tuple.mjs",
+    "bytes": 1125
+  },
+  {
+    "path": "typebox/build/type/action/_remove_readonly.mjs",
+    "bytes": 478
+  },
+  {
+    "path": "typebox/build/type/engine/readonly/instantiate_remove.mjs",
+    "bytes": 586
+  },
+  {
+    "path": "typebox/build/type/action/_remove_optional.mjs",
+    "bytes": 478
+  },
+  {
+    "path": "typebox/build/type/engine/optional/instantiate_remove.mjs",
+    "bytes": 586
+  },
+  {
+    "path": "typebox/build/type/engine/tuple/to_object.mjs",
+    "bytes": 463
+  },
+  {
+    "path": "typebox/build/type/engine/exclude/operation.mjs",
+    "bytes": 982
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_integer.mjs",
+    "bytes": 248
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_intersect.mjs",
+    "bytes": 298
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_literal.mjs",
+    "bytes": 436
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_number.mjs",
+    "bytes": 245
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_string.mjs",
+    "bytes": 714
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_template_literal.mjs",
+    "bytes": 609
+  },
+  {
+    "path": "typebox/build/type/engine/record/from_key_union.mjs",
+    "bytes": 1514
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/flatten.mjs",
+    "bytes": 403
+  },
+  {
+    "path": "typebox/build/type/types/rest.mjs",
+    "bytes": 693
+  },
+  {
+    "path": "typebox/build/type/types/static.mjs",
+    "bytes": 60
+  },
+  {
+    "path": "typebox/build/type/types/this.mjs",
+    "bytes": 671
+  },
+  {
+    "path": "typebox/build/type/types/undefined.mjs",
+    "bytes": 707
+  },
+  {
+    "path": "typebox/build/type/types/void.mjs",
+    "bytes": 672
+  },
+  {
+    "path": "typebox/build/type/script/token/index.mjs",
+    "bytes": 374
+  },
+  {
+    "path": "typebox/build/type/script/token/bigint.mjs",
+    "bytes": 638
+  },
+  {
+    "path": "typebox/build/type/script/token/internal/match.mjs",
+    "bytes": 420
+  },
+  {
+    "path": "typebox/build/type/script/token/internal/guard.mjs",
+    "bytes": 666
+  },
+  {
+    "path": "typebox/build/type/script/token/internal/take.mjs",
+    "bytes": 1147
+  },
+  {
+    "path": "typebox/build/type/script/token/integer.mjs",
+    "bytes": 858
+  },
+  {
+    "path": "typebox/build/type/script/token/internal/trim.mjs",
+    "bytes": 1293
+  },
+  {
+    "path": "typebox/build/type/script/token/internal/char.mjs",
+    "bytes": 941
+  },
+  {
+    "path": "typebox/build/type/script/token/internal/optional.mjs",
+    "bytes": 399
+  },
+  {
+    "path": "typebox/build/type/script/token/unsigned_integer.mjs",
+    "bytes": 1146
+  },
+  {
+    "path": "typebox/build/type/script/token/internal/many.mjs",
+    "bytes": 635
+  },
+  {
+    "path": "typebox/build/type/script/token/const.mjs",
+    "bytes": 783
+  },
+  {
+    "path": "typebox/build/type/script/token/ident.mjs",
+    "bytes": 1174
+  },
+  {
+    "path": "typebox/build/type/script/token/number.mjs",
+    "bytes": 851
+  },
+  {
+    "path": "typebox/build/type/script/token/unsigned_number.mjs",
+    "bytes": 1867
+  },
+  {
+    "path": "typebox/build/type/script/token/rest.mjs",
+    "bytes": 358
+  },
+  {
+    "path": "typebox/build/type/script/token/span.mjs",
+    "bytes": 1258
+  },
+  {
+    "path": "typebox/build/type/script/token/until.mjs",
+    "bytes": 859
+  },
+  {
+    "path": "typebox/build/type/script/token/string.mjs",
+    "bytes": 762
+  },
+  {
+    "path": "typebox/build/type/script/token/until_1.mjs",
+    "bytes": 564
+  },
+  {
+    "path": "typebox/build/type/engine/template_literal/instantiate.mjs",
+    "bytes": 732
+  },
+  {
+    "path": "typebox/build/type/engine/template_literal/encode.mjs",
+    "bytes": 3884
+  },
+  {
+    "path": "typebox/build/type/extends/result.mjs",
+    "bytes": 1378
+  },
+  {
+    "path": "typebox/build/type/extends/array.mjs",
+    "bytes": 882
+  },
+  {
+    "path": "typebox/build/type/extends/bigint.mjs",
+    "bytes": 336
+  },
+  {
+    "path": "typebox/build/type/extends/boolean.mjs",
+    "bytes": 340
+  },
+  {
+    "path": "typebox/build/type/extends/constructor.mjs",
+    "bytes": 999
+  },
+  {
+    "path": "typebox/build/type/extends/parameters.mjs",
+    "bytes": 1636
+  },
+  {
+    "path": "typebox/build/type/extends/return_type.mjs",
+    "bytes": 331
+  },
+  {
+    "path": "typebox/build/type/extends/dependent.mjs",
+    "bytes": 333
+  },
+  {
+    "path": "typebox/build/type/extends/enum.mjs",
+    "bytes": 287
+  },
+  {
+    "path": "typebox/build/type/extends/function.mjs",
+    "bytes": 982
+  },
+  {
+    "path": "typebox/build/type/extends/integer.mjs",
+    "bytes": 441
+  },
+  {
+    "path": "typebox/build/type/extends/intersect.mjs",
+    "bytes": 698
+  },
+  {
+    "path": "typebox/build/type/extends/literal.mjs",
+    "bytes": 2207
+  },
+  {
+    "path": "typebox/build/type/extends/never.mjs",
+    "bytes": 332
+  },
+  {
+    "path": "typebox/build/type/extends/null.mjs",
+    "bytes": 328
+  },
+  {
+    "path": "typebox/build/type/extends/number.mjs",
+    "bytes": 336
+  },
+  {
+    "path": "typebox/build/type/extends/object.mjs",
+    "bytes": 5446
+  },
+  {
+    "path": "typebox/build/type/extends/record.mjs",
+    "bytes": 1183
+  },
+  {
+    "path": "typebox/build/type/extends/string.mjs",
+    "bytes": 336
+  },
+  {
+    "path": "typebox/build/type/extends/symbol.mjs",
+    "bytes": 336
+  },
+  {
+    "path": "typebox/build/type/extends/template_literal.mjs",
+    "bytes": 320
+  },
+  {
+    "path": "typebox/build/type/extends/tuple.mjs",
+    "bytes": 3531
+  },
+  {
+    "path": "typebox/build/type/extends/inference.mjs",
+    "bytes": 2849
+  },
+  {
+    "path": "typebox/build/type/extends/undefined.mjs",
+    "bytes": 443
+  },
+  {
+    "path": "typebox/build/type/extends/union.mjs",
+    "bytes": 1442
+  },
+  {
+    "path": "typebox/build/type/extends/unknown.mjs",
+    "bytes": 535
+  },
+  {
+    "path": "typebox/build/type/extends/void.mjs",
+    "bytes": 328
+  },
+  {
+    "path": "typebox/build/type/engine/cyclic/index.mjs",
+    "bytes": 195
+  },
+  {
+    "path": "typebox/build/type/engine/cyclic/candidates.mjs",
+    "bytes": 582
+  },
+  {
+    "path": "typebox/build/type/engine/cyclic/check.mjs",
+    "bytes": 2399
+  },
+  {
+    "path": "typebox/build/type/action/interface.mjs",
+    "bytes": 1010
+  },
+  {
+    "path": "typebox/build/type/engine/interface/instantiate.mjs",
+    "bytes": 1171
+  },
+  {
+    "path": "typebox/build/type/engine/cyclic/dependencies.mjs",
+    "bytes": 2487
+  },
+  {
+    "path": "typebox/build/type/engine/cyclic/extends.mjs",
+    "bytes": 2404
+  },
+  {
+    "path": "typebox/build/type/engine/cyclic/instantiate.mjs",
+    "bytes": 1594
+  },
+  {
+    "path": "typebox/build/type/engine/cyclic/target.mjs",
+    "bytes": 523
+  },
+  {
+    "path": "typebox/build/type/engine/evaluate/instantiate.mjs",
+    "bytes": 513
+  },
+  {
+    "path": "typebox/build/type/engine/call/distribute_arguments.mjs",
+    "bytes": 3430
+  },
+  {
+    "path": "typebox/build/type/engine/call/resolve_target.mjs",
+    "bytes": 1087
+  },
+  {
+    "path": "typebox/build/type/engine/call/resolve_arguments.mjs",
+    "bytes": 2108
+  },
+  {
+    "path": "typebox/build/type/engine/immutable/instantiate_remove.mjs",
+    "bytes": 592
+  },
+  {
+    "path": "typebox/build/type/engine/intrinsics/instantiate.mjs",
+    "bytes": 2441
+  },
+  {
+    "path": "typebox/build/type/engine/intrinsics/from_type.mjs",
+    "bytes": 631
+  },
+  {
+    "path": "typebox/build/type/engine/intrinsics/from_literal.mjs",
+    "bytes": 328
+  },
+  {
+    "path": "typebox/build/type/engine/intrinsics/mapping.mjs",
+    "bytes": 100
+  },
+  {
+    "path": "typebox/build/type/engine/intrinsics/from_template_literal.mjs",
+    "bytes": 315
+  },
+  {
+    "path": "typebox/build/type/engine/intrinsics/from_union.mjs",
+    "bytes": 250
+  },
+  {
+    "path": "typebox/build/type/action/capitalize.mjs",
+    "bytes": 452
+  },
+  {
+    "path": "typebox/build/type/action/lowercase.mjs",
+    "bytes": 445
+  },
+  {
+    "path": "typebox/build/type/action/uncapitalize.mjs",
+    "bytes": 466
+  },
+  {
+    "path": "typebox/build/type/action/uppercase.mjs",
+    "bytes": 445
+  },
+  {
+    "path": "typebox/build/type/engine/conditional/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/conditional/instantiate.mjs",
+    "bytes": 1467
+  },
+  {
+    "path": "typebox/build/type/action/conditional.mjs",
+    "bytes": 654
+  },
+  {
+    "path": "typebox/build/type/engine/constructor_parameters/instantiate.mjs",
+    "bytes": 1237
+  },
+  {
+    "path": "typebox/build/type/action/constructor_parameters.mjs",
+    "bytes": 533
+  },
+  {
+    "path": "typebox/build/type/engine/exclude/instantiate.mjs",
+    "bytes": 793
+  },
+  {
+    "path": "typebox/build/type/action/exclude.mjs",
+    "bytes": 459
+  },
+  {
+    "path": "typebox/build/type/engine/extract/instantiate.mjs",
+    "bytes": 793
+  },
+  {
+    "path": "typebox/build/type/action/extract.mjs",
+    "bytes": 461
+  },
+  {
+    "path": "typebox/build/type/engine/extract/operation.mjs",
+    "bytes": 982
+  },
+  {
+    "path": "typebox/build/type/engine/indexed/instantiate.mjs",
+    "bytes": 1272
+  },
+  {
+    "path": "typebox/build/type/action/indexed.mjs",
+    "bytes": 683
+  },
+  {
+    "path": "typebox/build/type/engine/helpers/keys_to_indexer.mjs",
+    "bytes": 464
+  },
+  {
+    "path": "typebox/build/type/engine/object/index.mjs",
+    "bytes": 32
+  },
+  {
+    "path": "typebox/build/type/engine/object/collapse.mjs",
+    "bytes": 584
+  },
+  {
+    "path": "typebox/build/type/engine/object/from_type.mjs",
+    "bytes": 1124
+  },
+  {
+    "path": "typebox/build/type/engine/object/from_cyclic.mjs",
+    "bytes": 263
+  },
+  {
+    "path": "typebox/build/type/engine/object/from_dependent.mjs",
+    "bytes": 302
+  },
+  {
+    "path": "typebox/build/type/engine/object/from_intersect.mjs",
+    "bytes": 1251
+  },
+  {
+    "path": "typebox/build/type/engine/object/from_object.mjs",
+    "bytes": 90
+  },
+  {
+    "path": "typebox/build/type/engine/object/from_tuple.mjs",
+    "bytes": 312
+  },
+  {
+    "path": "typebox/build/type/engine/object/from_union.mjs",
+    "bytes": 889
+  },
+  {
+    "path": "typebox/build/type/engine/indexed/from_type.mjs",
+    "bytes": 616
+  },
+  {
+    "path": "typebox/build/type/engine/indexed/from_array.mjs",
+    "bytes": 1393
+  },
+  {
+    "path": "typebox/build/type/engine/helpers/keys.mjs",
+    "bytes": 251
+  },
+  {
+    "path": "typebox/build/type/engine/indexed/from_object.mjs",
+    "bytes": 1578
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/to_indexable_keys.mjs",
+    "bytes": 490
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/from_type.mjs",
+    "bytes": 1314
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/from_cyclic.mjs",
+    "bytes": 263
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/from_dependent.mjs",
+    "bytes": 302
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/from_enum.mjs",
+    "bytes": 265
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/from_intersect.mjs",
+    "bytes": 278
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/from_literal.mjs",
+    "bytes": 115
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/from_template_literal.mjs",
+    "bytes": 300
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/from_union.mjs",
+    "bytes": 208
+  },
+  {
+    "path": "typebox/build/type/engine/this/expand_this.mjs",
+    "bytes": 1433
+  },
+  {
+    "path": "typebox/build/type/engine/indexed/from_tuple.mjs",
+    "bytes": 1413
+  },
+  {
+    "path": "typebox/build/type/engine/indexed/array_indexer.mjs",
+    "bytes": 836
+  },
+  {
+    "path": "typebox/build/type/engine/instance_type/instantiate.mjs",
+    "bytes": 890
+  },
+  {
+    "path": "typebox/build/type/action/instance_type.mjs",
+    "bytes": 469
+  },
+  {
+    "path": "typebox/build/type/engine/keyof/instantiate.mjs",
+    "bytes": 1257
+  },
+  {
+    "path": "typebox/build/type/action/keyof.mjs",
+    "bytes": 412
+  },
+  {
+    "path": "typebox/build/type/engine/keyof/from_type.mjs",
+    "bytes": 1024
+  },
+  {
+    "path": "typebox/build/type/engine/keyof/from_any.mjs",
+    "bytes": 298
+  },
+  {
+    "path": "typebox/build/type/engine/keyof/from_array.mjs",
+    "bytes": 131
+  },
+  {
+    "path": "typebox/build/type/engine/keyof/from_object.mjs",
+    "bytes": 788
+  },
+  {
+    "path": "typebox/build/type/engine/keyof/from_record.mjs",
+    "bytes": 141
+  },
+  {
+    "path": "typebox/build/type/engine/keyof/from_tuple.mjs",
+    "bytes": 272
+  },
+  {
+    "path": "typebox/build/type/engine/mapped/instantiate.mjs",
+    "bytes": 846
+  },
+  {
+    "path": "typebox/build/type/action/mapped.mjs",
+    "bytes": 633
+  },
+  {
+    "path": "typebox/build/type/engine/mapped/mapped_operation.mjs",
+    "bytes": 1996
+  },
+  {
+    "path": "typebox/build/type/engine/mapped/mapped_variants.mjs",
+    "bytes": 1396
+  },
+  {
+    "path": "typebox/build/type/engine/module/instantiate.mjs",
+    "bytes": 2024
+  },
+  {
+    "path": "typebox/build/type/engine/non_nullable/instantiate.mjs",
+    "bytes": 990
+  },
+  {
+    "path": "typebox/build/type/action/non_nullable.mjs",
+    "bytes": 461
+  },
+  {
+    "path": "typebox/build/type/engine/omit/instantiate.mjs",
+    "bytes": 775
+  },
+  {
+    "path": "typebox/build/type/action/omit.mjs",
+    "bytes": 673
+  },
+  {
+    "path": "typebox/build/type/engine/omit/from_type.mjs",
+    "bytes": 725
+  },
+  {
+    "path": "typebox/build/type/engine/indexable/to_indexable.mjs",
+    "bytes": 554
+  },
+  {
+    "path": "typebox/build/type/engine/parameters/instantiate.mjs",
+    "bytes": 1139
+  },
+  {
+    "path": "typebox/build/type/action/parameters.mjs",
+    "bytes": 452
+  },
+  {
+    "path": "typebox/build/type/engine/partial/instantiate.mjs",
+    "bytes": 653
+  },
+  {
+    "path": "typebox/build/type/action/partial.mjs",
+    "bytes": 428
+  },
+  {
+    "path": "typebox/build/type/engine/partial/from_type.mjs",
+    "bytes": 977
+  },
+  {
+    "path": "typebox/build/type/engine/partial/from_cyclic.mjs",
+    "bytes": 445
+  },
+  {
+    "path": "typebox/build/type/engine/partial/from_dependent.mjs",
+    "bytes": 302
+  },
+  {
+    "path": "typebox/build/type/engine/partial/from_intersect.mjs",
+    "bytes": 278
+  },
+  {
+    "path": "typebox/build/type/engine/partial/from_union.mjs",
+    "bytes": 232
+  },
+  {
+    "path": "typebox/build/type/engine/partial/from_object.mjs",
+    "bytes": 432
+  },
+  {
+    "path": "typebox/build/type/engine/pick/instantiate.mjs",
+    "bytes": 775
+  },
+  {
+    "path": "typebox/build/type/action/pick.mjs",
+    "bytes": 673
+  },
+  {
+    "path": "typebox/build/type/engine/pick/from_type.mjs",
+    "bytes": 813
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/instantiate.mjs",
+    "bytes": 687
+  },
+  {
+    "path": "typebox/build/type/action/readonly_object.mjs",
+    "bytes": 871
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/from_type.mjs",
+    "bytes": 1258
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/from_array.mjs",
+    "bytes": 236
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/from_cyclic.mjs",
+    "bytes": 445
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/from_dependent.mjs",
+    "bytes": 302
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/from_intersect.mjs",
+    "bytes": 278
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/from_object.mjs",
+    "bytes": 432
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/from_tuple.mjs",
+    "bytes": 238
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/from_union.mjs",
+    "bytes": 232
+  },
+  {
+    "path": "typebox/build/type/engine/ref/instantiate.mjs",
+    "bytes": 393
+  },
+  {
+    "path": "typebox/build/type/engine/required/instantiate.mjs",
+    "bytes": 657
+  },
+  {
+    "path": "typebox/build/type/engine/required/from_type.mjs",
+    "bytes": 977
+  },
+  {
+    "path": "typebox/build/type/engine/required/from_cyclic.mjs",
+    "bytes": 445
+  },
+  {
+    "path": "typebox/build/type/engine/required/from_dependent.mjs",
+    "bytes": 302
+  },
+  {
+    "path": "typebox/build/type/engine/required/from_intersect.mjs",
+    "bytes": 278
+  },
+  {
+    "path": "typebox/build/type/engine/required/from_union.mjs",
+    "bytes": 232
+  },
+  {
+    "path": "typebox/build/type/engine/required/from_object.mjs",
+    "bytes": 441
+  },
+  {
+    "path": "typebox/build/type/action/required.mjs",
+    "bytes": 436
+  },
+  {
+    "path": "typebox/build/type/engine/return_type/instantiate.mjs",
+    "bytes": 863
+  },
+  {
+    "path": "typebox/build/type/action/return_type.mjs",
+    "bytes": 453
+  },
+  {
+    "path": "typebox/build/type/engine/with/instantiate.mjs",
+    "bytes": 579
+  },
+  {
+    "path": "typebox/build/type/action/with.mjs",
+    "bytes": 403
+  },
+  {
+    "path": "typebox/build/type/engine/rest/index.mjs",
+    "bytes": 30
+  },
+  {
+    "path": "typebox/build/type/engine/rest/spread.mjs",
+    "bytes": 693
+  },
+  {
+    "path": "typebox/build/type/action/_remove_immutable.mjs",
+    "bytes": 486
+  },
+  {
+    "path": "typebox/build/type/action/evaluate.mjs",
+    "bytes": 429
+  },
+  {
+    "path": "typebox/build/type/action/module.mjs",
+    "bytes": 569
+  },
+  {
+    "path": "typebox/build/type/engine/index.mjs",
+    "bytes": 1518
+  },
+  {
+    "path": "typebox/build/type/engine/constructor_parameters/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/enum/index.mjs",
+    "bytes": 54
+  },
+  {
+    "path": "typebox/build/type/engine/exclude/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/extract/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/helpers/index.mjs",
+    "bytes": 96
+  },
+  {
+    "path": "typebox/build/type/engine/helpers/union.mjs",
+    "bytes": 76
+  },
+  {
+    "path": "typebox/build/type/engine/indexed/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/instance_type/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/interface/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/intrinsics/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/keyof/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/mapped/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/module/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/non_nullable/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/omit/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/parameters/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/patterns/index.mjs",
+    "bytes": 63
+  },
+  {
+    "path": "typebox/build/type/engine/partial/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/pick/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/priority/index.mjs",
+    "bytes": 32
+  },
+  {
+    "path": "typebox/build/type/engine/priority/priority.mjs",
+    "bytes": 1222
+  },
+  {
+    "path": "typebox/build/type/engine/readonly_object/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/record/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/ref/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/required/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/return_type/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/template_literal/index.mjs",
+    "bytes": 187
+  },
+  {
+    "path": "typebox/build/type/engine/template_literal/static.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/engine/template_literal/is_pattern.mjs",
+    "bytes": 440
+  },
+  {
+    "path": "typebox/build/type/engine/with/index.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/type/script/index.mjs",
+    "bytes": 30
+  },
+  {
+    "path": "typebox/build/type/script/script.mjs",
+    "bytes": 1029
+  },
+  {
+    "path": "typebox/build/typebox.mjs",
+    "bytes": 5022
+  },
+  {
+    "path": "typebox/build/value/index.mjs",
+    "bytes": 1160
+  },
+  {
+    "path": "typebox/build/value/assert/index.mjs",
+    "bytes": 30
+  },
+  {
+    "path": "typebox/build/value/assert/assert.mjs",
+    "bytes": 1153
+  },
+  {
+    "path": "typebox/build/value/check/index.mjs",
+    "bytes": 29
+  },
+  {
+    "path": "typebox/build/value/check/check.mjs",
+    "bytes": 453
+  },
+  {
+    "path": "typebox/build/schema/index.mjs",
+    "bytes": 394
+  },
+  {
+    "path": "typebox/build/schema/schema.mjs",
+    "bytes": 365
+  },
+  {
+    "path": "typebox/build/schema/engine/index.mjs",
+    "bytes": 1925
+  },
+  {
+    "path": "typebox/build/schema/engine/_context.mjs",
+    "bytes": 4134
+  },
+  {
+    "path": "typebox/build/schema/types/index.mjs",
+    "bytes": 2007
+  },
+  {
+    "path": "typebox/build/schema/types/_refine.mjs",
+    "bytes": 711
+  },
+  {
+    "path": "typebox/build/schema/types/additionalItems.mjs",
+    "bytes": 530
+  },
+  {
+    "path": "typebox/build/schema/types/schema.mjs",
+    "bytes": 491
+  },
+  {
+    "path": "typebox/build/schema/types/additionalProperties.mjs",
+    "bytes": 543
+  },
+  {
+    "path": "typebox/build/schema/types/allOf.mjs",
+    "bytes": 544
+  },
+  {
+    "path": "typebox/build/schema/types/anchor.mjs",
+    "bytes": 423
+  },
+  {
+    "path": "typebox/build/schema/types/anyOf.mjs",
+    "bytes": 544
+  },
+  {
+    "path": "typebox/build/schema/types/const.mjs",
+    "bytes": 406
+  },
+  {
+    "path": "typebox/build/schema/types/contains.mjs",
+    "bytes": 495
+  },
+  {
+    "path": "typebox/build/schema/types/default.mjs",
+    "bytes": 423
+  },
+  {
+    "path": "typebox/build/schema/types/defs.mjs",
+    "bytes": 523
+  },
+  {
+    "path": "typebox/build/schema/types/dependencies.mjs",
+    "bytes": 680
+  },
+  {
+    "path": "typebox/build/schema/types/dependentRequired.mjs",
+    "bytes": 649
+  },
+  {
+    "path": "typebox/build/schema/types/dependentSchemas.mjs",
+    "bytes": 622
+  },
+  {
+    "path": "typebox/build/schema/types/dynamicAnchor.mjs",
+    "bytes": 451
+  },
+  {
+    "path": "typebox/build/schema/types/dynamicRef.mjs",
+    "bytes": 439
+  },
+  {
+    "path": "typebox/build/schema/types/else.mjs",
+    "bytes": 479
+  },
+  {
+    "path": "typebox/build/schema/types/enum.mjs",
+    "bytes": 443
+  },
+  {
+    "path": "typebox/build/schema/types/exclusiveMaximum.mjs",
+    "bytes": 537
+  },
+  {
+    "path": "typebox/build/schema/types/exclusiveMinimum.mjs",
+    "bytes": 537
+  },
+  {
+    "path": "typebox/build/schema/types/format.mjs",
+    "bytes": 452
+  },
+  {
+    "path": "typebox/build/schema/types/id.mjs",
+    "bytes": 439
+  },
+  {
+    "path": "typebox/build/schema/types/if.mjs",
+    "bytes": 472
+  },
+  {
+    "path": "typebox/build/schema/types/items.mjs",
+    "bytes": 967
+  },
+  {
+    "path": "typebox/build/schema/types/maximum.mjs",
+    "bytes": 492
+  },
+  {
+    "path": "typebox/build/schema/types/maxContains.mjs",
+    "bytes": 478
+  },
+  {
+    "path": "typebox/build/schema/types/maxItems.mjs",
+    "bytes": 460
+  },
+  {
+    "path": "typebox/build/schema/types/maxLength.mjs",
+    "bytes": 464
+  },
+  {
+    "path": "typebox/build/schema/types/maxProperties.mjs",
+    "bytes": 480
+  },
+  {
+    "path": "typebox/build/schema/types/minimum.mjs",
+    "bytes": 492
+  },
+  {
+    "path": "typebox/build/schema/types/minContains.mjs",
+    "bytes": 478
+  },
+  {
+    "path": "typebox/build/schema/types/minItems.mjs",
+    "bytes": 460
+  },
+  {
+    "path": "typebox/build/schema/types/minLength.mjs",
+    "bytes": 464
+  },
+  {
+    "path": "typebox/build/schema/types/minProperties.mjs",
+    "bytes": 480
+  },
+  {
+    "path": "typebox/build/schema/types/multipleOf.mjs",
+    "bytes": 507
+  },
+  {
+    "path": "typebox/build/schema/types/not.mjs",
+    "bytes": 475
+  },
+  {
+    "path": "typebox/build/schema/types/oneOf.mjs",
+    "bytes": 544
+  },
+  {
+    "path": "typebox/build/schema/types/pattern.mjs",
+    "bytes": 506
+  },
+  {
+    "path": "typebox/build/schema/types/patternProperties.mjs",
+    "bytes": 620
+  },
+  {
+    "path": "typebox/build/schema/types/prefixItems.mjs",
+    "bytes": 544
+  },
+  {
+    "path": "typebox/build/schema/types/properties.mjs",
+    "bytes": 585
+  },
+  {
+    "path": "typebox/build/schema/types/propertyNames.mjs",
+    "bytes": 569
+  },
+  {
+    "path": "typebox/build/schema/types/recursiveAnchor.mjs",
+    "bytes": 698
+  },
+  {
+    "path": "typebox/build/schema/types/recursiveRef.mjs",
+    "bytes": 447
+  },
+  {
+    "path": "typebox/build/schema/types/ref.mjs",
+    "bytes": 443
+  },
+  {
+    "path": "typebox/build/schema/types/required.mjs",
+    "bytes": 524
+  },
+  {
+    "path": "typebox/build/schema/types/then.mjs",
+    "bytes": 479
+  },
+  {
+    "path": "typebox/build/schema/types/type.mjs",
+    "bytes": 559
+  },
+  {
+    "path": "typebox/build/schema/types/uniqueItems.mjs",
+    "bytes": 473
+  },
+  {
+    "path": "typebox/build/schema/types/unevaluatedItems.mjs",
+    "bytes": 533
+  },
+  {
+    "path": "typebox/build/schema/types/unevaluatedProperties.mjs",
+    "bytes": 553
+  },
+  {
+    "path": "typebox/build/schema/engine/_externals.mjs",
+    "bytes": 829
+  },
+  {
+    "path": "typebox/build/schema/engine/_functions.mjs",
+    "bytes": 2549
+  },
+  {
+    "path": "typebox/build/schema/engine/schema.mjs",
+    "bytes": 24736
+  },
+  {
+    "path": "typebox/build/schema/engine/_refine.mjs",
+    "bytes": 1393
+  },
+  {
+    "path": "typebox/build/schema/engine/additionalItems.mjs",
+    "bytes": 3030
+  },
+  {
+    "path": "typebox/build/schema/engine/_unique.mjs",
+    "bytes": 111
+  },
+  {
+    "path": "typebox/build/schema/engine/additionalProperties.mjs",
+    "bytes": 6175
+  },
+  {
+    "path": "typebox/build/schema/engine/_regexp.mjs",
+    "bytes": 116
+  },
+  {
+    "path": "typebox/build/schema/engine/allOf.mjs",
+    "bytes": 2427
+  },
+  {
+    "path": "typebox/build/schema/engine/_reducer.mjs",
+    "bytes": 2152
+  },
+  {
+    "path": "typebox/build/schema/engine/anyOf.mjs",
+    "bytes": 2506
+  },
+  {
+    "path": "typebox/build/schema/engine/boolean.mjs",
+    "bytes": 1026
+  },
+  {
+    "path": "typebox/build/schema/engine/const.mjs",
+    "bytes": 1291
+  },
+  {
+    "path": "typebox/build/schema/engine/contains.mjs",
+    "bytes": 2477
+  },
+  {
+    "path": "typebox/build/schema/engine/dependencies.mjs",
+    "bytes": 2463
+  },
+  {
+    "path": "typebox/build/schema/engine/dependentRequired.mjs",
+    "bytes": 2018
+  },
+  {
+    "path": "typebox/build/schema/engine/dependentSchemas.mjs",
+    "bytes": 1936
+  },
+  {
+    "path": "typebox/build/schema/engine/dynamicRef.mjs",
+    "bytes": 1266
+  },
+  {
+    "path": "typebox/build/schema/engine/enum.mjs",
+    "bytes": 1391
+  },
+  {
+    "path": "typebox/build/schema/engine/exclusiveMaximum.mjs",
+    "bytes": 1155
+  },
+  {
+    "path": "typebox/build/schema/engine/exclusiveMinimum.mjs",
+    "bytes": 1161
+  },
+  {
+    "path": "typebox/build/schema/engine/format.mjs",
+    "bytes": 1120
+  },
+  {
+    "path": "typebox/build/format/index.mjs",
+    "bytes": 133
+  },
+  {
+    "path": "typebox/build/format/format.mjs",
+    "bytes": 992
+  },
+  {
+    "path": "typebox/build/format/_registry.mjs",
+    "bytes": 3811
+  },
+  {
+    "path": "typebox/build/format/date_time.mjs",
+    "bytes": 402
+  },
+  {
+    "path": "typebox/build/format/date.mjs",
+    "bytes": 682
+  },
+  {
+    "path": "typebox/build/format/time.mjs",
+    "bytes": 1156
+  },
+  {
+    "path": "typebox/build/format/duration.mjs",
+    "bytes": 340
+  },
+  {
+    "path": "typebox/build/format/email.mjs",
+    "bytes": 502
+  },
+  {
+    "path": "typebox/build/format/hostname.mjs",
+    "bytes": 335
+  },
+  {
+    "path": "typebox/build/format/idna/index.mjs",
+    "bytes": 68
+  },
+  {
+    "path": "typebox/build/format/idna/hostname.mjs",
+    "bytes": 573
+  },
+  {
+    "path": "typebox/build/format/idna/label/ascii.mjs",
+    "bytes": 447
+  },
+  {
+    "path": "typebox/build/format/idna/pattern/pattern.mjs",
+    "bytes": 3938
+  },
+  {
+    "path": "typebox/build/format/idna/label/puny.mjs",
+    "bytes": 1237
+  },
+  {
+    "path": "typebox/build/format/idna/format/puny.mjs",
+    "bytes": 5813
+  },
+  {
+    "path": "typebox/build/format/idna/label/unicode.mjs",
+    "bytes": 5016
+  },
+  {
+    "path": "typebox/build/format/idna/format/bidi.mjs",
+    "bytes": 4370
+  },
+  {
+    "path": "typebox/build/format/idna/idn-hostname.mjs",
+    "bytes": 2082
+  },
+  {
+    "path": "typebox/build/format/idn_email.mjs",
+    "bytes": 450
+  },
+  {
+    "path": "typebox/build/format/idn_hostname.mjs",
+    "bytes": 419
+  },
+  {
+    "path": "typebox/build/format/ipv4.mjs",
+    "bytes": 281
+  },
+  {
+    "path": "typebox/build/format/ipv6.mjs",
+    "bytes": 739
+  },
+  {
+    "path": "typebox/build/format/iri_reference.mjs",
+    "bytes": 662
+  },
+  {
+    "path": "typebox/build/format/iri.mjs",
+    "bytes": 1562
+  },
+  {
+    "path": "typebox/build/format/json_pointer_uri_fragment.mjs",
+    "bytes": 382
+  },
+  {
+    "path": "typebox/build/format/json_pointer.mjs",
+    "bytes": 301
+  },
+  {
+    "path": "typebox/build/format/regex.mjs",
+    "bytes": 278
+  },
+  {
+    "path": "typebox/build/format/relative_json_pointer.mjs",
+    "bytes": 357
+  },
+  {
+    "path": "typebox/build/format/uri_reference.mjs",
+    "bytes": 3650
+  },
+  {
+    "path": "typebox/build/format/uri_template.mjs",
+    "bytes": 510
+  },
+  {
+    "path": "typebox/build/format/uri.mjs",
+    "bytes": 1983
+  },
+  {
+    "path": "typebox/build/format/url.mjs",
+    "bytes": 266
+  },
+  {
+    "path": "typebox/build/format/uuid.mjs",
+    "bytes": 291
+  },
+  {
+    "path": "typebox/build/schema/engine/if.mjs",
+    "bytes": 2353
+  },
+  {
+    "path": "typebox/build/schema/engine/items.mjs",
+    "bytes": 4893
+  },
+  {
+    "path": "typebox/build/schema/engine/maxContains.mjs",
+    "bytes": 1895
+  },
+  {
+    "path": "typebox/build/schema/engine/maximum.mjs",
+    "bytes": 1094
+  },
+  {
+    "path": "typebox/build/schema/engine/maxItems.mjs",
+    "bytes": 1111
+  },
+  {
+    "path": "typebox/build/schema/engine/maxLength.mjs",
+    "bytes": 1084
+  },
+  {
+    "path": "typebox/build/schema/engine/maxProperties.mjs",
+    "bytes": 1168
+  },
+  {
+    "path": "typebox/build/schema/engine/minContains.mjs",
+    "bytes": 2396
+  },
+  {
+    "path": "typebox/build/schema/engine/minimum.mjs",
+    "bytes": 1100
+  },
+  {
+    "path": "typebox/build/schema/engine/minItems.mjs",
+    "bytes": 1117
+  },
+  {
+    "path": "typebox/build/schema/engine/minLength.mjs",
+    "bytes": 1084
+  },
+  {
+    "path": "typebox/build/schema/engine/minProperties.mjs",
+    "bytes": 1174
+  },
+  {
+    "path": "typebox/build/schema/engine/multipleOf.mjs",
+    "bytes": 1097
+  },
+  {
+    "path": "typebox/build/schema/engine/not.mjs",
+    "bytes": 1696
+  },
+  {
+    "path": "typebox/build/schema/engine/oneOf.mjs",
+    "bytes": 2899
+  },
+  {
+    "path": "typebox/build/schema/engine/pattern.mjs",
+    "bytes": 1357
+  },
+  {
+    "path": "typebox/build/schema/engine/patternProperties.mjs",
+    "bytes": 2514
+  },
+  {
+    "path": "typebox/build/schema/engine/prefixItems.mjs",
+    "bytes": 2001
+  },
+  {
+    "path": "typebox/build/schema/engine/properties.mjs",
+    "bytes": 4134
+  },
+  {
+    "path": "typebox/build/schema/engine/_exact_optional.mjs",
+    "bytes": 934
+  },
+  {
+    "path": "typebox/build/schema/engine/propertyNames.mjs",
+    "bytes": 1785
+  },
+  {
+    "path": "typebox/build/schema/engine/recursiveRef.mjs",
+    "bytes": 1278
+  },
+  {
+    "path": "typebox/build/schema/engine/ref.mjs",
+    "bytes": 2447
+  },
+  {
+    "path": "typebox/build/schema/engine/required.mjs",
+    "bytes": 1349
+  },
+  {
+    "path": "typebox/build/schema/engine/type.mjs",
+    "bytes": 4112
+  },
+  {
+    "path": "typebox/build/schema/engine/unevaluatedItems.mjs",
+    "bytes": 2445
+  },
+  {
+    "path": "typebox/build/schema/engine/unevaluatedProperties.mjs",
+    "bytes": 2500
+  },
+  {
+    "path": "typebox/build/schema/engine/uniqueItems.mjs",
+    "bytes": 2027
+  },
+  {
+    "path": "typebox/build/schema/engine/_stack.mjs",
+    "bytes": 11485
+  },
+  {
+    "path": "typebox/build/schema/resolve/index.mjs",
+    "bytes": 42
+  },
+  {
+    "path": "typebox/build/schema/resolve/resolve.mjs",
+    "bytes": 15542
+  },
+  {
+    "path": "typebox/build/schema/pointer/index.mjs",
+    "bytes": 77
+  },
+  {
+    "path": "typebox/build/schema/pointer/pointer_get.mjs",
+    "bytes": 35
+  },
+  {
+    "path": "typebox/build/schema/pointer/pointer.mjs",
+    "bytes": 3872
+  },
+  {
+    "path": "typebox/build/schema/intern/index.mjs",
+    "bytes": 30
+  },
+  {
+    "path": "typebox/build/schema/intern/intern.mjs",
+    "bytes": 12192
+  },
+  {
+    "path": "typebox/build/schema/static/index.mjs",
+    "bytes": 11
+  },
+  {
+    "path": "typebox/build/schema/build.mjs",
+    "bytes": 4496
+  },
+  {
+    "path": "typebox/build/schema/compile.mjs",
+    "bytes": 1663
+  },
+  {
+    "path": "typebox/build/schema/errors.mjs",
+    "bytes": 889
+  },
+  {
+    "path": "typebox/build/schema/parse.mjs",
+    "bytes": 1198
+  },
+  {
+    "path": "typebox/build/schema/check.mjs",
+    "bytes": 595
+  },
+  {
+    "path": "typebox/build/value/errors/index.mjs",
+    "bytes": 30
+  },
+  {
+    "path": "typebox/build/value/errors/errors.mjs",
+    "bytes": 507
+  },
+  {
+    "path": "typebox/build/value/clean/index.mjs",
+    "bytes": 29
+  },
+  {
+    "path": "typebox/build/value/clean/clean.mjs",
+    "bytes": 849
+  },
+  {
+    "path": "typebox/build/value/clean/from_type.mjs",
+    "bytes": 1118
+  },
+  {
+    "path": "typebox/build/type/index.mjs",
+    "bytes": 180
+  },
+  {
+    "path": "typebox/build/value/clean/from_array.mjs",
+    "bytes": 291
+  },
+  {
+    "path": "typebox/build/value/clean/from_cyclic.mjs",
+    "bytes": 240
+  },
+  {
+    "path": "typebox/build/value/clean/from_intersect.mjs",
+    "bytes": 1247
+  },
+  {
+    "path": "typebox/build/value/clean/from_object.mjs",
+    "bytes": 1328
+  },
+  {
+    "path": "typebox/build/value/clean/additional.mjs",
+    "bytes": 279
+  },
+  {
+    "path": "typebox/build/value/clean/from_record.mjs",
+    "bytes": 1399
+  },
+  {
+    "path": "typebox/build/value/clean/from_ref.mjs",
+    "bytes": 289
+  },
+  {
+    "path": "typebox/build/value/clean/from_tuple.mjs",
+    "bytes": 523
+  },
+  {
+    "path": "typebox/build/value/clean/from_union.mjs",
+    "bytes": 403
+  },
+  {
+    "path": "typebox/build/value/clone/index.mjs",
+    "bytes": 29
+  },
+  {
+    "path": "typebox/build/value/clone/clone.mjs",
+    "bytes": 471
+  },
+  {
+    "path": "typebox/build/value/shared/union_priority_sort.mjs",
+    "bytes": 3165
+  },
+  {
+    "path": "typebox/build/value/codec/index.mjs",
+    "bytes": 87
+  },
+  {
+    "path": "typebox/build/value/codec/decode.mjs",
+    "bytes": 2241
+  },
+  {
+    "path": "typebox/build/value/convert/index.mjs",
+    "bytes": 31
+  },
+  {
+    "path": "typebox/build/value/convert/convert.mjs",
+    "bytes": 715
+  },
+  {
+    "path": "typebox/build/value/convert/from_type.mjs",
+    "bytes": 2997
+  },
+  {
+    "path": "typebox/build/value/convert/from_array.mjs",
+    "bytes": 275
+  },
+  {
+    "path": "typebox/build/value/convert/try/index.mjs",
+    "bytes": 34
+  },
+  {
+    "path": "typebox/build/value/convert/try/try.mjs",
+    "bytes": 273
+  },
+  {
+    "path": "typebox/build/value/convert/try/try_array.mjs",
+    "bytes": 208
+  },
+  {
+    "path": "typebox/build/value/convert/try/try_result.mjs",
+    "bytes": 581
+  },
+  {
+    "path": "typebox/build/value/convert/try/try_bigint.mjs",
+    "bytes": 1933
+  },
+  {
+    "path": "typebox/build/value/convert/try/try_boolean.mjs",
+    "bytes": 1736
+  },
+  {
+    "path": "typebox/build/value/convert/try/try_null.mjs",
+    "bytes": 1848
+  },
+  {
+    "path": "typebox/build/value/convert/try/try_number.mjs",
+    "bytes": 1777
+  },
+  {
+    "path": "typebox/build/value/convert/try/try_string.mjs",
+    "bytes": 534
+  },
+  {
+    "path": "typebox/build/value/convert/try/try_undefined.mjs",
+    "bytes": 1879
+  },
+  {
+    "path": "typebox/build/value/convert/from_bigint.mjs",
+    "bytes": 211
+  },
+  {
+    "path": "typebox/build/value/convert/from_boolean.mjs",
+    "bytes": 213
+  },
+  {
+    "path": "typebox/build/value/convert/from_cyclic.mjs",
+    "bytes": 240
+  },
+  {
+    "path": "typebox/build/value/convert/from_enum.mjs",
+    "bytes": 221
+  },
+  {
+    "path": "typebox/build/value/convert/from_integer.mjs",
+    "bytes": 224
+  },
+  {
+    "path": "typebox/build/value/convert/from_intersect.mjs",
+    "bytes": 333
+  },
+  {
+    "path": "typebox/build/value/convert/from_literal.mjs",
+    "bytes": 2198
+  },
+  {
+    "path": "typebox/build/value/convert/from_null.mjs",
+    "bytes": 207
+  },
+  {
+    "path": "typebox/build/value/convert/from_number.mjs",
+    "bytes": 211
+  },
+  {
+    "path": "typebox/build/value/convert/from_object.mjs",
+    "bytes": 1256
+  },
+  {
+    "path": "typebox/build/value/convert/from_additional.mjs",
+    "bytes": 647
+  },
+  {
+    "path": "typebox/build/value/shared/optional_undefined.mjs",
+    "bytes": 771
+  },
+  {
+    "path": "typebox/build/value/convert/from_record.mjs",
+    "bytes": 931
+  },
+  {
+    "path": "typebox/build/value/convert/from_ref.mjs",
+    "bytes": 291
+  },
+  {
+    "path": "typebox/build/value/convert/from_string.mjs",
+    "bytes": 211
+  },
+  {
+    "path": "typebox/build/value/convert/from_template_literal.mjs",
+    "bytes": 232
+  },
+  {
+    "path": "typebox/build/value/convert/from_tuple.mjs",
+    "bytes": 405
+  },
+  {
+    "path": "typebox/build/value/convert/from_undefined.mjs",
+    "bytes": 217
+  },
+  {
+    "path": "typebox/build/value/convert/from_union.mjs",
+    "bytes": 589
+  },
+  {
+    "path": "typebox/build/value/convert/from_void.mjs",
+    "bytes": 208
+  },
+  {
+    "path": "typebox/build/value/default/index.mjs",
+    "bytes": 31
+  },
+  {
+    "path": "typebox/build/value/default/default.mjs",
+    "bytes": 712
+  },
+  {
+    "path": "typebox/build/value/default/from_type.mjs",
+    "bytes": 1355
+  },
+  {
+    "path": "typebox/build/value/default/from_array.mjs",
+    "bytes": 374
+  },
+  {
+    "path": "typebox/build/value/default/from_cyclic.mjs",
+    "bytes": 265
+  },
+  {
+    "path": "typebox/build/value/default/from_default.mjs",
+    "bytes": 545
+  },
+  {
+    "path": "typebox/build/value/default/from_intersect.mjs",
+    "bytes": 358
+  },
+  {
+    "path": "typebox/build/value/default/from_object.mjs",
+    "bytes": 1399
+  },
+  {
+    "path": "typebox/build/value/default/from_record.mjs",
+    "bytes": 1000
+  },
+  {
+    "path": "typebox/build/value/default/from_ref.mjs",
+    "bytes": 314
+  },
+  {
+    "path": "typebox/build/value/default/from_tuple.mjs",
+    "bytes": 485
+  },
+  {
+    "path": "typebox/build/value/default/from_union.mjs",
+    "bytes": 444
+  },
+  {
+    "path": "typebox/build/value/pipeline/index.mjs",
+    "bytes": 32
+  },
+  {
+    "path": "typebox/build/value/pipeline/pipeline.mjs",
+    "bytes": 631
+  },
+  {
+    "path": "typebox/build/value/codec/from_type.mjs",
+    "bytes": 1323
+  },
+  {
+    "path": "typebox/build/value/codec/from_array.mjs",
+    "bytes": 1431
+  },
+  {
+    "path": "typebox/build/value/codec/callback.mjs",
+    "bytes": 972
+  },
+  {
+    "path": "typebox/build/value/codec/from_cyclic.mjs",
+    "bytes": 360
+  },
+  {
+    "path": "typebox/build/value/codec/from_intersect.mjs",
+    "bytes": 2838
+  },
+  {
+    "path": "typebox/build/value/codec/from_object.mjs",
+    "bytes": 1934
+  },
+  {
+    "path": "typebox/build/value/codec/from_record.mjs",
+    "bytes": 1592
+  },
+  {
+    "path": "typebox/build/value/codec/from_ref.mjs",
+    "bytes": 1365
+  },
+  {
+    "path": "typebox/build/value/codec/from_tuple.mjs",
+    "bytes": 1339
+  },
+  {
+    "path": "typebox/build/value/codec/from_union.mjs",
+    "bytes": 1574
+  },
+  {
+    "path": "typebox/build/value/codec/encode.mjs",
+    "bytes": 2242
+  },
+  {
+    "path": "typebox/build/value/codec/has.mjs",
+    "bytes": 4081
+  },
+  {
+    "path": "typebox/build/value/create/index.mjs",
+    "bytes": 59
+  },
+  {
+    "path": "typebox/build/value/create/error.mjs",
+    "bytes": 156
+  },
+  {
+    "path": "typebox/build/value/create/create.mjs",
+    "bytes": 446
+  },
+  {
+    "path": "typebox/build/value/create/from_type.mjs",
+    "bytes": 4104
+  },
+  {
+    "path": "typebox/build/value/create/from_default.mjs",
+    "bytes": 349
+  },
+  {
+    "path": "typebox/build/value/create/from_array.mjs",
+    "bytes": 529
+  },
+  {
+    "path": "typebox/build/value/create/from_bigint.mjs",
+    "bytes": 305
+  },
+  {
+    "path": "typebox/build/value/create/from_boolean.mjs",
+    "bytes": 91
+  },
+  {
+    "path": "typebox/build/value/create/from_constructor.mjs",
+    "bytes": 289
+  },
+  {
+    "path": "typebox/build/value/create/from_cyclic.mjs",
+    "bytes": 226
+  },
+  {
+    "path": "typebox/build/value/create/from_enum.mjs",
+    "bytes": 207
+  },
+  {
+    "path": "typebox/build/value/create/from_function.mjs",
+    "bytes": 204
+  },
+  {
+    "path": "typebox/build/value/create/from_integer.mjs",
+    "bytes": 364
+  },
+  {
+    "path": "typebox/build/value/create/from_intersect.mjs",
+    "bytes": 319
+  },
+  {
+    "path": "typebox/build/value/create/from_literal.mjs",
+    "bytes": 95
+  },
+  {
+    "path": "typebox/build/value/create/from_never.mjs",
+    "bytes": 176
+  },
+  {
+    "path": "typebox/build/value/create/from_null.mjs",
+    "bytes": 87
+  },
+  {
+    "path": "typebox/build/value/create/from_number.mjs",
+    "bytes": 361
+  },
+  {
+    "path": "typebox/build/value/create/from_object.mjs",
+    "bytes": 373
+  },
+  {
+    "path": "typebox/build/value/create/from_record.mjs",
+    "bytes": 367
+  },
+  {
+    "path": "typebox/build/value/create/from_ref.mjs",
+    "bytes": 378
+  },
+  {
+    "path": "typebox/build/value/create/from_string.mjs",
+    "bytes": 450
+  },
+  {
+    "path": "typebox/build/value/create/from_symbol.mjs",
+    "bytes": 93
+  },
+  {
+    "path": "typebox/build/value/create/from_template_literal.mjs",
+    "bytes": 528
+  },
+  {
+    "path": "typebox/build/value/create/from_tuple.mjs",
+    "bytes": 207
+  },
+  {
+    "path": "typebox/build/value/create/from_undefined.mjs",
+    "bytes": 97
+  },
+  {
+    "path": "typebox/build/value/create/from_union.mjs",
+    "bytes": 322
+  },
+  {
+    "path": "typebox/build/value/create/from_void.mjs",
+    "bytes": 89
+  },
+  {
+    "path": "typebox/build/value/equal/index.mjs",
+    "bytes": 29
+  },
+  {
+    "path": "typebox/build/value/equal/equal.mjs",
+    "bytes": 221
+  },
+  {
+    "path": "typebox/build/value/hash/index.mjs",
+    "bytes": 28
+  },
+  {
+    "path": "typebox/build/value/hash/hash.mjs",
+    "bytes": 402
+  },
+  {
+    "path": "typebox/build/value/parse/index.mjs",
+    "bytes": 29
+  },
+  {
+    "path": "typebox/build/value/parse/parse.mjs",
+    "bytes": 1917
+  },
+  {
+    "path": "typebox/build/value/delta/index.mjs",
+    "bytes": 85
+  },
+  {
+    "path": "typebox/build/value/delta/diff.mjs",
+    "bytes": 5500
+  },
+  {
+    "path": "typebox/build/value/delta/edit.mjs",
+    "bytes": 438
+  },
+  {
+    "path": "typebox/build/value/delta/patch.mjs",
+    "bytes": 1426
+  },
+  {
+    "path": "typebox/build/value/pointer/index.mjs",
+    "bytes": 48
+  },
+  {
+    "path": "typebox/build/value/repair/index.mjs",
+    "bytes": 30
+  },
+  {
+    "path": "typebox/build/value/repair/repair.mjs",
+    "bytes": 901
+  },
+  {
+    "path": "typebox/build/value/repair/from_type.mjs",
+    "bytes": 4262
+  },
+  {
+    "path": "typebox/build/value/repair/from_array.mjs",
+    "bytes": 1859
+  },
+  {
+    "path": "typebox/build/value/repair/error.mjs",
+    "bytes": 208
+  },
+  {
+    "path": "typebox/build/value/repair/from_enum.mjs",
+    "bytes": 221
+  },
+  {
+    "path": "typebox/build/value/repair/from_intersect.mjs",
+    "bytes": 333
+  },
+  {
+    "path": "typebox/build/value/repair/from_object.mjs",
+    "bytes": 1302
+  },
+  {
+    "path": "typebox/build/value/repair/from_record.mjs",
+    "bytes": 1267
+  },
+  {
+    "path": "typebox/build/value/repair/from_ref.mjs",
+    "bytes": 423
+  },
+  {
+    "path": "typebox/build/value/repair/from_template_literal.mjs",
+    "bytes": 319
+  },
+  {
+    "path": "typebox/build/value/repair/from_tuple.mjs",
+    "bytes": 480
+  },
+  {
+    "path": "typebox/build/value/repair/from_union.mjs",
+    "bytes": 1019
+  },
+  {
+    "path": "typebox/build/value/shared/union_score_select.mjs",
+    "bytes": 2317
+  },
+  {
+    "path": "typebox/build/value/repair/from_unknown.mjs",
+    "bytes": 429
+  },
+  {
+    "path": "typebox/build/value/shared/index.mjs",
+    "bytes": 151
+  },
+  {
+    "path": "typebox/build/value/value.mjs",
+    "bytes": 688
+  },
+  {
+    "path": "@earendil-works/chord/dist/errors.js",
+    "bytes": 2091
+  },
+  {
+    "path": "@earendil-works/chord/dist/schema.js",
+    "bytes": 9552
+  },
+  {
+    "path": "@earendil-works/chord/dist/host.js",
+    "bytes": 47046
+  },
+  {
+    "path": "@earendil-works/chord/dist/cluster.js",
+    "bytes": 10367
+  },
+  {
+    "path": "@earendil-works/chord/dist/reload.js",
+    "bytes": 29747
+  },
+  {
+    "path": "@earendil-works/chord/dist/object.js",
+    "bytes": 65476
+  },
+  {
+    "path": "@earendil-works/chord/dist/cell.js",
+    "bytes": 13739
+  },
+  {
+    "path": "@earendil-works/chord/dist/delta/index.js",
+    "bytes": 27547
+  },
+  {
+    "path": "@earendil-works/chord/dist/delta/diff.js",
+    "bytes": 17071
+  },
+  {
+    "path": "@earendil-works/chord/dist/delta/tracker.js",
+    "bytes": 80301
+  },
+  {
+    "path": "@earendil-works/chord/dist/json.js",
+    "bytes": 5161
+  },
+  {
+    "path": "@earendil-works/chord/dist/delta/apply-immutable-trusted.js",
+    "bytes": 4812
+  },
+  {
+    "path": "@earendil-works/chord/dist/publish.js",
+    "bytes": 1383
+  },
+  {
+    "path": "@earendil-works/chord/dist/wire.js",
+    "bytes": 8451
+  },
+  {
+    "path": "@earendil-works/chord/dist/connection.js",
+    "bytes": 49705
+  },
+  {
+    "path": "@earendil-works/chord/dist/link.js",
+    "bytes": 14060
+  },
+  {
+    "path": "@earendil-works/chord/dist/remote.js",
+    "bytes": 23164
+  },
+  {
+    "path": "@earendil-works/chord/dist/registry.js",
+    "bytes": 257
+  },
+  {
+    "path": "@earendil-works/chord/dist/state.js",
+    "bytes": 9655
+  },
+  {
+    "path": "@earendil-works/chord/dist/context/index.js",
+    "bytes": 3276
+  },
+  {
+    "path": "@earendil-works/chord/dist/websocket.js",
+    "bytes": 911
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/ids.js",
+    "bytes": 311
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/entries.js",
+    "bytes": 1620
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/errors.js",
+    "bytes": 2064
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/agent.js",
+    "bytes": 11442
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/session/session.js",
+    "bytes": 35791
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/session/observation.js",
+    "bytes": 9082
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/session/transaction.js",
+    "bytes": 36466
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/types.js",
+    "bytes": 131
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/session/forks.js",
+    "bytes": 2333
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/compaction.js",
+    "bytes": 19607
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/estimate.js",
+    "bytes": 3752
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/text.js",
+    "bytes": 1421
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/retry.js",
+    "bytes": 8825
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tasks.js",
+    "bytes": 205
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/context.js",
+    "bytes": 12789
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/live.js",
+    "bytes": 7212
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/generation.js",
+    "bytes": 30333
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/overflow.js",
+    "bytes": 10422
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/transcript.js",
+    "bytes": 8745
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/inbox.js",
+    "bytes": 5664
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/json.js",
+    "bytes": 1268
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/prompt.js",
+    "bytes": 5993
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/provider.js",
+    "bytes": 1249
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/uuid.js",
+    "bytes": 2045
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/tool.js",
+    "bytes": 37727
+  },
+  {
+    "path": "@earendil-works/chord/dist/output.js",
+    "bytes": 14529
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/validation.js",
+    "bytes": 10758
+  },
+  {
+    "path": "typebox/build/compile/index.mjs",
+    "bytes": 575
+  },
+  {
+    "path": "typebox/build/compile/code.mjs",
+    "bytes": 2595
+  },
+  {
+    "path": "typebox/build/compile/compile.mjs",
+    "bytes": 437
+  },
+  {
+    "path": "typebox/build/compile/validator.mjs",
+    "bytes": 3629
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/truncate.js",
+    "bytes": 4330
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/usage.js",
+    "bytes": 2478
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/submissions.js",
+    "bytes": 9390
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/util.js",
+    "bytes": 2105
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/define.js",
+    "bytes": 990
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/events.js",
+    "bytes": 18059
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/view.js",
+    "bytes": 8761
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/harness.js",
+    "bytes": 14540
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/registry.js",
+    "bytes": 3995
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/scheduler.js",
+    "bytes": 85753
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/harness/task-graph.js",
+    "bytes": 7240
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/storage/memory.js",
+    "bytes": 33065
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/storage/scan.js",
+    "bytes": 1424
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/env/node.js",
+    "bytes": 44256
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/env/decode.js",
+    "bytes": 1495
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/env/index.js",
+    "bytes": 1393
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/env/line-scan.js",
+    "bytes": 5583
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/env/node-watch.js",
+    "bytes": 19725
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/storage/sqlite/node.js",
+    "bytes": 6151
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/storage/sqlite/schema.js",
+    "bytes": 2436
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/storage/sqlite/storage.js",
+    "bytes": 33759
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/storage/sqlite/migrations.js",
+    "bytes": 6508
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/index.js",
+    "bytes": 1080
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/bash.js",
+    "bytes": 7524
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/env.js",
+    "bytes": 282
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/edit.js",
+    "bytes": 6071
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/edit-diff.js",
+    "bytes": 17004
+  },
+  {
+    "path": "diff/libesm/index.js",
+    "bytes": 1914
+  },
+  {
+    "path": "diff/libesm/diff/base.js",
+    "bytes": 12008
+  },
+  {
+    "path": "diff/libesm/diff/character.js",
+    "bytes": 228
+  },
+  {
+    "path": "diff/libesm/diff/word.js",
+    "bytes": 13933
+  },
+  {
+    "path": "diff/libesm/util/string.js",
+    "bytes": 7127
+  },
+  {
+    "path": "diff/libesm/diff/line.js",
+    "bytes": 2629
+  },
+  {
+    "path": "diff/libesm/util/params.js",
+    "bytes": 410
+  },
+  {
+    "path": "diff/libesm/diff/sentence.js",
+    "bytes": 1904
+  },
+  {
+    "path": "diff/libesm/diff/css.js",
+    "bytes": 275
+  },
+  {
+    "path": "diff/libesm/diff/json.js",
+    "bytes": 2914
+  },
+  {
+    "path": "diff/libesm/diff/array.js",
+    "bytes": 370
+  },
+  {
+    "path": "diff/libesm/patch/apply.js",
+    "bytes": 12892
+  },
+  {
+    "path": "diff/libesm/patch/line-endings.js",
+    "bytes": 2334
+  },
+  {
+    "path": "diff/libesm/patch/parse.js",
+    "bytes": 6218
+  },
+  {
+    "path": "diff/libesm/util/distance-iterator.js",
+    "bytes": 1487
+  },
+  {
+    "path": "diff/libesm/patch/reverse.js",
+    "bytes": 1081
+  },
+  {
+    "path": "diff/libesm/patch/create.js",
+    "bytes": 9499
+  },
+  {
+    "path": "diff/libesm/convert/dmp.js",
+    "bytes": 580
+  },
+  {
+    "path": "diff/libesm/convert/xml.js",
+    "bytes": 781
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/file-mutation-queue.js",
+    "bytes": 2369
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/path-utils.js",
+    "bytes": 1052
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/read.js",
+    "bytes": 13636
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/image.js",
+    "bytes": 7381
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/image-processor.js",
+    "bytes": 954
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/tools/write.js",
+    "bytes": 1507
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/anthropic.js",
+    "bytes": 3548
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/anthropic-messages.lazy.js",
+    "bytes": 180
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/lazy.js",
+    "bytes": 2663
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/event-stream.js",
+    "bytes": 4027
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/helpers.js",
+    "bytes": 2110
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/oauth/load.js",
+    "bytes": 2902
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/env-api-keys.js",
+    "bytes": 7813
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/provider-env.js",
+    "bytes": 1696
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/models.js",
+    "bytes": 31970
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/context.js",
+    "bytes": 1666
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/credential-store.js",
+    "bytes": 2045
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/abort.js",
+    "bytes": 1551
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/resolve.js",
+    "bytes": 6696
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/models-error.js",
+    "bytes": 677
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/diagnostics.js",
+    "bytes": 964
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/models-store.js",
+    "bytes": 587
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/model-operations.js",
+    "bytes": 2053
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/anthropic.models.js",
+    "bytes": 615
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/anthropic.json",
+    "bytes": 11820
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/model-catalog.js",
+    "bytes": 632
+  }
+]

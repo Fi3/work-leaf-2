@@ -1,0 +1,2447 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-16T15:05:50.872397+00:00",
+  "path_base": "dev-docs",
+  "description": "Saved upstream references and licenses. Collection manifests preserve original acquisition records.",
+  "collections": [
+    {
+      "id": "interfaces",
+      "title": "Agent terminal and editor interface references",
+      "index": "interfaces/INDEX.md",
+      "manifest": "interfaces/manifest.json"
+    },
+    {
+      "id": "neovim",
+      "title": "neovim",
+      "index": "neovim/INDEX.md",
+      "manifest": "neovim/manifest.json"
+    },
+    {
+      "id": "neovim-ui",
+      "title": "neovim-ui",
+      "index": "neovim-ui/INDEX.md",
+      "manifest": "neovim-ui/manifest.json"
+    },
+    {
+      "id": "pi",
+      "title": "Pi runtime and optional Coding Agent references",
+      "index": "pi/INDEX.md",
+      "manifest": "pi/manifest.json"
+    }
+  ],
+  "topics": {
+    "acp": [
+      "acp-repository-overview",
+      "acp-architecture",
+      "acp-v1-overview",
+      "acp-v1-initialization",
+      "acp-v1-session-setup",
+      "acp-v1-prompt-turn",
+      "acp-v1-tool-calls",
+      "acp-v1-cancellation",
+      "acp-v1-terminals",
+      "acp-v1-file-system",
+      "acp-v1-content",
+      "acp-v1-agent-plan",
+      "acp-v1-transports",
+      "acp-v1-session-list",
+      "acp-v1-session-config",
+      "acp-v2-draft-status"
+    ],
+    "agent-loop": [
+      "pi-coding-agent-concepts"
+    ],
+    "agent-ui": [
+      "pi-tui-components",
+      "acp-v1-agent-plan"
+    ],
+    "api": [
+      "neovim-api"
+    ],
+    "api-contracts": [
+      "pi-durable-design"
+    ],
+    "architecture": [
+      "acp-architecture"
+    ],
+    "async": [
+      "neovim-lua",
+      "neovim-job_control",
+      "neovim-luvref"
+    ],
+    "authentication": [
+      "pi-ai"
+    ],
+    "branching": [
+      "pi-coding-agent-sessions"
+    ],
+    "buffers": [
+      "acp-v1-file-system",
+      "neovim-api",
+      "neovim-autocmd",
+      "neovim-windows",
+      "neovim-options",
+      "nui-popup"
+    ],
+    "cancellation": [
+      "acp-v1-prompt-turn",
+      "acp-v1-cancellation",
+      "pi-ai",
+      "pi-durable",
+      "pi-coding-agent-rpc-commands"
+    ],
+    "capabilities": [
+      "acp-v1-overview",
+      "acp-v1-initialization"
+    ],
+    "cleanup": [
+      "acp-v1-terminals"
+    ],
+    "coding-agent": [
+      "pi-coding-agent-concepts",
+      "pi-coding-agent-sdk",
+      "pi-coding-agent-rpc",
+      "pi-coding-agent-rpc-commands",
+      "pi-coding-agent-rpc-ui",
+      "pi-coding-agent-events",
+      "pi-coding-agent-messages",
+      "pi-coding-agent-sessions",
+      "pi-coding-agent-models"
+    ],
+    "commands": [
+      "neovim-lua-guide",
+      "neovim-map",
+      "pi-coding-agent-rpc-commands"
+    ],
+    "compaction": [
+      "acp-v1-prompt-turn"
+    ],
+    "compatibility": [
+      "pi-tui-terminal-setup",
+      "neovim-lua-plugin"
+    ],
+    "completion": [
+      "pi-coding-agent-events"
+    ],
+    "components": [
+      "pi-tui-components",
+      "nui-overview"
+    ],
+    "configuration": [
+      "acp-v1-session-config",
+      "neovim-lua-plugin",
+      "pi-coding-agent-models"
+    ],
+    "confirmation": [
+      "nui-input"
+    ],
+    "content": [
+      "acp-v1-content"
+    ],
+    "context": [
+      "acp-v1-content",
+      "pi-coding-agent-concepts"
+    ],
+    "diagnostics": [
+      "neovim-diagnostic",
+      "neovim-quickfix",
+      "neovim-health"
+    ],
+    "dialogs": [
+      "pi-coding-agent-rpc-ui"
+    ],
+    "diff": [
+      "neovim-plugins",
+      "neovim-diff"
+    ],
+    "diffs": [
+      "acp-v1-tool-calls"
+    ],
+    "distribution": [
+      "neovim-pack"
+    ],
+    "draft": [
+      "acp-v2-draft-status"
+    ],
+    "editor": [
+      "acp-architecture"
+    ],
+    "editor-context": [
+      "acp-v1-file-system"
+    ],
+    "embedding": [
+      "pi-coding-agent-sdk"
+    ],
+    "errors": [
+      "pi-coding-agent-rpc"
+    ],
+    "events": [
+      "acp-v1-overview",
+      "neovim-autocmd",
+      "pi-coding-agent-sdk",
+      "pi-coding-agent-events"
+    ],
+    "execution": [
+      "acp-v1-terminals"
+    ],
+    "exit": [
+      "neovim-autocmd"
+    ],
+    "extmarks": [
+      "neovim-api"
+    ],
+    "files": [
+      "acp-v1-file-system"
+    ],
+    "focus": [
+      "pi-tui-components"
+    ],
+    "framing": [
+      "pi-coding-agent-rpc",
+      "pi-coding-agent-events"
+    ],
+    "future": [
+      "acp-v2-draft-status"
+    ],
+    "highlighting": [
+      "nui-text",
+      "nui-line"
+    ],
+    "history": [
+      "acp-v1-session-setup"
+    ],
+    "images": [
+      "acp-v1-content"
+    ],
+    "initialization": [
+      "acp-v1-initialization"
+    ],
+    "input": [
+      "pi-tui-overview",
+      "neovim-lua",
+      "neovim-tui",
+      "neovim-map",
+      "neovim-vimfn",
+      "nui-input",
+      "nui-menu"
+    ],
+    "installation": [
+      "neovim-health"
+    ],
+    "keybindings": [
+      "pi-tui-keybindings"
+    ],
+    "keyboard": [
+      "pi-tui-keybindings",
+      "pi-tui-terminal-setup"
+    ],
+    "keymaps": [
+      "neovim-map"
+    ],
+    "layout": [
+      "nui-popup",
+      "nui-split",
+      "nui-layout"
+    ],
+    "lifecycle": [
+      "pi-coding-agent-rpc"
+    ],
+    "list": [
+      "acp-v1-session-list"
+    ],
+    "load": [
+      "acp-v1-session-setup"
+    ],
+    "loading": [
+      "neovim-pack"
+    ],
+    "local-models": [
+      "pi-ai",
+      "pi-coding-agent-models"
+    ],
+    "locations": [
+      "acp-v1-tool-calls"
+    ],
+    "lua": [
+      "neovim-lua-guide",
+      "neovim-lua"
+    ],
+    "messages": [
+      "pi-coding-agent-messages"
+    ],
+    "model-providers": [
+      "pi-ai",
+      "pi-coding-agent-models"
+    ],
+    "models": [
+      "acp-v1-session-config"
+    ],
+    "navigation": [
+      "neovim-quickfix"
+    ],
+    "neovim": [
+      "nui-overview"
+    ],
+    "notifications": [
+      "pi-coding-agent-rpc-ui"
+    ],
+    "observation": [
+      "pi-durable-design"
+    ],
+    "options": [
+      "acp-v1-session-config",
+      "neovim-options"
+    ],
+    "output": [
+      "acp-v1-terminals"
+    ],
+    "overlays": [
+      "pi-tui-overview"
+    ],
+    "pagination": [
+      "acp-v1-session-list"
+    ],
+    "permissions": [
+      "acp-v1-tool-calls"
+    ],
+    "plans": [
+      "acp-v1-agent-plan"
+    ],
+    "plugin": [
+      "neovim-lua-plugin",
+      "neovim-lua-guide",
+      "neovim-remote_plugin",
+      "neovim-pack",
+      "neovim-health"
+    ],
+    "processes": [
+      "neovim-lua",
+      "neovim-job_control",
+      "neovim-terminal",
+      "neovim-remote_plugin",
+      "neovim-vimfn",
+      "neovim-luvref"
+    ],
+    "progress": [
+      "acp-v1-agent-plan"
+    ],
+    "prompt": [
+      "neovim-channel"
+    ],
+    "protocol": [
+      "acp-v1-overview",
+      "pi-coding-agent-rpc",
+      "pi-coding-agent-rpc-commands",
+      "pi-coding-agent-rpc-ui"
+    ],
+    "quickfix": [
+      "neovim-vimfn"
+    ],
+    "recovery": [
+      "pi-durable",
+      "pi-durable-design"
+    ],
+    "remote": [
+      "acp-v1-transports"
+    ],
+    "rendering": [
+      "pi-tui-overview",
+      "neovim-api-ui-events",
+      "nui-text",
+      "nui-line"
+    ],
+    "replay": [
+      "pi-durable-design"
+    ],
+    "request-identifiers": [
+      "pi-durable"
+    ],
+    "requests": [
+      "acp-v1-cancellation"
+    ],
+    "resize": [
+      "nui-layout"
+    ],
+    "resources": [
+      "acp-v1-content"
+    ],
+    "review": [
+      "neovim-diagnostic",
+      "neovim-quickfix",
+      "neovim-plugins",
+      "neovim-diff"
+    ],
+    "rpc": [
+      "neovim-api",
+      "neovim-api-ui-events",
+      "neovim-remote_plugin"
+    ],
+    "selection": [
+      "nui-menu"
+    ],
+    "sessions": [
+      "acp-v1-session-setup",
+      "acp-v1-session-list",
+      "pi-durable",
+      "pi-coding-agent-concepts",
+      "pi-coding-agent-sdk",
+      "pi-coding-agent-sessions"
+    ],
+    "shutdown": [
+      "pi-coding-agent-rpc"
+    ],
+    "state": [
+      "pi-coding-agent-rpc-commands"
+    ],
+    "status": [
+      "acp-repository-overview"
+    ],
+    "stdio": [
+      "acp-v1-transports"
+    ],
+    "storage": [
+      "pi-durable",
+      "pi-durable-design",
+      "pi-coding-agent-sessions"
+    ],
+    "streaming": [
+      "acp-v1-prompt-turn",
+      "neovim-channel",
+      "pi-ai",
+      "pi-durable",
+      "pi-coding-agent-events"
+    ],
+    "structure": [
+      "neovim-lua-plugin"
+    ],
+    "tasks": [
+      "pi-durable-design"
+    ],
+    "terminal": [
+      "pi-tui-terminal-setup",
+      "acp-v1-terminals",
+      "neovim-terminal",
+      "neovim-tui"
+    ],
+    "tool-calls": [
+      "pi-ai",
+      "pi-coding-agent-messages"
+    ],
+    "tool-output": [
+      "pi-coding-agent-events"
+    ],
+    "tools": [
+      "acp-v1-tool-calls",
+      "pi-durable"
+    ],
+    "transactions": [
+      "pi-durable-design"
+    ],
+    "transport": [
+      "acp-architecture",
+      "acp-v1-transports",
+      "neovim-channel",
+      "neovim-vimfn",
+      "neovim-luvref"
+    ],
+    "tui": [
+      "pi-tui-overview",
+      "pi-tui-components",
+      "pi-tui-keybindings",
+      "pi-tui-terminal-setup",
+      "neovim-tui"
+    ],
+    "ui": [
+      "neovim-windows",
+      "neovim-terminal",
+      "neovim-api-ui-events",
+      "neovim-diagnostic",
+      "neovim-plugins",
+      "neovim-options"
+    ],
+    "unicode": [
+      "pi-tui-overview"
+    ],
+    "updates": [
+      "acp-v1-prompt-turn"
+    ],
+    "usage": [
+      "pi-coding-agent-messages"
+    ],
+    "user-input": [
+      "pi-coding-agent-rpc-ui"
+    ],
+    "versioning": [
+      "acp-repository-overview"
+    ],
+    "versions": [
+      "acp-v1-initialization",
+      "acp-v2-draft-status"
+    ],
+    "windows": [
+      "neovim-api",
+      "neovim-windows",
+      "neovim-diff",
+      "nui-popup",
+      "nui-split"
+    ]
+  },
+  "documents": [
+    {
+      "id": "pi-tui-overview",
+      "title": "Pi terminal UI library",
+      "path": "interfaces/pi-tui/overview.md",
+      "repository": "https://github.com/earendil-works/pi",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/tui/README.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/tui/README.md",
+      "upstream_path": "packages/tui/README.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "13e8b964f1fd06010ec13b71fdfc3069f4fa36b42567262762ef68f76e56e4e0",
+      "format": "markdown",
+      "topics": [
+        "tui",
+        "rendering",
+        "input",
+        "unicode",
+        "overlays"
+      ],
+      "description": "Read the component, rendering, keyboard, and display model.",
+      "license_path": "interfaces/pi-tui/LICENSE.txt",
+      "transform": "Source bytes unchanged. Upstream README.md renamed to overview.md.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 34796,
+      "lines": 949,
+      "section_count": 40
+    },
+    {
+      "id": "pi-tui-components",
+      "title": "Pi agent TUI components",
+      "path": "interfaces/pi-tui/components.md",
+      "repository": "https://github.com/earendil-works/pi",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/tui.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/tui.md",
+      "upstream_path": "packages/coding-agent/docs/tui.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "0263c7a102a6d972038645448d568abf01108ad839b12a374dad7150811ae8a3",
+      "format": "markdown",
+      "topics": [
+        "tui",
+        "agent-ui",
+        "components",
+        "focus"
+      ],
+      "description": "Read how Pi extensions display interactive components.",
+      "license_path": "interfaces/pi-tui/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 8959,
+      "lines": 125,
+      "section_count": 10
+    },
+    {
+      "id": "pi-tui-keybindings",
+      "title": "Pi agent keybindings",
+      "path": "interfaces/pi-tui/keybindings.md",
+      "repository": "https://github.com/earendil-works/pi",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/keybindings.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/keybindings.md",
+      "upstream_path": "packages/coding-agent/docs/keybindings.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "413aa1c5e95a934d216aa5aba20052fa2cf35940ba5f02d1f4b22ff53c6ec678",
+      "format": "markdown",
+      "topics": [
+        "tui",
+        "keyboard",
+        "keybindings"
+      ],
+      "description": "Study configurable actions, key names, and editor input.",
+      "license_path": "interfaces/pi-tui/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 10658,
+      "lines": 195,
+      "section_count": 15
+    },
+    {
+      "id": "pi-tui-terminal-setup",
+      "title": "Pi terminal setup",
+      "path": "interfaces/pi-tui/terminal-setup.md",
+      "repository": "https://github.com/earendil-works/pi",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/terminal-setup.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/terminal-setup.md",
+      "upstream_path": "packages/coding-agent/docs/terminal-setup.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "583381fb9dc466135a865ca406a3be299a7a8da2c9d810c5b73f401912a0a357",
+      "format": "markdown",
+      "topics": [
+        "tui",
+        "terminal",
+        "keyboard",
+        "compatibility"
+      ],
+      "description": "Check terminal input requirements and compatibility constraints.",
+      "license_path": "interfaces/pi-tui/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 9093,
+      "lines": 233,
+      "section_count": 21
+    },
+    {
+      "id": "acp-repository-overview",
+      "title": "ACP repository and version policy",
+      "path": "interfaces/acp/overview.md",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/README.md",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/README.md",
+      "upstream_path": "README.md",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "56f5d88d99567098850f27a25f97f45f49c43899097ae9bf988f79c0d66adf13",
+      "format": "markdown",
+      "topics": [
+        "acp",
+        "versioning",
+        "status"
+      ],
+      "description": "Distinguish protocol versions from schema and SDK releases.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged. Upstream README.md renamed to overview.md.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 5444,
+      "lines": 52,
+      "section_count": 6
+    },
+    {
+      "id": "acp-architecture",
+      "title": "ACP architecture",
+      "path": "interfaces/acp/architecture.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/get-started/architecture.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/get-started/architecture.mdx",
+      "upstream_path": "docs/get-started/architecture.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "1ecc53e3acba67415d5e16fde965b7df4e21dfcb650451bb01e0b10c6f4c36cd",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "architecture",
+        "editor",
+        "transport"
+      ],
+      "description": "Read the editor and agent communication model.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 2203,
+      "lines": 34,
+      "frontmatter": {
+        "title": "Architecture",
+        "description": "Overview of the Agent Client Protocol architecture."
+      },
+      "section_count": 3
+    },
+    {
+      "id": "acp-v1-overview",
+      "title": "ACP v1 protocol overview",
+      "path": "interfaces/acp/v1/overview.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/overview.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/overview.mdx",
+      "upstream_path": "docs/protocol/v1/overview.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "8955c2f17bc68acf656ba2afa20e700219311f3eb8e5819261abd66608dbe5c2",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "protocol",
+        "events",
+        "capabilities"
+      ],
+      "description": "Find requests, notifications, and responsibilities on each side.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 8173,
+      "lines": 250,
+      "frontmatter": {
+        "title": "Overview",
+        "description": "How the Agent Client Protocol works"
+      },
+      "section_count": 15
+    },
+    {
+      "id": "acp-v1-initialization",
+      "title": "ACP v1 initialization",
+      "path": "interfaces/acp/v1/initialization.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/initialization.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/initialization.mdx",
+      "upstream_path": "docs/protocol/v1/initialization.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "de93675c5b3f62303bdb758b6e1c57c548b53c403087a5e981bb1d2722188f2f",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "initialization",
+        "capabilities",
+        "versions"
+      ],
+      "description": "Read connection setup and capability negotiation.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 11269,
+      "lines": 326,
+      "frontmatter": {
+        "title": "Initialization",
+        "description": "How all Agent Client Protocol connections begin"
+      },
+      "section_count": 17
+    },
+    {
+      "id": "acp-v1-session-setup",
+      "title": "ACP v1 session setup",
+      "path": "interfaces/acp/v1/session-setup.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/session-setup.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/session-setup.mdx",
+      "upstream_path": "docs/protocol/v1/session-setup.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "c9e586cf400608ee160032cc2ec8fa0a0b3e904f7324183eb8eb1aa9a42d6575",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "sessions",
+        "load",
+        "history"
+      ],
+      "description": "Read session creation and optional history loading.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 16006,
+      "lines": 556,
+      "frontmatter": {
+        "title": "Session Setup",
+        "description": "Creating and loading sessions"
+      },
+      "section_count": 19
+    },
+    {
+      "id": "acp-v1-prompt-turn",
+      "title": "ACP v1 prompt turn and updates",
+      "path": "interfaces/acp/v1/prompt-turn.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/prompt-turn.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/prompt-turn.mdx",
+      "upstream_path": "docs/protocol/v1/prompt-turn.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "8d7fa30f56c5769d7721c5fdb954a90f9f01588f548c5e7b1a57df574f12cad3",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "streaming",
+        "updates",
+        "cancellation",
+        "compaction"
+      ],
+      "description": "Read prompt processing, streamed updates, and turn completion.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 23379,
+      "lines": 586,
+      "frontmatter": {
+        "title": "Prompt Turn",
+        "description": "Understanding the core conversation flow"
+      },
+      "section_count": 14
+    },
+    {
+      "id": "acp-v1-tool-calls",
+      "title": "ACP v1 tool calls and permissions",
+      "path": "interfaces/acp/v1/tool-calls.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/tool-calls.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/tool-calls.mdx",
+      "upstream_path": "docs/protocol/v1/tool-calls.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "19165c2e4b4b8c7395aa85a139d3ac5dbd7ac80bbac54743c3fd59f17218b78b",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "tools",
+        "permissions",
+        "diffs",
+        "locations"
+      ],
+      "description": "Read tool status, displayed output, file changes, and permission requests.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 9385,
+      "lines": 337,
+      "frontmatter": {
+        "title": "Tool Calls",
+        "description": "How Agents report tool call execution"
+      },
+      "section_count": 10
+    },
+    {
+      "id": "acp-v1-cancellation",
+      "title": "ACP v1 request cancellation",
+      "path": "interfaces/acp/v1/cancellation.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/cancellation.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/cancellation.mdx",
+      "upstream_path": "docs/protocol/v1/cancellation.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "a20bd442b3b4d8d0185ef4af1529b82d9329bc93d2f864a36fdf75fd90b7831c",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "cancellation",
+        "requests"
+      ],
+      "description": "Distinguish request cancellation from stopping a prompt turn.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 3608,
+      "lines": 70,
+      "frontmatter": {
+        "title": "Cancellation",
+        "description": "Mechanisms for request cancellation"
+      },
+      "section_count": 3
+    },
+    {
+      "id": "acp-v1-terminals",
+      "title": "ACP v1 terminal execution",
+      "path": "interfaces/acp/v1/terminals.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/terminals.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/terminals.mdx",
+      "upstream_path": "docs/protocol/v1/terminals.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "5d3d5c70b9c4f5e1c9a10cda6535d014f17dc1abaf7cd2c39bc1ac5bd6760191",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "terminal",
+        "execution",
+        "output",
+        "cleanup"
+      ],
+      "description": "Read terminal creation, output, process completion, and release.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 6950,
+      "lines": 282,
+      "frontmatter": {
+        "title": "Terminals",
+        "description": "Executing and managing terminal commands"
+      },
+      "section_count": 8
+    },
+    {
+      "id": "acp-v1-file-system",
+      "title": "ACP v1 file access",
+      "path": "interfaces/acp/v1/file-system.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/file-system.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/file-system.mdx",
+      "upstream_path": "docs/protocol/v1/file-system.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "f023e59aa180e17f4cc04592cb194080f1e5a48f50d8f76397d51dfaea1d0e7c",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "files",
+        "buffers",
+        "editor-context"
+      ],
+      "description": "Read client file access and unsaved editor content.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 2875,
+      "lines": 117,
+      "frontmatter": {
+        "title": "File System",
+        "description": "Client filesystem access methods"
+      },
+      "section_count": 3
+    },
+    {
+      "id": "acp-v1-content",
+      "title": "ACP v1 content blocks",
+      "path": "interfaces/acp/v1/content.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/content.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/content.mdx",
+      "upstream_path": "docs/protocol/v1/content.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "936a6f49c701361a1a09a3dcfe690c9b35ea0b7e29f6fa27db795615c9c94ff2",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "content",
+        "context",
+        "resources",
+        "images"
+      ],
+      "description": "Read text, resource links, and other message content.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 6246,
+      "lines": 207,
+      "frontmatter": {
+        "title": "Content",
+        "description": "Understanding content blocks in the Agent Client Protocol"
+      },
+      "section_count": 6
+    },
+    {
+      "id": "acp-v1-agent-plan",
+      "title": "ACP v1 agent plans",
+      "path": "interfaces/acp/v1/agent-plan.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/agent-plan.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/agent-plan.mdx",
+      "upstream_path": "docs/protocol/v1/agent-plan.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "4bfcacc030249555a5a2e76d94f0f95a52183625d4318382c7c3dc84953fe93a",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "plans",
+        "progress",
+        "agent-ui"
+      ],
+      "description": "Read how clients receive and display plan changes.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 2374,
+      "lines": 83,
+      "frontmatter": {
+        "title": "Agent Plan",
+        "description": "How Agents communicate their execution plans"
+      },
+      "section_count": 4
+    },
+    {
+      "id": "acp-v1-transports",
+      "title": "ACP v1 transports",
+      "path": "interfaces/acp/v1/transports.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/transports.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/transports.mdx",
+      "upstream_path": "docs/protocol/v1/transports.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "dbd4a4607e63cc785427ca2a2b5f307724a5f2ec52575d4988bd613db53dcf02",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "transport",
+        "stdio",
+        "remote"
+      ],
+      "description": "Read the specified transport and its limits.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 2336,
+      "lines": 52,
+      "frontmatter": {
+        "title": "Transports",
+        "description": "Mechanisms for agents and clients to communicate with each other"
+      },
+      "section_count": 3
+    },
+    {
+      "id": "acp-v1-session-list",
+      "title": "ACP v1 session list",
+      "path": "interfaces/acp/v1/session-list.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/session-list.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/session-list.mdx",
+      "upstream_path": "docs/protocol/v1/session-list.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "6b4de26653acfb7980a6257d00fe76f860843b3dfb08bb38f7439f9ba2c1ac25",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "sessions",
+        "list",
+        "pagination"
+      ],
+      "description": "Read session discovery and list pagination.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 7653,
+      "lines": 225,
+      "frontmatter": {
+        "title": "Session List",
+        "description": "Discovering existing sessions"
+      },
+      "section_count": 5
+    },
+    {
+      "id": "acp-v1-session-config",
+      "title": "ACP v1 session configuration",
+      "path": "interfaces/acp/v1/session-config-options.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/session-config-options.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/protocol/v1/session-config-options.mdx",
+      "upstream_path": "docs/protocol/v1/session-config-options.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "1 (stable protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "5f2d90d1e44db5c3f40e0d635516a46fcf37335f45cbb2fcc0dc2ba54064b155",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "configuration",
+        "models",
+        "options"
+      ],
+      "description": "Read how clients show and change agent configuration.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 11699,
+      "lines": 372,
+      "frontmatter": {
+        "title": "Session Config Options",
+        "description": "Flexible configuration selectors for agent sessions"
+      },
+      "section_count": 12
+    },
+    {
+      "id": "acp-v2-draft-status",
+      "title": "ACP v2 draft announcement",
+      "path": "interfaces/acp/v2-draft-status.mdx",
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/announcements/acp-v2-draft.mdx",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/docs/announcements/acp-v2-draft.mdx",
+      "upstream_path": "docs/announcements/acp-v2-draft.mdx",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "version": "2 (draft protocol)",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "07e282aa8b1dcaecac84cfb98dc394805b01c4f5dab975545b0c54ca0c8af332",
+      "format": "mdx",
+      "topics": [
+        "acp",
+        "draft",
+        "versions",
+        "future"
+      ],
+      "description": "Read the explicit draft status and the proposed lifecycle changes.",
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "transform": "Source bytes unchanged.",
+      "collection": "interfaces",
+      "kind": "reference",
+      "bytes": 8827,
+      "lines": 85,
+      "frontmatter": {
+        "title": "ACP v2 is available in Draft",
+        "sidebarTitle": "ACP v2 Draft",
+        "description": "The ACP v2 protocol documentation and schema are published in draft form for review and testing."
+      },
+      "section_count": 9
+    },
+    {
+      "repository": "https://github.com/earendil-works/pi",
+      "path": "interfaces/pi-tui/LICENSE.txt",
+      "upstream_path": "LICENSE",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/LICENSE",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/LICENSE",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "0457f5bcec3b3b211605dfb5d1a49042fd638f3686a410fe099c24a25af13c48",
+      "license": "MIT",
+      "transform": "Source bytes unchanged. License file renamed to LICENSE.txt.",
+      "collection": "interfaces",
+      "id": "interfaces-interfaces-pi-tui-LICENSE-txt",
+      "kind": "license",
+      "title": "MIT notice",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "Upstream license and copyright notice.",
+      "version": null,
+      "license_path": "interfaces/pi-tui/LICENSE.txt",
+      "bytes": 1069,
+      "lines": 21
+    },
+    {
+      "repository": "https://github.com/agentclientprotocol/agent-client-protocol",
+      "path": "interfaces/acp/LICENSE.txt",
+      "upstream_path": "LICENSE",
+      "source_url": "https://github.com/agentclientprotocol/agent-client-protocol/blob/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/LICENSE",
+      "download_url": "https://raw.githubusercontent.com/agentclientprotocol/agent-client-protocol/00c5a02d7ab96b9d6aa214002d408ce9d972b4e4/LICENSE",
+      "revision": "00c5a02d7ab96b9d6aa214002d408ce9d972b4e4",
+      "retrieved_at": "2026-10-16T14:59:52Z",
+      "sha256": "f250d08cee4549b22b3b4aaaf3a743473336fd280316df5d0340717e5127a221",
+      "license": "Apache-2.0",
+      "transform": "Source bytes unchanged. License file renamed to LICENSE.txt.",
+      "collection": "interfaces",
+      "id": "interfaces-interfaces-acp-LICENSE-txt",
+      "kind": "license",
+      "title": "Apache-2.0 notice",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "Upstream license and copyright notice.",
+      "version": null,
+      "license_path": "interfaces/acp/LICENSE.txt",
+      "bytes": 10782,
+      "lines": 190
+    },
+    {
+      "id": "neovim-lua-plugin",
+      "title": "Lua plugin development",
+      "kind": "reference",
+      "path": "neovim/lua-plugin.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/lua-plugin.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/lua-plugin.txt",
+      "upstream_path": "runtime/doc/lua-plugin.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "9d3b39ac5299db4182c939b4fe83f56654b0b9d6d8d9e27ff8d991f3f6bf19f0",
+      "format": "text",
+      "topics": [
+        "plugin",
+        "structure",
+        "configuration",
+        "compatibility"
+      ],
+      "description": "Plugin layout, deferred loading, configuration, keymaps, user interface, documentation, and version checks.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 14065,
+      "lines": 353
+    },
+    {
+      "id": "neovim-lua-guide",
+      "title": "Lua guide",
+      "kind": "reference",
+      "path": "neovim/lua-guide.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/lua-guide.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/lua-guide.txt",
+      "upstream_path": "runtime/doc/lua-guide.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "21e441222289383be9dae21009fc6ac2a4b293701df5e8d089340d1ff1560af0",
+      "format": "text",
+      "topics": [
+        "lua",
+        "plugin",
+        "commands"
+      ],
+      "description": "Lua modules, options, mappings, commands, and autocommands.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 29201,
+      "lines": 745
+    },
+    {
+      "id": "neovim-lua",
+      "title": "Lua API reference",
+      "kind": "reference",
+      "path": "neovim/lua.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/lua.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/lua.txt",
+      "upstream_path": "runtime/doc/lua.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "482f76c7bb2d5b63c356c60d8ca86a4f0a7e502d344ed90c396dd9de34bef247",
+      "format": "text",
+      "topics": [
+        "lua",
+        "async",
+        "input",
+        "processes"
+      ],
+      "description": "Lua runtime, scheduling, JSON, process execution, input, selection, and notification APIs.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 209106,
+      "lines": 5619
+    },
+    {
+      "id": "neovim-api",
+      "title": "Neovim API",
+      "kind": "reference",
+      "path": "neovim/api.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/api.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/api.txt",
+      "upstream_path": "runtime/doc/api.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "7f6f2d5a1fcc16b46b91c737175f24106c10c1d72d7d36acf7470a22aeefcc85",
+      "format": "text",
+      "topics": [
+        "api",
+        "buffers",
+        "windows",
+        "extmarks",
+        "rpc"
+      ],
+      "description": "Buffer and window operations, floating windows, extmarks, API contracts, and RPC.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 175082,
+      "lines": 4332
+    },
+    {
+      "id": "neovim-channel",
+      "title": "Asynchronous channels",
+      "kind": "reference",
+      "path": "neovim/channel.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/channel.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/channel.txt",
+      "upstream_path": "runtime/doc/channel.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "736720165f02ddb04af8c341d4d8f183c31eb5ba071a3e08addae0531e7093e3",
+      "format": "text",
+      "topics": [
+        "transport",
+        "streaming",
+        "prompt"
+      ],
+      "description": "Raw bytes, partial callback data, channels, sockets, RPC, and prompt buffers.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 10470,
+      "lines": 264
+    },
+    {
+      "id": "neovim-job_control",
+      "title": "Job control",
+      "kind": "reference",
+      "path": "neovim/job_control.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/job_control.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/job_control.txt",
+      "upstream_path": "runtime/doc/job_control.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "9b38315d007bab1a170863f9bab2740fb0ff81bca5d0861c03cf3685d2e32692",
+      "format": "text",
+      "topics": [
+        "processes",
+        "async"
+      ],
+      "description": "Child processes, standard streams, and exit callbacks.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 5258,
+      "lines": 142
+    },
+    {
+      "id": "neovim-autocmd",
+      "title": "Autocommands",
+      "kind": "reference",
+      "path": "neovim/autocmd.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/autocmd.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/autocmd.txt",
+      "upstream_path": "runtime/doc/autocmd.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "20cdf68bd1e46e2f9b19d36212639c1689ec68c799a3b23bee20a92f79997317",
+      "format": "text",
+      "topics": [
+        "events",
+        "exit",
+        "buffers"
+      ],
+      "description": "Editor events, buffer events, quit events, and autocommand groups.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 73797,
+      "lines": 1961
+    },
+    {
+      "id": "neovim-windows",
+      "title": "Windows and buffers",
+      "kind": "reference",
+      "path": "neovim/windows.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/windows.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/windows.txt",
+      "upstream_path": "runtime/doc/windows.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "dc3d681ce8275752136d517f5e8fca1992835f5f9f50bbcda7ba3dbe370e5e8d",
+      "format": "text",
+      "topics": [
+        "ui",
+        "windows",
+        "buffers"
+      ],
+      "description": "Window layout, buffer lifetime, hidden buffers, and navigation.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 58557,
+      "lines": 1452
+    },
+    {
+      "id": "neovim-terminal",
+      "title": "Terminal buffers",
+      "kind": "reference",
+      "path": "neovim/terminal.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/terminal.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/terminal.txt",
+      "upstream_path": "runtime/doc/terminal.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "da9955974620e51be3f25a44c76db628182139513e74451efae79d96cba61ee4",
+      "format": "text",
+      "topics": [
+        "ui",
+        "terminal",
+        "processes"
+      ],
+      "description": "Embedded terminals, input modes, terminal events, and terminal output.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 30070,
+      "lines": 707
+    },
+    {
+      "id": "neovim-api-ui-events",
+      "title": "External UI protocol",
+      "kind": "reference",
+      "path": "neovim/api-ui-events.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/api-ui-events.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/api-ui-events.txt",
+      "upstream_path": "runtime/doc/api-ui-events.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "88e86b4c3a20264884beeb5ba0d974ff7c0848df03a0c885f36c3acf8b8123a7",
+      "format": "text",
+      "topics": [
+        "ui",
+        "rpc",
+        "rendering"
+      ],
+      "description": "External UI attachment, redraw events, grid updates, command lines, and messages.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 39883,
+      "lines": 937
+    },
+    {
+      "id": "neovim-tui",
+      "title": "Built-in terminal UI",
+      "kind": "reference",
+      "path": "neovim/tui.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/tui.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/tui.txt",
+      "upstream_path": "runtime/doc/tui.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "5bea51571d64334f35512f29b887bb9fa1e5ca87e31f7182948e1c853368347a",
+      "format": "text",
+      "topics": [
+        "tui",
+        "input",
+        "terminal"
+      ],
+      "description": "Terminal capabilities, input, colors, cursor shape, and resize behavior.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 14092,
+      "lines": 296
+    },
+    {
+      "id": "neovim-diagnostic",
+      "title": "Diagnostics",
+      "kind": "reference",
+      "path": "neovim/diagnostic.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/diagnostic.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/diagnostic.txt",
+      "upstream_path": "runtime/doc/diagnostic.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "c0ddc2a2d800ed82d55899e4af785d484d7d0073facf7fcdbfa9673c87c13c39",
+      "format": "text",
+      "topics": [
+        "review",
+        "diagnostics",
+        "ui"
+      ],
+      "description": "Diagnostic records, namespaces, signs, virtual text, and quickfix integration.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 50169,
+      "lines": 1086
+    },
+    {
+      "id": "neovim-quickfix",
+      "title": "Quickfix and location lists",
+      "kind": "reference",
+      "path": "neovim/quickfix.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/quickfix.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/quickfix.txt",
+      "upstream_path": "runtime/doc/quickfix.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "e21b6d11eb11bd33adf0fcf27cb19ceef8c3179a1572832b00cd0c8560852091",
+      "format": "text",
+      "topics": [
+        "review",
+        "navigation",
+        "diagnostics"
+      ],
+      "description": "Search result lists, error locations, list updates, and navigation.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 99438,
+      "lines": 2443
+    },
+    {
+      "id": "neovim-map",
+      "title": "Mappings and commands",
+      "kind": "reference",
+      "path": "neovim/map.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/map.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/map.txt",
+      "upstream_path": "runtime/doc/map.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "d029920354fa90adf446de7892adc085b000d1c5565aaa1809adb0a1bc266d77",
+      "format": "text",
+      "topics": [
+        "input",
+        "keymaps",
+        "commands"
+      ],
+      "description": "Mappings, user commands, completion, and command arguments.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 73469,
+      "lines": 1803
+    },
+    {
+      "id": "neovim-remote_plugin",
+      "title": "Remote plugins",
+      "kind": "reference",
+      "path": "neovim/remote_plugin.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/remote_plugin.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/remote_plugin.txt",
+      "upstream_path": "runtime/doc/remote_plugin.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "ca210f05efba45d671dc5dc8445f84b90f9e1c64b30e95060f8c37289bc70c3d",
+      "format": "text",
+      "topics": [
+        "rpc",
+        "plugin",
+        "processes"
+      ],
+      "description": "Remote plugin hosts, registration, manifests, and an example.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 6114,
+      "lines": 140
+    },
+    {
+      "id": "neovim-plugins",
+      "title": "Standard plugins",
+      "kind": "reference",
+      "path": "neovim/plugins.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/plugins.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/plugins.txt",
+      "upstream_path": "runtime/doc/plugins.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "5486f2478f1a550a8458a89464fd453aa5af21a8a018bf40139d8bc5e45b94bc",
+      "format": "text",
+      "topics": [
+        "ui",
+        "review",
+        "diff"
+      ],
+      "description": "Built-in plugins, including diff and undo-tree tools.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 12985,
+      "lines": 305
+    },
+    {
+      "id": "neovim-pack",
+      "title": "Packages",
+      "kind": "reference",
+      "path": "neovim/pack.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/pack.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/pack.txt",
+      "upstream_path": "runtime/doc/pack.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "06d7673a7cee076e8eda15822547bdeba6f4b4b7e12fc5a843459f449ed4d71a",
+      "format": "text",
+      "topics": [
+        "plugin",
+        "distribution",
+        "loading"
+      ],
+      "description": "Runtime search paths, package layout, loading, and package management.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 24242,
+      "lines": 542
+    },
+    {
+      "id": "neovim-health",
+      "title": "Health checks",
+      "kind": "reference",
+      "path": "neovim/health.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/health.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/health.txt",
+      "upstream_path": "runtime/doc/health.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "7104e713a6a84a6eadd343377af09f41afd830246a05e8d2bd9fd7f818c87542",
+      "format": "text",
+      "topics": [
+        "plugin",
+        "diagnostics",
+        "installation"
+      ],
+      "description": "Health check development and health report APIs.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 5584,
+      "lines": 160
+    },
+    {
+      "id": "neovim-options",
+      "title": "Editor options",
+      "kind": "reference",
+      "path": "neovim/options.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/options.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/options.txt",
+      "upstream_path": "runtime/doc/options.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "22d23358a0c3f349d56fed119968d522fd58b1f54c347dd16ad350597aab8da0",
+      "format": "text",
+      "topics": [
+        "ui",
+        "buffers",
+        "options"
+      ],
+      "description": "Option definitions, including scratch buffers, buffer lifetime, wrapping, and status display.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 338701,
+      "lines": 7726
+    },
+    {
+      "id": "neovim-vimfn",
+      "title": "Built-in function reference",
+      "kind": "reference",
+      "path": "neovim/vimfn.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/vimfn.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/vimfn.txt",
+      "upstream_path": "runtime/doc/vimfn.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "baf756ef9aa7973480b577577ebd481764f3391488d1faf7d568a9a678bdcc8a",
+      "format": "text",
+      "topics": [
+        "processes",
+        "input",
+        "transport",
+        "quickfix"
+      ],
+      "description": "Function definitions for jobs, sockets, channels, input, prompts, and quickfix lists.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 459126,
+      "lines": 12491
+    },
+    {
+      "id": "neovim-diff",
+      "title": "Diff mode",
+      "kind": "reference",
+      "path": "neovim/diff.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/diff.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/diff.txt",
+      "upstream_path": "runtime/doc/diff.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "41d41e59211c4e26af3b43aebc6052b07b256cb21fcc581ae99d497bf0077f7b",
+      "format": "text",
+      "topics": [
+        "review",
+        "diff",
+        "windows"
+      ],
+      "description": "Diff windows, updates, navigation, and file comparison.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 22486,
+      "lines": 606
+    },
+    {
+      "id": "neovim-luvref",
+      "title": "Libuv Lua bindings",
+      "kind": "reference",
+      "path": "neovim/luvref.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/luvref.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/luvref.txt",
+      "upstream_path": "runtime/doc/luvref.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "cd0452c33e4aafce370d0b0e3dfb543315a3bb6756e7381c68bde4e857aab7b7",
+      "format": "text",
+      "topics": [
+        "async",
+        "transport",
+        "processes"
+      ],
+      "description": "Event loop bindings, TCP sockets, pipes, timers, process handles, and cleanup.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "additional_license_paths": [
+        "neovim/LICENSE-luv.txt",
+        "neovim/LICENSE-luv-vimdocs.txt"
+      ],
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 178805,
+      "lines": 4642
+    },
+    {
+      "id": "neovim-LICENSE",
+      "title": "Neovim license",
+      "kind": "license",
+      "path": "neovim/LICENSE.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/LICENSE.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/LICENSE.txt",
+      "upstream_path": "LICENSE.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "de23202ef9a51f5e654034190539739a4abece5505f2ce75e780791106707011",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "Apache 2.0 and Vim license terms.",
+      "license_path": "neovim/LICENSE.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 16332,
+      "lines": 301
+    },
+    {
+      "id": "neovim-uganda",
+      "title": "Vim copyright and license",
+      "kind": "license",
+      "path": "neovim/uganda.txt",
+      "source_url": "https://github.com/neovim/neovim/blob/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/uganda.txt",
+      "download_url": "https://raw.githubusercontent.com/neovim/neovim/779c36969e31080503be2dfccbcc3f999e289606/runtime/doc/uganda.txt",
+      "upstream_path": "runtime/doc/uganda.txt",
+      "revision": "779c36969e31080503be2dfccbcc3f999e289606",
+      "version": "v0.12.6",
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "34c8c77b4f1a1fe307748034c76eca4c9e03d19d1a30494b70dea44521253fd5",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "Vim copyright, distribution terms, and charity notice.",
+      "license_path": "neovim/uganda.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/neovim/neovim",
+      "bytes": 11421,
+      "lines": 227
+    },
+    {
+      "id": "neovim-LICENSE-luv",
+      "title": "Luv license",
+      "kind": "license",
+      "path": "neovim/LICENSE-luv.txt",
+      "source_url": "https://github.com/luvit/luv/blob/dcd1a1cad5b05634a7691402d6ca2f214fb4ae76/LICENSE.txt",
+      "download_url": "https://raw.githubusercontent.com/luvit/luv/dcd1a1cad5b05634a7691402d6ca2f214fb4ae76/LICENSE.txt",
+      "upstream_path": "LICENSE.txt",
+      "revision": "dcd1a1cad5b05634a7691402d6ca2f214fb4ae76",
+      "version": null,
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "License at the Luv revision cited by the saved reference.",
+      "license_path": "neovim/LICENSE-luv.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/luvit/luv",
+      "bytes": 11358,
+      "lines": 202
+    },
+    {
+      "id": "neovim-LICENSE-luv-vimdocs",
+      "title": "Luv Vim documentation license",
+      "kind": "license",
+      "path": "neovim/LICENSE-luv-vimdocs.txt",
+      "source_url": "https://github.com/nanotee/luv-vimdocs/blob/997b9338fd3ac91a53bbdc19110c127e3bea01c4/LICENSE.txt",
+      "download_url": "https://raw.githubusercontent.com/nanotee/luv-vimdocs/997b9338fd3ac91a53bbdc19110c127e3bea01c4/LICENSE.txt",
+      "upstream_path": "LICENSE.txt",
+      "revision": "997b9338fd3ac91a53bbdc19110c127e3bea01c4",
+      "version": null,
+      "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "Supplemental license for the documentation project credited in the saved reference.",
+      "license_path": "neovim/LICENSE-luv-vimdocs.txt",
+      "transform": "none; original upstream bytes",
+      "collection": "neovim",
+      "repository": "https://github.com/nanotee/luv-vimdocs",
+      "bytes": 11358,
+      "lines": 202
+    },
+    {
+      "id": "nui-overview",
+      "title": "NUI component overview",
+      "path": "neovim-ui/overview.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/README.md",
+      "upstream_path": "README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.713424+00:00",
+      "sha256": "1553090aeae136c2b2281ef3743f827faa50f041db088eb1270cac1af386c2d5",
+      "format": "markdown",
+      "topics": [
+        "components",
+        "neovim"
+      ],
+      "description": "Optional Lua UI components and usage examples.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference",
+      "collection": "neovim-ui",
+      "bytes": 8469,
+      "lines": 353,
+      "section_count": 17
+    },
+    {
+      "id": "nui-popup",
+      "title": "NUI popup windows",
+      "path": "neovim-ui/popup.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/popup/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/popup/README.md",
+      "upstream_path": "lua/nui/popup/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.877351+00:00",
+      "sha256": "2fa711f4191b9692ba6fd62e3b07552b56901f27589896ba196d62a5d627d818",
+      "format": "markdown",
+      "topics": [
+        "windows",
+        "buffers",
+        "layout"
+      ],
+      "description": "Floating windows, borders, events, and buffer access.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference",
+      "collection": "neovim-ui",
+      "bytes": 12437,
+      "lines": 674,
+      "section_count": 31
+    },
+    {
+      "id": "nui-split",
+      "title": "NUI split windows",
+      "path": "neovim-ui/split.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/split/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/split/README.md",
+      "upstream_path": "lua/nui/split/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.702375+00:00",
+      "sha256": "0756d8111a26f17d65fb5449f4fcac7f78f58dcb72d9f5f6bd62fa371e513317",
+      "format": "markdown",
+      "topics": [
+        "windows",
+        "layout"
+      ],
+      "description": "Split-window components and their lifecycle.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference",
+      "collection": "neovim-ui",
+      "bytes": 1517,
+      "lines": 91,
+      "section_count": 11
+    },
+    {
+      "id": "nui-layout",
+      "title": "NUI layouts",
+      "path": "neovim-ui/layout.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/layout/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/layout/README.md",
+      "upstream_path": "lua/nui/layout/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.685786+00:00",
+      "sha256": "5fe9d72fb0782cee25d35047e92f28e5b068fbbe806216a4f8532d172611be01",
+      "format": "markdown",
+      "topics": [
+        "layout",
+        "resize"
+      ],
+      "description": "Arrange and resize groups of UI components.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference",
+      "collection": "neovim-ui",
+      "bytes": 5827,
+      "lines": 307,
+      "section_count": 18
+    },
+    {
+      "id": "nui-input",
+      "title": "NUI input prompts",
+      "path": "neovim-ui/input.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/input/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/input/README.md",
+      "upstream_path": "lua/nui/input/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:47.046445+00:00",
+      "sha256": "948e709cb269d5e6099827ab5c55abec55a3e764382b45fb4643e18ec3a0e133",
+      "format": "markdown",
+      "topics": [
+        "input",
+        "confirmation"
+      ],
+      "description": "Text input callbacks and prompt display.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference",
+      "collection": "neovim-ui",
+      "bytes": 2506,
+      "lines": 114,
+      "section_count": 10
+    },
+    {
+      "id": "nui-menu",
+      "title": "NUI menus",
+      "path": "neovim-ui/menu.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/menu/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/menu/README.md",
+      "upstream_path": "lua/nui/menu/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.990148+00:00",
+      "sha256": "055c20f555358491032d5f086cd24a6e6b587512a9d45174fc8776a94abdce63",
+      "format": "markdown",
+      "topics": [
+        "input",
+        "selection"
+      ],
+      "description": "Selection lists and keyboard actions.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference",
+      "collection": "neovim-ui",
+      "bytes": 4385,
+      "lines": 207,
+      "section_count": 17
+    },
+    {
+      "id": "nui-text",
+      "title": "NUI text",
+      "path": "neovim-ui/text.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/text/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/text/README.md",
+      "upstream_path": "lua/nui/text/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:47.054342+00:00",
+      "sha256": "880ea2dd7361cb8c3a1c4e367effa00124168cb302578e9bc13ddbef6bd048f8",
+      "format": "markdown",
+      "topics": [
+        "rendering",
+        "highlighting"
+      ],
+      "description": "Text objects with highlights.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference",
+      "collection": "neovim-ui",
+      "bytes": 4558,
+      "lines": 141,
+      "section_count": 13
+    },
+    {
+      "id": "nui-line",
+      "title": "NUI lines",
+      "path": "neovim-ui/line.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/line/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/line/README.md",
+      "upstream_path": "lua/nui/line/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:47.170306+00:00",
+      "sha256": "3c5923246ed2ef3f6ccd05935253647f8316f3c771b6e64bee9f20d1f2141bce",
+      "format": "markdown",
+      "topics": [
+        "rendering",
+        "highlighting"
+      ],
+      "description": "Compose and render lines of highlighted text.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference",
+      "collection": "neovim-ui",
+      "bytes": 2822,
+      "lines": 100,
+      "section_count": 9
+    },
+    {
+      "id": "nui-license",
+      "title": "NUI license",
+      "path": "neovim-ui/LICENSE.txt",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/LICENSE",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/LICENSE",
+      "upstream_path": "LICENSE",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:47.286546+00:00",
+      "sha256": "51717bf1d1b3a9383542ee766c46adeb21c51f0b3d43a58bb58fcf08f4120795",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "Upstream permission and copyright notice.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "license",
+      "collection": "neovim-ui",
+      "bytes": 1069,
+      "lines": 21
+    },
+    {
+      "id": "pi-ai",
+      "title": "Pi AI overview",
+      "path": "pi/ai/overview.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/ai/README.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/ai/README.md",
+      "upstream_path": "packages/ai/README.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "1d449a01dd6213ee0d513c52cb25be4154d1d4dcbcb340d554fdc3df7606b66f",
+      "format": "markdown",
+      "topics": [
+        "model-providers",
+        "local-models",
+        "authentication",
+        "streaming",
+        "tool-calls",
+        "cancellation"
+      ],
+      "description": "Use the shared model API, configure providers, and handle tool calls and streamed responses.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 99518,
+      "lines": 1920,
+      "section_count": 67
+    },
+    {
+      "id": "pi-durable",
+      "title": "Pi Durable overview",
+      "path": "pi/durable/overview.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/durable/README.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/durable/README.md",
+      "upstream_path": "packages/durable/README.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "aed68cc6a667122da8fbd841c23881d5abba6208828562a8a40f3b87ea7b3bca",
+      "format": "markdown",
+      "topics": [
+        "sessions",
+        "recovery",
+        "storage",
+        "request-identifiers",
+        "streaming",
+        "cancellation",
+        "tools"
+      ],
+      "description": "Use the Durable harness, storage, conversation state, tools, and restart recovery.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 54029,
+      "lines": 774,
+      "section_count": 34
+    },
+    {
+      "id": "pi-durable-design",
+      "title": "Pi Durable upstream design reference",
+      "path": "pi/durable/design-reference.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/durable/docs/spec.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/durable/docs/spec.md",
+      "upstream_path": "packages/durable/docs/spec.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "ce06b6d6aaad7cf805ea8916659d696456f05f13c1486a7758170f3e19abf229",
+      "format": "markdown",
+      "topics": [
+        "transactions",
+        "tasks",
+        "storage",
+        "recovery",
+        "observation",
+        "replay",
+        "api-contracts"
+      ],
+      "description": "Read the upstream rules for tasks, transactions, observation, storage, and recovery.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 287230,
+      "lines": 5361,
+      "section_count": 50
+    },
+    {
+      "id": "pi-coding-agent-concepts",
+      "title": "Coding Agent concepts",
+      "path": "pi/coding-agent/how-pi-works.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/how-pi-works.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/how-pi-works.md",
+      "upstream_path": "packages/coding-agent/docs/how-pi-works.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "7d43ab8e2b886cd1047dcee503588a1c828b92333dd4f177526b89e6db8aaa8b",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "agent-loop",
+        "context",
+        "sessions"
+      ],
+      "description": "Understand the existing Coding Agent. Its session model is separate from Durable.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 3300,
+      "lines": 49,
+      "section_count": 7
+    },
+    {
+      "id": "pi-coding-agent-sdk",
+      "title": "Coding Agent SDK",
+      "path": "pi/coding-agent/sdk.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/sdk.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/sdk.md",
+      "upstream_path": "packages/coding-agent/docs/sdk.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "d9034ccbf2219a58712d8dd4fcdf47e687d77131e71dd5d119d8a71e9bd2a2e8",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "embedding",
+        "sessions",
+        "events"
+      ],
+      "description": "Inspect an existing in-process host interface for Coding Agent.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 10147,
+      "lines": 147,
+      "section_count": 8
+    },
+    {
+      "id": "pi-coding-agent-rpc",
+      "title": "Coding Agent RPC protocol",
+      "path": "pi/coding-agent/rpc.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/rpc.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/rpc.md",
+      "upstream_path": "packages/coding-agent/docs/rpc.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "37a03d180115460a0a275022f4aeabef1e5345458df6a9b6e8a6de18474de720",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "protocol",
+        "framing",
+        "lifecycle",
+        "errors",
+        "shutdown"
+      ],
+      "description": "Inspect an existing subprocess protocol, its record framing, and its lifecycle.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 8897,
+      "lines": 193,
+      "section_count": 11
+    },
+    {
+      "id": "pi-coding-agent-rpc-commands",
+      "title": "Coding Agent RPC commands",
+      "path": "pi/coding-agent/rpc-commands.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/rpc-commands.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/rpc-commands.md",
+      "upstream_path": "packages/coding-agent/docs/rpc-commands.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "4deeee367852f4633ef594bc079f9e9fb14640a4e3ba8a69b7c89b6f54740838",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "protocol",
+        "commands",
+        "cancellation",
+        "state"
+      ],
+      "description": "Inspect commands for prompts, state, model changes, queues, and cancellation.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 21482,
+      "lines": 860,
+      "section_count": 45
+    },
+    {
+      "id": "pi-coding-agent-rpc-ui",
+      "title": "Coding Agent RPC user interaction",
+      "path": "pi/coding-agent/rpc-extension-ui.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/rpc-extension-ui.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/rpc-extension-ui.md",
+      "upstream_path": "packages/coding-agent/docs/rpc-extension-ui.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "3c6f2c6edfc8b1ace6642343727aef97a7e9234c85509850921b52d6ff09a48e",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "protocol",
+        "dialogs",
+        "user-input",
+        "notifications"
+      ],
+      "description": "Inspect remote user interaction records and their limits outside the terminal interface.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 6174,
+      "lines": 200,
+      "section_count": 17
+    },
+    {
+      "id": "pi-coding-agent-events",
+      "title": "Coding Agent JSON event stream",
+      "path": "pi/coding-agent/json.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/json.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/json.md",
+      "upstream_path": "packages/coding-agent/docs/json.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "f103191816fdcf3627dfc98b89acad8a28eee737697130ddaeb2581131213543",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "events",
+        "streaming",
+        "framing",
+        "tool-output",
+        "completion"
+      ],
+      "description": "Inspect event records, streamed message assembly, and run completion signals.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 11106,
+      "lines": 226,
+      "section_count": 14
+    },
+    {
+      "id": "pi-coding-agent-messages",
+      "title": "Coding Agent message types",
+      "path": "pi/coding-agent/message-types.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/message-types.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/message-types.md",
+      "upstream_path": "packages/coding-agent/docs/message-types.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "b832893fb762f87fdbbfd694241d484592942823791f3e81a6c4d915421ff5db",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "messages",
+        "tool-calls",
+        "usage"
+      ],
+      "description": "Inspect message content and the Coding Agent message union.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 7536,
+      "lines": 279,
+      "section_count": 18
+    },
+    {
+      "id": "pi-coding-agent-sessions",
+      "title": "Coding Agent session file format",
+      "path": "pi/coding-agent/session-format.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/session-format.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/session-format.md",
+      "upstream_path": "packages/coding-agent/docs/session-format.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "4f8fc42179b332bcf71fe4c85cc95d914853ff7486d68742954a45316b512a4a",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "sessions",
+        "storage",
+        "branching"
+      ],
+      "description": "Inspect the existing Coding Agent JSONL session format. This is not Durable storage.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 15766,
+      "lines": 293,
+      "section_count": 23
+    },
+    {
+      "id": "pi-coding-agent-models",
+      "title": "Coding Agent model configuration",
+      "path": "pi/coding-agent/models.md",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/models.md",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/coding-agent/docs/models.md",
+      "upstream_path": "packages/coding-agent/docs/models.md",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "d5bd0d886f0e1541648081ae01da91e1a218cd454713336d5100fc820f6c1527",
+      "format": "markdown",
+      "topics": [
+        "coding-agent",
+        "model-providers",
+        "local-models",
+        "configuration"
+      ],
+      "description": "Inspect local model and compatible endpoint setup in the existing Coding Agent.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "kind": "reference",
+      "bytes": 12614,
+      "lines": 209,
+      "section_count": 16
+    },
+    {
+      "id": "pi-license",
+      "title": "Pi MIT License",
+      "path": "pi/LICENSE.txt",
+      "source_url": "https://github.com/earendil-works/pi/blob/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/LICENSE",
+      "download_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/LICENSE",
+      "upstream_path": "LICENSE",
+      "revision": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+      "version": "1.3.0",
+      "retrieved_at": "2026-10-16T14:59:36Z",
+      "sha256": "0457f5bcec3b3b211605dfb5d1a49042fd638f3686a410fe099c24a25af13c48",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "MIT license and copyright notice for the saved Pi documents.",
+      "license_path": "pi/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "license",
+      "collection": "pi",
+      "repository": "https://github.com/earendil-works/pi",
+      "bytes": 1069,
+      "lines": 21
+    }
+  ]
+}

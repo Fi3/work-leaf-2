@@ -1,0 +1,94 @@
+{
+  "verified_at": "2026-10-16T16:27:39.547950+00:00",
+  "source": "https://github.com/earendil-works/pi",
+  "published_commit": "71023aec1546d6d677a65669c5665c0927ce0dd0",
+  "saved_reference_commit": "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+  "artifacts": [
+    {
+      "name": "@earendil-works/pi-durable",
+      "version": "1.3.0",
+      "tarball": "https://registry.npmjs.org/@earendil-works/pi-durable/-/pi-durable-1.3.0.tgz",
+      "integrity": "sha512-2aD0xead1LH0BBwUBxex28in/PpUJEwyaEiW/nLoTFUcZ/lDYEl6LHX6mGZKJG8tUHzERwJyysDgy0ruidt84w==",
+      "source_commit": "71023aec1546d6d677a65669c5665c0927ce0dd0",
+      "source_directory": "packages/durable",
+      "attestation_url": "https://registry.npmjs.org/-/npm/v1/attestations/@earendil-works%2fpi-durable@1.3.0",
+      "attestation_response_sha256": "bfcba9e4a47df0c03ab190de126535c9ab8064cbc89c58243e2ebabc7353a506",
+      "attestation_subject_sha512": "d9a0f4c5e69dd4b1f4041c140717b1dbc8a7fcfa54244c32684896fe72e84c551c67f94360497a2c75fa98664a246f2d507cc4470272cac0e0cb4aee89db7ce3",
+      "build_invocation": "https://github.com/earendil-works/pi/actions/runs/38789958852/attempts/1",
+      "saved_manifest_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/durable/package.json",
+      "saved_manifest_sha256": "7877411c036932f74af4226563ff37f121013a9f69d4f9ceb55f5cdbcf6e5c54",
+      "installed_manifest_matches_saved_source": true
+    },
+    {
+      "name": "@earendil-works/pi-ai",
+      "version": "1.3.0",
+      "tarball": "https://registry.npmjs.org/@earendil-works/pi-ai/-/pi-ai-1.3.0.tgz",
+      "integrity": "sha512-KaBI8x7q7sPoFUXICNGD9efHzDG+oRNwVvkA9jdIsSQWH1RjFssOlEGsbLtewUPPgCrvmz0l2KTgSLXTyj3acw==",
+      "source_commit": "71023aec1546d6d677a65669c5665c0927ce0dd0",
+      "source_directory": "packages/ai",
+      "attestation_url": "https://registry.npmjs.org/-/npm/v1/attestations/@earendil-works%2fpi-ai@1.3.0",
+      "attestation_response_sha256": "53cb22567f386cf55631caf846c42be0a6e792fe499027a78d23878ff0ec25b4",
+      "attestation_subject_sha512": "29a048f31eeaeec3e81545c808d183f5e7c7cc31bea1137056f900f63748b124161f546316cb0e9441ac6cbb5ec143cf802aef9b3d25d8a4e048b5d3ca3dda73",
+      "build_invocation": "https://github.com/earendil-works/pi/actions/runs/38789958852/attempts/1",
+      "saved_manifest_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/ai/package.json",
+      "saved_manifest_sha256": "4e9ed07b06a91d844485874c251f312b610d015a4a4fd32c78cde58a7862a3f1",
+      "installed_manifest_matches_saved_source": true
+    },
+    {
+      "name": "@earendil-works/chord",
+      "version": "1.3.0",
+      "tarball": "https://registry.npmjs.org/@earendil-works/chord/-/chord-1.3.0.tgz",
+      "integrity": "sha512-qqYhjALZ193atpBzmmS+M5pHQoiI4Aynetc1jXpv+5O2crXH3Y8wbFEy33orU2nmFrlw1U36rsdgUjaW4b3m/w==",
+      "source_commit": "71023aec1546d6d677a65669c5665c0927ce0dd0",
+      "source_directory": "packages/chord",
+      "attestation_url": "https://registry.npmjs.org/-/npm/v1/attestations/@earendil-works%2fchord@1.3.0",
+      "attestation_response_sha256": "58c0e90a21fcdd1f04ce367c156281b51bfe5e96a7a044dbbf8cc11af7419105",
+      "attestation_subject_sha512": "aaa6218c02d9d7dddab690739a64be339a47428888e00ca77ad7358d7a6ffb93b672b5c7dd8f306c5132df7a2b5369e616b970d54dfaaec760523696e1bde6ff",
+      "build_invocation": "https://github.com/earendil-works/pi/actions/runs/38789958852/attempts/1",
+      "saved_manifest_url": "https://raw.githubusercontent.com/earendil-works/pi/4dd2b149d155d7369de16ea4dc77c84e9f5ffb24/packages/chord/package.json",
+      "saved_manifest_sha256": "1cfccb1c93b8e96d1be4ae8a19b4f10e545b9d3e0b9f005b199c3722da0512f8",
+      "installed_manifest_matches_saved_source": true
+    }
+  ],
+  "signature_verification": {
+    "command": "npm audit signatures --json",
+    "node": "v26.10.0",
+    "npm": "12.2.0",
+    "exit_code": 0,
+    "result": {
+      "invalid": [],
+      "missing": []
+    }
+  },
+  "comparison": {
+    "url": "https://github.com/earendil-works/pi/compare/71023aec1546d6d677a65669c5665c0927ce0dd0...4dd2b149d155d7369de16ea4dc77c84e9f5ffb24",
+    "response_sha256": "42dfdbd1d47e241d5b12fc1a656bf02e6decb8859ffc65a45f2f9c68632d4a6f",
+    "status": "ahead",
+    "commits_after_publication": 10,
+    "behind_by": 0,
+    "commits": [
+      "ae7b16d43b7c78c5b6fa3213fdd1215bb339729d",
+      "4954d760504c11df9b2cbdc040346107b6a8153d",
+      "6085986e4b4a55a36a872df9e438e1a55ffcba35",
+      "c4cf7957b4e6698a182925f4393240c1e3b23f41",
+      "790271cd0218b27068211771704f9e2d42500e9a",
+      "0fbdbd3f8ab1876ac260c0f08226a400759323b8",
+      "99fe1489707f9f6accbef4377be79ef0544c42f2",
+      "90d863f7c1183b965f099855715d6e88c7b8a52c",
+      "6fcb48670fc0e6672a644f3b2691010321734426",
+      "4dd2b149d155d7369de16ea4dc77c84e9f5ffb24"
+    ],
+    "changed_runtime_sources": [
+      "packages/ai/src/api/google-shared.ts",
+      "packages/ai/src/api/openai-completions.ts",
+      "packages/ai/src/api/openai-responses-shared.ts",
+      "packages/ai/src/utils/retry.ts",
+      "packages/durable/src/harness/compaction.ts",
+      "packages/durable/src/harness/generation.ts",
+      "packages/durable/src/harness/types.ts",
+      "packages/durable/src/index.ts"
+    ],
+    "review": "Changes add optional per-model compaction settings, ToolControl terminate typing, retry error recognition, and OpenAI/Google whitespace-only tool-output handling. Required durable operations passed executable probes with the faux provider. Source review found no blocking difference for the selected Anthropic provider. No paid provider call was made.",
+    "fork_required": false
+  }
+}

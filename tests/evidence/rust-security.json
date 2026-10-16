@@ -1,0 +1,60 @@
+{
+  "verified_at": "2026-10-16T16:27:39.547950+00:00",
+  "source": "https://github.com/RustSec/advisory-db",
+  "revision": "479c888ce4401313bca61ba4aba2d0f6244c4a09",
+  "revision_date": "2026-10-16T06:29:44Z",
+  "archive_url": "https://api.github.com/repos/RustSec/advisory-db/tarball/479c888ce4401313bca61ba4aba2d0f6244c4a09",
+  "archive_sha256": "8be4d05099c0dafaf3f92789d92ebbf7583bd05641c0ed2dd5098bc7e080a238",
+  "method": "Inspect all RustSec crates/<package> advisory records for every locked external package name. No selected name has an advisory record in this revision.",
+  "packages": [
+    {
+      "name": "itoa",
+      "version": "1.0.18"
+    },
+    {
+      "name": "libc",
+      "version": "0.2.190"
+    },
+    {
+      "name": "memchr",
+      "version": "2.8.3"
+    },
+    {
+      "name": "proc-macro2",
+      "version": "1.0.107"
+    },
+    {
+      "name": "quote",
+      "version": "1.0.47"
+    },
+    {
+      "name": "serde",
+      "version": "1.0.229"
+    },
+    {
+      "name": "serde_core",
+      "version": "1.0.229"
+    },
+    {
+      "name": "serde_derive",
+      "version": "1.0.229"
+    },
+    {
+      "name": "serde_json",
+      "version": "1.0.154"
+    },
+    {
+      "name": "syn",
+      "version": "3.0.9"
+    },
+    {
+      "name": "unicode-ident",
+      "version": "1.0.27"
+    },
+    {
+      "name": "zmij",
+      "version": "1.0.23"
+    }
+  ],
+  "matching_advisory_records": []
+}

@@ -1,0 +1,207 @@
+{
+  "collection": "neovim-ui",
+  "repository": "https://github.com/MunifTanjim/nui.nvim",
+  "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+  "version": "main snapshot",
+  "retrieved_at": "2026-10-16T14:59:47.287407+00:00",
+  "documents": [
+    {
+      "id": "nui-overview",
+      "title": "NUI component overview",
+      "path": "neovim-ui/overview.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/README.md",
+      "upstream_path": "README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.713424+00:00",
+      "sha256": "1553090aeae136c2b2281ef3743f827faa50f041db088eb1270cac1af386c2d5",
+      "format": "markdown",
+      "topics": [
+        "components",
+        "neovim"
+      ],
+      "description": "Optional Lua UI components and usage examples.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference"
+    },
+    {
+      "id": "nui-popup",
+      "title": "NUI popup windows",
+      "path": "neovim-ui/popup.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/popup/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/popup/README.md",
+      "upstream_path": "lua/nui/popup/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.877351+00:00",
+      "sha256": "2fa711f4191b9692ba6fd62e3b07552b56901f27589896ba196d62a5d627d818",
+      "format": "markdown",
+      "topics": [
+        "windows",
+        "buffers",
+        "layout"
+      ],
+      "description": "Floating windows, borders, events, and buffer access.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference"
+    },
+    {
+      "id": "nui-split",
+      "title": "NUI split windows",
+      "path": "neovim-ui/split.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/split/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/split/README.md",
+      "upstream_path": "lua/nui/split/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.702375+00:00",
+      "sha256": "0756d8111a26f17d65fb5449f4fcac7f78f58dcb72d9f5f6bd62fa371e513317",
+      "format": "markdown",
+      "topics": [
+        "windows",
+        "layout"
+      ],
+      "description": "Split-window components and their lifecycle.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference"
+    },
+    {
+      "id": "nui-layout",
+      "title": "NUI layouts",
+      "path": "neovim-ui/layout.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/layout/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/layout/README.md",
+      "upstream_path": "lua/nui/layout/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.685786+00:00",
+      "sha256": "5fe9d72fb0782cee25d35047e92f28e5b068fbbe806216a4f8532d172611be01",
+      "format": "markdown",
+      "topics": [
+        "layout",
+        "resize"
+      ],
+      "description": "Arrange and resize groups of UI components.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference"
+    },
+    {
+      "id": "nui-input",
+      "title": "NUI input prompts",
+      "path": "neovim-ui/input.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/input/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/input/README.md",
+      "upstream_path": "lua/nui/input/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:47.046445+00:00",
+      "sha256": "948e709cb269d5e6099827ab5c55abec55a3e764382b45fb4643e18ec3a0e133",
+      "format": "markdown",
+      "topics": [
+        "input",
+        "confirmation"
+      ],
+      "description": "Text input callbacks and prompt display.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference"
+    },
+    {
+      "id": "nui-menu",
+      "title": "NUI menus",
+      "path": "neovim-ui/menu.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/menu/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/menu/README.md",
+      "upstream_path": "lua/nui/menu/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:46.990148+00:00",
+      "sha256": "055c20f555358491032d5f086cd24a6e6b587512a9d45174fc8776a94abdce63",
+      "format": "markdown",
+      "topics": [
+        "input",
+        "selection"
+      ],
+      "description": "Selection lists and keyboard actions.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference"
+    },
+    {
+      "id": "nui-text",
+      "title": "NUI text",
+      "path": "neovim-ui/text.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/text/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/text/README.md",
+      "upstream_path": "lua/nui/text/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:47.054342+00:00",
+      "sha256": "880ea2dd7361cb8c3a1c4e367effa00124168cb302578e9bc13ddbef6bd048f8",
+      "format": "markdown",
+      "topics": [
+        "rendering",
+        "highlighting"
+      ],
+      "description": "Text objects with highlights.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference"
+    },
+    {
+      "id": "nui-line",
+      "title": "NUI lines",
+      "path": "neovim-ui/line.md",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/line/README.md",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/lua/nui/line/README.md",
+      "upstream_path": "lua/nui/line/README.md",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:47.170306+00:00",
+      "sha256": "3c5923246ed2ef3f6ccd05935253647f8316f3c771b6e64bee9f20d1f2141bce",
+      "format": "markdown",
+      "topics": [
+        "rendering",
+        "highlighting"
+      ],
+      "description": "Compose and render lines of highlighted text.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "reference"
+    },
+    {
+      "id": "nui-license",
+      "title": "NUI license",
+      "path": "neovim-ui/LICENSE.txt",
+      "repository": "https://github.com/MunifTanjim/nui.nvim",
+      "source_url": "https://github.com/MunifTanjim/nui.nvim/blob/10fc361835c856ba4233ef5ea135b919bf3dce97/LICENSE",
+      "download_url": "https://raw.githubusercontent.com/MunifTanjim/nui.nvim/10fc361835c856ba4233ef5ea135b919bf3dce97/LICENSE",
+      "upstream_path": "LICENSE",
+      "revision": "10fc361835c856ba4233ef5ea135b919bf3dce97",
+      "version": "main snapshot",
+      "retrieved_at": "2026-10-16T14:59:47.286546+00:00",
+      "sha256": "51717bf1d1b3a9383542ee766c46adeb21c51f0b3d43a58bb58fcf08f4120795",
+      "format": "text",
+      "topics": [
+        "license"
+      ],
+      "description": "Upstream permission and copyright notice.",
+      "license_path": "neovim-ui/LICENSE.txt",
+      "transform": "verbatim",
+      "kind": "license"
+    }
+  ]
+}

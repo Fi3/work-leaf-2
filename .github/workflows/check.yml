@@ -1,0 +1,39 @@
+name: Release checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install exact test runtimes
+        shell: bash
+        run: |
+          set -euo pipefail
+          task_tools="$RUNNER_TEMP/harness-tools"
+          mkdir -p "$task_tools/node" "$task_tools/nvim"
+          curl -fsSL https://nodejs.org/dist/v26.10.0/node-v26.10.0-linux-x64.tar.xz -o "$task_tools/node.tar.xz"
+          echo "ca70e9e349de048b9522abb3adc05b3bd6f43c5ffd3ec57916c7da292f59f022  $task_tools/node.tar.xz" | sha256sum --check
+          tar -xJf "$task_tools/node.tar.xz" --strip-components=1 -C "$task_tools/node"
+          export PATH="$task_tools/node/bin:$PATH"
+          npm install --global --ignore-scripts --prefix "$task_tools/node" npm@12.2.0
+          curl -fsSL https://github.com/neovim/neovim/releases/download/v0.12.6/nvim-linux-x86_64.tar.gz -o "$task_tools/nvim.tar.gz"
+          echo "474430d53e6264f6d6dd18db42d6dc9df3a1b56ca9e88a325bbf860e1a811d87  $task_tools/nvim.tar.gz" | sha256sum --check
+          tar -xzf "$task_tools/nvim.tar.gz" --strip-components=1 -C "$task_tools/nvim"
+          echo "$task_tools/node/bin" >> "$GITHUB_PATH"
+          echo "$task_tools/nvim/bin" >> "$GITHUB_PATH"
+          rustup toolchain install 1.94.1 --profile minimal --component rustfmt --component clippy
+      - name: Install reviewed packages
+        run: npm ci --ignore-scripts
+      - name: Run the complete release gate
+        run: sh scripts/check.sh
+      - name: Keep test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: linux-test-evidence
+          path: |
+            tests/evidence/
+            /tmp/harness-nvim-ui-evidence-*/
