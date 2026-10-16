@@ -1,0 +1,73 @@
+{
+  "recorded_at": "2026-10-16T17:19:50.105023+00:00",
+  "mode": "actual X11 screen capture of a dedicated Kitty window; actual Neovim, Rust server, and Pi adapter",
+  "model": "Pi faux provider with fixed responses; no provider credentials supplied",
+  "tools": "actual Pi bash tool and Python syntax check in a temporary project",
+  "input": "keys sent to the terminal with Kitty remote control",
+  "capture": "FFmpeg x11grab restricted to the terminal window",
+  "video": "harness-demo.mp4",
+  "video_sha256": "679f78a9a76b63cb2197c965d52591d3bc709f9be0a00454fdcc7ae5d3d68767",
+  "duration_seconds": 48.6,
+  "frames_per_second": 15,
+  "screen_pixels": [
+    1280,
+    800
+  ],
+  "caption_bar_pixels": 96,
+  "audio": false,
+  "steps": [
+    {
+      "seconds": 0.0,
+      "text": "Run the launch script from the project directory."
+    },
+    {
+      "seconds": 5.3,
+      "text": "Press ; in normal mode. Agents appear under project folders."
+    },
+    {
+      "seconds": 8.5,
+      "text": "Press n. Enter a name to create an agent in this project."
+    },
+    {
+      "seconds": 13.6,
+      "text": "Type a task in the prompt. Press Ctrl-S to send it."
+    },
+    {
+      "seconds": 18.7,
+      "text": "The actual bash tool checks the file. The answer streams into the transcript."
+    },
+    {
+      "seconds": 21.7,
+      "text": "Move back to the source window after the first task completes."
+    },
+    {
+      "seconds": 27.9,
+      "text": "Return to the tree. Select another stored agent with Enter."
+    },
+    {
+      "seconds": 33.0,
+      "text": "Start a second task. Use s on its tree row to stop only that agent."
+    },
+    {
+      "seconds": 40.2,
+      "text": "Press ; to hide the tree. Use :qa to close after all tasks have stopped."
+    },
+    {
+      "seconds": 45.2,
+      "text": "The demonstration is complete. All model text came from the Pi faux provider."
+    }
+  ],
+  "assertions": [
+    "normal editor starts with one window",
+    "semicolon displays stored agents grouped by workspace",
+    "named agent is selected",
+    "submitted task appears in the stored transcript",
+    "actual tool output contains Syntax check passed.",
+    "first task reaches idle",
+    "another agent is selected",
+    "second task becomes active",
+    "sidebar stop reaches idle",
+    "normal exit closes Neovim after work stops"
+  ],
+  "cleanup": "all demonstration sessions stopped; private server shut down; terminal closed"
+}

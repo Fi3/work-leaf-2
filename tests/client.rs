@@ -2,7 +2,8 @@ use harness::client::Client;
 use harness::protocol::{MAX_INPUT, MAX_RECORD, RpcError, encode, read_frame, response};
 use serde_json::{Value, json};
 use std::fs;
-use std::io::{BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
@@ -114,6 +115,164 @@ fn success(output: &Output) {
         "{}",
         String::from_utf8_lossy(&output.stderr)
     );
+}
+
+fn output_flags(output: &impl AsRawFd) -> i32 {
+    // The descriptor stays open while fcntl reads its current file status flags.
+    let flags = unsafe { libc::fcntl(output.as_raw_fd(), libc::F_GETFL) };
+    assert!(flags >= 0);
+    flags
+}
+
+fn output_pair(socket: bool) -> (OwnedFd, OwnedFd) {
+    if socket {
+        let (reader, writer) = UnixStream::pair().unwrap();
+        (reader.into(), writer.into())
+    } else {
+        let (reader, writer) = std::io::pipe().unwrap();
+        (reader.into(), writer.into())
+    }
+}
+
+#[test]
+fn standard_output_preserves_caller_flags_and_later_pipe_output() {
+    for (socket, nonblocking) in [(false, false), (true, false), (false, true), (true, true)] {
+        let fixture = Fixture::new(|stream| {
+            hello(stream);
+            let input = request(stream);
+            reply(stream, &input, json!({"items":[]}));
+        });
+        let (reader, writer) = output_pair(socket);
+        let mut writer = fs::File::from(writer);
+        if nonblocking {
+            harness::process::nonblocking(writer.as_raw_fd()).unwrap();
+        }
+        let flags = output_flags(&writer);
+        let output = fixture
+            .command(&["session", "list"])
+            .stdout(writer.try_clone().unwrap())
+            .output()
+            .unwrap();
+        success(&output);
+        let observed_flags = output_flags(&writer);
+        let reading = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(50));
+            let mut data = Vec::new();
+            fs::File::from(reader).read_to_end(&mut data).unwrap();
+            data
+        });
+        let later = vec![b'y'; if nonblocking { 1 } else { 1024 * 1024 }];
+        let written = writer.write_all(&later);
+        drop(writer);
+        let data = reading.join().unwrap();
+        assert_eq!(observed_flags, flags, "The caller's output flags changed");
+        written.unwrap();
+        let mut expected = b"{\"items\":[]}\n".to_vec();
+        expected.extend(later);
+        assert_eq!(data, expected);
+    }
+}
+
+#[test]
+fn standard_output_preserves_inherited_terminal_flags() {
+    let mut master = -1;
+    let mut slave = -1;
+    // openpty initializes two owned descriptors; null pointers select the default terminal settings.
+    assert_eq!(
+        unsafe {
+            libc::openpty(
+                &mut master,
+                &mut slave,
+                std::ptr::null_mut(),
+                std::ptr::null(),
+                std::ptr::null(),
+            )
+        },
+        0
+    );
+    // Both descriptors were returned by the successful openpty call and are owned only here.
+    let (master, slave) = unsafe { (fs::File::from_raw_fd(master), fs::File::from_raw_fd(slave)) };
+    let fixture = Fixture::new(|stream| {
+        hello(stream);
+        let input = request(stream);
+        reply(stream, &input, json!({"items":[]}));
+    });
+    let flags = output_flags(&slave);
+    success(
+        &fixture
+            .command(&["session", "list"])
+            .stdout(slave.try_clone().unwrap())
+            .output()
+            .unwrap(),
+    );
+    assert_eq!(output_flags(&slave), flags);
+    drop(slave);
+    let mut line = String::new();
+    BufReader::new(master).read_line(&mut line).unwrap();
+    assert_eq!(
+        serde_json::from_str::<Value>(&line).unwrap(),
+        json!({"items":[]})
+    );
+}
+
+#[test]
+fn standard_output_preserves_file_offsets_and_flags_on_failure() {
+    let fixture = Fixture::new(|stream| {
+        hello(stream);
+        for _ in 0..2 {
+            let input = request(stream);
+            reply(stream, &input, json!({"items":[]}));
+        }
+    });
+    let path = fixture.dir.join("output");
+    let mut file = fs::File::create(&path).unwrap();
+    file.write_all(b"before\n").unwrap();
+    let flags = output_flags(&file);
+    let mut child = fixture
+        .command(&["rpc"])
+        .stdout(file.try_clone().unwrap())
+        .spawn()
+        .unwrap();
+    let mut input = child.stdin.take().unwrap();
+    for id in ["one", "two"] {
+        input
+            .write_all(
+                &encode(&json!({"jsonrpc":"2.0","id":id,"method":"session.list","params":{}}))
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+    drop(input);
+    success(&child.wait_with_output().unwrap());
+    assert_eq!(output_flags(&file), flags);
+    file.write_all(b"after\n").unwrap();
+    let data = fs::read_to_string(path).unwrap();
+    let lines: Vec<_> = data.lines().collect();
+    assert_eq!((lines[0], lines[3]), ("before", "after"));
+    assert_eq!(
+        serde_json::from_str::<Value>(lines[1]).unwrap()["id"],
+        "one"
+    );
+    assert_eq!(
+        serde_json::from_str::<Value>(lines[2]).unwrap()["id"],
+        "two"
+    );
+
+    let fixture = Fixture::new(|stream| {
+        hello(stream);
+        let input = request(stream);
+        reply(stream, &input, json!({"items":[]}));
+    });
+    let (reader, writer) = std::io::pipe().unwrap();
+    drop(reader);
+    let flags = output_flags(&writer);
+    let output = fixture
+        .command(&["session", "list"])
+        .stdout(writer.try_clone().unwrap())
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(3));
+    assert_eq!(output_flags(&writer), flags);
 }
 
 #[test]
@@ -536,7 +695,7 @@ fn sigint_interrupts_wait_and_standard_input_without_stop() {
 
 #[test]
 fn sigint_interrupts_full_standard_output() {
-    for proxy in [false, true] {
+    for (proxy, socket) in [(false, false), (true, false), (false, true), (true, true)] {
         let (send, receive) = mpsc::channel();
         let fixture = Fixture::new(move |stream| {
             hello(stream);
@@ -545,12 +704,15 @@ fn sigint_interrupts_full_standard_output() {
             send.send(()).unwrap();
             disconnected(stream);
         });
+        let (_reader, writer) = output_pair(socket);
+        let flags = output_flags(&writer);
         let mut child = fixture
             .command(if proxy {
                 &["rpc"]
             } else {
                 &["session", "list"]
             })
+            .stdout(writer.try_clone().unwrap())
             .spawn()
             .unwrap();
         if proxy {
@@ -576,38 +738,121 @@ fn sigint_interrupts_full_standard_output() {
                 .success()
         );
         assert_eq!(child.wait().unwrap().code(), Some(130));
+        assert_eq!(output_flags(&writer), flags);
     }
 }
 
 #[test]
-fn client_configuration_selects_socket_and_checks_state() {
+fn default_configuration_checks_state_before_mutations() {
+    for args in [
+        vec!["send", "--session", "work", "--request-id", "r", "--stdin"],
+        vec!["stop", "--session", "work", "--submission-id", "s"],
+        vec!["rpc"],
+    ] {
+        let (sent, observed) = mpsc::channel();
+        let fixture = Fixture::new(move |stream| {
+            hello(stream);
+            let record = read_frame(stream).unwrap();
+            sent.send(record.is_none()).unwrap();
+            if let Some(record) = record {
+                let input = serde_json::from_slice(&record).unwrap();
+                reply(stream, &input, json!({"status":"accepted"}));
+            }
+        });
+        let settings = fixture.dir.join("harness");
+        let state = fixture.dir.join("state-b");
+        fs::create_dir(&settings).unwrap();
+        fs::create_dir(&state).unwrap();
+        fs::write(
+            settings.join("config.json"),
+            serde_json::to_vec(&json!({"state_dir":state,"socket_path":fixture.socket})).unwrap(),
+        )
+        .unwrap();
+        let mut child = Command::new(env!("CARGO_BIN_EXE_harness"))
+            .args(&args)
+            .env("XDG_CONFIG_HOME", &fixture.dir)
+            .env("XDG_STATE_HOME", &fixture.dir)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let input = if args[0] == "rpc" {
+            encode(&json!({"jsonrpc":"2.0","id":"mutation","method":"run.stop","params":{"session_id":"work","submission_id":"s"}})).unwrap()
+        } else {
+            b"Task".to_vec()
+        };
+        let _ = child.stdin.take().unwrap().write_all(&input);
+        let output = child.wait_with_output().unwrap();
+        assert!(
+            observed.recv().unwrap(),
+            "A mutation reached the wrong state directory"
+        );
+        assert_eq!(
+            output.status.code(),
+            Some(6),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(output.stdout.is_empty());
+        assert!(
+            String::from_utf8(output.stderr)
+                .unwrap()
+                .contains("another state directory")
+        );
+    }
+}
+
+#[test]
+fn explicit_socket_can_select_an_endpoint_outside_default_configuration() {
     let fixture = Fixture::new(|stream| {
-        let input = request(stream);
-        let state = stream.get_ref().local_addr().unwrap();
-        let state = state.as_pathname().unwrap().parent().unwrap();
-        reply(stream, &input, json!({"api_version":1,"state_dir":state}));
+        hello(stream);
         let input = request(stream);
         assert_eq!(input["method"], "session.list");
         reply(stream, &input, json!({"items":[]}));
-        disconnected(stream);
     });
-    let config = fixture.dir.join("config.json");
-    fs::write(
-        &config,
-        serde_json::to_vec(&json!({"state_dir":fixture.dir,"socket_path":fixture.socket})).unwrap(),
-    )
-    .unwrap();
-    let output = Command::new(env!("CARGO_BIN_EXE_harness"))
-        .args(["--config"])
-        .arg(config)
-        .args(["session", "list"])
-        .env("XDG_CONFIG_HOME", &fixture.dir)
-        .env("XDG_STATE_HOME", &fixture.dir)
-        .output()
+    let settings = fixture.dir.join("harness");
+    fs::create_dir(&settings).unwrap();
+    fs::write(settings.join("config.json"), serde_json::to_vec(&json!({"state_dir":fixture.dir.join("other-state"),"socket_path":fixture.dir.join("other.sock")})).unwrap()).unwrap();
+    success(&fixture.run(&["session", "list"], b""));
+}
+
+#[test]
+fn client_configuration_selects_socket_and_checks_state() {
+    for explicit in [false, true] {
+        let fixture = Fixture::new(|stream| {
+            let input = request(stream);
+            let state = stream.get_ref().local_addr().unwrap();
+            let state = state.as_pathname().unwrap().parent().unwrap();
+            reply(stream, &input, json!({"api_version":1,"state_dir":state}));
+            let input = request(stream);
+            assert_eq!(input["method"], "session.list");
+            reply(stream, &input, json!({"items":[]}));
+            disconnected(stream);
+        });
+        let directory = fixture.dir.join("harness");
+        fs::create_dir(&directory).unwrap();
+        let config = directory.join("config.json");
+        fs::write(
+            &config,
+            serde_json::to_vec(&json!({"state_dir":fixture.dir,"socket_path":fixture.socket}))
+                .unwrap(),
+        )
         .unwrap();
-    success(&output);
-    assert_eq!(
-        serde_json::from_slice::<Value>(&output.stdout).unwrap(),
-        json!({"items":[]})
-    );
+        let mut command = Command::new(env!("CARGO_BIN_EXE_harness"));
+        if explicit {
+            command.arg("--config").arg(config);
+        }
+        let output = command
+            .args(["session", "list"])
+            .env("XDG_CONFIG_HOME", &fixture.dir)
+            .env("XDG_STATE_HOME", &fixture.dir)
+            .output()
+            .unwrap();
+        success(&output);
+        assert_eq!(
+            serde_json::from_slice::<Value>(&output.stdout).unwrap(),
+            json!({"items":[]})
+        );
+    }
 }

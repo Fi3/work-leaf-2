@@ -11,7 +11,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-const HELP: &str = "harness start|serve [--config PATH] [--state-dir PATH] [--socket PATH]\n\
+const HELP: &str = "harness nvim [--config PATH] [--socket PATH]\n\
+harness start|serve [--config PATH] [--state-dir PATH] [--socket PATH]\n\
 harness status|shutdown|restart-worker|rpc [--socket PATH]\n\
 harness session create --id ID --workspace PATH [--socket PATH]\n\
 harness session list [--socket PATH]\n\
@@ -19,7 +20,8 @@ harness send --session ID --request-id ID --stdin [--socket PATH]\n\
 harness wait --session ID --request-id ID [--timeout-ms N] [--text] [--socket PATH]\n\
 harness watch --session ID [--socket PATH]\n\
 harness stop --session ID --submission-id ID [--socket PATH]\n\
-All client commands also accept --config PATH and --state-dir PATH.";
+All client commands also accept --config PATH and --state-dir PATH.\n\
+For nvim, set a custom state_dir in the configuration file.";
 
 pub fn run() -> i32 {
     if let Err(error) = process::install_signals() {
@@ -74,7 +76,9 @@ impl Arguments {
         let command = positional.join(" ");
         let allowed: &[&str] = match command.as_str() {
             "start" | "serve" => &["--socket", "--config", "--state-dir"],
-            "status" | "shutdown" | "restart-worker" | "rpc" | "session list" => &["--socket"],
+            "nvim" | "status" | "shutdown" | "restart-worker" | "rpc" | "session list" => {
+                &["--socket"]
+            }
             "session create" => &["--socket", "--id", "--workspace"],
             "send" => &["--socket", "--session", "--request-id", "--stdin"],
             "wait" => &[
@@ -94,6 +98,11 @@ impl Arguments {
             {
                 return Err(RpcError::invalid(format!("Unknown option {option}")));
             }
+        }
+        if command == "nvim" && options.contains_key("--state-dir") {
+            return Err(RpcError::invalid(
+                "For nvim, set state_dir and socket_path in the --config file",
+            ));
         }
         Ok(Self { command, options })
     }
@@ -123,9 +132,12 @@ fn execute(args: Vec<String>) -> Result<i32, RpcError> {
         args.path("--state-dir"),
         args.path("--socket"),
     )?;
-    let expected_state = (args.get("--config").is_some() || args.get("--state-dir").is_some())
-        .then_some(config.state_dir.as_path());
+    let expected_state = (args.get("--socket").is_none()
+        || args.get("--config").is_some()
+        || args.get("--state-dir").is_some())
+    .then_some(config.state_dir.as_path());
     match args.command.as_str() {
+        "nvim" => return crate::editor::open(&config),
         "serve" => {
             server::serve(config)?;
             return Ok(0);

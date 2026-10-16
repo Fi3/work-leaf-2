@@ -14,6 +14,7 @@ import { chunk, cursor, entryPreview, entryText, fitPage, outcome, parseCursor, 
 
 export const SessionDoc = defineDoc({ kind: 'app.session', version: 1, scope: 'conversation', history: 'latest', fork: 'initial', initial: () => ({}) });
 const toolNames = CodingTools.tools.map(tool => tool.name);
+const admission = Symbol('admission');
 const terminal = record => record.status === 'done' || record.status === 'unanswered';
 const notReady = () => appError('not_ready', 'Pending recovery is blocked; correct configuration and restart the worker');
 function piId(value) {
@@ -75,7 +76,7 @@ class Application {
   constructor(config, models) {
     this.config = config; this.models = models; this.sessions = new Map(); this.environments = new Map();
     this.watches = new Map(); this.waits = new Map(); this.stops = new Map(); this.locks = new Map();
-    this.admission = Promise.resolve(); this.pending = new Set(); this.blocked = null; this.closing = false;
+    this.pending = new Set(); this.blocked = null; this.closing = false;
   }
   environment(cwd) {
     if (!this.environments.has(cwd)) this.environments.set(cwd, new NodeExecutionEnv({ cwd }));
@@ -112,17 +113,17 @@ class Application {
     const session = this.sessions.get(id); if (!session) throw appError('not_found', 'Unknown session'); return session;
   }
   async serialized(key, operation) {
-    const previous = key === 'admission' ? this.admission : this.locks.get(key) ?? Promise.resolve();
+    const previous = this.locks.get(key) ?? Promise.resolve();
     const task = previous.catch(() => {}).then(operation);
     const tail = task.catch(() => {});
-    if (key === 'admission') this.admission = tail; else this.locks.set(key, tail);
+    this.locks.set(key, tail);
     this.pending.add(task);
     try { return await task; }
     finally { this.pending.delete(task); if (this.locks.get(key) === tail) this.locks.delete(key); }
   }
   assertAdmission() { if (this.closing) throw appError('not_ready', 'Worker is closing'); }
   async create(params) {
-    return this.serialized('admission', async () => {
+    return this.serialized(admission, async () => {
       this.assertAdmission(); const canonical = await workspace(params.workspace);
       const existing = this.sessions.get(params.session_id);
       if (existing) { if (existing.metadata.workspace !== canonical) throw appError('conflict', 'Session has a different workspace'); return existing.metadata; }
@@ -200,7 +201,7 @@ class Application {
   async submit(session, params) {
     const known = await this.lookup(session, params.request_id); if (known) return outcome(session.metadata, known);
     if (this.stops.has(params.session_id)) throw appError('busy', 'Session is stopping');
-    return this.serialized(params.session_id, () => this.serialized('admission', async () => {
+    return this.serialized(params.session_id, () => this.serialized(admission, async () => {
       const duplicate = await this.lookup(session, params.request_id); if (duplicate) return outcome(session.metadata, duplicate);
       this.assertAdmission(); if (this.blocked) throw notReady();
       const live = await this.harness.snapshot(LiveDoc, session.conversation.id, context);

@@ -2,10 +2,11 @@ use crate::process;
 use crate::protocol::{self, API_VERSION, Framer, MAX_PENDING, MAX_WATCHES, Request, RpcError};
 use serde_json::{Value, json};
 use std::collections::{HashSet, VecDeque};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::net::Shutdown;
 use std::os::fd::{AsFd, AsRawFd};
+use std::os::unix::fs::{FileTypeExt, OpenOptionsExt};
 use std::os::unix::net::UnixStream;
 use std::path::Path;
 use std::sync::mpsc::{self, RecvTimeoutError};
@@ -16,12 +17,24 @@ const POLL: Duration = Duration::from_millis(100);
 
 pub fn write_stdout(mut bytes: &[u8]) -> Result<(), RpcError> {
     let mut output = File::from(io::stdout().as_fd().try_clone_to_owned()?);
-    process::nonblocking(output.as_raw_fd())?;
+    let kind = output.metadata()?.file_type();
+    if kind.is_fifo() || kind.is_char_device() {
+        // dup shares status flags with the caller. Reopening gives pipes and terminals independent flags.
+        output = OpenOptions::new()
+            .write(true)
+            .custom_flags(libc::O_NONBLOCK | libc::O_NOCTTY)
+            .open("/proc/self/fd/1")?;
+    }
     while !bytes.is_empty() {
         if process::interrupted() {
             return Err(unavailable("Client interrupted; the run can continue"));
         }
-        match output.write(bytes) {
+        let result = if kind.is_socket() {
+            process::send_nonblocking(output.as_raw_fd(), bytes)
+        } else {
+            output.write(bytes)
+        };
+        match result {
             Ok(0) => return Err(unavailable("Standard output closed")),
             Ok(count) => bytes = &bytes[count..],
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {

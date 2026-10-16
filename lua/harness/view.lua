@@ -3,12 +3,21 @@ local M = {}
 function M.new(options)
   local self = {}
   local namespace = vim.api.nvim_create_namespace('HarnessView')
+  local function width()
+    local sidebar = vim.fn.win_findbuf(vim.fn.bufnr('harness://agents'))[1]
+    if not sidebar then return options.width end
+    return math.min(options.width, math.max(1, math.floor((vim.o.columns - vim.api.nvim_win_get_width(sidebar) - 2) / 2)))
+  end
   local function buffer(kind, editable)
     local buf = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_name(buf, 'harness://' .. kind)
     vim.bo[buf].buftype, vim.bo[buf].bufhidden = 'nofile', 'hide'
     vim.bo[buf].swapfile, vim.bo[buf].modifiable = false, editable
     vim.bo[buf].filetype = 'harness'
+    if editable then
+      vim.keymap.set({ 'n', 'i' }, '<C-s>', function() vim.cmd('stopinsert'); vim.cmd('Harness send') end,
+        { buffer = buf, silent = true, desc = 'Send agent prompt' })
+    end
     return buf
   end
 
@@ -17,15 +26,22 @@ function M.new(options)
       self.transcript, self.prompt = buffer('transcript', false), buffer('prompt', true)
     end
     if #vim.fn.win_findbuf(self.transcript) == 0 then
-      vim.cmd('botright ' .. options.width .. 'vsplit')
+      vim.cmd('botright ' .. width() .. 'vsplit')
       vim.api.nvim_win_set_buf(0, self.transcript)
+      vim.wo.wrap, vim.wo.linebreak, vim.wo.winfixwidth = true, true, false
     end
     if #vim.fn.win_findbuf(self.prompt) == 0 then
       vim.api.nvim_set_current_win(vim.fn.win_findbuf(self.transcript)[1])
       vim.cmd('belowright ' .. options.prompt_height .. 'split')
       vim.api.nvim_win_set_buf(0, self.prompt)
+      vim.wo.wrap, vim.wo.linebreak, vim.wo.winfixwidth = true, true, false
     end
     vim.api.nvim_set_current_win(vim.fn.win_findbuf(self.prompt)[1])
+  end
+
+  function self.resize()
+    local win = self.transcript and vim.fn.win_findbuf(self.transcript)[1]
+    if win then vim.api.nvim_win_set_width(win, width()) end
   end
 
   function self.draft()

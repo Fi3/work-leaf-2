@@ -38,10 +38,11 @@ class Editor:
         self.wait(lambda: self.calls('session.watch'), 'initial watch')
         self.pump(.15)
 
-    def launch(self, env):
+    def launch(self, env, command=None):
         self.master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
-        self.process = subprocess.Popen(['nvim', '-u', 'NONE', '-n', '-i', 'NONE', '--cmd', 'lua dofile(vim.env.HARNESS_REPO .. "/tests/nvim/interactive_init.lua")'], stdin=slave, stdout=slave, stderr=slave, cwd=self.root, env=env)
+        command = command or ['nvim', '-u', 'NONE', '-n', '-i', 'NONE', '--cmd', 'lua dofile(vim.env.HARNESS_REPO .. "/tests/nvim/interactive_init.lua")']
+        self.process = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave, cwd=self.root, env=env)
         os.close(slave)
         self.output = bytearray()
 
@@ -66,6 +67,7 @@ class Editor:
                 # Reply to terminal queries. These replies prevent artificial
                 # startup and shutdown delays in the terminal under test.
                 if b'\x1b]11;?' in data: os.write(self.master, b'\x1b]11;rgb:0000/0000/0000\x07')
+                if b'\x1b[5n' in data: os.write(self.master, b'\x1b[0n')
                 if b'\x1b[c' in data: os.write(self.master, b'\x1b[?1;2c')
                 if b'\x1b[>c' in data: os.write(self.master, b'\x1b[>0;0;0c')
 
@@ -87,12 +89,15 @@ class Editor:
     def source(self, only=False):
         self.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"))[1])' + ('; vim.cmd("only")' if only else ''))
 
-    def panel_text(self):
-        path = self.root / 'panel.txt'
+    def panel_text(self, kind='transcript'):
+        path = self.root / (kind + '.txt')
         path.unlink(missing_ok=True)
-        self.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://transcript"), 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/panel.txt")')
+        self.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://' + kind + '"), 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/' + kind + '.txt")')
         self.wait(path.exists, 'read actual transcript')
         return path.read_text()
+
+    def tree_row(self, text):
+        self.command('lua local b=vim.fn.bufnr("harness://agents"); vim.api.nvim_set_current_win(vim.fn.win_findbuf(b)[1]); for i,line in ipairs(vim.api.nvim_buf_get_lines(b,0,-1,false)) do if line:find(' + json.dumps(text) + ',1,true) then vim.api.nvim_win_set_cursor(0,{i,0}); break end end')
 
     def prompt(self, command):
         start = len(self.output)

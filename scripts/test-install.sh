@@ -30,9 +30,9 @@ const env = { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8',
   HARNESS_FAUX_RESPONSES: responses, HARNESS_FAUX_TOKENS_PER_SECOND: '1000' };
 let serverPid, workerPid;
 
-function command(program, args, input = '') {
+function command(program, args, input = '', environment = env) {
   return new Promise((resolve, reject) => {
-    const child = spawn(program, args, { cwd: directory, env, stdio: ['pipe', 'pipe', 'pipe'], timeout: 20000 });
+    const child = spawn(program, args, { cwd: directory, env: environment, stdio: ['pipe', 'pipe', 'pipe'], timeout: 20000 });
     let stdout = '', stderr = '';
     child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
     child.stdout.on('data', value => { stdout += value; });
@@ -83,31 +83,69 @@ try {
   assert.equal(stopped.reason, 'cancelled');
   assert.deepEqual(await json(['wait', '--session', 'work', '--request-id', 'second'], '', 5), stopped);
 
-  const lua = join(directory, 'installed.lua');
+  const actualNvim = execFileSync('sh', ['-c', 'command -v nvim'], { encoding: 'utf8' }).trim();
+  const wrappers = join(directory, 'bin'), userConfig = join(directory, 'nvim');
+  await mkdir(wrappers); await mkdir(userConfig);
+  await writeFile(join(wrappers, 'nvim'), '#!/bin/sh\nexec "$HARNESS_INSTALL_NVIM" --headless "$@"\n', { mode: 0o755 });
+  const lua = join(userConfig, 'init.lua');
   await writeFile(lua, `
-vim.opt.runtimepath:append(${JSON.stringify(join(share, 'nvim'))})
-vim.cmd('runtime plugin/harness.lua')
-local harness = require('harness')
-assert(debug.getinfo(harness.setup, 'S').source == '@' .. ${JSON.stringify(join(share, 'nvim/lua/harness/init.lua'))})
-harness.setup({ executable = ${JSON.stringify(executable)}, config_path = ${JSON.stringify(config)}, workspace = ${JSON.stringify(workspace)}, autostart = false })
-vim.cmd('Harness attach work')
-local transcript, prompt
-assert(vim.wait(10000, function()
-  for _, buffer in ipairs(vim.api.nvim_list_bufs()) do
-    local name = vim.api.nvim_buf_get_name(buffer)
-    if name == 'harness://transcript' then transcript = buffer end
-    if name == 'harness://prompt' then prompt = buffer end
-  end
-  if not transcript then return false end
-  local text = table.concat(vim.api.nvim_buf_get_lines(transcript, 0, -1, false), '\\n')
-  return text:find('Connection: connected', 1, true) and text:find('Session: work', 1, true)
-    and text:find('State: idle', 1, true) and text:find('Installed answer.', 1, true)
-end, 20), 'The installed interface must show the stored answer')
-assert(#vim.api.nvim_list_wins() == 3, 'Source, transcript, and prompt windows')
-assert(not vim.bo[transcript].modifiable and vim.bo[prompt].modifiable)
-vim.cmd('qa')
+vim.g.install_user_config_loaded = true
+vim.opt.number = true
+vim.api.nvim_create_autocmd('VimEnter', { once = true, callback = function()
+  vim.schedule(function()
+    local ok, message = pcall(function()
+      assert(vim.g.install_user_config_loaded and vim.o.number, 'Load normal user configuration')
+      assert(vim.env.HARNESS_NVIM_RUNTIME == nil and vim.env.HARNESS_NVIM_OPTIONS == nil)
+      local harness = require('harness')
+      assert(debug.getinfo(harness.setup, 'S').source == '@' .. ${JSON.stringify(join(share, 'nvim/lua/harness/init.lua'))})
+      assert(#vim.api.nvim_list_wins() == 1, 'The launcher must keep the normal initial editor')
+      assert(vim.fn.maparg(';', 'n') ~= '', 'Enable the sidebar key')
+      vim.api.nvim_feedkeys(';', 'xt', false)
+      local agents
+      assert(vim.wait(10000, function()
+        agents = vim.fn.bufnr('harness://agents')
+        if agents == -1 then return false end
+        for row, line in ipairs(vim.api.nvim_buf_get_lines(agents, 0, -1, false)) do
+          if line:match('work %[') then
+            vim.api.nvim_win_set_cursor(vim.fn.win_findbuf(agents)[1], { row, 0 })
+            return true
+          end
+        end
+        return false
+      end, 20), 'The sidebar must list the installed session')
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, false, true), 'xt', false)
+      local transcript, prompt
+      assert(vim.wait(10000, function()
+        for _, buffer in ipairs(vim.api.nvim_list_bufs()) do
+          local name = vim.api.nvim_buf_get_name(buffer)
+          if name == 'harness://transcript' then transcript = buffer end
+          if name == 'harness://prompt' then prompt = buffer end
+        end
+        if not transcript then return false end
+        local text = table.concat(vim.api.nvim_buf_get_lines(transcript, 0, -1, false), '\\n')
+        return text:find('Connection: connected', 1, true) and text:find('Session: work', 1, true)
+          and text:find('State: idle', 1, true) and text:find('Installed answer.', 1, true)
+      end, 20), 'Selecting an agent must show the stored answer')
+      assert(#vim.api.nvim_list_wins() == 4, 'Tree, source, transcript, and prompt windows')
+      assert(not vim.bo[transcript].modifiable and vim.bo[prompt].modifiable)
+      local pid = vim.fn.getpid()
+      local children = assert(io.open('/proc/' .. pid .. '/task/' .. pid .. '/children'))
+      local processes = children:read('*a'); children:close()
+      local installed_client = false
+      for child in processes:gmatch('%d+') do
+        if vim.uv.fs_readlink('/proc/' .. child .. '/exe') == ${JSON.stringify(executable)} then installed_client = true end
+      end
+      assert(installed_client, 'The installed runtime must use the installed command client')
+    end)
+    if not ok then io.stderr:write(tostring(message) .. '\\n'); vim.cmd('cquit 1') end
+    vim.cmd('qa')
+  end)
+end })
 `);
-  const editor = await command('nvim', ['--headless', '-u', 'NONE', '-l', lua]);
+  const editor = await command(executable, ['nvim', '--config', config], '', {
+    ...env, PATH: `${wrappers}:${env.PATH}`, HARNESS_INSTALL_NVIM: actualNvim,
+    XDG_DATA_HOME: join(directory, 'data'), XDG_CACHE_HOME: join(directory, 'cache'),
+  });
   assert.equal(editor.code, 0, editor.stderr);
   await cli(['shutdown']);
   for (let count = 0; count < 200 && (await alive(serverPid) || await alive(workerPid)); count++) await delay(25);
@@ -123,9 +161,11 @@ vim.cmd('qa')
     npm_packages: Object.keys(lock.packages).filter(Boolean).length,
     worker_path: relative(prefix, workerPath), source_worker_used: false, provider_credentials_supplied: false,
     passed: ['detached startup', 'installed worker path', 'create and list session', 'send and complete Unicode answer',
-      'stop and retained cancelled outcome', 'installed Neovim runtime attaches and shows stored answer',
-      'three windows with read-only transcript and editable prompt', 'server and worker shutdown'],
-    neovim_mode: 'headless installed-runtime smoke; interactive interface evidence is separate',
+      'stop and retained cancelled outcome', 'harness nvim loads normal user configuration and enables the sidebar key',
+      'installed runtime uses the installed command client and shows stored answer',
+      'semicolon opens the tree; Enter selects an agent',
+      'four windows with agent tree, source, read-only transcript and editable prompt', 'server and worker shutdown'],
+    neovim_mode: 'installed harness nvim launcher with actual Neovim in headless mode; interactive interface evidence is separate',
   };
   await writeFile(resolve(root, 'tests/evidence/clean-install.json'), JSON.stringify(report, null, 2) + '\n');
   console.log('Clean installation passed: installed Rust, Pi adapter, and Neovim runtime; no provider credentials.');

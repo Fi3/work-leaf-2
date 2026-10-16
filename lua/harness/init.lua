@@ -2,7 +2,7 @@ local M = {}
 local options = { executable = 'harness', autostart = true, width = 72, prompt_height = 6 }
 local allowed = { executable = true, config_path = true, socket_path = true, workspace = true,
   autostart = true, width = true, prompt_height = true }
-local view, transport, selected, source, source_window
+local view, transport, selected, source, source_window, sidebar
 local sessions, attached = {}, {}
 local connection, watch, watch_sequence = 'disconnected', nil, 0
 local attachment = 0
@@ -26,14 +26,41 @@ local function save_draft()
   if selected then sessions[selected].draft = view.draft() end
 end
 
+local function merge_entries(entries, incoming, before)
+  local result = vim.list_extend({}, entries)
+  local at = #result + 1
+  for index, item in ipairs(result) do if item.entry_id == before then at = index; break end end
+  for index = #incoming, 1, -1 do
+    local item, found = incoming[index]
+    for position, stored in ipairs(result) do
+      if stored.entry_id == item.entry_id then found = position; break end
+    end
+    if found then result[found], at = item, found
+    else table.insert(result, at, item) end
+  end
+  return result
+end
+
 local function update(snapshot)
   local id = snapshot.session.session_id
   local session = sessions[id]
   if not session then return end
   local previous = session.snapshot
+  local overlap = false
+  for _, older in ipairs(previous and previous.entries or {}) do
+    for _, newer in ipairs(snapshot.entries) do
+      if older.entry_id == newer.entry_id then overlap = true; break end
+    end
+    if overlap then break end
+  end
   session.snapshot = snapshot
-  if not session.history_loaded then session.cursor = snapshot.history_cursor end
+  if not session.history_loaded or not overlap then
+    session.cursor = snapshot.history_cursor
+    session.history_before = snapshot.entries[1] and snapshot.entries[1].entry_id
+  end
+  if session.history_loaded then session.history = merge_entries(session.history, snapshot.entries) end
   if selected == id then render() end
+  if sidebar then sidebar.update(snapshot) end
   if previous and previous.state ~= 'idle' and snapshot.state == 'idle' then vim.cmd('checktime') end
 end
 
@@ -44,6 +71,7 @@ local function initialize()
     connection = err or 'connected'
     if err then watch, watch_sequence = nil, 0 end
     render()
+    if sidebar then sidebar.update() end
   end, function(event)
     if event.watch_id ~= watch or event.sequence <= watch_sequence then return end
     watch_sequence = event.sequence
@@ -154,9 +182,10 @@ local function send()
     end
     if receipt.submission_id == nil then report('Missing submission receipt.'); return end
     session.pending = nil
-    if selected == envelope.session_id and view.draft() == envelope.text then
-      view.set_draft('')
+    local draft = selected == envelope.session_id and view.draft() or session.draft
+    if draft == envelope.text then
       session.draft = ''
+      if selected == envelope.session_id then view.set_draft('') end
     end
     for _ = 1, #envelope.context do table.remove(session.context, 1) end
     render()
@@ -168,10 +197,15 @@ local function history()
   if not session.cursor or session.cursor == vim.NIL then
     vim.notify('Harness: No older transcript entries.'); return
   end
-  rpc('transcript.list', { session_id = selected, cursor = session.cursor, limit = 50 }, function(result)
-    local items = result.items
-    vim.list_extend(items, session.history)
-    session.history, session.cursor, session.history_loaded = items, result.next_cursor, true
+  local cursor, before = session.cursor, session.history_before
+  session.history_loaded = true
+  session.history = merge_entries(session.history, session.snapshot.entries)
+  rpc('transcript.list', { session_id = selected, cursor = cursor, limit = 50 }, function(result)
+    session.history = merge_entries(session.history, result.items, before)
+    if session.cursor == cursor then
+      session.cursor = result.next_cursor
+      session.history_before = result.items[1] and result.items[1].entry_id or before
+    end
     render()
   end)
 end
@@ -203,11 +237,30 @@ function M.setup(settings)
   end
 end
 
+function M.enable_sidebar()
+  vim.keymap.set('n', ';', M.sidebar, { silent = true, desc = 'Toggle agent sidebar' })
+end
+
+function M.sidebar()
+  initialize()
+  local buf = vim.api.nvim_get_current_buf()
+  if buf ~= view.prompt and buf ~= view.transcript and (not sidebar or buf ~= sidebar.buffer) then
+    source, source_window = buf, vim.api.nvim_get_current_win()
+  end
+  sidebar = sidebar or require('harness.sidebar').new(transport, function(id)
+    M.command({ fargs = { 'attach', id } })
+  end, report)
+  if selected then sidebar.update(sessions[selected].snapshot) end
+  sidebar.toggle(workspace())
+  view.resize()
+end
+
 function M.command(command)
   local ok, err = pcall(function()
+    if command.fargs[1] == 'sidebar' then M.sidebar(); return end
     initialize()
     local buf = vim.api.nvim_get_current_buf()
-    if buf ~= view.prompt and buf ~= view.transcript then
+    if buf ~= view.prompt and buf ~= view.transcript and (not sidebar or buf ~= sidebar.buffer) then
       source, source_window = buf, vim.api.nvim_get_current_win()
     end
     local context_source = source

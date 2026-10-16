@@ -1,0 +1,47 @@
+{
+  "verified_at": "2026-10-16T17:21:33.727245+00:00",
+  "command": [
+    "/tmp/harness-source-launch-g_mrbbks/source/harness.sh",
+    "--config",
+    "/tmp/harness-source-launch-g_mrbbks/agent.json"
+  ],
+  "cwd": "/tmp/harness-source-launch-g_mrbbks/project",
+  "working_directory": "separate project with Rust 1.70.0 and Cargo wasm32-unknown-unknown target configuration",
+  "empty_node_modules_before": true,
+  "empty_build_target_before": true,
+  "npm_install": "npm ci --ignore-scripts --prefix SOURCE with npm_config_offline=true",
+  "npm_package_count": 91,
+  "caller_rust": "rustc 1.70.0 (90c541806 2023-05-31)",
+  "source_rust": "rustc 1.94.1 (e408947bf 2026-03-25)",
+  "node": "v26.10.0",
+  "npm": "12.2.0",
+  "neovim": "NVIM v0.12.6",
+  "build_target": "SOURCE/target, independent of caller CARGO_TARGET_DIR and Cargo target config",
+  "binary_created": true,
+  "caller_target_unused": true,
+  "exit_code": 0,
+  "neovim_mode": "actual Neovim headless with normal user init; terminal sidebar tests are separate",
+  "observed": {
+    "normal_user_init": true,
+    "caller_working_directory": true,
+    "sidebar_mapping": true,
+    "initial_windows": 1,
+    "server_started": false,
+    "source_runtime": true,
+    "launcher_environment_cleared": true
+  },
+  "source_hashes": {
+    "harness.sh": "7b3104e5aeb4e2709901c83228d00b27d3ae65ea5c318234a283630c8e0bc501",
+    "src/editor.rs": "c81ceb4d7dc462b4897d95eabb86c40c7fcec1a899bb2ef6112ec9d0d547d5ad",
+    "src/config.rs": "625b0629043648dc1be9846c54653d2de0238e00b0d31ed1ae855b39f17d8ed7",
+    "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041",
+    "Cargo.lock": "a4c99f2f6de51c390ae2d11db28c27dcf2a57a675c17e8c2fd8e2669e5dc172f",
+    "rust-toolchain.toml": "f53198ae4fdecfd87da36fe431c771b54c51e975d01c0e99f653bc14d5d48211",
+    "package.json": "f87b963dd4e91e7436ed5448c5ca52d8fd73523bce9d22434d32382f12bef78b",
+    "lua/harness/init.lua": "18e798c75ec475991216a36502a13882f810868071247b0c1fff411c591192b6",
+    "lua/harness/sidebar.lua": "34cc368c0fa8c4349f7ad4a1f95322c0dc641708f11c54bf0e51696add403582",
+    "lua/harness/view.lua": "207da981e765d8b4dd4ee227fdeba158f6138f976502aafb0cf3ac9f31a822ba",
+    "plugin/harness.lua": "3441a08349c634c3eb9ad00af1d5116b44596625d07ed102d86455b58b7145bc"
+  },
+  "log_sha256": "0bc7233c338f9ca63a00c638f89097265ad3f3c97b8bfdc2608a48955a7bc049"
+}

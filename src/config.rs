@@ -52,6 +52,21 @@ pub fn absolute(path: &Path, base: &Path) -> PathBuf {
     }
 }
 
+pub fn bundled_path(installed: &str, source: &str) -> Result<PathBuf, RpcError> {
+    let executable = std::env::current_exe()?;
+    let path = executable
+        .parent()
+        .and_then(Path::parent)
+        .ok_or_else(|| RpcError::invalid("Executable has no installation directory"))?
+        .join("share/harness")
+        .join(installed);
+    Ok(if path.exists() {
+        path
+    } else {
+        Path::new(env!("CARGO_MANIFEST_DIR")).join(source)
+    })
+}
+
 pub fn canonical_path(path: &Path) -> Result<PathBuf, RpcError> {
     if let Ok(metadata) = std::fs::symlink_metadata(path)
         && metadata.file_type().is_symlink()
@@ -134,22 +149,10 @@ impl Config {
                 "Unix socket path exceeds 107 bytes; set a shorter socket_path",
             ));
         }
-        let executable = std::env::current_exe()?;
-        let installed_worker = executable
-            .parent()
-            .and_then(Path::parent)
-            .unwrap_or(&cwd)
-            .join("share/harness/adapter/worker.mjs");
-        let worker_path = raw
-            .worker_path
-            .map(|p| absolute(&p, base))
-            .unwrap_or_else(|| {
-                if installed_worker.exists() {
-                    installed_worker
-                } else {
-                    Path::new(env!("CARGO_MANIFEST_DIR")).join("adapter/worker.mjs")
-                }
-            });
+        let worker_path = match raw.worker_path {
+            Some(path) => absolute(&path, base),
+            None => bundled_path("adapter/worker.mjs", "adapter/worker.mjs")?,
+        };
         Ok(Self {
             provider: raw.provider,
             model: raw.model,

@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-10-16T16:41:35.164Z",
+  "verified_at": "2026-10-16T17:22:50.384Z",
   "platform": "linux",
   "architecture": "x64",
   "node": "v26.10.0",
@@ -7,7 +7,7 @@
   "rust": "rustc 1.94.1 (e408947bf 2026-03-25)",
   "neovim": "NVIM v0.12.6",
   "install": "npm ci --ignore-scripts --omit=dev with npm_config_offline=true in a new temporary prefix",
-  "binary_sha256": "69bf1c0f1071edd5bc64380e0519201109bde78c242df017d39b6d8c9e2a457d",
+  "binary_sha256": "2e37aa581b3a5818cf4bc1b019ef1465fad85bde64c20fdf68426af9b8027999",
   "npm_lock_sha256": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041",
   "npm_packages": 91,
   "worker_path": "share/harness/adapter/worker.mjs",
@@ -19,9 +19,11 @@
     "create and list session",
     "send and complete Unicode answer",
     "stop and retained cancelled outcome",
-    "installed Neovim runtime attaches and shows stored answer",
-    "three windows with read-only transcript and editable prompt",
+    "harness nvim loads normal user configuration and enables the sidebar key",
+    "installed runtime uses the installed command client and shows stored answer",
+    "semicolon opens the tree; Enter selects an agent",
+    "four windows with agent tree, source, read-only transcript and editable prompt",
     "server and worker shutdown"
   ],
-  "neovim_mode": "headless installed-runtime smoke; interactive interface evidence is separate"
+  "neovim_mode": "installed harness nvim launcher with actual Neovim in headless mode; interactive interface evidence is separate"
 }

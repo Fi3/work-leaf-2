@@ -120,6 +120,30 @@ vim.cmd('Harness')
 wait(function() return has('Older text available') end, 'History availability and truncation')
 vim.cmd('Harness history')
 wait(function() return has('Older entry') end, 'Older transcript page')
+local rolling = state()
+table.insert(rolling.sessions[id].entries, { entry_id = 'rolling', kind = 'user', text = 'Retain rolling entry', truncated = false })
+save(rolling)
+vim.cmd('Harness')
+wait(function() return has('Retain rolling entry') end, 'History follows advancing snapshots')
+rolling = state()
+rolling.sessions[id].entries = { { entry_id = 'newest', kind = 'user', text = 'Newest entry', truncated = false } }
+rolling.sessions[id].cursor = 'gap-page'
+rolling.history_pages = { ['gap-page'] = { items = {
+  { entry_id = 'rolling', kind = 'user', text = 'Retain rolling entry', truncated = false },
+  { entry_id = 'gap', kind = 'user', text = 'Stored gap entry', truncated = false },
+}, next_cursor = vim.NIL } }
+save(rolling)
+vim.cmd('Harness')
+wait(function() return has('Newest entry') end, 'Reconnect with a disjoint snapshot')
+check(has('Older entry') and has('Retain rolling entry') and has('Line'), 'Loaded history retains entries omitted from new snapshots')
+vim.cmd('Harness history')
+wait(function() return has('Stored gap entry') end, 'An exhausted cursor can load a later gap')
+local history_text = text(named('transcript'))
+check(history_text:find('Older entry', 1, true) < history_text:find('Retain rolling entry', 1, true)
+  and history_text:find('Retain rolling entry', 1, true) < history_text:find('Stored gap entry', 1, true)
+  and history_text:find('Stored gap entry', 1, true) < history_text:find('Newest entry', 1, true), 'History remains in transcript order')
+local _, repeated = history_text:gsub('Retain rolling entry', '')
+check(repeated == 1, 'Overlapping history pages do not duplicate entries')
 local transcript_window = vim.fn.win_findbuf(named('transcript'))[1]
 vim.api.nvim_win_set_cursor(transcript_window, { 1, 0 })
 vim.api.nvim_win_call(transcript_window, function() vim.cmd('normal! zt') end)
@@ -157,5 +181,78 @@ vim.cmd('Harness sessions')
 wait(function() return choice ~= nil end, 'Native session choice')
 check(#choice == 2 and has('Session: ' .. id), 'Multiple sessions require an explicit choice')
 vim.ui.select = select
+for _, newer in ipairs({ false, true }) do
+  vim.cmd('Harness attach ' .. id)
+  wait(function() return has('Session: ' .. id) end, 'Original session before delayed receipt')
+  local sent = #calls('input.submit')
+  vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'deferred-receipt original' })
+  vim.cmd('Harness send')
+  wait(function() return #calls('input.submit') == sent + 1 end, 'Input admitted before receipt')
+  if newer then vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'New saved draft' }) end
+  vim.cmd('Harness attach second')
+  wait(function() return has('Session: second') end, 'Switch before receipt')
+  vim.cmd('Harness attach ' .. id)
+  wait(function() return has('Session: ' .. id) end, 'Return after receipt')
+  check(text(named('prompt')) == (newer and 'New saved draft' or ''), 'Receipt clears only its matching saved draft')
+  if not newer then
+    vim.cmd('Harness send')
+    check(#calls('input.submit') == sent + 1 and messages[#messages]:find('prompt is empty', 1, true), 'Returning to a session cannot resend its admitted draft')
+  end
+end
+local function key(value)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(value, true, false, true), 'xt', false)
+end
+local function tree_row(value)
+  local buffer = named('agents')
+  vim.api.nvim_set_current_win(vim.fn.win_findbuf(buffer)[1])
+  for row, line in ipairs(vim.api.nvim_buf_get_lines(buffer, 0, -1, false)) do
+    if line:find(value, 1, true) then vim.api.nvim_win_set_cursor(0, { row, 0 }); return end
+  end
+  error('Missing sidebar row: ' .. value)
+end
+vim.api.nvim_set_current_win(vim.fn.win_findbuf(source)[1])
+vim.api.nvim_win_set_buf(0, source)
+require('harness').enable_sidebar()
+key(';')
+wait(function() return named('agents') and text(named('agents')):find('second [', 1, true)
+  and not text(named('agents')):find('Loading...', 1, true) end, 'Sidebar lists all sessions')
+check(vim.fn.win_screenpos(vim.fn.win_findbuf(named('agents'))[1])[2] == 1, 'Sidebar is at the left edge')
+check(not vim.bo[named('agents')].modifiable, 'Sidebar is read-only')
+check(text(named('agents')):find('* ' .. id .. ' [', 1, true), 'Opening the sidebar marks the already attached session')
+tree_row('- ')
+key('<CR>')
+check(not text(named('agents')):find('second [', 1, true), 'Workspace folds its sessions')
+key('<CR>')
+check(text(named('agents')):find('second [', 1, true), 'Workspace expands its sessions')
+local stopping = state()
+stopping.sessions.second.state, stopping.sessions.second.active = 'running', 'highlighted-run'
+save(stopping)
+key('r')
+wait(function() return text(named('agents')):find('second [running]', 1, true) end, 'Sidebar refreshes session state')
+local stops_before, active_before = #calls('run.stop'), state().sessions[id].active
+tree_row('second [')
+key('s')
+wait(function() return #calls('run.stop') == stops_before + 1 end, 'Sidebar stops highlighted session')
+local stopped = calls('run.stop')[stops_before + 1].params
+check(stopped.session_id == 'second' and stopped.submission_id == 'highlighted-run', 'Sidebar stop targets the displayed row')
+check(state().sessions[id].active == active_before, 'Sidebar stop leaves another selected session active')
+tree_row('second [')
+key('<CR>')
+wait(function() return has('Session: second') end, 'Sidebar Enter attaches the chosen agent')
+vim.cmd('Harness context buffer')
+check(has('Context snapshot: source.txt'), 'Sidebar selection preserves the source buffer for context')
+vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'Hidden sidebar draft' })
+tree_row('second [')
+key('q')
+check(#vim.fn.win_findbuf(named('agents')) == 0 and text(named('prompt')) == 'Hidden sidebar draft', 'Hiding the sidebar preserves the draft')
+key(';')
+wait(function() return #vim.fn.win_findbuf(named('agents')) == 1 end, 'Semicolon reopens the sidebar')
+local input = vim.ui.input
+vim.ui.input = function(_, callback) callback('named_agent') end
+tree_row('- ')
+key('n')
+wait(function() return has('Session: named_agent') end, 'Sidebar creates a named session')
+check(state().sessions.named_agent.metadata.workspace == temp, 'New agent uses the highlighted workspace')
+vim.ui.input = input
 print('Neovim component checks passed: lazy startup, panels, Unicode framing, context, streams, stop, reconnect and duplicate retry.')
 vim.cmd('noautocmd qa!')

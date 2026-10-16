@@ -42,6 +42,7 @@ if sys.argv[-1] == 'start':
     sys.exit(0)
 
 watches = {}
+deferred = []
 sequence = 0
 for line in sys.stdin:
     request = json.loads(line)
@@ -93,11 +94,17 @@ for line in sys.stdin:
         if session.get('active') == params['submission_id']:
             session.update(state='idle', active=None, tools=[])
     elif method == 'transcript.list':
-        result = {'items': [{'entry_id': 'old', 'kind': 'user', 'text': 'Older entry', 'truncated': False}], 'next_cursor': None}
+        result = state.get('history_pages', {}).get(params.get('cursor'), {'items': [{'entry_id': 'old', 'kind': 'user', 'text': 'Older entry', 'truncated': False}], 'next_cursor': None})
     save(state)
     response = {'jsonrpc': '2.0', 'id': request['id']}
     response['error' if failure else 'result'] = failure or result
-    emit(response)
+    if method == 'input.submit' and params['text'].startswith('deferred-receipt'):
+        deferred.append(response)
+    else:
+        emit(response)
+    if method == 'session.watch':
+        for receipt in deferred: emit(receipt)
+        deferred.clear()
     if method in ('input.submit', 'run.stop'):
         for watch, session_id in watches.items():
             sequence += 1

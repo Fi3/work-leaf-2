@@ -175,6 +175,23 @@ pub fn nonblocking(fd: RawFd) -> io::Result<()> {
     Ok(())
 }
 
+pub fn send_nonblocking(fd: RawFd, bytes: &[u8]) -> io::Result<usize> {
+    // fd is a live output socket and bytes remains valid throughout this per-call nonblocking send.
+    let count = unsafe {
+        libc::send(
+            fd,
+            bytes.as_ptr().cast(),
+            bytes.len(),
+            libc::MSG_DONTWAIT | libc::MSG_NOSIGNAL,
+        )
+    };
+    if count < 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(count as usize)
+    }
+}
+
 pub fn kill_worker(child: &mut Child) {
     let _ = child.kill();
     let _ = child.wait();

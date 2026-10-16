@@ -6,24 +6,25 @@ stores conversations, inputs, tool results, and final answers in SQLite.
 [SPEC.md](SPEC.md) is the requirements source. The files in `dev-docs/` are saved
 references. They are not implementation instructions.
 
-## Install
+## Start
+
+From this directory, run:
+
+```sh
+./harness.sh
+```
+
+The script installs the locked Pi dependencies if they are absent. It builds the
+Rust command and opens Neovim with your normal configuration and the plugin.
+Press `;` in normal mode to open the left agent tree. No editor setup is needed.
+From another project directory, run `/path/to/work-leaf-2/harness.sh`.
+The script keeps that project as the working directory.
 
 Use Rust **1.94.1**, Node **26.10.0**, npm **12.2.0**, and Neovim **0.12.6**.
 The Rust toolchain file selects the required compiler, formatter, and Clippy.
 Older editor versions are not supported by the current test evidence.
 
-From this directory, run:
-
-```sh
-npm ci --ignore-scripts
-sh scripts/install.sh "$HOME/.local"
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-The installer builds the locked release binary. It installs the worker and its
-complete locked dependencies under `share/harness`. It installs the editor files
-under `share/harness/nvim`. It does not change your editor configuration.
-
+Before the first agent task, set the model and its key.
 Create `${XDG_CONFIG_HOME:-$HOME/.config}/harness/config.json` with this content:
 
 ```json
@@ -41,6 +42,73 @@ provider is Anthropic. Tests use Pi's faux provider and need no provider key.
 Optional configuration keys are `node_path`, `worker_path`, `state_dir`, and
 `socket_path`. Relative configuration paths use the configuration directory.
 A custom state directory requires a distinct socket path. Unknown keys fail.
+
+## Use the agent tree
+
+An agent is a stored session. The tree groups agents under their project folders.
+This nesting does not create parent and child agents that control each other.
+
+| Key | Action |
+| --- | --- |
+| `;` in normal mode | Show or hide the left tree. |
+| `Enter` on a folder | Expand or close the folder. |
+| `Enter` on an agent | Open its transcript and prompt. |
+| `n` in the tree | Enter a name to create an agent in that folder. |
+| `s` on an agent | Stop that agent's active task. |
+| `r` in the tree | Refresh the stored agent list. |
+| `q` in the tree | Hide the tree. |
+| `Ctrl-S` in the prompt | Send the text. |
+
+Type in the prompt with normal Neovim editing commands. You can switch agents or
+hide the tree while work continues. Use the exit confirmation described below
+to keep or stop active tasks.
+
+## Watch the demonstration
+
+[Open the screen recording](tests/evidence/harness-demo.mp4). The 49-second video
+has text that explains each action. It records an actual Neovim window with the
+Rust server and Pi adapter. The Pi faux provider supplies repeatable model text.
+The Bash tool and Python syntax check run in a temporary project. No provider
+key is used. The [recording report](tests/evidence/harness-demo.json) contains the
+checks, times, and video hash.
+
+| Time | Action |
+| --- | --- |
+| 00:00 | Run the script from the project directory. |
+| 00:05 | Press `;` to show agents grouped under project folders. |
+| 00:08 | Press `n` and enter `review` to create an agent. |
+| 00:13 | Type a task. Press Ctrl-S to send it. |
+| 00:18 | Read tool activity and the streamed answer. |
+| 00:21 | Move back to the source window after the first task completes. |
+| 00:27 | Select the `tests` agent with Enter. |
+| 00:33 | Start another task, then press `s` on its tree row to stop it. |
+| 00:40 | Hide the tree and close Neovim with `:qa`. |
+
+## Install the command
+
+For use without the source launch script, run:
+
+```sh
+sh scripts/install.sh "$HOME/.local"
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+The installer builds the locked release binary. It installs the worker and its
+complete locked dependencies under `share/harness`. It installs the editor files
+under `share/harness/nvim`. It does not change your editor configuration.
+
+From your project directory, run:
+
+```sh
+harness nvim
+```
+
+This opens the same editor interface. Press `;` to show the tree. Opening the
+tree starts or connects to the server. Loading the plugin alone starts no work.
+
+Use `harness nvim --config PATH` for another server configuration. The launcher
+also accepts `--socket PATH`. Put a custom `state_dir` in the configuration file.
+The source script accepts the same options: `./harness.sh --config PATH`.
 
 ## Use from a script
 
@@ -77,7 +145,7 @@ absent or paused by recovery checks. SIGTERM is an administrative server exit.
 It preserves unfinished work. Use `harness start` to recover that work.
 Changing provider credentials requires a new server environment.
 
-All commands accept `--socket PATH`, `--config PATH`, and `--state-dir PATH`.
+Server and script commands accept `--socket PATH`, `--config PATH`, and `--state-dir PATH`.
 Only `start` and the editor startup path start a missing server.
 Standard output contains JSON results, NDJSON streams, or the requested answer
 text. Diagnostics go to standard error.
@@ -98,11 +166,13 @@ Its JSON result distinguishes completion from cancellation.
 
 ## Use from Neovim
 
-Add the installed runtime directory to your Neovim configuration:
+To use Harness when you open Neovim directly, add the installed runtime directory
+to your Neovim configuration. This is optional with `harness nvim`:
 
 ```lua
 vim.opt.runtimepath:append(vim.fn.expand('~/.local/share/harness/nvim'))
 require('harness').setup({ executable = vim.fn.expand('~/.local/bin/harness') })
+require('harness').enable_sidebar()
 ```
 
 Optional settings are `config_path`, `socket_path`, `workspace`, `autostart`,
@@ -112,6 +182,7 @@ height 6. Loading the plugin starts no process and makes no provider request.
 | Command | Action |
 | --- | --- |
 | `:Harness` | Open the transcript and prompt; start or reconnect. |
+| `:Harness sidebar` | Show or hide the agent tree. |
 | `:Harness new` | Create a session in the source window's workspace. |
 | `:Harness sessions` | Select a stored session. |
 | `:Harness attach ID` | Attach to a specified session. |
@@ -124,8 +195,9 @@ height 6. Loading the plugin starts no process and makes no provider request.
 | `:HarnessQuit` | Request normal editor exit. |
 
 The transcript is read-only. The prompt is editable. Hide either panel with
-normal window commands. The draft remains available. The plugin creates no
-global key mappings. File context must be inside the session workspace. Context
+normal window commands. The draft remains available. The launcher enables the
+normal-mode `;` mapping. A direct plugin load adds it only when you call
+`enable_sidebar()`. File context must be inside the session workspace. Context
 does not save the buffer. Pi tools read and change server files. Normal Neovim
 file-change checks apply to clean buffers.
 
@@ -283,30 +355,45 @@ scheduled callbacks continue during the modal prompt. Source review confirmed
 that invalidating the original window cancels the original exit command.
 
 The complete release gate passed locally on **2026-10-16** with the final source
-files. It passed formatting, Clippy with warnings denied, 27 Rust tests, the
-release build, four adapter syntax checks, and 44 Node tests. The Node tests
-include 33 adapter tests, three actual server script tests, and eight actual
+files. It passed formatting, Clippy with warnings denied, 35 Rust tests, the
+release build, four adapter syntax checks, and 45 Node tests. The Node tests
+include 34 adapter tests, three actual server script tests, and eight actual
 server recovery tests. Independent Node test files ran concurrently with separate
 temporary workspaces and sockets.
 
-Neovim passed its headless checks, **52 actual terminal cases with the Rust server
+Neovim passed its headless checks, **55 actual terminal cases with the Rust server
 and Pi faux provider**, and 43 terminal cases with controlled protocol fixtures.
 The actual tests include each normal exit command, exact answers, write failures,
 hidden modified buffers, multiple sessions, another client, run completion and
 new work during the prompt, connection failure, and Escape during a pending stop.
 They also cover layout, streamed text, tool output, editor response, unsaved
 context, startup, retained drafts, duplicate retries, and forced-exit recovery.
+Two cases use the source script and `harness nvim`. They verify normal user
+configuration, no server before `;`, named agent creation, panel width, text
+wrapping, Ctrl-S input, streaming, and normal exit. Another case checks tree
+groups, selection, targeted stop, retained drafts, and invalid names.
+
+Regression checks cover the `admission` session name, unchanged caller output
+flags, default configuration state identity, late receipts after session changes,
+and retained transcript entries across newer snapshots and reconnect gaps.
 
 The clean-install check built and installed into a new temporary prefix. It used
 the complete locked npm tree with install scripts disabled. The installed Rust
 binary, installed Pi worker, and installed Neovim runtime passed the smoke test.
+The installed `harness nvim` command loaded the normal user configuration without
+manual plugin setup. Pressing `;` opened the tree; Enter opened the selected agent.
+A separate first-use source check started with no npm packages or build output.
+The script installed the locked packages and used its own Rust toolchain, even
+when the caller's project selected another compiler and target. Actual Neovim
+retained the caller's directory and started no server before the first command.
 All 70 saved reference hashes still match the catalog. `SPEC.md` is unchanged.
 
 See the [release report](tests/evidence/release.json),
 [complete check output](tests/evidence/release.log),
 [actual terminal results](tests/evidence/nvim-real.json),
-[fixture terminal results](tests/evidence/nvim-fixture.json), and
-[clean-install report](tests/evidence/clean-install.json).
+[fixture terminal results](tests/evidence/nvim-fixture.json),
+[clean-install report](tests/evidence/clean-install.json), and
+[first-use source report](tests/evidence/source-launch.json).
 The terminal reports link to compressed recordings and include their byte hashes.
 The release report records hashes of the checked source files.
 

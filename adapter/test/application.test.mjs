@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { mkdtemp, rm, writeFile, readFile, mkdir, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -60,6 +61,40 @@ test('duplicate identifiers preserve input while busy and after restart; old sto
   assert.deepEqual(await run('run.stop', { session_id: 'work', submission_id: receipt.submission_id }), stopped);
   assert.equal((await run('submission.get', { session_id: 'work', request_id: 'next' })).status, 'accepted');
   await run('run.stop', { session_id: 'work', submission_id: next.submission_id });
+});
+
+test('session admission permits concurrent input, creation, and consistent duplicate receipts', async t => {
+  const { app, config, workspace } = await setup(t, [fauxAssistantMessage('a'.repeat(1000)), fauxAssistantMessage('b'.repeat(1000))], 20);
+  await app.close();
+  execFileSync(process.execPath, ['--input-type=module', '-e', `
+    import assert from 'node:assert/strict';
+    import { openApplication } from ${JSON.stringify(new URL('../pi.mjs', import.meta.url).href)};
+    const app = await openApplication(${JSON.stringify(config)});
+    let sequence = 0;
+    const call = (method, params) => app.dispatch(method, params, String(++sequence));
+    const create = session_id => call('session.create', { session_id, workspace: ${JSON.stringify(workspace)} });
+    const send = (session_id, text) => call('input.submit', { session_id, request_id: 'task', text, context: [] });
+    try {
+      await Promise.all([create('admission'), create('other')]);
+      const [first, duplicate, other, created] = await Promise.all([
+        send('admission', 'Original input'), send('admission', 'Replacement input'),
+        send('other', 'Independent input'), create('new'),
+      ]);
+      assert.equal(first.status, 'accepted');
+      assert.equal(duplicate.submission_id, first.submission_id);
+      assert.equal(other.status, 'accepted');
+      assert.notEqual(other.submission_id, first.submission_id);
+      assert.equal(created.session_id, 'new');
+      const history = await call('transcript.list', { session_id: 'admission' });
+      assert.deepEqual(history.items.filter(entry => entry.kind === 'user').map(entry => entry.text), ['Original input']);
+      const stopped = await Promise.all([first, other].map(receipt => call('run.stop', {
+        session_id: receipt.session_id, submission_id: receipt.submission_id,
+      })));
+      assert.ok(stopped.every(result => result.reason === 'cancelled'));
+      assert.deepEqual(await send('admission', 'Another replacement'), stopped[0]);
+      assert.equal((await call('session.list', {})).items.length, 3);
+    } finally { await app.close(); }
+  `], { timeout: 5000, stdio: 'pipe' });
 });
 
 test('watches start with complete state and converge; full answer is available as byte chunks', async t => {
