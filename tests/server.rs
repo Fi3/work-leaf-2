@@ -165,6 +165,23 @@ fn two_starters_converge_and_permissions_are_private() {
 }
 
 #[test]
+fn applying_a_key_rejects_an_existing_server_without_replacing_it() {
+    let mut server = Server::new();
+    server.serve("");
+    let config = harness::config::Config::load(Some(&server.config), None, None).unwrap();
+    let original = harness::server::start(&config).unwrap();
+    let workers = server.workers();
+    let key = "replacement-test-key-must-not-be-returned";
+    let error = harness::server::start_with_key(&config, Some(key)).unwrap_err();
+    assert_eq!(error.kind(), Some("conflict"));
+    assert!(error.message.contains("key was not applied"));
+    assert!(!error.message.contains(key));
+    assert_eq!(harness::server::start(&config).unwrap(), original);
+    assert_eq!(server.workers(), workers);
+    assert!(server.child.as_mut().unwrap().try_wait().unwrap().is_none());
+}
+
+#[test]
 fn pending_wait_does_not_block_stop_and_lost_watch_is_released() {
     let mut server = Server::new();
     server.serve("");

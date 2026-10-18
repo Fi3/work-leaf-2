@@ -131,6 +131,7 @@ fn integer(params: &Value, name: &str, min: u64, max: u64) -> Result<(), RpcErro
 pub fn validate(method: &str, params: &Value) -> Result<(), RpcError> {
     let (required, optional): (&[&str], &[&str]) = match method {
         "system.hello" => (&["api_version"], &[]),
+        "configuration.get" => (&[], &[]),
         "session.create" => (&["session_id", "workspace"], &[]),
         "session.list" => (&[], &["cursor", "limit"]),
         "session.get" | "session.watch" => (&["session_id"], &[]),

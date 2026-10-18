@@ -43,7 +43,7 @@ class Rpc:
         self.socket.close()
 
 class RealEditor(Editor):
-    def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None):
+    def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None, first_run=False):
         self.name = name
         self.root = EVIDENCE / name
         self.root.mkdir()
@@ -51,10 +51,20 @@ class RealEditor(Editor):
         (self.root / 'two').write_text('two\n')
         self.socket_path = self.root / 'control.sock'
         self.config = self.root / 'config.json'
-        self.config.write_text(json.dumps({'provider': 'faux', 'model': 'test', 'state_dir': str(self.root / 'state'), 'socket_path': str(self.socket_path), 'worker_path': str(REPO / 'adapter/worker.mjs')}))
+        if first_run:
+            self.config = self.root / 'config/harness/config.json'
+            self.socket_path = self.root / 'runtime/harness/control.sock'
+            (self.root / 'runtime').mkdir(mode=0o700)
+        else:
+            self.config.write_text(json.dumps({'provider': 'faux', 'model': 'test', 'state_dir': str(self.root / 'state'), 'socket_path': str(self.socket_path), 'worker_path': str(REPO / 'adapter/worker.mjs')}))
         response_file = self.root / 'responses.json'
         response_file.write_text(json.dumps(responses or [message or MESSAGE] * 12))
         self.env = dict(os.environ, TERM='xterm-256color', HARNESS_REPO=str(REPO), HARNESS_EXECUTABLE=str(BINARY), HARNESS_WORKSPACE=str(self.root), HARNESS_CONFIG=str(self.config), HARNESS_SOCKET=str(self.socket_path), HARNESS_FAUX_RESPONSES=str(response_file), HARNESS_FAUX_TOKENS_PER_SECOND=str(rate))
+        if first_run:
+            self.env.pop('ANTHROPIC_API_KEY', None)
+            self.env.update(HOME=str(self.root / 'home'), XDG_RUNTIME_DIR=str(self.root / 'runtime'),
+                            CARGO_HOME=os.environ.get('CARGO_HOME', str(Path.home() / '.cargo')),
+                            RUSTUP_HOME=os.environ.get('RUSTUP_HOME', str(Path.home() / '.rustup')))
         if drop_receipt:
             self.env.update(HARNESS_EXECUTABLE=str(REPO / 'tests/nvim/drop_receipt.py'), HARNESS_REAL_EXECUTABLE=str(BINARY), HARNESS_DROPPED_RECEIPT=str(self.root / 'dropped.json'))
         self.server = None
@@ -82,7 +92,7 @@ class RealEditor(Editor):
             user_init = self.root / 'config/nvim/init.lua'
             user_init.parent.mkdir(parents=True)
             user_init.write_text("vim.g.launcher_user_init = true\nvim.o.number = true\nvim.o.shadafile = 'NONE'\nvim.o.swapfile = false\nvim.cmd('edit one')\n" + ("vim.o.loadplugins = false\nvim.wo.wrap = false\nrequire('harness').setup({ width = 43, prompt_height = 5 })\n" if launcher == 'configured' else ''))
-            command = [str(REPO / 'harness.sh'), '--config', str(self.config)] if launcher == 'plain' else [str(BINARY), '--config', str(self.config), 'nvim']
+            command = [str(REPO / 'harness.sh')] + ([] if first_run else ['--config', str(self.config)]) if launcher == 'plain' else [str(BINARY), '--config', str(self.config), 'nvim']
             self.launch(self.env, command)
             self.wait(lambda: b'one' in self.output, 'normal Neovim startup', timeout=15)
             self.command('lua vim.fn.writefile({vim.json.encode({windows=#vim.api.nvim_list_wins(), loaded=vim.g.loaded_harness, mapped=vim.fn.maparg(";","n")~="", panels=vim.fn.bufnr("harness://prompt")>0})}, vim.env.HARNESS_WORKSPACE .. "/before-sidebar.json")')
@@ -99,8 +109,24 @@ class RealEditor(Editor):
             if launcher:
                 assert self.rpc.request('session.list')['items'] == [], 'Opening the tree must not create an agent'
                 self.keys('n')
+                if first_run:
+                    self.wait(lambda: b'Provider [1/2/q]:' in self.output, 'setup before agent naming')
+                    assert b'New agent name:' not in self.output, 'Do not ask for an agent name before setup'
+                    assert self.rpc.request('session.list')['items'] == []
+                    self.keys('q\r')
+                    self.wait(lambda: b'Setup ended' in self.output, 'cancelled setup close control')
+                    assert not self.config.exists(), 'Cancelled setup must not write configuration'
+                    self.keys('q')
+                    start = len(self.output)
+                    self.keys('n')
+                    self.wait(lambda: b'Provider [1/2/q]:' in self.output[start:], 'retry setup from the same sidebar')
+                    self.keys('2\r')
                 self.wait(lambda: b'New agent name:' in self.output, 'native agent name input')
                 self.keys('work\r')
+                if first_run:
+                    self.rpc.close()
+                    self.rpc = Rpc(self.socket_path)
+                    assert self.rpc.request('configuration.get')['ready']
             self.wait(lambda: len(self.rpc.request('session.list')['items']) == 1, 'Neovim creates a session')
             self.session_id = self.rpc.request('session.list')['items'][0]['session_id']
         else: self.session_id = 'work'
@@ -269,6 +295,39 @@ def launcher_cases():
 
 def integration_cases():
     launcher_cases()
+    editor = RealEditor('first-run-setup', active=False, startup=True, launcher='plain', first_run=True, rate=400)
+    config = json.loads(editor.config.read_text())
+    assert config['provider'] == 'faux' and config['model'] == 'test'
+    assert 'api_key' not in config
+    assert (editor.config.stat().st_mode & 0o777) == 0o600
+    assert 'g setup' in editor.panel_text('agents')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr("harness://prompt"))[1]); vim.cmd("startinsert")')
+    editor.keys('First guided task λ 世界\rSecond line\x1b\r')
+    editor.wait(lambda: editor.snapshot()['active_submission_id'], 'normal Enter sends a multiline prompt')
+    editor.wait(lambda: editor.snapshot()['state'] == 'idle', 'guided task completes', timeout=15)
+    assert any(item['kind'] == 'user' and item['text'] == 'First guided task λ 世界\nSecond line' for item in editor.snapshot()['entries'])
+    editor.command('qa')
+    editor.exits()
+    editor.finish()
+
+    editor = RealEditor('narrow-screen-controls', active=False, startup=True, launcher='configured', rate=400)
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr("harness://prompt"))[1]); vim.cmd("startinsert")')
+    editor.keys('Draft λ 世界 across sizes\x1b')
+    for columns, lines in ((80, 24), (60, 20), (120, 40)):
+        editor.resize(columns, lines)
+        path = editor.root / 'layout.json'
+        path.unlink(missing_ok=True)
+        editor.command('lua local p=vim.fn.win_findbuf(vim.fn.bufnr("harness://prompt"))[1]; local t=vim.fn.win_findbuf(vim.fn.bufnr("harness://transcript"))[1]; local s=vim.fn.win_findbuf(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"))[1]; vim.fn.writefile({vim.json.encode({columns=vim.o.columns, lines=vim.o.lines, prompt_width=vim.api.nvim_win_get_width(p), transcript_width=vim.api.nvim_win_get_width(t), source_width=vim.api.nvim_win_get_width(s), prompt_row=vim.fn.win_screenpos(p)[1], transcript_row=vim.fn.win_screenpos(t)[1], source_row=vim.fn.win_screenpos(s)[1], prompt_help=vim.wo[p].winbar, source_wrap=vim.wo[s].wrap})}, vim.env.HARNESS_WORKSPACE .. "/layout.json")')
+        editor.wait(path.exists, 'read responsive layout')
+        layout = json.loads(path.read_text())
+        assert layout['columns'] == columns and layout['lines'] == lines, layout
+        assert 'send' in layout['prompt_help'] and layout['source_wrap'] is False, layout
+        assert layout['prompt_width'] >= 35 and layout['transcript_width'] >= 35 and layout['source_width'] >= 35, layout
+        if columns < 110:
+            assert layout['source_row'] < layout['transcript_row'] < layout['prompt_row'], layout
+        assert editor.panel_text('prompt') == 'Draft λ 世界 across sizes\n'
+    editor.finish()
+
     editor = RealEditor('sidebar-controls', active=False, startup=True, launcher='configured')
     editor.create('second')
     (editor.root / 'other').mkdir()

@@ -42,7 +42,10 @@ class Editor:
         self.master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
         command = command or ['nvim', '-u', 'NONE', '-n', '-i', 'NONE', '--cmd', 'lua dofile(vim.env.HARNESS_REPO .. "/tests/nvim/interactive_init.lua")']
-        self.process = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave, cwd=self.root, env=env)
+        def terminal_owner():
+            os.setsid()
+            fcntl.ioctl(0, termios.TIOCSCTTY, 0)
+        self.process = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave, cwd=self.root, env=env, preexec_fn=terminal_owner)
         os.close(slave)
         self.output = bytearray()
 
@@ -85,6 +88,10 @@ class Editor:
 
     def command(self, text):
         self.keys('\x1b:' + text + '\r')
+
+    def resize(self, columns, lines):
+        fcntl.ioctl(self.master, termios.TIOCSWINSZ, struct.pack('HHHH', lines, columns, 0, 0))
+        self.pump(.2)
 
     def source(self, only=False):
         self.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"))[1])' + ('; vim.cmd("only")' if only else ''))

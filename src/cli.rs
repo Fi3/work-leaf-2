@@ -12,6 +12,7 @@ use std::thread;
 use std::time::Duration;
 
 const HELP: &str = "harness nvim [--config PATH] [--socket PATH]\n\
+harness setup [--config PATH] [--socket PATH]\n\
 harness start|serve [--config PATH] [--state-dir PATH] [--socket PATH]\n\
 harness status|shutdown|restart-worker|rpc [--socket PATH]\n\
 harness session create --id ID --workspace PATH [--socket PATH]\n\
@@ -76,9 +77,8 @@ impl Arguments {
         let command = positional.join(" ");
         let allowed: &[&str] = match command.as_str() {
             "start" | "serve" => &["--socket", "--config", "--state-dir"],
-            "nvim" | "status" | "shutdown" | "restart-worker" | "rpc" | "session list" => {
-                &["--socket"]
-            }
+            "nvim" | "setup" | "status" | "shutdown" | "restart-worker" | "rpc"
+            | "session list" => &["--socket"],
             "session create" => &["--socket", "--id", "--workspace"],
             "send" => &["--socket", "--session", "--request-id", "--stdin"],
             "wait" => &[
@@ -127,7 +127,12 @@ fn execute(args: Vec<String>) -> Result<i32, RpcError> {
     let args = Arguments::parse(args)?;
     let (method, params) = operation(&args)?;
     crate::protocol::validate(method, &params)?;
-    let config = Config::load(
+    let load = if args.command == "setup" {
+        Config::load_setup
+    } else {
+        Config::load
+    };
+    let config = load(
         args.path("--config"),
         args.path("--state-dir"),
         args.path("--socket"),
@@ -138,6 +143,7 @@ fn execute(args: Vec<String>) -> Result<i32, RpcError> {
     .then_some(config.state_dir.as_path());
     match args.command.as_str() {
         "nvim" => return crate::editor::open(&config),
+        "setup" => return crate::setup::run(&config),
         "serve" => {
             server::serve(config)?;
             return Ok(0);

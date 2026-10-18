@@ -1,11 +1,11 @@
 {
-  "verified_at": "2026-10-16T17:21:33.727245+00:00",
+  "verified_at": "2026-10-18T16:27:38.128722+00:00",
   "command": [
-    "/tmp/harness-source-launch-g_mrbbks/source/harness.sh",
+    "/tmp/harness-source-launch-7_clejn2/source/harness.sh",
     "--config",
-    "/tmp/harness-source-launch-g_mrbbks/agent.json"
+    "/tmp/harness-source-launch-7_clejn2/agent.json"
   ],
-  "cwd": "/tmp/harness-source-launch-g_mrbbks/project",
+  "cwd": "/tmp/harness-source-launch-7_clejn2/project",
   "working_directory": "separate project with Rust 1.70.0 and Cargo wasm32-unknown-unknown target configuration",
   "empty_node_modules_before": true,
   "empty_build_target_before": true,
@@ -20,28 +20,47 @@
   "binary_created": true,
   "caller_target_unused": true,
   "exit_code": 0,
-  "neovim_mode": "actual Neovim headless with normal user init; terminal sidebar tests are separate",
+  "neovim_mode": "actual Neovim headless with normal user init; terminal sidebar and first-run setup tests are separate",
   "observed": {
-    "normal_user_init": true,
-    "caller_working_directory": true,
     "sidebar_mapping": true,
     "initial_windows": 1,
     "server_started": false,
     "source_runtime": true,
-    "launcher_environment_cleared": true
+    "launcher_environment_cleared": true,
+    "normal_user_init": true,
+    "caller_working_directory": true
   },
   "source_hashes": {
-    "harness.sh": "7b3104e5aeb4e2709901c83228d00b27d3ae65ea5c318234a283630c8e0bc501",
-    "src/editor.rs": "c81ceb4d7dc462b4897d95eabb86c40c7fcec1a899bb2ef6112ec9d0d547d5ad",
-    "src/config.rs": "625b0629043648dc1be9846c54653d2de0238e00b0d31ed1ae855b39f17d8ed7",
-    "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041",
     "Cargo.lock": "a4c99f2f6de51c390ae2d11db28c27dcf2a57a675c17e8c2fd8e2669e5dc172f",
-    "rust-toolchain.toml": "f53198ae4fdecfd87da36fe431c771b54c51e975d01c0e99f653bc14d5d48211",
+    "Cargo.toml": "c1eb829ab24118016fc496e703955cd1d4b5ade296bead9f1551af171598757d",
+    "adapter/pi.mjs": "eafd2ba9d76e212280224e4b070f03a74743788f73915226666f0a16250e5e48",
+    "adapter/protocol.mjs": "b46c479bea4dde6c39b34a681f7bbc97373260a9566fca850e050fed51b767d7",
+    "adapter/view.mjs": "133ca08bb4e42a48af493a03afd08782512f82728cff62be28bfdc69a50f6511",
+    "adapter/worker.mjs": "1eb85f8478d4a74c3e86da1dc8ec3699e91719c23f343aad756eb555d24dadec",
+    "harness.sh": "7b3104e5aeb4e2709901c83228d00b27d3ae65ea5c318234a283630c8e0bc501",
+    "lua/harness/context.lua": "938d5161702d32f55c11a53ea3186932ecaa74bdda5a7bde8f15439d0dd5c95b",
+    "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
+    "lua/harness/init.lua": "12077f02a6bf91bfb9c10d1dc13fe1158b0fbb2a023e47b9293012fa3ed66ed2",
+    "lua/harness/setup.lua": "67655c6d2d704c8f4474c36bf647f8be518b75dd7ea9211c5158d0c5d75eaaec",
+    "lua/harness/sidebar.lua": "cfdcb4234bdf4e3482865a0dccc64fb5b58afcc987c2c814b0bb3ba462fe5407",
+    "lua/harness/transport.lua": "8c4713ede2dccf8e3b18a459a78ba93e547aeb919a582f96a6bbae38fb03a23b",
+    "lua/harness/view.lua": "b94a1a5cd3dbefec748ec4f2745377f13b3a2192b3d4a69124f304f32264cf62",
+    "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041",
     "package.json": "f87b963dd4e91e7436ed5448c5ca52d8fd73523bce9d22434d32382f12bef78b",
-    "lua/harness/init.lua": "18e798c75ec475991216a36502a13882f810868071247b0c1fff411c591192b6",
-    "lua/harness/sidebar.lua": "34cc368c0fa8c4349f7ad4a1f95322c0dc641708f11c54bf0e51696add403582",
-    "lua/harness/view.lua": "207da981e765d8b4dd4ee227fdeba158f6138f976502aafb0cf3ac9f31a822ba",
-    "plugin/harness.lua": "3441a08349c634c3eb9ad00af1d5116b44596625d07ed102d86455b58b7145bc"
+    "plugin/harness.lua": "0d35ccd810a59fd33bfddc16055dd5521804926788d124a7148a1211bb6dac28",
+    "rust-toolchain.toml": "f53198ae4fdecfd87da36fe431c771b54c51e975d01c0e99f653bc14d5d48211",
+    "src/application.rs": "5348e617b2d178c4df37d4e3353486ebdee6f051b2fc8df27e75d1a2e6add61d",
+    "src/cli.rs": "51a21b2221a485b3b0b7b6c34b8f7b09a84b89a782ce621b5dd0f286c1233bb7",
+    "src/client.rs": "2ee9a8bfcca815145d8945dd49498cbcf59b466148eda5590e3b633dd3f05043",
+    "src/config.rs": "c101f49b304c1fae2506cbf52ef92955c526e92d13245bc5af922d76a20903d4",
+    "src/editor.rs": "c81ceb4d7dc462b4897d95eabb86c40c7fcec1a899bb2ef6112ec9d0d547d5ad",
+    "src/lib.rs": "671a36164ded2fc2c3e027faae1636c879ba7db4c56d16cd8ee4fbf69f25031f",
+    "src/main.rs": "316b18972c30f3a6a92d6ae1f309e5019efca6369fed83dd5aa23a5fe18fe856",
+    "src/process.rs": "384ca179a6d5b493269167b608f81945adf713d5300f0e8071dd2fbd999b016d",
+    "src/protocol.rs": "aba5d9e871e1579e29771dc9a41a9c85a71a46afc4d77065fb730d7cf7bfb127",
+    "src/server.rs": "d5909da0fe0854d2de372d00986f44ed20d98120a6a1d602dd7b56f2c16dad42",
+    "src/setup.rs": "f79b5749873af24cf686851435f8e523e435a7d2cb82fb0af1d3ab84d7ff3783",
+    "src/worker.rs": "38166a14a266747b5218ee83be57379a5f3f7fd6265ea684bbdbe1f97c03bf7d"
   },
-  "log_sha256": "0bc7233c338f9ca63a00c638f89097265ad3f3c97b8bfdc2608a48955a7bc049"
+  "log_sha256": "7c742f298058fdf00273ea361e2c65e0c475cce28ec23d69ae131465561c40d0"
 }

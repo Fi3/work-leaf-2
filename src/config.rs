@@ -1,5 +1,8 @@
-use crate::protocol::RpcError;
+use crate::{process, protocol::RpcError};
 use serde::{Deserialize, Serialize};
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 
 #[derive(Default, Deserialize)]
@@ -89,6 +92,95 @@ pub fn canonical_path(path: &Path) -> Result<PathBuf, RpcError> {
 }
 
 impl Config {
+    pub fn load_setup(
+        config_path: Option<&Path>,
+        state_override: Option<&Path>,
+        socket_override: Option<&Path>,
+    ) -> Result<Self, RpcError> {
+        let path = match config_path {
+            Some(path) => absolute(path, &std::env::current_dir()?),
+            None => xdg("XDG_CONFIG_HOME", ".config")?.join("harness/config.json"),
+        };
+        read_setup_file(&path)?;
+        Self::load(config_path, state_override, socket_override)
+    }
+
+    pub fn setup_path(&self) -> Result<PathBuf, RpcError> {
+        self.config_path.clone().map_or_else(
+            || Ok(xdg("XDG_CONFIG_HOME", ".config")?.join("harness/config.json")),
+            Ok,
+        )
+    }
+
+    pub fn setup_bytes(&self) -> Result<Option<Vec<u8>>, RpcError> {
+        read_setup_file(&self.setup_path()?)
+    }
+
+    pub fn stage_setup(
+        &self,
+        provider: &str,
+        model: &str,
+        expected: &Option<Vec<u8>>,
+    ) -> Result<SetupFile, RpcError> {
+        let path = self.setup_path()?;
+        let parent = path
+            .parent()
+            .ok_or_else(|| RpcError::invalid("Configuration has no parent"))?;
+        if parent.exists() {
+            if !process::owned(parent)?.is_dir() {
+                return Err(RpcError::invalid("Configuration parent is not a directory"));
+            }
+        } else {
+            process::private_dir(parent)?;
+        }
+        let mut name = std::ffi::OsString::from(".");
+        name.push(path.file_name().unwrap_or_default());
+        name.push(".setup.lock");
+        let lock = process::private_file(&parent.join(name))?;
+        lock.try_lock().map_err(|_| {
+            RpcError::app("conflict", "Another setup is updating this configuration")
+        })?;
+        let original = read_setup_file(&path)?;
+        if &original != expected {
+            return Err(RpcError::app(
+                "conflict",
+                "Configuration changed during setup; file preserved. Run setup again",
+            ));
+        }
+        let mut value: serde_json::Value = match &original {
+            Some(bytes) => {
+                serde_json::from_slice::<FileConfig>(bytes).map_err(|_| {
+                    RpcError::invalid("Invalid existing configuration; file preserved")
+                })?;
+                serde_json::from_slice(bytes).map_err(|_| {
+                    RpcError::invalid("Invalid existing configuration; file preserved")
+                })?
+            }
+            None => serde_json::json!({}),
+        };
+        value["provider"] = serde_json::json!(provider);
+        value["model"] = serde_json::json!(model);
+        let temporary = parent.join(format!(".harness-setup-{}.tmp", process::random_id()?));
+        let staged = SetupFile {
+            path,
+            temporary,
+            original,
+            _lock: lock,
+        };
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .mode(0o600)
+            .open(&staged.temporary)?;
+        file.set_permissions(std::fs::Permissions::from_mode(0o600))?;
+        let mut bytes = serde_json::to_vec_pretty(&value)
+            .map_err(|_| RpcError::invalid("Cannot encode configuration"))?;
+        bytes.push(b'\n');
+        file.write_all(&bytes)?;
+        file.sync_all()?;
+        Ok(staged)
+    }
+
     pub fn load(
         config_path: Option<&Path>,
         state_override: Option<&Path>,
@@ -105,7 +197,12 @@ impl Config {
             Err(e) if e.kind() == std::io::ErrorKind::NotFound && config_path.is_none() => {
                 FileConfig::default()
             }
-            Err(e) => return Err(RpcError::invalid(format!("Cannot read configuration: {e}"))),
+            Err(e) => {
+                return Err(RpcError::invalid(format!(
+                    "Cannot read configuration {}: {e}. Create this file or omit --config for first setup",
+                    path.display()
+                )));
+            }
         };
         let base = path
             .parent()
@@ -178,5 +275,49 @@ impl Config {
             Some(&self.state_dir),
             Some(&self.socket_path),
         )
+    }
+}
+
+fn read_setup_file(path: &Path) -> Result<Option<Vec<u8>>, RpcError> {
+    match process::owned_read(path) {
+        Ok(mut file) => {
+            let mut bytes = Vec::new();
+            file.read_to_end(&mut bytes)?;
+            Ok(Some(bytes))
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(error.into()),
+    }
+}
+
+pub struct SetupFile {
+    path: PathBuf,
+    temporary: PathBuf,
+    original: Option<Vec<u8>>,
+    _lock: File,
+}
+
+impl SetupFile {
+    pub fn unchanged(&self) -> Result<(), RpcError> {
+        if read_setup_file(&self.path)? != self.original {
+            return Err(RpcError::app(
+                "conflict",
+                "Configuration changed during setup; file preserved. Run setup again",
+            ));
+        }
+        Ok(())
+    }
+
+    pub fn commit(&self) -> Result<(), RpcError> {
+        self.unchanged()?;
+        std::fs::rename(&self.temporary, &self.path)?;
+        File::open(self.path.parent().unwrap_or_else(|| Path::new(".")))?.sync_all()?;
+        Ok(())
+    }
+}
+
+impl Drop for SetupFile {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.temporary);
     }
 }

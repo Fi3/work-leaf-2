@@ -2,13 +2,14 @@ local M = {}
 local options = { executable = 'harness', autostart = true, width = 72, prompt_height = 6 }
 local allowed = { executable = true, config_path = true, socket_path = true, workspace = true,
   autostart = true, width = true, prompt_height = true }
-local view, transport, selected, source, source_window, sidebar
+local view, transport, selected, source, source_window, sidebar, setup
 local sessions, attached = {}, {}
 local connection, watch, watch_sequence = 'disconnected', nil, 0
 local attachment = 0
 local pending_attachment
 
 local function report(message)
+  if sidebar then sidebar.message(message) end
   vim.notify('Harness: ' .. message, vim.log.levels.ERROR)
 end
 
@@ -77,6 +78,9 @@ local function initialize()
     watch_sequence = event.sequence
     update(event.snapshot)
   end)
+  setup = require('harness.setup').new(transport, function(value, err)
+    if sidebar then sidebar.configuration(value, err) end
+  end, report)
   require('harness.exit').install(attached, transport, report)
 end
 
@@ -87,7 +91,7 @@ local function rpc(method, params, callback)
   end)
 end
 
-local function attach(id, callback)
+local function attach(id, callback, focus)
   if pending_attachment and pending_attachment.id == id then
     if callback then
       if #pending_attachment.callbacks >= 32 then report('Too many pending commands.'); return end
@@ -121,6 +125,10 @@ local function attach(id, callback)
     update(value.snapshot)
     if switching then view.set_draft(sessions[id].draft) end
     render()
+    if focus then
+      if sidebar and vim.o.columns < 110 then sidebar.hide(); view.open() end
+      view.focus()
+    end
     for _, ready in ipairs(pending.callbacks) do ready() end
   end)
 end
@@ -136,9 +144,29 @@ local function workspace()
   return vim.fn.getcwd()
 end
 
-local function create(directory)
-  rpc('session.create', { session_id = 'session_' .. random_id(), workspace = directory }, function(session)
-    attach(session.session_id)
+local function create(directory, named)
+  setup.ensure(function()
+    local function submit(name)
+      if not name or name == '' then return end
+      if #name > 128 or not name:match('^[A-Za-z0-9_-]+$') then report('Use 1-128 letters, digits, _ or - for the name.'); return end
+      rpc('session.create', { session_id = name, workspace = directory }, function(session)
+        view.open()
+        if sidebar then sidebar.collapsed[directory] = false; sidebar.refresh() end
+        attach(session.session_id, nil, true)
+      end)
+    end
+    local function ready()
+      if named then vim.ui.input({ prompt = 'New agent name: ' }, submit)
+      else submit('session_' .. random_id()) end
+    end
+    if selected and not watch then attach(selected, ready) else ready() end
+  end)
+end
+
+local function configure()
+  setup.open(function()
+    if sidebar then sidebar.refresh() end
+    if selected then attach(selected) end
   end)
 end
 
@@ -151,10 +179,10 @@ local function choose(always, directory)
       vim.list_extend(items, result.items)
       if result.next_cursor ~= vim.NIL then page(result.next_cursor); return end
       if #items == 0 then create(directory); return end
-      if #items == 1 and not always then attach(items[1].session_id); return end
+      if #items == 1 and not always then attach(items[1].session_id, nil, true); return end
       vim.ui.select(items, { prompt = 'Select a Harness session:', format_item = function(item)
         return item.session_id .. ' (' .. item.workspace .. ')'
-      end }, function(item) if item then attach(item.session_id) end end)
+      end }, function(item) if item then attach(item.session_id, nil, true) end end)
     end)
   end
   page()
@@ -244,12 +272,16 @@ end
 function M.sidebar()
   initialize()
   local buf = vim.api.nvim_get_current_buf()
-  if buf ~= view.prompt and buf ~= view.transcript and (not sidebar or buf ~= sidebar.buffer) then
+  if buf ~= view.prompt and buf ~= view.transcript and buf ~= setup.buffer and (not sidebar or buf ~= sidebar.buffer) then
     source, source_window = buf, vim.api.nvim_get_current_win()
   end
-  sidebar = sidebar or require('harness.sidebar').new(transport, function(id)
-    M.command({ fargs = { 'attach', id } })
-  end, report)
+  sidebar = sidebar or require('harness.sidebar').new(transport, {
+    select = function(id) M.command({ fargs = { 'attach', id } }) end,
+    create = function(directory) create(directory, true) end,
+    setup = configure,
+    configuration = function() setup.check(function() end) end,
+    report = report,
+  })
   if selected then sidebar.update(sessions[selected].snapshot) end
   sidebar.toggle(workspace())
   view.resize()
@@ -260,11 +292,12 @@ function M.command(command)
     if command.fargs[1] == 'sidebar' then M.sidebar(); return end
     initialize()
     local buf = vim.api.nvim_get_current_buf()
-    if buf ~= view.prompt and buf ~= view.transcript and (not sidebar or buf ~= sidebar.buffer) then
+    if buf ~= view.prompt and buf ~= view.transcript and buf ~= setup.buffer and (not sidebar or buf ~= sidebar.buffer) then
       source, source_window = buf, vim.api.nvim_get_current_win()
     end
     local context_source = source
     local action = command.fargs[1]
+    if action == 'setup' then configure(); return end
     if action == 'status' then
       local state = selected and watch and connection == 'connected' and sessions[selected].snapshot.state or 'unknown'
       vim.notify('Harness: ' .. connection .. (selected and '; session ' .. selected .. '; state ' .. state or '')); return
@@ -285,7 +318,7 @@ function M.command(command)
         local success, message = pcall(function()
           if action == 'new' then create(directory)
           elseif action == 'sessions' then choose(true, directory)
-          elseif action == 'attach' then attach(command.fargs[2])
+          elseif action == 'attach' then attach(command.fargs[2], nil, true)
           elseif not selected then
             if action then error('Open or attach a session first.') end
             choose(false, directory)

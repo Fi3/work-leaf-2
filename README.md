@@ -24,23 +24,31 @@ Use Rust **1.94.1**, Node **26.10.0**, npm **12.2.0**, and Neovim **0.12.6**.
 The Rust toolchain file selects the required compiler, formatter, and Clippy.
 Older editor versions are not supported by the current test evidence.
 
-Before the first agent task, set the model and its key.
-Create `${XDG_CONFIG_HOME:-$HOME/.config}/harness/config.json` with this content:
+Press `n` in the tree to create an agent. If setup is needed, a terminal opens
+inside Neovim **before** the name prompt. Choose one of these options:
 
-```json
-{
-  "provider": "anthropic",
-  "model": "claude-sonnet-4-6",
-  "instructions": "Work in the selected workspace. Explain the result."
-}
-```
+- `1`: Connect to Anthropic. Select a model from the supplied list, then enter
+  your API key. The key is hidden while you type. Model use can incur charges.
+- `2`: Try the local demo. It uses fixed replies and needs no key. It does not
+  provide AI coding. Choose Anthropic when you want to perform real tasks.
+- `q`: Cancel setup. Your settings, open files, and drafts stay unchanged.
 
-Set `ANTHROPIC_API_KEY` in the server environment before startup. Do not put the
-key in the configuration file. There is no default paid model. The initial hosted
-provider is Anthropic. Tests use Pi's faux provider and need no provider key.
+When setup completes, enter an agent name. The prompt opens in insert mode.
+Type a task and press `Ctrl-S`. Press `Esc` to return to normal Neovim editing.
+The tree shows setup errors until you correct them. Press `g` in the tree, or
+use `:Harness setup`, to open setup again. You can also run `harness setup` from
+a shell. Setup checks local credentials; it makes no model request and cannot
+prove that a key is valid with the provider.
 
-Optional configuration keys are `node_path`, `worker_path`, `state_dir`, and
-`socket_path`. Relative configuration paths use the configuration directory.
+Settings are saved in `${XDG_CONFIG_HOME:-$HOME/.config}/harness/config.json`.
+Setup keeps other settings and writes the file with private permissions. The
+key stays only in the server environment. It is not saved to disk. After the
+server stops, enter the key again, or set `ANTHROPIC_API_KEY` in the environment
+before startup. Setup changes apply only when all work is idle. Active or
+unfinished work prevents the change and is preserved.
+
+Optional configuration keys include `instructions`, `node_path`, `worker_path`,
+`state_dir`, and `socket_path`. Relative paths use the configuration directory.
 A custom state directory requires a distinct socket path. Unknown keys fail.
 
 ## Use the agent tree
@@ -53,36 +61,57 @@ This nesting does not create parent and child agents that control each other.
 | `;` in normal mode | Show or hide the left tree. |
 | `Enter` on a folder | Expand or close the folder. |
 | `Enter` on an agent | Open its transcript and prompt. |
-| `n` in the tree | Enter a name to create an agent in that folder. |
+| `n` in the tree | Complete setup if needed, then name an agent in that folder. |
+| `g` in the tree | Open provider and model setup. |
 | `s` on an agent | Stop that agent's active task. |
 | `r` in the tree | Refresh the stored agent list. |
 | `q` in the tree | Hide the tree. |
 | `Ctrl-S` in the prompt | Send the text. |
+| `Enter` in the prompt, normal mode | Send the text. |
+| `Enter` in the prompt, insert mode | Add a new line. |
+| `p` in the conversation | Move to the prompt and start typing. |
+| `h` in the conversation | Load older messages. |
 
 Type in the prompt with normal Neovim editing commands. You can switch agents or
 hide the tree while work continues. Use the exit confirmation described below
 to keep or stop active tasks.
 
+The conversation shows who spoke, tool activity, and task state. The prompt has
+a visible send instruction. Empty prompts show a hint that is never submitted.
+At widths below 110 columns, the conversation opens below your source file.
+Selecting an agent hides the tree to leave room for your text. Resize the
+terminal at any time; your draft and source focus remain available.
+
+The interface uses the saved [Pi TUI guidance](dev-docs/interfaces/pi-tui/overview.md)
+and [Neovim layout guidance](dev-docs/neovim-ui/layout.md): visible next steps,
+native input, retained state, and layouts that fit the terminal. Setup uses a
+native Neovim terminal. The Rust command reads credentials directly; Lua does
+not receive the key. No UI library was added.
+
 ## Watch the demonstration
 
-[Open the screen recording](tests/evidence/harness-demo.mp4). The 49-second video
+[Open the screen recording](tests/evidence/harness-demo.mp4). The 47-second video
 has text that explains each action. It records an actual Neovim window with the
-Rust server and Pi adapter. The Pi faux provider supplies repeatable model text.
-The Bash tool and Python syntax check run in a temporary project. No provider
-key is used. The [recording report](tests/evidence/harness-demo.json) contains the
-checks, times, and video hash.
+Rust server and Pi adapter, starting with no configuration file or provider key.
+The setup menu offers a paid connection or the local demo. This recording chooses
+the demo, which supplies fixed text. It does not perform AI coding or run tools.
+The [recording report](tests/evidence/harness-demo.json) contains the checks,
+times, and video hash.
 
 | Time | Action |
 | --- | --- |
 | 00:00 | Run the script from the project directory. |
-| 00:05 | Press `;` to show agents grouped under project folders. |
-| 00:08 | Press `n` and enter `review` to create an agent. |
-| 00:13 | Type a task. Press Ctrl-S to send it. |
-| 00:18 | Read tool activity and the streamed answer. |
-| 00:21 | Move back to the source window after the first task completes. |
-| 00:27 | Select the `tests` agent with Enter. |
-| 00:33 | Start another task, then press `s` on its tree row to stop it. |
-| 00:40 | Hide the tree and close Neovim with `:qa`. |
+| 00:05 | Press `;` to show the empty tree and its instructions. |
+| 00:09 | Press `n`. Setup opens before the name prompt. |
+| 00:13 | Choose `2` for the local demo. |
+| 00:17 | Enter `review`. The prompt opens in insert mode. |
+| 00:20 | Type two lines. Press Ctrl-S to send them. |
+| 00:26 | Read the fixed reply and the demo label. |
+| 00:30 | Return to the source file with normal window commands. |
+| 00:33 | Open the tree and find the `g` setup control. |
+| 00:37 | Select the saved agent with Enter. |
+| 00:40 | Press Escape, then close Neovim with `:qa`. |
+| 00:43 | Read how to select Anthropic for real tasks. |
 
 ## Install the command
 
@@ -146,7 +175,7 @@ It preserves unfinished work. Use `harness start` to recover that work.
 Changing provider credentials requires a new server environment.
 
 Server and script commands accept `--socket PATH`, `--config PATH`, and `--state-dir PATH`.
-Only `start` and the editor startup path start a missing server.
+`start`, `setup`, and the editor startup path can start a missing server.
 Standard output contains JSON results, NDJSON streams, or the requested answer
 text. Diagnostics go to standard error.
 
@@ -183,7 +212,8 @@ height 6. Loading the plugin starts no process and makes no provider request.
 | --- | --- |
 | `:Harness` | Open the transcript and prompt; start or reconnect. |
 | `:Harness sidebar` | Show or hide the agent tree. |
-| `:Harness new` | Create a session in the source window's workspace. |
+| `:Harness new` | Check setup, then create a session in the source window's workspace. |
+| `:Harness setup` | Set the provider, model, and server credential. |
 | `:Harness sessions` | Select a stored session. |
 | `:Harness attach ID` | Attach to a specified session. |
 | `:Harness send` | Send the prompt and explicit context snapshots. |
@@ -222,6 +252,12 @@ are connection-local strings; `request_id` is the durable input identifier.
 Notifications are only for watches. Each `session.state` notification replaces
 the previous snapshot. A reconnect needs a new watch. There is no event replay.
 See [the shared fixtures](tests/fixtures/protocol.json) for exact record shapes.
+
+`configuration.get` takes an empty object. It returns the selected provider and
+model, local readiness, an explanatory message, and the supplied Anthropic
+model list. Its `issue` is `missing_model`, `invalid_model`, `missing_key`, or
+null. It never returns a key or calls the model. This local configuration status
+is separate from the recovery status in `system.hello`.
 
 `harness rpc` proxies these records through standard input and output. Keep its
 input open for watches. On input EOF, it drains pending responses, releases its
@@ -354,14 +390,14 @@ editor proof passed 35 real terminal cases on Neovim 0.12.6. It also proved that
 scheduled callbacks continue during the modal prompt. Source review confirmed
 that invalidating the original window cancels the original exit command.
 
-The complete release gate passed locally on **2026-10-16** with the final source
-files. It passed formatting, Clippy with warnings denied, 35 Rust tests, the
-release build, four adapter syntax checks, and 45 Node tests. The Node tests
-include 34 adapter tests, three actual server script tests, and eight actual
+The complete release gate passed locally on **2026-10-18** with the final source
+files. It passed formatting, Clippy with warnings denied, 44 Rust tests, the
+release build, four adapter syntax checks, and 49 Node tests. The Node tests
+include 38 adapter tests, three actual server script tests, and eight actual
 server recovery tests. Independent Node test files ran concurrently with separate
 temporary workspaces and sockets.
 
-Neovim passed its headless checks, **55 actual terminal cases with the Rust server
+Neovim passed its headless checks, **57 actual terminal cases with the Rust server
 and Pi faux provider**, and 43 terminal cases with controlled protocol fixtures.
 The actual tests include each normal exit command, exact answers, write failures,
 hidden modified buffers, multiple sessions, another client, run completion and
@@ -372,6 +408,17 @@ Two cases use the source script and `harness nvim`. They verify normal user
 configuration, no server before `;`, named agent creation, panel width, text
 wrapping, Ctrl-S input, streaming, and normal exit. Another case checks tree
 groups, selection, targeted stop, retained drafts, and invalid names.
+
+Two more cases start with no configuration or key and resize the actual terminal.
+They verify setup cancellation, explicit demo selection before the name prompt,
+insert-mode focus, multiline input, send controls, and widths of 120, 80, and 60
+columns. The headless view checks also preserve source focus when two windows
+show the same file. Eight Rust setup tests use actual terminal devices and Pi.
+They check hidden key input, restored terminal flags after interruption, private
+configuration writes, retained settings, credential precedence, write failures,
+and rejection while work is active. A separate server test rejects credential
+replacement through a competing server. Provider readiness checks make no paid
+request; they verify credential presence only.
 
 Regression checks cover the `admission` session name, unchanged caller output
 flags, default configuration state identity, late receipts after session changes,
@@ -393,7 +440,8 @@ See the [release report](tests/evidence/release.json),
 [actual terminal results](tests/evidence/nvim-real.json),
 [fixture terminal results](tests/evidence/nvim-fixture.json),
 [clean-install report](tests/evidence/clean-install.json), and
-[first-use source report](tests/evidence/source-launch.json).
+[first-use source report](tests/evidence/source-launch.json) with its
+[installation log](tests/evidence/source-launch.log).
 The terminal reports link to compressed recordings and include their byte hashes.
 The release report records hashes of the checked source files.
 
@@ -404,6 +452,7 @@ cargo test --locked --workspace --all-targets --all-features
 cargo build --locked --release
 node --test adapter/test/*.test.mjs
 nvim --headless -u NONE -l tests/nvim/run.lua
+nvim --headless -u NONE -l tests/nvim/view.lua
 sh scripts/check-dependencies.sh
 ```
 

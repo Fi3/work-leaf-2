@@ -6,7 +6,7 @@ export const invalid = message => new RpcError(-32602, message);
 export const appError = (kind, message) => new RpcError(-32000, message, kind);
 export const identifier = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 const fields = {
-  'system.hello': [['api_version'], []], 'session.create': [['session_id', 'workspace'], []],
+  'system.hello': [['api_version'], []], 'configuration.get': [[], []], 'session.create': [['session_id', 'workspace'], []],
   'session.list': [[], ['cursor', 'limit']], 'session.get': [['session_id'], []], 'session.watch': [['session_id'], []],
   'session.unwatch': [['watch_id'], []], 'input.submit': [['session_id', 'request_id', 'text', 'context'], []],
   'submission.get': [['session_id', 'request_id'], []], 'submission.wait': [['session_id', 'request_id'], ['timeout_ms']],

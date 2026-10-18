@@ -41,7 +41,7 @@ pub fn random_id() -> io::Result<String> {
     Ok(bytes.iter().map(|b| format!("{b:02x}")).collect())
 }
 
-fn owned(path: &Path) -> io::Result<std::fs::Metadata> {
+pub(crate) fn owned(path: &Path) -> io::Result<std::fs::Metadata> {
     let metadata = std::fs::symlink_metadata(path)?;
     // geteuid has no pointer arguments or preconditions.
     let uid = unsafe { libc::geteuid() };
@@ -52,6 +52,99 @@ fn owned(path: &Path) -> io::Result<std::fs::Metadata> {
         ));
     }
     Ok(metadata)
+}
+
+pub(crate) fn owned_read(path: &Path) -> io::Result<File> {
+    let before = owned(path)?;
+    if !before.is_file() {
+        return Err(io::Error::other("Configuration is not a regular file"));
+    }
+    let file = OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(path)?;
+    let after = file.metadata()?;
+    if before.dev() != after.dev() || before.ino() != after.ino() {
+        return Err(io::Error::other("Configuration changed while opening it"));
+    }
+    Ok(file)
+}
+
+pub fn terminal_line(prompt: &str, secret: bool) -> io::Result<Option<String>> {
+    struct Restore(libc::termios);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            // The saved settings came from this process's live standard-input terminal.
+            unsafe { libc::tcsetattr(0, libc::TCSANOW, &self.0) };
+        }
+    }
+    let restore = if secret {
+        // tcgetattr initializes settings; standard input must be a terminal for setup.
+        let mut settings = unsafe {
+            let mut settings = std::mem::zeroed();
+            if libc::tcgetattr(0, &mut settings) < 0 {
+                return Err(io::Error::last_os_error());
+            }
+            settings
+        };
+        let saved = Restore(settings);
+        settings.c_lflag &= !(libc::ECHO | libc::ECHONL);
+        // Change only echo flags; canonical editing and terminal signal handling stay active.
+        if unsafe { libc::tcsetattr(0, libc::TCSANOW, &settings) } < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        Some(saved)
+    } else {
+        None
+    };
+    print!("{prompt}");
+    io::stdout().flush()?;
+    let mut line = Vec::new();
+    loop {
+        if interrupted() {
+            return Ok(None);
+        }
+        let mut descriptor = libc::pollfd {
+            fd: 0,
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        // The descriptor is live, and poll receives one valid pollfd for this call.
+        let ready = unsafe { libc::poll(&mut descriptor, 1, 100) };
+        if ready < 0 {
+            let error = io::Error::last_os_error();
+            if error.kind() == io::ErrorKind::Interrupted {
+                continue;
+            }
+            return Err(error);
+        }
+        if ready == 0 {
+            continue;
+        }
+        let mut byte = 0_u8;
+        // byte is writable for one byte; reading one byte does not consume the next prompt's input.
+        let count = unsafe { libc::read(0, (&mut byte as *mut u8).cast(), 1) };
+        if count < 0 {
+            let error = io::Error::last_os_error();
+            if error.kind() == io::ErrorKind::Interrupted {
+                continue;
+            }
+            return Err(error);
+        }
+        if count == 0 {
+            return Ok(None);
+        }
+        if byte == b'\n' {
+            drop(restore);
+            return String::from_utf8(line)
+                .map(Some)
+                .map_err(|_| io::Error::other("Input must be UTF-8 text"));
+        }
+        if line.len() >= 4096 {
+            return Err(io::Error::other("Setup input is too long"));
+        }
+        line.push(byte);
+    }
 }
 
 pub fn private_dir(path: &Path) -> io::Result<()> {

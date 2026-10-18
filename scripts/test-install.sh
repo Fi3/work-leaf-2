@@ -91,6 +91,7 @@ try {
   await writeFile(lua, `
 vim.g.install_user_config_loaded = true
 vim.opt.number = true
+vim.o.columns, vim.o.lines = 120, 40
 vim.api.nvim_create_autocmd('VimEnter', { once = true, callback = function()
   vim.schedule(function()
     local ok, message = pcall(function()

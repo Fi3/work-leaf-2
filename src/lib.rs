@@ -6,4 +6,5 @@ mod editor;
 pub mod process;
 pub mod protocol;
 pub mod server;
+mod setup;
 pub mod worker;

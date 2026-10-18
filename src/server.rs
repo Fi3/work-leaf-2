@@ -7,6 +7,7 @@ use crate::{
 use serde_json::{Value, json};
 use std::collections::{HashMap, VecDeque};
 use std::io::{Read, Write};
+use std::os::fd::AsRawFd;
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::process::{Command, Stdio};
@@ -236,7 +237,7 @@ fn run(listener: UnixListener, config: Config, lock: std::fs::File) -> Result<()
     Ok(())
 }
 
-fn existing(config: &Config) -> Result<Option<Value>, RpcError> {
+fn existing(config: &Config, expected_pid: Option<u32>) -> Result<Option<Value>, RpcError> {
     process::check_endpoint(&config.socket_path)?;
     let mut stream = match UnixStream::connect(&config.socket_path) {
         Ok(stream) => stream,
@@ -250,6 +251,29 @@ fn existing(config: &Config) -> Result<Option<Value>, RpcError> {
         }
         Err(e) => return Err(e.into()),
     };
+    if let Some(expected) = expected_pid {
+        let mut credentials: libc::ucred = unsafe { std::mem::zeroed() };
+        let mut size = std::mem::size_of_val(&credentials) as libc::socklen_t;
+        // The live Unix socket and writable credential storage remain valid for this call.
+        if unsafe {
+            libc::getsockopt(
+                stream.as_raw_fd(),
+                libc::SOL_SOCKET,
+                libc::SO_PEERCRED,
+                (&mut credentials as *mut libc::ucred).cast(),
+                &mut size,
+            )
+        } < 0
+        {
+            return Err(std::io::Error::last_os_error().into());
+        }
+        if credentials.pid as u32 != expected {
+            return Err(RpcError::app(
+                "conflict",
+                "Another server started during setup. The entered key was not applied. Run setup again",
+            ));
+        }
+    }
     stream.set_read_timeout(Some(Duration::from_millis(500)))?;
     stream.set_write_timeout(Some(Duration::from_millis(500)))?;
     stream.write_all(&protocol::encode(
@@ -283,8 +307,12 @@ fn existing(config: &Config) -> Result<Option<Value>, RpcError> {
 }
 
 pub fn start(config: &Config) -> Result<Value, RpcError> {
+    start_with_key(config, None)
+}
+
+pub fn start_with_key(config: &Config, key: Option<&str>) -> Result<Value, RpcError> {
     let deadline = Instant::now() + Duration::from_secs(10);
-    if let Some(hello) = existing(config)?
+    if let Some(hello) = existing(config, key.map(|_| 0))?
         && hello["storage_ready"] == true
     {
         return Ok(hello);
@@ -299,6 +327,12 @@ pub fn start(config: &Config) -> Result<Value, RpcError> {
     }
     let log = process::private_file(&log_path)?;
     let mut command = Command::new(std::env::current_exe()?);
+    if let Some(key) = key {
+        command
+            .env_remove("ANTHROPIC_AUTH_TOKEN")
+            .env_remove("ANTHROPIC_OAUTH_TOKEN")
+            .env("ANTHROPIC_API_KEY", key);
+    }
     command
         .arg("serve")
         .arg("--state-dir")
@@ -313,19 +347,21 @@ pub fn start(config: &Config) -> Result<Value, RpcError> {
         .stdout(log.try_clone()?)
         .stderr(log);
     process::detach(&mut command);
-    let mut child = None;
+    let mut child: Option<std::process::Child> = None;
     loop {
-        let connected = existing(config)?;
+        let connected = existing(
+            config,
+            key.map(|_| child.as_ref().map_or(0, |child| child.id())),
+        )?;
         if let Some(hello) = &connected
             && hello["storage_ready"] == true
         {
             return Ok(hello.clone());
         }
-        if let Some(running) = child.as_mut() {
-            let running: &mut std::process::Child = running;
-            if running.try_wait()?.is_some() {
-                child = None;
-            }
+        if let Some(running) = child.as_mut()
+            && running.try_wait()?.is_some()
+        {
+            child = None;
         }
         if connected.is_none() && child.is_none() {
             match process::lock(&config.state_dir) {

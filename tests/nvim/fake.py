@@ -40,6 +40,17 @@ if sys.argv[-1] == 'start':
     state['starts'] = state.get('starts', 0) + 1
     save(state)
     sys.exit(0)
+if sys.argv[-1] == 'setup':
+    print('Choose demo, failure, or q to cancel:', flush=True)
+    choice = input()
+    if choice == 'q': sys.exit(130)
+    if choice == 'failure':
+        print('Cannot save configuration.', flush=True)
+        sys.exit(2)
+    state = load()
+    state['configuration'] = {'provider': 'faux', 'model': 'test', 'ready': True, 'issue': None, 'message': 'Ready.', 'models': [{'id': 'test', 'name': 'Demo'}]}
+    save(state)
+    sys.exit(0)
 
 watches = {}
 deferred = []
@@ -54,6 +65,8 @@ for line in sys.stdin:
     session = state['sessions'].get(params.get('session_id'))
     if method == 'system.hello':
         result = {'api_version': 1}
+    elif method == 'configuration.get':
+        result = state.get('configuration', {'provider': 'faux', 'model': 'test', 'ready': True, 'issue': None, 'message': 'Ready.', 'models': [{'id': 'test', 'name': 'Demo'}]})
     elif method == 'session.create':
         metadata = dict(fixture['snapshot']['session'], session_id=params['session_id'], workspace=os.path.realpath(params['workspace']))
         session = state['sessions'].setdefault(params['session_id'], {'metadata': metadata})

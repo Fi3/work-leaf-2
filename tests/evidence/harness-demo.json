@@ -1,13 +1,13 @@
 {
-  "recorded_at": "2026-10-16T17:19:50.105023+00:00",
+  "recorded_at": "2026-10-18T16:27:09.899981+00:00",
   "mode": "actual X11 screen capture of a dedicated Kitty window; actual Neovim, Rust server, and Pi adapter",
   "model": "Pi faux provider with fixed responses; no provider credentials supplied",
-  "tools": "actual Pi bash tool and Python syntax check in a temporary project",
+  "tools": "no tools in this first-run demonstration; tool execution is covered by the actual terminal integration tests",
   "input": "keys sent to the terminal with Kitty remote control",
   "capture": "FFmpeg x11grab restricted to the terminal window",
   "video": "harness-demo.mp4",
-  "video_sha256": "679f78a9a76b63cb2197c965d52591d3bc709f9be0a00454fdcc7ae5d3d68767",
-  "duration_seconds": 48.6,
+  "video_sha256": "b5b434901ecdd286257fda14d943bc15200aae165f32a971fbb16f64be9ba503",
+  "duration_seconds": 46.6,
   "frames_per_second": 15,
   "screen_pixels": [
     1280,
@@ -18,56 +18,64 @@
   "steps": [
     {
       "seconds": 0.0,
-      "text": "Run the launch script from the project directory."
+      "text": "Run ./harness.sh from your project. No configuration file or API key is present."
     },
     {
-      "seconds": 5.3,
-      "text": "Press ; in normal mode. Agents appear under project folders."
+      "seconds": 5.5,
+      "text": "Press ; to open the tree. The empty state explains how to begin."
     },
     {
-      "seconds": 8.5,
-      "text": "Press n. Enter a name to create an agent in this project."
+      "seconds": 9.5,
+      "text": "Press n. Setup opens before the agent name is requested."
     },
     {
       "seconds": 13.6,
-      "text": "Type a task in the prompt. Press Ctrl-S to send it."
+      "text": "Choose 2 for the local demo. It uses fixed replies and needs no API key."
     },
     {
-      "seconds": 18.7,
-      "text": "The actual bash tool checks the file. The answer streams into the transcript."
+      "seconds": 17.1,
+      "text": "Enter review as the agent name. The prompt opens ready for typing."
     },
     {
-      "seconds": 21.7,
-      "text": "Move back to the source window after the first task completes."
+      "seconds": 20.2,
+      "text": "Type a task. Ctrl-S sends it; Enter adds a line while you type."
     },
     {
-      "seconds": 27.9,
-      "text": "Return to the tree. Select another stored agent with Enter."
+      "seconds": 26.3,
+      "text": "Read the reply. The demo label states that no AI model is connected."
     },
     {
-      "seconds": 33.0,
-      "text": "Start a second task. Use s on its tree row to stop only that agent."
+      "seconds": 30.3,
+      "text": "Move back to your source file with normal Neovim window commands."
     },
     {
-      "seconds": 40.2,
-      "text": "Press ; to hide the tree. Use :qa to close after all tasks have stopped."
+      "seconds": 33.4,
+      "text": "Press ; twice to focus the tree. Press g whenever you want to change setup."
     },
     {
-      "seconds": 45.2,
-      "text": "The demonstration is complete. All model text came from the Pi faux provider."
+      "seconds": 37.5,
+      "text": "Press Enter on review to return to its saved conversation and prompt."
+    },
+    {
+      "seconds": 40.5,
+      "text": "Press Escape, then :qa to close. Settings and conversation remain saved."
+    },
+    {
+      "seconds": 43.5,
+      "text": "For AI coding, choose Anthropic in setup, select a model, and enter your API key."
     }
   ],
   "assertions": [
+    "no configuration file before startup",
     "normal editor starts with one window",
-    "semicolon displays stored agents grouped by workspace",
-    "named agent is selected",
-    "submitted task appears in the stored transcript",
-    "actual tool output contains Syntax check passed.",
-    "first task reaches idle",
-    "another agent is selected",
-    "second task becomes active",
-    "sidebar stop reaches idle",
-    "normal exit closes Neovim after work stops"
+    "semicolon shows an empty project tree and next steps",
+    "n opens setup before asking for an agent name",
+    "explicit demo choice saves configuration without credentials",
+    "named agent is selected and input mode begins",
+    "multiline task appears in the stored transcript",
+    "fixed demo answer appears and reaches idle",
+    "saved agent can be selected from the tree",
+    "normal exit closes Neovim"
   ],
   "cleanup": "all demonstration sessions stopped; private server shut down; terminal closed"
 }

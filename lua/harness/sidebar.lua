@@ -1,8 +1,9 @@
 local M = {}
 
-function M.new(transport, select, report)
+function M.new(transport, actions)
   local self = { snapshots = {}, items = {}, collapsed = {} }
   local rows, refreshing, refresh_again, selected = {}, false, false, nil
+  local configuration, failure
 
   local function window()
     return self.buffer and vim.fn.win_findbuf(self.buffer)[1]
@@ -12,7 +13,17 @@ function M.new(transport, select, report)
     if not self.buffer or not vim.api.nvim_buf_is_valid(self.buffer) then return end
     local win = window()
     local cursor = win and vim.api.nvim_win_get_cursor(win)[1] or 1
-    local lines = { 'Agents', 'Enter open/fold   n new', 's stop  r refresh states', 'q hide  ; toggle', refreshing and 'Loading...' or '' }
+    local lines = { 'Agents', 'Enter open/fold   n new', 'g setup  s stop  r refresh', 'q hide  ; toggle' }
+    local message = failure or (configuration and (configuration.ready and 'Ready to create an agent.' or configuration.message))
+    if message then
+      local line = ''
+      for word in message:gmatch('%S+') do
+        if vim.fn.strdisplaywidth(line .. word) > 29 and line ~= '' then lines[#lines + 1] = line; line = '' end
+        line = line .. (line == '' and '' or ' ') .. word
+      end
+      if line ~= '' then lines[#lines + 1] = line end
+    end
+    lines[#lines + 1] = refreshing and 'Loading...' or ''
     rows = {}
     local groups = { [self.directory] = {} }
     for _, item in ipairs(self.items) do
@@ -25,6 +36,7 @@ function M.new(transport, select, report)
       lines[#lines + 1] = (self.collapsed[path] and '+ ' or '- ') .. vim.fn.fnamemodify(path, ':t') .. ' (' .. path .. ')'
       rows[#lines] = { workspace = path }
       if not self.collapsed[path] then
+        if #groups[path] == 0 then lines[#lines + 1] = '  No agents. Press n to create.' end
         table.sort(groups[path], function(a, b) return a.session_id < b.session_id end)
         for _, item in ipairs(groups[path]) do
           local snapshot = self.snapshots[item.session_id]
@@ -42,7 +54,7 @@ function M.new(transport, select, report)
 
   local function request(method, params, callback)
     transport.request(method, params, function(value, err)
-      if err then refreshing, refresh_again = false, false; render(); report(err); return end
+      if err then refreshing, refresh_again = false, false; self.message(err); actions.report(err); return end
       callback(value)
     end)
   end
@@ -51,7 +63,8 @@ function M.new(transport, select, report)
     if refreshing then refresh_again = true; return end
     refreshing = true; render()
     transport.connect(function(_, err)
-      if err then refreshing, refresh_again = false, false; render(); report(err); return end
+      if err then refreshing, refresh_again = false, false; self.message(err); actions.report(err); return end
+      actions.configuration()
       local items = {}
       local function states(index)
         if not items[index] then
@@ -73,6 +86,16 @@ function M.new(transport, select, report)
       end
       page()
     end)
+  end
+
+  function self.message(message)
+    failure = message
+    render()
+  end
+
+  function self.configuration(value, err)
+    configuration, failure = value, err
+    render()
   end
 
   function self.update(snapshot)
@@ -101,27 +124,21 @@ function M.new(transport, select, report)
       local function map(key, action) vim.keymap.set('n', key, action, { buffer = self.buffer, silent = true }) end
       map('q', self.hide)
       map('r', self.refresh)
+      map('g', actions.setup)
       map('<CR>', function()
         local item = row(); if not item then return end
-        if item.session_id then select(item.session_id)
+        if item.session_id then actions.select(item.session_id)
         else self.collapsed[item.workspace] = not self.collapsed[item.workspace]; render() end
       end)
       map('n', function()
         local directory = row() and row().workspace or self.directory
-        vim.ui.input({ prompt = 'New agent name: ' }, function(name)
-          if not name or name == '' then return end
-          if #name > 128 or not name:match('^[A-Za-z0-9_-]+$') then report('Use 1-128 letters, digits, _ or - for the name.'); return end
-          request('session.create', { session_id = name, workspace = directory }, function(value)
-            self.collapsed[directory] = false
-            self.refresh(); select(value.session_id)
-          end)
-        end)
+        actions.create(directory)
       end)
       map('s', function()
         local item = row()
         if not item or not item.session_id then return end
         local snapshot = self.snapshots[item.session_id]
-        if not transport.connected or not snapshot then report('Session state is unknown. Press r to reconnect.'); return end
+        if not transport.connected or not snapshot then actions.report('Session state is unknown. Press r to reconnect.'); return end
         if snapshot.active_submission_id == vim.NIL then return end
         request('run.stop', { session_id = item.session_id, submission_id = snapshot.active_submission_id }, self.refresh)
       end)

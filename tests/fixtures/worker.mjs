@@ -16,7 +16,8 @@ createInterface({ input: process.stdin }).on('line', line => {
       const watch_id = `watch-${id}`;
       send(id, { watch_id, snapshot: fixture.snapshot });
     }, 50);
-  } else if (method === 'session.list') send(id, fixture.list);
+  } else if (method === 'configuration.get') send(id, fixture.configuration);
+  else if (method === 'session.list') send(id, fixture.list);
   else if (method === 'session.get') send(id, { session: fixture.snapshot.session, snapshot: fixture.snapshot });
   else if (method === 'submission.wait') { /* A pending operation must not block the next request. */ }
   else if (method === 'run.stop') send(id, fixture.outcomes[2]);

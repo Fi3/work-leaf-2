@@ -45,7 +45,10 @@ async function configuredModels(config) {
     if (!Array.isArray(messages)) throw invalid('Faux response fixture must be an array');
     faux.setResponses(messages);
   } else {
-    const respond = () => { faux.appendResponses([respond]); return fauxAssistantMessage('Faux response.'); };
+    const respond = () => {
+      faux.appendResponses([respond]);
+      return fauxAssistantMessage('Demo mode uses fixed replies. It does not use an AI model or change project files.\n\nYou can test prompt input, saved history, and the agent panels. Run `harness setup` and choose Anthropic to use an AI model for new agents.');
+    };
     faux.setResponses([respond]);
   }
   models.setProvider(faux.provider);
@@ -108,6 +111,21 @@ class Application {
   }
   hello() {
     return { api_version: 1, node_version: process.version, artifacts: { durable: '1.3.0', ai: '1.3.0', chord: '1.3.0' }, ready: !this.blocked && !this.closing, scheduling_enabled: !this.blocked && !this.closing };
+  }
+  async configuration() {
+    const provider = this.config.provider ?? null, model = this.config.model ?? null;
+    const models = this.models.getModels('anthropic').map(({ id, name }) => ({ id, name }));
+    const issue = !provider || !model ? 'missing_model' : !this.models.getModel(provider, model) ? 'invalid_model'
+      : !(await this.models.checkAuth(provider)) ? 'missing_key' : null;
+    const messages = {
+      missing_model: 'Choose a provider and model with setup before you create an agent.',
+      invalid_model: 'The selected provider or model is unavailable. Run setup to choose a supported model.',
+      missing_key: 'Anthropic credentials are missing from the server environment. Run setup to set ANTHROPIC_API_KEY.',
+    };
+    const message = issue ? messages[issue] : provider === 'faux'
+      ? 'Demo mode uses fixed replies. It does not use an AI model or change project files.'
+      : 'Anthropic credentials are present. The provider has not checked them.';
+    return { provider, model, ready: issue === null, issue, message, models };
   }
   session(id) {
     const session = this.sessions.get(id); if (!session) throw appError('not_found', 'Unknown session'); return session;
@@ -284,6 +302,7 @@ class Application {
   async operation(method, params, requestId, send) {
     validate(method, params);
     if (method === 'system.hello') { if (params.api_version !== 1) throw appError('incompatible_version', 'Use API version 1'); return this.hello(); }
+    if (method === 'configuration.get') return this.configuration();
     if (method === 'session.create') return this.create(params);
     if (method === 'session.list') return this.list(params);
     if (method === 'session.unwatch') return this.unwatch(params.watch_id);

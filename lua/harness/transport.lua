@@ -25,7 +25,7 @@ function M.new(options, changed, notification)
     if vim.fn.chansend(self.job, line) == 0 then fail('Client pipe closed.') end
   end
 
-  local function args(command)
+  function self.arguments(command)
     local result = { options.executable }
     if options.config_path then vim.list_extend(result, { '--config', options.config_path }) end
     if options.socket_path then vim.list_extend(result, { '--socket', options.socket_path }) end
@@ -36,7 +36,7 @@ function M.new(options, changed, notification)
   local function proxy(callback)
     local partial = ''
     local job
-    job = vim.fn.jobstart(args('rpc'), {
+    job = vim.fn.jobstart(self.arguments('rpc'), {
       on_stdout = function(_, data)
         local chunk = table.concat(data, '\n')
         vim.schedule(function()
@@ -85,16 +85,29 @@ function M.new(options, changed, notification)
 
   function self.connect(callback)
     if self.connected then callback(true); return end
-    if self.starting then callback(nil, 'Connection is starting.'); return end
+    if self.starting then
+      if #self.waiting >= 32 then callback(nil, 'Too many pending connections.')
+      else self.waiting[#self.waiting + 1] = callback end
+      return
+    end
     self.starting = true
-    local function finish(result, err) self.starting = false; callback(result, err) end
+    self.waiting = { callback }
+    local function finish(result, err)
+      local waiting = self.waiting
+      self.starting, self.waiting = false, nil
+      for _, ready in ipairs(waiting) do ready(result, err) end
+    end
     if not options.autostart then proxy(finish); return end
-    vim.system(args('start'), { text = true, timeout = 11000 }, function(result)
+    vim.system(self.arguments('start'), { text = true, timeout = 11000 }, function(result)
       vim.schedule(function()
         if result.code ~= 0 then finish(nil, (result.stderr or ''):gsub('%s+$', '')); return end
         proxy(finish)
       end)
     end)
+  end
+
+  function self.disconnect()
+    fail('Reconnecting after setup.')
   end
 
   return self

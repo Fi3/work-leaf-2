@@ -127,6 +127,12 @@
       "id": "c13",
       "method": "server.restart_worker",
       "params": {}
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "configuration",
+      "method": "configuration.get",
+      "params": {}
     }
   ],
   "invalid": [
@@ -211,6 +217,17 @@
         }
       ],
       "code": -32600
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-config",
+        "method": "configuration.get",
+        "params": {
+          "key": "must-not-be-accepted"
+        }
+      },
+      "code": -32602
     }
   ],
   "snapshot": {
@@ -378,5 +395,18 @@
       }
     ],
     "next_cursor": null
+  },
+  "configuration": {
+    "provider": "faux",
+    "model": "test",
+    "ready": true,
+    "issue": null,
+    "message": "Local demo. Replies are fixed; no AI coding tasks run.",
+    "models": [
+      {
+        "id": "claude-sonnet-4-6",
+        "name": "Claude Sonnet 4.6"
+      }
+    ]
   }
 }

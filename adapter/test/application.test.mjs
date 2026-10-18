@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
+import { createModels } from '@earendil-works/pi-ai/models';
+import { anthropicProvider } from '@earendil-works/pi-ai/providers/anthropic';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai/providers/faux';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { openApplication, SessionDoc } from '../pi.mjs';
@@ -26,6 +28,71 @@ async function setup(t, messages, tokens = 100000) {
 }
 const input = (session_id, request_id, text = 'Task') => ({ session_id, request_id, text, context: [] });
 const isKind = kind => error => error.data?.kind === kind;
+
+test('configuration lists the Pi catalog and explains missing or unsupported choices without requests', async t => {
+  const { app, call } = await setup(t);
+  let authReads = 0;
+  app.models = createModels({ authContext: { env: async () => { authReads++; return undefined; }, fileExists: async () => false } });
+  app.models.setProvider(anthropicProvider());
+  t.mock.method(globalThis, 'fetch', () => { assert.fail('Configuration must not make a network request'); });
+  for (const [provider, model, issue] of [
+    [null, null, 'missing_model'], ['anthropic', null, 'missing_model'], [null, 'claude-sonnet-4-6', 'missing_model'],
+    ['unsupported', 'claude-sonnet-4-6', 'invalid_model'], ['anthropic', 'unknown', 'invalid_model'],
+  ]) {
+    Object.assign(app.config, { provider, model });
+    const result = await call('configuration.get');
+    assert.deepEqual({ provider: result.provider, model: result.model, ready: result.ready, issue: result.issue }, { provider, model, ready: false, issue });
+    assert.match(result.message, /setup/);
+    assert.equal(result.models.length, 17);
+    assert.ok(result.models.some(item => item.id === 'claude-sonnet-4-6' && item.name === 'Claude Sonnet 4.6'));
+    assert.ok(result.models.every(item => typeof item.id === 'string' && typeof item.name === 'string' && Object.keys(item).length === 2));
+  }
+  assert.equal(authReads, 0);
+  assert.deepEqual((await call('session.list')).items, []);
+});
+
+test('configuration checks only credential presence and returns no credential material', async t => {
+  const { app, call } = await setup(t);
+  let key;
+  app.models = createModels({ authContext: { env: async name => name === 'ANTHROPIC_API_KEY' ? key : undefined, fileExists: async () => false } });
+  app.models.setProvider(anthropicProvider());
+  Object.assign(app.config, { provider: 'anthropic', model: 'claude-sonnet-4-6' });
+  t.mock.method(globalThis, 'fetch', () => { assert.fail('Configuration must not make a network request'); });
+  const missing = await call('configuration.get');
+  assert.equal(missing.ready, false); assert.equal(missing.issue, 'missing_key');
+  assert.match(missing.message, /server environment/); assert.match(missing.message, /ANTHROPIC_API_KEY/);
+  key = 'deliberately-invalid-secret-for-test';
+  const configured = await call('configuration.get');
+  assert.equal(configured.ready, true); assert.equal(configured.issue, null);
+  assert.match(configured.message, /has not checked/);
+  assert.deepEqual(Object.keys(configured).sort(), ['issue', 'message', 'model', 'models', 'provider', 'ready']);
+  assert.ok(!JSON.stringify(configured).includes(key));
+});
+
+test('configuration reads preserve an active run and the fixed configuration of its session', async t => {
+  const { app, call, create } = await setup(t, [fauxAssistantMessage('a'.repeat(1000))], 20);
+  const session = await create('work');
+  const receipt = await call('input.submit', input('work', 'active'));
+  const configured = await call('configuration.get');
+  assert.equal(configured.ready, true); assert.equal(configured.provider, 'faux'); assert.equal(configured.model, 'test');
+  assert.match(configured.message, /Demo/); assert.match(configured.message, /fixed replies/);
+  app.config.model = 'unknown';
+  assert.equal((await call('configuration.get')).issue, 'invalid_model');
+  assert.deepEqual(await create('work'), session);
+  assert.equal((await call('submission.get', { session_id: 'work', request_id: 'active' })).status, 'accepted');
+  await call('run.stop', { session_id: 'work', submission_id: receipt.submission_id });
+});
+
+test('the default demo response explains its limit and how to configure an AI model', async t => {
+  const { call, create } = await setup(t);
+  await create('demo'); await call('input.submit', input('demo', 'first', 'Change my code'));
+  const result = await call('submission.wait', { session_id: 'demo', request_id: 'first', timeout_ms: 3000 });
+  const answer = await call('entry.read', { session_id: 'demo', entry_id: result.answer_entry_id });
+  assert.match(answer.text, /Demo mode uses fixed replies/);
+  assert.match(answer.text, /does not use an AI model or change project files/);
+  assert.match(answer.text, /harness setup/);
+  assert.equal((await call('transcript.list', { session_id: 'demo' })).items.filter(item => item.kind === 'tool').length, 0);
+});
 
 test('atomic creation is idempotent and preserves fixed configuration after reopen', async t => {
   const { app, call, create, workspace, config } = await setup(t);
