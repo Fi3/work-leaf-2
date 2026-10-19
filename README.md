@@ -19,6 +19,7 @@ Rust command and opens Neovim with your normal configuration and the plugin.
 Press `;` in normal mode to open the left agent tree. No editor setup is needed.
 From another project directory, run `/path/to/work-leaf-2/harness.sh`.
 The script keeps that project as the working directory.
+After an editor update, close Neovim and run the script again to load the changes.
 
 Use Rust **1.94.1**, Node **26.10.0**, npm **12.2.0**, and Neovim **0.12.6**.
 The Rust toolchain file selects the required compiler, formatter, and Clippy.
@@ -30,8 +31,11 @@ tab. Type a task and press **Enter** to send it. **Shift-Enter** adds a line.
 Use **Ctrl-J** if your terminal does not send Shift-Enter. Ctrl-S also sends.
 
 For the first AI chat, type `\model` and press Enter. Select an Anthropic model
-from the list. Type `\login` to enter your API key in a private terminal. Model
-use can incur charges. For a test without a key, type `\model demo`. The local
+from the scrollable list. Use arrow keys, Page Up, Page Down, or the mouse wheel.
+Use `/` to search, `G` to reach the last choice, and Enter or a double-click to
+select. Escape cancels. The list marks the current model and shows your position
+and the total number of choices. Type `\login` to enter your API key in a private
+terminal. Model use can incur charges. For a test without a key, type `\model demo`. The local
 demo gives fixed replies; it does not provide AI coding.
 
 New chats use the settings of the newest chat in that directory that has a model.
@@ -101,7 +105,11 @@ it. Files and chats are normal listed buffers: use `:buffers`, `:buffer NAME`,
 `:bnext`, or **Ctrl-^** to switch between them. From the message box, press Escape
 before a normal command. Ctrl-^ also works directly in the message box.
 The message box closes when you select a file and returns when you select a chat.
-Opening a chat preserves unsaved file text. Normal Neovim write checks still
+In a split layout, it stays below that chat and uses only that chat's width.
+Opening `:new`, `:vnew`, or `:split` from the input uses the main editor area.
+`:q` in the input closes only that box. Press `p` in the chat to open it again.
+Closing the chat removes its input box. Drafts remain available when you reopen
+the chat. Opening a chat preserves unsaved file text. Normal Neovim write checks still
 apply when you switch away from a modified file.
 
 Each chat keeps its own draft. Each tab restores its selected chat. The tree
@@ -433,7 +441,7 @@ adapter syntax checks, and 61 Node tests. The Node tests include 48 adapter test
 three actual server script tests, and ten actual server recovery tests. Independent
 Node test files run concurrently with separate temporary directories and sockets.
 
-Neovim passed both headless suites, **60 actual terminal cases with the Rust
+Neovim passed three headless suites, **62 actual terminal cases with the Rust
 server and Pi faux provider**, and 43 terminal cases with controlled protocol
 fixtures. The actual tests cover each normal exit command, exact answers, write
 failures, hidden modified buffers, multiple sessions, another client, completion
@@ -453,6 +461,10 @@ The file and chat tests use the normal content window. They check `:buffer`,
 `:bnext`, and Ctrl-^ from chat history and input, separate drafts, modified files
 with `nohidden`, preserved file settings, multiple tabs, and focus during streamed
 output. The screen recording also shows these file and chat transitions.
+Additional cases check new files and chats from the input, mouse clicks between
+file and chat columns, input width, and `:q` cleanup. The model list checks cover
+the complete catalog, page keys, search, mouse scrolling, selection, cancellation,
+resize, and retained drafts. A late catalog response cannot take focus from a file.
 
 Headless tests delay startup and receipts. They verify that the first action
 keeps its text and target, later text stays in the draft, empty Enter does not
@@ -484,11 +496,10 @@ and draft, and one successful Enter submission with its final answer. Unknown
 newer interfaces are rejected without shutdown. Rust tests also check state
 identity and storage ownership release during upgrade.
 
-The [installed-server check](tests/evidence/live-runtime.json) records replacement
-of the old local server with the checked release binary. The state directory is
-unchanged. The server and Pi worker report ready, and the chat configuration
-request succeeds. This check creates no chat and makes no model request. The
-default server has no model selected; use `\model` in a new chat.
+The [installed-runtime check](tests/evidence/live-runtime.json) verifies the local
+release binary and editor files. The updated editor files keep the compatible
+server running. Its state directory is unchanged. The server and Pi worker report
+ready. This check creates no chat and makes no model request.
 
 The clean-install check built and installed into a new temporary prefix. It used
 the complete locked npm tree with install scripts disabled. The installed Rust
@@ -521,6 +532,7 @@ cargo build --locked --release
 node --test adapter/test/*.test.mjs
 nvim --headless -u NONE -l tests/nvim/run.lua
 nvim --headless -u NONE -l tests/nvim/view.lua
+nvim --headless -u NONE -l tests/nvim/select.lua
 sh scripts/check-dependencies.sh
 ```
 

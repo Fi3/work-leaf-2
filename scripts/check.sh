@@ -9,6 +9,7 @@ for source in adapter/*.mjs; do node --check "$source"; done
 node --test adapter/test/*.test.mjs tests/*.test.mjs
 nvim --headless -u NONE -l tests/nvim/run.lua
 nvim --headless -u NONE -l tests/nvim/view.lua
+nvim --headless -u NONE -l tests/nvim/select.lua
 sh scripts/check-dependencies.sh
 python3 tests/nvim/interactive.py
 python3 tests/nvim/real.py --group exit

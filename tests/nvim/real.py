@@ -131,6 +131,20 @@ class RealEditor(Editor):
         self.command('lua for _,w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(w)):match("^harness://prompt/") then vim.api.nvim_set_current_win(w); break end end; vim.cmd("startinsert!")')
         self.keys(text + '\r')
 
+    def observe(self, expression):
+        if not hasattr(self, 'editor_socket'):
+            self.editor_socket = self.root / 'editor.sock'
+            self.command('call serverstart(' + json.dumps(str(self.editor_socket)) + ')')
+        encoded = 'luaeval(' + json.dumps('vim.json.encode(' + expression + ')') + ')'
+        return json.loads(subprocess.check_output(['nvim', '--server', str(self.editor_socket), '--remote-expr', encoded], text=True, timeout=5))
+
+    def windows(self):
+        return self.observe('(function() local result={} for _,w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do local b=vim.api.nvim_win_get_buf(w); local pos=vim.fn.win_screenpos(w); result[#result+1]={id=w,name=vim.api.nvim_buf_get_name(b),row=pos[1],col=pos[2],width=vim.api.nvim_win_get_width(w),height=vim.api.nvim_win_get_height(w),current=w==vim.api.nvim_get_current_win(),top=vim.api.nvim_win_call(w,function() return vim.fn.line("w0") end),cursor=vim.api.nvim_win_get_cursor(w)[1],lines=vim.api.nvim_buf_get_lines(b,0,-1,false)} end return result end)()')
+
+    def mouse(self, button, column, row):
+        self.keys(f'\x1b[<{button};{column};{row}M')
+        if button < 64: self.keys(f'\x1b[<{button};{column};{row}m')
+
     def create(self, session_id):
         return self.rpc.request('session.create', {'session_id': session_id, 'workspace': str(self.root)})
 
@@ -338,9 +352,141 @@ def buffer_switch_case():
     assert (editor.root / 'one').read_text() == 'one\n'
     editor.finish()
 
+def model_picker_case():
+    editor = RealEditor('model-picker-keyboard-and-mouse', active=False, startup=True, launcher='plain', first_run=True)
+    editor.observe('true')
+    editor.resize(80, 18)
+    catalog = editor.rpc.request('configuration.get', {'session_id': editor.session_id})['models']
+    editor.chat('\\model')
+    editor.wait(lambda: any(w['name']=='harness://select' for w in editor.windows()), 'model list opens')
+    picker = next(w for w in editor.windows() if w['name']=='harness://select')
+    assert len(picker['lines']) == len(catalog)+1 and len(picker['lines']) > picker['height']
+    assert not any('[current]' in line for line in picker['lines']), 'Unconfigured chat cannot mark a paid model as selected'
+    editor.keys('\x1b[6~')
+    assert next(w for w in editor.windows() if w['name']=='harness://select')['cursor'] > 1
+    editor.keys('G')
+    picker = next(w for w in editor.windows() if w['name']=='harness://select')
+    assert picker['cursor'] == len(catalog)+1 and picker['top'] > 1
+    editor.keys('\r')
+    editor.wait(lambda: editor.snapshot()['session']['provider']=='faux', 'last catalog choice selects local demo')
+    editor.chat('\\model')
+    editor.wait(lambda: any(w['name']=='harness://select' for w in editor.windows()), 'reopen model list')
+    editor.keys('gg')
+    before = next(w for w in editor.windows() if w['name']=='harness://select')
+    for _ in range(3): editor.mouse(65, before['col']+3, before['row']+3)
+    after = next(w for w in editor.windows() if w['name']=='harness://select')
+    assert after['top'] > before['top'], (before, after)
+    x, y = after['col']+3, after['row']+after['height']//2
+    editor.mouse(0,x,y)
+    target_line = next(w for w in editor.windows() if w['name']=='harness://select')['cursor']
+    assert editor.snapshot()['session']['provider']=='faux', 'Single click moves the row without applying it'
+    editor.pump(.6)
+    click=f'\x1b[<0;{x};{y}M\x1b[<0;{x};{y}m'
+    editor.keys(click+click)
+    editor.wait(lambda: editor.snapshot()['session']['model']==catalog[target_line-1]['id'], 'double click applies the visible model')
+    editor.chat('\\model demo')
+    editor.wait(lambda: editor.snapshot()['session']['provider']=='faux', 'restore local demo without a model request')
+    editor.chat('\\model')
+    editor.wait(lambda: any(w['name']=='harness://select' for w in editor.windows()), 'reopen model picker before cancellation')
+    editor.observe('(function() vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt/' + editor.session_id + '"),0,-1,false,{"Draft survives model cancellation"}); return true end)()')
+    editor.keys('\x1b')
+    editor.wait(lambda: not any(w['name']=='harness://select' for w in editor.windows()), 'Escape cancels selection')
+    assert editor.snapshot()['session']['provider']=='faux'
+    assert editor.panel_text('prompt')=='Draft survives model cancellation\n'
+    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ',0,-1,false,{""})')
+    editor.chat('\\model')
+    editor.wait(lambda: any(w['name']=='harness://select' for w in editor.windows()), 'open picker before outside click')
+    transcript = next(w for w in editor.windows() if w['name']=='harness://chat/'+editor.session_id)
+    editor.mouse(0, transcript['col']+transcript['width']-1, transcript['row']+1)
+    editor.wait(lambda: not any(w['name']=='harness://select' for w in editor.windows()), 'outside click cancels picker')
+    assert editor.observe('vim.api.nvim_get_current_win()') == transcript['id'], 'Cancellation must retain clicked window focus'
+    assert editor.snapshot()['session']['provider']=='faux' and not editor.snapshot()['entries']
+    editor.finish()
+
+
+def prompt_window_case():
+    editor = RealEditor('prompt-local-window-layout', active=True, rate=25)
+    editor.observe('true')
+    editor.command('set mouse=a')
+    target=editor.snapshot()['active_submission_id']
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1])')
+    editor.command('new')
+    editor.wait(lambda: any(w['name']=='' and w['current'] for w in editor.windows()), 'horizontal new file opens outside the input')
+    assert next(w for w in editor.windows() if w['name']=='' and w['current'])['height'] > 8
+    assert not any(w['name'].startswith('harness://prompt/') for w in editor.windows())
+    editor.command('q')
+    editor.wait(lambda: any(w['name']=='harness://prompt/work' for w in editor.windows()), 'returning to chat restores its input')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1])')
+    editor.command('vnew')
+    editor.wait(lambda: any(w['name']=='' and w['current'] for w in editor.windows()), 'new file from prompt gets a file window')
+    file_window=next(w for w in editor.windows() if w['name']=='' and w['current'])
+    assert file_window['height'] > 10, file_window
+    assert not any(w['name'].startswith('harness://prompt/') for w in editor.windows()), 'File focus hides chat input'
+    editor.command('edit two')
+    editor.command('Harness new')
+    editor.wait(lambda: len(editor.rpc.request('session.list')['items'])==2, 'new chat uses the file area')
+    second=next(item['session_id'] for item in editor.rpc.request('session.list')['items'] if item['session_id']!='work')
+    def local_pair():
+        windows=editor.windows()
+        chats=[w for w in windows if w['name']=='harness://chat/'+second]
+        prompts=[w for w in windows if w['name']=='harness://prompt/'+second]
+        return len(prompts)==1 and prompts[0]['height']==5 and any(chat['col']==prompts[0]['col'] and chat['width']==prompts[0]['width'] and chat['row']+chat['height']+1 == prompts[0]['row'] for chat in chats)
+    editor.wait(local_pair, 'input remains below its own chat column')
+    windows=editor.windows(); second_main=next(w for w in windows if w['name']=='harness://chat/'+second)
+    assert second_main['id']==file_window['id'] and second_main['height']>10
+    prior_second=second
+    editor.command('Harness new')
+    editor.wait(lambda: len(editor.rpc.request('session.list')['items'])==3, 'new chat from input creates its own main-area conversation')
+    second=next(item['session_id'] for item in editor.rpc.request('session.list')['items'] if item['session_id'] not in ('work',prior_second))
+    editor.wait(local_pair, 'new chat replaces history and input together')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr("harness://chat/' + second + '"))[1])')
+    editor.command('wincmd H')
+    editor.wait(local_pair, 'moving a chat column repairs its local input without a resize command')
+    assert next(w for w in editor.windows() if w['name']=='harness://chat/'+second)['id']==file_window['id']
+    windows=editor.windows()
+    first=next(w for w in windows if w['name']=='harness://chat/work')
+    editor.mouse(0, first['col']+2, first['row']+1)
+    editor.wait(lambda: any(w['name']=='harness://prompt/work' for w in editor.windows()), 'mouse selects the first chat input')
+    assert not any(w['name']=='harness://prompt/'+second for w in editor.windows()), 'Other chat input stays hidden'
+    editor.command('buffer one')
+    editor.wait(lambda: not any(w['name'].startswith('harness://prompt/') for w in editor.windows()), 'file selection removes all chat inputs')
+    windows=editor.windows(); other=next(w for w in windows if w['name']=='harness://chat/'+second)
+    editor.mouse(0,other['col']+2,other['row']+1)
+    editor.wait(local_pair, 'mouse return restores input only under selected chat')
+    source_file=next(w for w in editor.windows() if w['name']==str(editor.root/'one'))
+    editor.mouse(0,source_file['col']+2,source_file['row']+1)
+    editor.wait(lambda: not any(w['name'].startswith('harness://prompt/') for w in editor.windows()), 'mouse focus on the file hides input')
+    editor.mouse(0,other['col']+2,other['row']+1)
+    editor.wait(local_pair, 'mouse focus on chat restores its local input')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr("harness://prompt/' + second + '"))[1])')
+    editor.command('split')
+    editor.wait(lambda: len([w for w in editor.windows() if w['name']=='harness://chat/'+second])==2 and local_pair(), 'copying a chat window keeps one local input')
+    editor.command('q')
+    editor.wait(lambda: len([w for w in editor.windows() if w['name']=='harness://chat/'+second])==1 and local_pair(), 'closing the copied chat returns input to the remaining chat')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr("harness://prompt/' + second + '"))[1])')
+    editor.command('tab split')
+    editor.wait(local_pair, 'copying a tab from input opens chat with a local input')
+    assert len(editor.windows())==2, editor.windows()
+    editor.command('tabclose')
+    editor.wait(local_pair, 'returning to the split tab restores its local chat input')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr("harness://prompt/' + second + '"))[1])')
+    editor.command('q')
+    editor.pump(.3)
+    assert not any(w['name'].startswith('harness://prompt/') for w in editor.windows()), ':q on input must keep it closed'
+    editor.command('Harness attach '+second)
+    editor.wait(local_pair, 'explicit chat open restores its input')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr("harness://chat/' + second + '"))[1])')
+    editor.command('q')
+    editor.wait(lambda: not any(w['name'].startswith('harness://prompt/') for w in editor.windows()), 'closing chat removes its orphan input')
+    assert editor.snapshot('work')['active_submission_id']==target, 'Window changes cannot stop accepted work'
+    editor.finish()
+
+
 def integration_cases():
     launcher_cases()
     buffer_switch_case()
+    model_picker_case()
+    prompt_window_case()
     editor = RealEditor('first-run-setup', active=False, startup=True, launcher='plain', first_run=True, rate=400)
     assert not editor.config.exists()
     assert editor.snapshot()['session']['provider'] is None

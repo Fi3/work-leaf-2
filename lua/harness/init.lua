@@ -315,6 +315,7 @@ end
 
 local function model(argument, provider)
   local id = selected
+  local origin, buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
   if argument ~= '' then
     local selected_provider, selected_model = argument:match('^([^/]+)/(.+)$')
     if argument == 'demo' then selected_provider, selected_model = 'faux', 'test' end
@@ -323,14 +324,19 @@ local function model(argument, provider)
     return
   end
   rpc('configuration.get', { session_id = id }, function(value)
-    if selected ~= id then return end
+    if selected ~= id or vim.api.nvim_get_current_win() ~= origin or vim.api.nvim_get_current_buf() ~= buffer then return end
     local items = {}
     if provider ~= 'faux' then
       for _, item in ipairs(value.models) do items[#items + 1] = { provider = 'anthropic', model = item.id, label = item.name .. ' · Anthropic' } end
     end
     if provider ~= 'anthropic' then items[#items + 1] = { provider = 'faux', model = 'test', label = 'Local demo · fixed replies, no AI coding' } end
-    vim.ui.select(items, { prompt = 'Model for this chat:', format_item = function(item) return item.label end }, function(item)
-      if item then settings({ provider = item.provider, model = item.model }, id) else view.focus() end
+    local current
+    for index, item in ipairs(items) do
+      if item.provider == value.provider and item.model == value.model then current = index; break end
+    end
+    require('harness.select').select(items, { prompt = 'Model for this chat', selected = current,
+      format_item = function(item) return item.label end }, function(item)
+      if item and selected == id then settings({ provider = item.provider, model = item.model }, id) end
     end)
   end)
 end
@@ -345,9 +351,9 @@ local function chat_command(name, argument, captured)
   elseif name == 'provider' then
     if argument == 'anthropic' or argument == 'faux' or argument == 'demo' then model('', argument == 'demo' and 'faux' or argument)
     elseif argument ~= '' then notice('Providers: anthropic, demo.'); view.focus()
-    else vim.ui.select({ 'Anthropic', 'Local demo (fixed replies)' }, { prompt = 'Provider:' }, function(_, index)
+    else require('harness.select').select({ 'Anthropic', 'Local demo (fixed replies)' }, { prompt = 'Provider' }, function(_, index)
       if selected ~= id then return end
-      if index then model('', index == 1 and 'anthropic' or 'faux') else view.focus() end
+      if index then model('', index == 1 and 'anthropic' or 'faux') end
     end) end
   elseif name == 'login' or name == 'auth' then
     if argument ~= '' then notice('Use \\login without a key. Enter the key only in the private terminal.'); view.focus()

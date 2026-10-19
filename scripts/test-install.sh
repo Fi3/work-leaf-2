@@ -156,6 +156,10 @@ vim.api.nvim_create_autocmd('VimEnter', { once = true, callback = function()
           and text:find('State: idle', 1, true)
       end, 20), 'Enter must send a task and show its final answer through the installed runtime')
       vim.cmd('buffer ' .. source_buffer)
+      assert(vim.wait(1000, function()
+        return vim.api.nvim_get_current_win() == content_window and vim.api.nvim_get_current_buf() == source_buffer
+          and #vim.api.nvim_list_wins() == 2
+      end), 'Native file selection finishes after the input window is removed')
       assert(vim.api.nvim_get_current_win() == content_window and vim.api.nvim_get_current_buf() == source_buffer)
       assert(#vim.api.nvim_list_wins() == 2 and vim.wo.number, 'File selection hides input and restores file options')
       vim.cmd('buffer ' .. transcript)

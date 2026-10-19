@@ -1,13 +1,13 @@
 {
-  "recorded_at": "2026-10-19T15:08:45.078394+00:00",
+  "recorded_at": "2026-10-19T19:13:40.516204+00:00",
   "mode": "actual X11 screen capture of a dedicated Kitty window on an isolated Xvfb display; actual Neovim, Rust server, and Pi adapter",
   "model": "Pi faux provider with fixed responses; no provider credentials supplied",
   "tools": "actual Bash tool creates a stored child agent through the Rust command client; faux responses prescribe the tool call",
   "input": "keys sent to the terminal with Kitty remote control",
   "capture": "FFmpeg x11grab restricted to the terminal window",
   "video": "harness-demo.mp4",
-  "video_sha256": "98bf7095b74b5fc533dbb4992aa848c764846ae8486ef0b0fc410dd570d52b57",
-  "duration_seconds": 54.6,
+  "video_sha256": "f4513ed3b8b029c3e0f5dd3475b0dd5324d3144c92cb01fcbd6b429f209a8859",
+  "duration_seconds": 71.134,
   "frames_per_second": 15,
   "screen_pixels": [
     1280,
@@ -21,59 +21,75 @@
       "text": "Run ./harness.sh from your project. This test starts without a configuration file or key."
     },
     {
-      "seconds": 5.3,
+      "seconds": 5.1,
       "text": "Press ;. The left tree lists agents from this directory. Select + New chat."
     },
     {
-      "seconds": 8.4,
+      "seconds": 8.2,
       "text": "Press Enter. Chat history fills the normal file area. The small message box is below it."
     },
     {
-      "seconds": 11.6,
-      "text": "Type \\model demo and press Enter. This selects fixed local replies without a key."
+      "seconds": 11.3,
+      "text": "Type \\model and press Enter. The model list is scrollable and searchable."
     },
     {
-      "seconds": 14.6,
+      "seconds": 14.4,
+      "text": "Page Down scrolls the list. The footer shows your position and the total number of choices."
+    },
+    {
+      "seconds": 17.4,
+      "text": "Press G to reach the last choice. Select Local demo with Enter for fixed replies without a key."
+    },
+    {
+      "seconds": 23.5,
       "text": "Type \\name Review and press Enter. The name is optional; no name dialog blocks creation."
     },
     {
-      "seconds": 17.7,
+      "seconds": 26.5,
       "text": "Write a task. Shift-Enter adds a line; Enter sends the complete prompt."
     },
     {
-      "seconds": 23.9,
+      "seconds": 32.6,
       "text": "The actual Bash tool creates the child through the command client. The editor stays available."
     },
     {
-      "seconds": 27.6,
+      "seconds": 36.3,
       "text": "Press Escape, then ; twice and r. Tests is nested under the Review agent that created it."
     },
     {
-      "seconds": 31.8,
+      "seconds": 40.4,
       "text": "Select Tests with Enter. This child opens with an empty, separate conversation."
     },
     {
-      "seconds": 34.9,
+      "seconds": 43.5,
       "text": "Press Escape, then Ctrl-^ to return to the previous chat. Native buffers hold each conversation."
     },
     {
-      "seconds": 38.0,
+      "seconds": 46.6,
       "text": "Use :buffer app.py to return to the file. The message box closes; the file uses the full height."
     },
     {
-      "seconds": 41.1,
+      "seconds": 49.7,
       "text": "Press Ctrl-^ to return to Review. The chat and its message box return in the same editor area."
     },
     {
-      "seconds": 45.2,
-      "text": "Press ; to hide the tree. The chat remains in the normal file area."
+      "seconds": 53.8,
+      "text": "Press p, then Escape. From the input, :vsplit app.py opens a file at normal height."
     },
     {
-      "seconds": 48.3,
+      "seconds": 57.8,
+      "text": "Click the conversation. Its input returns below that chat only; the file keeps its full height."
+    },
+    {
+      "seconds": 61.9,
+      "text": "Press p, Escape, then :q. Only the input closes. The chat and file stay open."
+    },
+    {
+      "seconds": 65.0,
       "text": "The chats stay saved. Press Escape, then :qa to close the idle editor."
     },
     {
-      "seconds": 51.3,
+      "seconds": 68.0,
       "text": "For AI coding, use \\model to select Anthropic, then \\login to enter your key."
     }
   ],
@@ -82,7 +98,9 @@
     "normal editor starts with one window",
     "semicolon shows only New chat in the empty directory tree",
     "Enter on New opens chat without setup or name dialogs",
-    "model and name are set through local chat commands",
+    "model list opens through a chat command and Page Down scrolls",
+    "G reaches the last choice and Enter selects the local demo",
+    "name is set through a local chat command",
     "Shift-Enter inserts a line and Enter submits the prompt",
     "actual Bash tool creates a child with the correct stored parent",
     "child appears nested under its creator",
@@ -92,6 +110,9 @@
     "buffer command opens the source file and hides the message box",
     "Ctrl-^ returns to the prior chat and restores its message box",
     "no configuration file is written by chat settings",
+    "vsplit from input opens a normal height file",
+    "mouse click on chat restores input only beneath that chat",
+    "q closes only the input and preserves chat and file",
     "normal idle exit closes Neovim"
   ],
   "cleanup": "all demonstration sessions stopped; private server shut down; terminal closed",
@@ -115,11 +136,12 @@
     "lua/harness/commands.lua": "ca88183111ee1d05c455c1d68ee1dd94e9218d9c8426e6af952291e0f1dec0da",
     "lua/harness/context.lua": "938d5161702d32f55c11a53ea3186932ecaa74bdda5a7bde8f15439d0dd5c95b",
     "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
-    "lua/harness/init.lua": "1db1881216e0c9859ab348e69b1f5a162d660ed2e598fcdd974abd5cc4428c34",
+    "lua/harness/init.lua": "8ad0fcb60aa5af643c690137f22dff29c2def792a00cf9e0b4e0d60a68fec976",
+    "lua/harness/select.lua": "e0aa058924211fc3ffa95ab5a538130676b968c52852fc8cab2e4b31d1805929",
     "lua/harness/setup.lua": "fa73f912c70fd696046272838fa379d431ca2cfb4ddb6d38c855e2d9eb201bde",
     "lua/harness/sidebar.lua": "c2b52c7bec5a74c1c99644ed5f1d7e431d0c5f3ca4d867ef98767eed4f705f91",
     "lua/harness/transport.lua": "a57027006fc9de53c0b6a40a52fb1ca3033d9cdb2743d5ac64fa1b6340258820",
-    "lua/harness/view.lua": "54f46a086c18335be25a8c9a008d905b8c72ffb1a984cebec789711890c69fed",
+    "lua/harness/view.lua": "99c5b213b931996cd8265651126a846baf369770bcd13352df87febefb01239c",
     "plugin/harness.lua": "966ecd73ee630914f9cc5c31c5334fac8542adfa875220e84b9aeb2eea07ec7e"
   },
   "binary_sha256": "af0983792e9a0e9b23bfd9e1e38356c3047d4fcf120165bde4f4ca6fc4abb5b2"

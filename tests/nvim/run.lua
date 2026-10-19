@@ -346,6 +346,28 @@ wait(function() return has('without a key') end, 'Keys must not be supplied as c
 check(#calls('input.submit') == admitted and not state().auth_calls, 'Settings errors and credential arguments do not reach the model or terminal')
 chat('\\model anthropic/hosted')
 wait(function() return state().sessions[child_id].metadata.provider == 'anthropic' end, 'Model selection does not require credential entry')
+local function model_window()
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    local config = vim.api.nvim_win_get_config(win)
+    if config.relative ~= '' and vim.inspect(config.title):find('Model for this chat', 1, true) then return win end
+  end
+end
+local configured_before_picker = #calls('session.configure')
+chat('\\model')
+wait(function() return model_window() ~= nil end, 'Model choice opens in a scrollable native window')
+check(vim.api.nvim_get_current_line():find('Hosted model', 1, true), 'Model choice starts on the stored model')
+vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'Keep this newer draft', 'Second line' })
+key('<Esc>')
+wait(function() return not model_window() end, 'Escape closes the model list')
+check(#calls('session.configure') == configured_before_picker and text(named('prompt')) == 'Keep this newer draft\nSecond line', 'Cancelling model selection preserves settings and later draft text')
+local configurations_before_picker = #calls('configuration.get')
+chat('\\model')
+show_file(source)
+wait(function() return #calls('configuration.get') > configurations_before_picker end, 'The model catalog request completes after file navigation')
+vim.wait(100, function() return false end)
+check(not model_window() and vim.api.nvim_get_current_buf() == source, 'A late model list cannot take focus from a file')
+vim.cmd('Harness')
+wait(function() return #vim.fn.win_findbuf(named('prompt')) > 0 end, 'The chat can be reopened after cancelling the late model list')
 chat('Keep draft during key entry')
 wait(function() return has('Use \\login') end, 'Missing credentials remain an inline chat error')
 check(text(named('prompt')) == 'Keep draft during key entry' and #calls('input.submit') == admitted, 'Missing credentials retain the unsent task')
@@ -432,7 +454,8 @@ vim.cmd('Harness attach ' .. chat_a)
 wait(function() return text(named('prompt')) == 'Newer draft in A' end, 'Background admission preserves the newer A draft')
 
 local picker, configured_before = nil, #calls('session.configure')
-vim.ui.select = function(items, _, callback) picker = { items = items, callback = callback } end
+local native_select = require('harness.select').select
+require('harness.select').select = function(items, _, callback) picker = { items = items, callback = callback } end
 chat('\\provider')
 wait(function() return picker ~= nil end, 'Provider choice opens for A')
 vim.cmd('Harness attach ' .. chat_b)
@@ -445,7 +468,7 @@ vim.wait(100, function() return false end)
 for index = configured_before + 1, #calls('session.configure') do
   check(calls('session.configure')[index].params.session_id ~= chat_b, 'A provider choice for A cannot configure B')
 end
-vim.ui.select = select
+require('harness.select').select = native_select
 
 vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'Tab one draft' })
 local first_tab = vim.api.nvim_get_current_tabpage()

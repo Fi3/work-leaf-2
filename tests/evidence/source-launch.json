@@ -1,11 +1,11 @@
 {
-  "verified_at": "2026-10-19T15:08:29.420163+00:00",
+  "verified_at": "2026-10-19T19:13:14.425336+00:00",
   "command": [
-    "/tmp/harness-source-launch-bqah6gy7/source/harness.sh",
+    "/tmp/harness-source-launch-e_dbf_wn/source/harness.sh",
     "--config",
-    "/tmp/harness-source-launch-bqah6gy7/agent.json"
+    "/tmp/harness-source-launch-e_dbf_wn/agent.json"
   ],
-  "cwd": "/tmp/harness-source-launch-bqah6gy7/project",
+  "cwd": "/tmp/harness-source-launch-e_dbf_wn/project",
   "working_directory": "separate project with Rust 1.70.0 and Cargo wasm32-unknown-unknown target configuration",
   "empty_node_modules_before": true,
   "empty_build_target_before": true,
@@ -22,13 +22,13 @@
   "exit_code": 0,
   "neovim_mode": "actual Neovim headless with normal user init; interactive terminal tests are separate",
   "observed": {
-    "source_runtime": true,
-    "launcher_environment_cleared": true,
-    "normal_user_init": true,
     "caller_working_directory": true,
     "sidebar_mapping": true,
     "initial_windows": 1,
-    "server_started": false
+    "server_started": false,
+    "source_runtime": true,
+    "launcher_environment_cleared": true,
+    "normal_user_init": true
   },
   "source_hashes": {
     "Cargo.lock": "a4c99f2f6de51c390ae2d11db28c27dcf2a57a675c17e8c2fd8e2669e5dc172f",
@@ -41,11 +41,12 @@
     "lua/harness/commands.lua": "ca88183111ee1d05c455c1d68ee1dd94e9218d9c8426e6af952291e0f1dec0da",
     "lua/harness/context.lua": "938d5161702d32f55c11a53ea3186932ecaa74bdda5a7bde8f15439d0dd5c95b",
     "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
-    "lua/harness/init.lua": "1db1881216e0c9859ab348e69b1f5a162d660ed2e598fcdd974abd5cc4428c34",
+    "lua/harness/init.lua": "8ad0fcb60aa5af643c690137f22dff29c2def792a00cf9e0b4e0d60a68fec976",
+    "lua/harness/select.lua": "e0aa058924211fc3ffa95ab5a538130676b968c52852fc8cab2e4b31d1805929",
     "lua/harness/setup.lua": "fa73f912c70fd696046272838fa379d431ca2cfb4ddb6d38c855e2d9eb201bde",
     "lua/harness/sidebar.lua": "c2b52c7bec5a74c1c99644ed5f1d7e431d0c5f3ca4d867ef98767eed4f705f91",
     "lua/harness/transport.lua": "a57027006fc9de53c0b6a40a52fb1ca3033d9cdb2743d5ac64fa1b6340258820",
-    "lua/harness/view.lua": "54f46a086c18335be25a8c9a008d905b8c72ffb1a984cebec789711890c69fed",
+    "lua/harness/view.lua": "99c5b213b931996cd8265651126a846baf369770bcd13352df87febefb01239c",
     "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041",
     "package.json": "f87b963dd4e91e7436ed5448c5ca52d8fd73523bce9d22434d32382f12bef78b",
     "plugin/harness.lua": "966ecd73ee630914f9cc5c31c5334fac8542adfa875220e84b9aeb2eea07ec7e",
@@ -64,5 +65,5 @@
     "src/worker.rs": "9a565790fb9aa2fcd0ed1c21d1955b68a2b6e29d23b3a57f5a691a524a8045ab"
   },
   "log_sha256": "0bc7233c338f9ca63a00c638f89097265ad3f3c97b8bfdc2608a48955a7bc049",
-  "binary_sha256": "1c747d43e0f25ec6e1204a01b60221a257670ab780ea63e599e57eba52ccc563"
+  "binary_sha256": "ca58de42c1635ad23f3b987c03c2f24056fa1552b47c45f5d3996c0b85a1b730"
 }

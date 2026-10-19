@@ -1,8 +1,8 @@
 local M = {}
 
 function M.new(options, actions)
-  local self, chats, hosts = {}, {}, {}
-  local changing = false
+  local self, chats, hosts, files = {}, {}, {}, {}
+  local changing, scheduled = false, false
   actions = actions or {}
   local namespace = vim.api.nvim_create_namespace('HarnessView')
   local hint_namespace = vim.api.nvim_create_namespace('HarnessPrompt')
@@ -96,35 +96,117 @@ function M.new(options, actions)
     return win and vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_tabpage(win) == vim.api.nvim_get_current_tabpage()
   end
 
+  local function activate(win)
+    local buf = vim.api.nvim_win_get_buf(win)
+    local id = self.session(buf)
+    if actions.activate then actions.activate(id, buf, win) end
+    if id then self.select(id) end
+  end
+
+  local function close_prompt(host)
+    local prompt = host.prompt
+    host.prompt = nil
+    if not current_window(prompt) or vim.api.nvim_win_get_buf(prompt) ~= host.promptbuf then return end
+    if vim.fn.winlayout()[1] ~= 'leaf' then
+      local focused = vim.api.nvim_get_current_win() == prompt
+      vim.api.nvim_win_close(prompt, false)
+      if focused then activate(vim.api.nvim_get_current_win()) end
+    else
+      local file = host.previous
+      if not file or not vim.api.nvim_buf_is_valid(file) then file = vim.api.nvim_create_buf(true, false) end
+      vim.wo[prompt].winfixheight = false
+      vim.api.nvim_win_call(prompt, function() vim.cmd('hide buffer ' .. file) end)
+      host.main, host.chat = prompt, nil
+      activate(prompt)
+    end
+  end
+
   function self.hide_prompt()
     local host = hosts[vim.api.nvim_get_current_tabpage()]
-    if not host then return end
-    if current_window(host.prompt) and #vim.api.nvim_tabpage_list_wins(0) > 1 then
-      change_windows(function() vim.api.nvim_win_close(host.prompt, false) end)
+    if host then host.closed = true; change_windows(function() close_prompt(host) end) end
+  end
+
+  local function paired(layout, main, prompt)
+    if layout[1] == 'leaf' then return false end
+    for index, child in ipairs(layout[2]) do
+      local next_child = layout[2][index + 1]
+      if layout[1] == 'col' and child[1] == 'leaf' and child[2] == main
+        and next_child and next_child[1] == 'leaf' and next_child[2] == prompt then return true end
+      if paired(child, main, prompt) then return true end
     end
-    host.prompt = nil
+    return false
   end
 
   local function show_prompt(main)
-    local tab, focused = vim.api.nvim_get_current_tabpage(), vim.api.nvim_get_current_win()
+    local tab, chat = vim.api.nvim_get_current_tabpage(), vim.api.nvim_win_get_buf(main)
+    local pair = chats[self.session(chat)]
+    if not pair or chat ~= pair.transcript then return end
     local host = hosts[tab] or {}
     hosts[tab] = host
-    if current_window(host.prompt) and host.main ~= main then self.hide_prompt() end
-    host.main = main
+    if host.main ~= main or host.chat ~= chat then host.closed = false end
+    host.main, host.chat = main, chat
+    host.previous = files[main] or host.previous
+    if host.closed then return end
     if not current_window(host.prompt) then
-      vim.api.nvim_set_current_win(main)
-      vim.cmd('belowright ' .. prompt_height() .. 'split')
-      host.prompt = vim.api.nvim_get_current_win()
+      host.prompt = vim.api.nvim_open_win(pair.prompt, false, { split = 'below', win = main, height = prompt_height() })
+    else
+      if not paired(vim.fn.winlayout(), main, host.prompt) then
+        vim.api.nvim_win_set_config(host.prompt, { split = 'below', win = main })
+      end
+      vim.api.nvim_win_set_buf(host.prompt, pair.prompt)
     end
-    vim.api.nvim_win_set_buf(host.prompt, self.prompt)
-    host.promptbuf = self.prompt
+    host.promptbuf = pair.prompt
     style(main, false)
     style(host.prompt, true)
     vim.api.nvim_win_set_height(host.prompt, prompt_height())
-    if current_window(focused) then vim.api.nvim_set_current_win(focused) end
+  end
+
+  local function reconcile()
+    if changing then return end
+    change_windows(function()
+      local host = hosts[vim.api.nvim_get_current_tabpage()]
+      local focused = vim.api.nvim_get_current_win()
+      if host and current_window(host.prompt) then
+        local buf = vim.api.nvim_win_get_buf(host.prompt)
+        if buf ~= host.promptbuf then
+          local prompt = host.prompt
+          host.prompt = nil
+          if current_window(host.main) then
+            if vim.wo[prompt].winhighlight == 'Normal:NormalFloat' then vim.wo[prompt].winhighlight = vim.wo[host.main].winhighlight end
+            vim.api.nvim_win_call(host.main, function() vim.cmd('hide buffer ' .. buf) end)
+            if focused == prompt then vim.api.nvim_set_current_win(host.main) end
+            vim.api.nvim_win_close(prompt, false)
+            activate(host.main)
+          end
+        elseif not current_window(host.main) or vim.api.nvim_win_get_buf(host.main) ~= host.chat then
+          close_prompt(host)
+        end
+      end
+      local win = vim.api.nvim_get_current_win()
+      local buf = vim.api.nvim_win_get_buf(win)
+      local id = self.session(buf)
+      local pair = id and chats[id]
+      if pair and buf == pair.prompt and (not host or win ~= host.prompt) then
+        -- A tab or an external plugin can copy the input buffer into a normal window.
+        vim.cmd('hide buffer ' .. pair.transcript)
+        activate(win)
+        buf = pair.transcript
+      end
+      if pair and buf == pair.transcript then show_prompt(win)
+      elseif pair and host and win == host.prompt then show_prompt(host.main)
+      elseif vim.bo[buf].buftype == '' and host then close_prompt(host)
+      elseif host and current_window(host.main) and vim.api.nvim_win_get_buf(host.main) == host.chat then show_prompt(host.main) end
+    end)
+  end
+
+  local function schedule()
+    if changing or scheduled then return end
+    scheduled = true
+    vim.schedule(function() scheduled = false; reconcile() end)
   end
 
   function self.open(id, preferred)
+    reconcile()
     self.select(id or self.session(self.transcript))
     if not self.transcript then return end
     change_windows(function()
@@ -138,58 +220,81 @@ function M.new(options, actions)
         end
       end
       main = main or vim.api.nvim_get_current_win()
+      local buf = vim.api.nvim_win_get_buf(main)
+      if vim.bo[buf].buftype == '' then files[main] = buf end
       vim.api.nvim_set_current_win(main)
-      if vim.api.nvim_win_get_buf(main) ~= self.transcript then vim.cmd('hide buffer ' .. self.transcript) end
+      if buf ~= self.transcript then vim.cmd('hide buffer ' .. self.transcript) end
+      if host then host.closed = false end
       show_prompt(main)
-      vim.api.nvim_set_current_win(hosts[vim.api.nvim_get_current_tabpage()].prompt)
+      host = hosts[vim.api.nvim_get_current_tabpage()]
+      host.last = self.transcript
+      vim.api.nvim_set_current_win(host.prompt)
     end)
   end
 
-  vim.api.nvim_create_autocmd('BufEnter', { callback = function()
+  vim.api.nvim_create_autocmd({ 'BufEnter', 'WinEnter' }, { callback = function()
     if changing then return end
     local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
     if vim.api.nvim_win_get_config(win).relative ~= '' then return end
-    change_windows(function()
-      local host = hosts[vim.api.nvim_get_current_tabpage()]
-      -- Native buffer commands from the input still use the main editor area.
-      if host and win == host.prompt and buf ~= host.promptbuf and current_window(host.main) then
-        if vim.wo[win].winhighlight == 'Normal:NormalFloat' then vim.wo[win].winhighlight = vim.wo[host.main].winhighlight end
-        vim.api.nvim_set_current_win(host.main)
-        vim.cmd('hide buffer ' .. buf)
-        vim.api.nvim_win_close(win, false)
-        host.prompt = nil
-        win = host.main
-      end
+    local host = hosts[vim.api.nvim_get_current_tabpage()]
+    if not host or win ~= host.prompt or buf == host.promptbuf then
+      activate(win)
       local id = self.session(buf)
-      if actions.activate then actions.activate(id, buf, win) end
-      if id then
-        self.select(id)
-        if buf == self.transcript then show_prompt(win) end
-      elseif vim.bo[buf].buftype == '' then self.hide_prompt() end
-    end)
+      local content = id and chats[id].transcript or buf
+      if host then
+        if host.last ~= content then host.closed = false end
+        host.last = content
+      end
+    end
+    schedule()
   end })
+  vim.api.nvim_create_autocmd('BufLeave', { callback = function()
+    if changing then return end
+    local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+    if vim.bo[buf].buftype == '' then files[win] = buf end
+  end })
+  vim.api.nvim_create_autocmd('WinNewPre', { callback = function()
+    if changing then return end
+    local host = hosts[vim.api.nvim_get_current_tabpage()]
+    if host and vim.api.nvim_get_current_win() == host.prompt and current_window(host.main)
+      and vim.api.nvim_win_get_buf(host.main) == host.chat then vim.api.nvim_set_current_win(host.main) end
+  end })
+  vim.api.nvim_create_autocmd('WinClosed', { callback = function(event)
+    if changing then return end
+    local win = tonumber(event.match)
+    for _, host in pairs(hosts) do
+      if host.prompt == win then host.prompt, host.closed = nil, true end
+      if host.main == win then host.previous = files[win] or host.previous end
+    end
+    files[win] = nil
+    schedule()
+  end })
+  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'TabEnter', 'WinResized' }, { callback = schedule })
 
   function self.focus()
+    reconcile()
+    local host = hosts[vim.api.nvim_get_current_tabpage()]
+    if host and current_window(host.main) and vim.api.nvim_win_get_buf(host.main) == self.transcript
+      and vim.api.nvim_get_current_buf() == self.transcript then
+      change_windows(function() host.closed = false; show_prompt(host.main) end)
+    end
     local win = window(self.prompt)
     if win then vim.api.nvim_set_current_win(win); vim.cmd('startinsert!') end
   end
 
   function self.resize()
-    local prompt = window(self.prompt)
-    if not prompt then return end
-    vim.api.nvim_win_set_height(prompt, prompt_height())
-    style(prompt, true)
+    reconcile()
   end
 
   vim.api.nvim_create_autocmd('VimResized', { callback = function()
     if vim.o.columns < 90 and window(self.prompt) then
-      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-        if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win)) == 'harness://agents' then
-          vim.api.nvim_win_close(win, false)
+      change_windows(function()
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win)) == 'harness://agents' then vim.api.nvim_win_close(win, false) end
         end
-      end
+      end)
     end
-    self.resize()
+    schedule()
   end })
 
   function self.draft(id)
