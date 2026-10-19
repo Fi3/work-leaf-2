@@ -42,7 +42,7 @@ test('configuration lists the Pi catalog and explains missing or unsupported cho
     Object.assign(app.config, { provider, model });
     const result = await call('configuration.get');
     assert.deepEqual({ provider: result.provider, model: result.model, ready: result.ready, issue: result.issue }, { provider, model, ready: false, issue });
-    assert.match(result.message, /setup/);
+    assert.match(result.message, /\\model/);
     assert.equal(result.models.length, 17);
     assert.ok(result.models.some(item => item.id === 'claude-sonnet-4-6' && item.name === 'Claude Sonnet 4.6'));
     assert.ok(result.models.every(item => typeof item.id === 'string' && typeof item.name === 'string' && Object.keys(item).length === 2));
@@ -61,6 +61,7 @@ test('configuration checks only credential presence and returns no credential ma
   const missing = await call('configuration.get');
   assert.equal(missing.ready, false); assert.equal(missing.issue, 'missing_key');
   assert.match(missing.message, /server environment/); assert.match(missing.message, /ANTHROPIC_API_KEY/);
+  assert.match(missing.message, /\\login/);
   key = 'deliberately-invalid-secret-for-test';
   const configured = await call('configuration.get');
   assert.equal(configured.ready, true); assert.equal(configured.issue, null);
@@ -91,20 +92,154 @@ test('the default demo response explains its limit and how to configure an AI mo
   assert.match(answer.text, /Demo mode uses fixed replies/);
   assert.match(answer.text, /does not use an AI model or change project files/);
   assert.match(answer.text, /harness setup/);
+  assert.match(answer.text, /\\model/); assert.match(answer.text, /\\login/);
   assert.equal((await call('transcript.list', { session_id: 'demo' })).items.filter(item => item.kind === 'tool').length, 0);
 });
 
-test('atomic creation is idempotent and preserves fixed configuration after reopen', async t => {
+test('creation preserves existing settings and inherits the latest configured chat after reopen', async t => {
   const { app, call, create, workspace, config } = await setup(t);
   const first = await create('work'); app.config.model = null;
-  await assert.rejects(create('new'), {message:'Set provider and model before creating a session'});
+  const inherited = await create('new');
+  assert.equal(inherited.provider, first.provider); assert.equal(inherited.model, first.model);
   app.config.model = 'invalid-new-default';
   assert.deepEqual(await create('work'), first);
   await assert.rejects(call('session.create', { session_id: 'work', workspace: '/tmp' }), isKind('conflict'));
   await app.close();
   const reopened = await openApplication(config); t.after(() => reopened.close());
   assert.deepEqual(await reopened.dispatch('session.create', { session_id: 'work', workspace }, 'reopen'), first);
-  assert.equal((await reopened.dispatch('session.list', {}, 'list')).items.length, 1);
+  assert.equal((await reopened.dispatch('session.list', {}, 'list')).items.length, 2);
+});
+
+test('an empty chat persists without a model and accepts settings before credentials', async t => {
+  const { app, call, create, config } = await setup(t);
+  Object.assign(config, { provider: null, model: null });
+  const empty = await create('empty');
+  assert.equal(empty.name, 'empty'); assert.equal(empty.parent_session_id, null);
+  assert.equal(empty.provider, null); assert.equal(empty.model, null);
+  const child = await call('session.create', { session_id: 'child', workspace: empty.workspace, parent_session_id: 'empty', name: 'New chat' });
+  assert.equal(child.provider, null); assert.equal(child.model, null); assert.equal(child.name, 'New chat');
+  assert.equal((await call('session.get', { session_id: 'empty' })).snapshot.state, 'idle');
+  await assert.rejects(call('input.submit', input('empty', 'first')), isKind('not_ready'));
+  await assert.rejects(call('submission.get', { session_id: 'empty', request_id: 'first' }), isKind('not_found'));
+  assert.deepEqual((await call('transcript.list', { session_id: 'empty' })).items, []);
+  const auth = t.mock.method(app.models, 'getAuth', () => assert.fail('Choosing a model must not read credentials'));
+  await call('session.configure', { session_id: 'empty', provider: 'anthropic', model: 'claude-sonnet-4-6', name: 'Review λ' });
+  auth.mock.restore();
+  assert.equal((await call('configuration.get', { session_id: 'empty' })).model, 'claude-sonnet-4-6');
+  await assert.rejects(call('session.configure', { session_id: 'empty', provider: 'anthropic', model: 'missing' }), { code: -32602 });
+  const selected = await call('session.configure', { session_id: 'empty', provider: 'faux', model: 'test', instructions: 'Review the project' });
+  assert.deepEqual(await call('session.configure', { session_id: 'empty', provider: 'faux', model: 'test', instructions: 'Review the project' }), selected);
+  await app.close();
+  const reopened = await openApplication(config); t.after(() => reopened.close());
+  const run = (method, params) => reopened.dispatch(method, params, method);
+  assert.deepEqual((await run('session.get', { session_id: 'empty' })).session, selected);
+  const receipt = await run('input.submit', input('empty', 'first', 'Original'));
+  const result = await run('submission.wait', { session_id: 'empty', request_id: 'first', timeout_ms: 3000 });
+  assert.equal(result.status, 'done');
+  assert.equal((await run('input.submit', input('empty', 'first', 'Replacement'))).submission_id, receipt.submission_id);
+  const changed = await run('session.configure', { session_id: 'empty', instructions: 'New instructions after history', name: 'Finished review' });
+  assert.equal(changed.instructions, 'New instructions after history');
+  assert.deepEqual((await run('transcript.list', { session_id: 'empty' })).items.filter(item => item.kind === 'user').map(item => item.text), ['Original']);
+});
+
+test('parents and workspace inheritance persist, and list cursors belong to their directory', async t => {
+  const { app, call, create, directory, workspace, config } = await setup(t);
+  const other = join(directory, 'other'); await mkdir(other);
+  await create('root');
+  await call('session.configure', { session_id: 'root', instructions: 'Root settings', name: 'Main' });
+  const child = await call('session.create', { session_id: 'child', workspace, parent_session_id: 'root', name: 'Review' });
+  assert.equal(child.parent_session_id, 'root'); assert.equal(child.instructions, 'Root settings');
+  await call('session.configure', { session_id: 'child', instructions: 'Child settings' });
+  const nested = await call('session.create', { session_id: 'nested', workspace, parent_session_id: 'child' });
+  assert.equal(nested.parent_session_id, 'child'); assert.equal(nested.instructions, 'Child settings');
+  const independent = await create('independent'); assert.equal(independent.instructions, 'Child settings'); assert.equal(independent.parent_session_id, null);
+  const elsewhere = await call('session.create', { session_id: 'elsewhere', workspace: other });
+  assert.equal(elsewhere.instructions, '');
+  await assert.rejects(call('session.create', { session_id: 'missing', workspace, parent_session_id: 'absent' }), isKind('not_found'));
+  await assert.rejects(call('session.create', { session_id: 'self', workspace, parent_session_id: 'self' }), isKind('not_found'));
+  await assert.rejects(call('session.create', { session_id: 'wrong_workspace', workspace: other, parent_session_id: 'root' }), isKind('conflict'));
+  await assert.rejects(call('session.create', { session_id: 'child', workspace, parent_session_id: 'nested' }), isKind('conflict'));
+  await assert.rejects(call('session.create', { session_id: 'child', workspace, parent_session_id: null }), isKind('conflict'));
+  assert.equal((await create('child')).parent_session_id, 'root');
+  const page = await call('session.list', { workspace, limit: 1 });
+  assert.ok(page.next_cursor);
+  await assert.rejects(call('session.list', { workspace: other, cursor: page.next_cursor }), { code: -32602 });
+  await assert.rejects(call('session.list', { cursor: page.next_cursor }), { code: -32602 });
+  const names = [...page.items]; let next = page.next_cursor;
+  while (next) { const page = await call('session.list', { workspace, limit: 1, cursor: next }); names.push(...page.items); next = page.next_cursor; }
+  assert.deepEqual(names.map(item => item.session_id), ['child', 'independent', 'nested', 'root']);
+  await app.close();
+  const reopened = await openApplication(config); t.after(() => reopened.close());
+  const restored = (await reopened.dispatch('session.list', { workspace }, 'list')).items;
+  assert.deepEqual(restored.map(item => [item.session_id, item.parent_session_id]), [['child', 'root'], ['independent', null], ['nested', 'child'], ['root', null]]);
+});
+
+test('settings are atomic in watch frames and reject only the active target', async t => {
+  const { app, call, create } = await setup(t, [fauxAssistantMessage('x'.repeat(1000))], 10);
+  await create('active'); await create('idle');
+  const receipt = await call('input.submit', input('active', 'task'));
+  await assert.rejects(call('session.configure', { session_id: 'active', name: 'Changed' }), isKind('busy'));
+  assert.equal((await call('session.get', { session_id: 'active' })).session.name, 'active');
+  const frames = [];
+  const watch = await app.dispatch('session.watch', { session_id: 'idle' }, 'watch', record => frames.push(record.params.snapshot)); watch.start();
+  const changed = await call('session.configure', { session_id: 'idle', provider: 'anthropic', model: 'claude-sonnet-4-6', name: 'Configured', instructions: 'Updated instructions' });
+  await delay(20);
+  assert.deepEqual(frames.at(-1).session, changed);
+  const current = await call('session.get', { session_id: 'idle' });
+  assert.deepEqual(current.session, changed); assert.deepEqual(current.snapshot.session, changed);
+  const renamed = await call('session.configure', { session_id: 'idle', name: 'Name only' });
+  await delay(10); assert.deepEqual(frames.at(-1).session, renamed);
+  assert.equal((await call('submission.get', { session_id: 'active', request_id: 'task' })).status, 'accepted');
+  await call('session.unwatch', { watch_id: watch.result.watch_id });
+  await call('run.stop', { session_id: 'active', submission_id: receipt.submission_id });
+});
+
+test('a long workspace path produces a usable scoped continuation cursor', async t => {
+  const { call, directory, workspace } = await setup(t);
+  const deep = join(directory, ...Array.from({ length: 40 }, () => 'd'.repeat(80)));
+  await mkdir(deep, { recursive: true });
+  for (const session_id of ['first', 'second']) await call('session.create', { session_id, workspace: deep });
+  const first = await call('session.list', { workspace: deep, limit: 1 });
+  assert.ok(Buffer.byteLength(first.next_cursor) <= 4096);
+  const second = await call('session.list', { workspace: deep, cursor: first.next_cursor, limit: 1 });
+  assert.deepEqual([...first.items, ...second.items].map(item => item.session_id), ['first', 'second']);
+  assert.equal(second.next_cursor, null);
+  await assert.rejects(call('session.list', { workspace, cursor: first.next_cursor }), { code: -32602 });
+});
+
+test('a watch attached before settings change starts with the latest committed name and model', async t => {
+  const { app, call, create } = await setup(t);
+  await create('work'); const frames = [];
+  const watch = await app.dispatch('session.watch', { session_id: 'work' }, 'watch', record => frames.push(record.params.snapshot));
+  const selected = await call('session.configure', { session_id: 'work', name: 'Renamed', provider: 'anthropic', model: 'claude-sonnet-4-6' });
+  watch.start(); await delay(10);
+  assert.deepEqual(frames.at(-1).session, selected); assert.equal(frames.at(-1).state, 'idle');
+  await call('session.unwatch', { watch_id: watch.result.watch_id });
+});
+
+test('legacy chats retain their public identifiers as names and have no parent', async t => {
+  const { app, call, create, config } = await setup(t);
+  await create('review'); const session = app.sessions.get('review');
+  await app.harness.commit(async tx => { const stored = await tx.doc(SessionDoc, session.conversation.id); delete stored.name; delete stored.parent_session_id; }, context);
+  assert.equal((await call('session.get', { session_id: 'review' })).session.name, 'review');
+  await app.close();
+  const reopened = await openApplication(config); t.after(() => reopened.close());
+  const restored = (await reopened.dispatch('session.get', { session_id: 'review' }, 'get')).session;
+  assert.equal(restored.name, 'review'); assert.equal(restored.parent_session_id, null);
+});
+
+test('concurrent settings and submission use one selected model and keep duplicate admission exact', async t => {
+  const { app, call, create } = await setup(t, [fauxAssistantMessage('x'.repeat(1000))], 10);
+  Object.assign(app.config, { provider: null, model: null }); await create('work');
+  const configured = call('session.configure', { session_id: 'work', provider: 'faux', model: 'test', instructions: 'Selected before admission' });
+  const submitted = call('input.submit', input('work', 'task', 'Original'));
+  const duplicate = call('input.submit', input('work', 'task', 'Replacement'));
+  const [settings, receipt, repeated] = await Promise.all([configured, submitted, duplicate]);
+  assert.equal(settings.model, 'test'); assert.equal(receipt.status, 'accepted'); assert.equal(repeated.submission_id, receipt.submission_id);
+  const snapshot = (await call('session.get', { session_id: 'work' })).snapshot;
+  assert.equal(snapshot.session.instructions, 'Selected before admission'); assert.equal(snapshot.active_submission_id, receipt.submission_id);
+  assert.deepEqual((await call('transcript.list', { session_id: 'work' })).items.filter(item => item.kind === 'user').map(item => item.text), ['Original']);
+  await call('run.stop', { session_id: 'work', submission_id: receipt.submission_id });
 });
 
 test('duplicate identifiers preserve input while busy and after restart; old stop cannot stop new work', async t => {

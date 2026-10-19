@@ -7,7 +7,6 @@ use crate::{
 use serde_json::{Value, json};
 use std::collections::{HashMap, VecDeque};
 use std::io::{Read, Write};
-use std::os::fd::AsRawFd;
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::process::{Command, Stdio};
@@ -251,28 +250,13 @@ fn existing(config: &Config, expected_pid: Option<u32>) -> Result<Option<Value>,
         }
         Err(e) => return Err(e.into()),
     };
-    if let Some(expected) = expected_pid {
-        let mut credentials: libc::ucred = unsafe { std::mem::zeroed() };
-        let mut size = std::mem::size_of_val(&credentials) as libc::socklen_t;
-        // The live Unix socket and writable credential storage remain valid for this call.
-        if unsafe {
-            libc::getsockopt(
-                stream.as_raw_fd(),
-                libc::SOL_SOCKET,
-                libc::SO_PEERCRED,
-                (&mut credentials as *mut libc::ucred).cast(),
-                &mut size,
-            )
-        } < 0
-        {
-            return Err(std::io::Error::last_os_error().into());
-        }
-        if credentials.pid as u32 != expected {
-            return Err(RpcError::app(
-                "conflict",
-                "Another server started during setup. The entered key was not applied. Run setup again",
-            ));
-        }
+    if let Some(expected) = expected_pid
+        && process::peer_pid(&stream)? != expected
+    {
+        return Err(RpcError::app(
+            "conflict",
+            "Another server started during setup. The entered key was not applied. Run auth or setup again",
+        ));
     }
     stream.set_read_timeout(Some(Duration::from_millis(500)))?;
     stream.set_write_timeout(Some(Duration::from_millis(500)))?;

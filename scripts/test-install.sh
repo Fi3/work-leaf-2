@@ -30,9 +30,9 @@ const env = { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8',
   HARNESS_FAUX_RESPONSES: responses, HARNESS_FAUX_TOKENS_PER_SECOND: '1000' };
 let serverPid, workerPid;
 
-function command(program, args, input = '', environment = env) {
+function command(program, args, input = '', environment = env, cwd = directory) {
   return new Promise((resolve, reject) => {
-    const child = spawn(program, args, { cwd: directory, env: environment, stdio: ['pipe', 'pipe', 'pipe'], timeout: 20000 });
+    const child = spawn(program, args, { cwd, env: environment, stdio: ['pipe', 'pipe', 'pipe'], timeout: 20000 });
     let stdout = '', stderr = '';
     child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
     child.stdout.on('data', value => { stdout += value; });
@@ -96,6 +96,7 @@ vim.api.nvim_create_autocmd('VimEnter', { once = true, callback = function()
   vim.schedule(function()
     local ok, message = pcall(function()
       assert(vim.g.install_user_config_loaded and vim.o.number, 'Load normal user configuration')
+      assert(vim.fn.getcwd() == ${JSON.stringify(workspace)}, 'Keep the caller project directory')
       assert(vim.env.HARNESS_NVIM_RUNTIME == nil and vim.env.HARNESS_NVIM_OPTIONS == nil)
       local harness = require('harness')
       assert(debug.getinfo(harness.setup, 'S').source == '@' .. ${JSON.stringify(join(share, 'nvim/lua/harness/init.lua'))})
@@ -146,7 +147,7 @@ end })
   const editor = await command(executable, ['nvim', '--config', config], '', {
     ...env, PATH: `${wrappers}:${env.PATH}`, HARNESS_INSTALL_NVIM: actualNvim,
     XDG_DATA_HOME: join(directory, 'data'), XDG_CACHE_HOME: join(directory, 'cache'),
-  });
+  }, workspace);
   assert.equal(editor.code, 0, editor.stderr);
   await cli(['shutdown']);
   for (let count = 0; count < 200 && (await alive(serverPid) || await alive(workerPid)); count++) await delay(25);

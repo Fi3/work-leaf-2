@@ -3,6 +3,7 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::os::fd::{AsRawFd, RawFd};
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
+use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::process::{Child, Command};
@@ -39,6 +40,29 @@ pub fn random_id() -> io::Result<String> {
     let mut bytes = [0; 16];
     File::open("/dev/urandom")?.read_exact(&mut bytes)?;
     Ok(bytes.iter().map(|b| format!("{b:02x}")).collect())
+}
+
+pub fn peer_pid(stream: &UnixStream) -> io::Result<u32> {
+    // SO_PEERCRED initializes this writable value for the live Unix socket.
+    let credentials = unsafe {
+        let mut credentials: libc::ucred = std::mem::zeroed();
+        let mut size = std::mem::size_of_val(&credentials) as libc::socklen_t;
+        if libc::getsockopt(
+            stream.as_raw_fd(),
+            libc::SOL_SOCKET,
+            libc::SO_PEERCRED,
+            (&mut credentials as *mut libc::ucred).cast(),
+            &mut size,
+        ) < 0
+        {
+            return Err(io::Error::last_os_error());
+        }
+        credentials
+    };
+    u32::try_from(credentials.pid)
+        .ok()
+        .filter(|pid| *pid != 0)
+        .ok_or_else(|| io::Error::other("Socket peer has no process identifier"))
 }
 
 pub(crate) fn owned(path: &Path) -> io::Result<std::fs::Metadata> {

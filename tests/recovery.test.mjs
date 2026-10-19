@@ -81,6 +81,62 @@ async function system(t, messages, tokens = 100000) {
 const input = (session_id, request_id) => ({ session_id, request_id, text: 'Run the task', context: [] });
 const create = (client, service, id = 'work') => client.call('session.create', { session_id: id, workspace: service.workspace });
 
+const delegate = id => `set -eu
+"$HARNESS_EXECUTABLE" --socket "$HARNESS_SOCKET" session create --id ${id} --workspace "$PWD" > ${id}.json
+printf 'Task for ${id}' | "$HARNESS_EXECUTABLE" --socket "$HARNESS_SOCKET" send --session ${id} --request-id task --stdin
+"$HARNESS_EXECUTABLE" --socket "$HARNESS_SOCKET" wait --session ${id} --request-id task --text > ${id}-answer.txt`;
+
+test('real Bash creates nested children through the standard client with separate histories', async t => {
+  const messages = [
+    fauxAssistantMessage(fauxToolCall('bash', { command: delegate('child') }), { stopReason: 'toolUse' }),
+    fauxAssistantMessage(fauxToolCall('bash', { command: delegate('grandchild') }), { stopReason: 'toolUse' }),
+    fauxAssistantMessage('Grandchild result'), fauxAssistantMessage('Child result'), fauxAssistantMessage('Parent result'),
+  ];
+  const service = await system(t, messages);
+  // The faux fixture must also work when the first chat is configured after server startup.
+  await writeFile(service.config, JSON.stringify({ state_dir: service.state, socket_path: service.socket }));
+  let server = await service.start(), client = await service.client();
+  const empty = await create(client, service, 'parent'); assert.equal(empty.model, null);
+  await client.call('session.configure', { session_id: 'parent', provider: 'faux', model: 'test', instructions: 'Preserve user changes' });
+  await client.call('input.submit', input('parent', 'task'));
+  const result = await client.call('submission.wait', { session_id: 'parent', request_id: 'task', timeout_ms: 10000 }, 12000);
+  assert.equal(result.status, 'done');
+  assert.equal((await client.call('entry.read', { session_id: 'parent', entry_id: result.answer_entry_id })).text, 'Parent result');
+  assert.equal(await readFile(join(service.workspace, 'child-answer.txt'), 'utf8'), 'Child result');
+  assert.equal(await readFile(join(service.workspace, 'grandchild-answer.txt'), 'utf8'), 'Grandchild result');
+  for (const [id, parent] of [['child', 'parent'], ['grandchild', 'child']]) {
+    const created = JSON.parse(await readFile(join(service.workspace, `${id}.json`), 'utf8'));
+    assert.equal(created.parent_session_id, parent); assert.equal(created.instructions, 'Preserve user changes');
+    const history = await client.call('transcript.list', { session_id: id });
+    assert.deepEqual(history.items.filter(item => item.kind === 'user').map(item => item.text), [`Task for ${id}`]);
+  }
+  const hierarchy = (await client.call('session.list', { workspace: service.workspace })).items;
+  assert.deepEqual(hierarchy.map(item => [item.session_id, item.parent_session_id]), [['child', 'parent'], ['grandchild', 'child'], ['parent', null]]);
+  await client.call('server.shutdown'); await server.exited;
+  server = await service.start(); client = await service.client();
+  assert.deepEqual((await client.call('session.list', { workspace: service.workspace })).items, hierarchy);
+  await client.call('server.shutdown'); await server.exited;
+});
+
+test('stopping a parent Bash wait keeps its independently admitted child active', async t => {
+  const service = await system(t, [
+    fauxAssistantMessage(fauxToolCall('bash', { command: delegate('child') }), { stopReason: 'toolUse' }),
+    fauxAssistantMessage(fauxToolCall('bash', { command: 'sleep 30' }), { stopReason: 'toolUse' }),
+  ]);
+  const server = await service.start(), client = await service.client();
+  await create(client, service, 'parent');
+  const parent = await client.call('input.submit', input('parent', 'task'));
+  const child = await deadline(async () => {
+    try { const value = await client.call('submission.get', { session_id: 'child', request_id: 'task' }); return value.status === 'accepted' ? value : false; }
+    catch (error) { if (error.data?.kind === 'not_found') return false; throw error; }
+  }, 'child admission');
+  assert.equal((await client.call('run.stop', { session_id: 'parent', submission_id: parent.submission_id })).reason, 'cancelled');
+  assert.equal((await client.call('submission.get', { session_id: 'child', request_id: 'task' })).status, 'accepted');
+  assert.equal((await client.call('session.get', { session_id: 'child' })).session.parent_session_id, 'parent');
+  await client.call('run.stop', { session_id: 'child', submission_id: child.submission_id });
+  await client.call('server.shutdown'); await server.exited;
+});
+
 for (const target of ['worker', 'server']) test(`${target} SIGKILL cleans ordinary bash descendants and recovers without repeating the unsafe call`, async t => {
   const messages = [fauxAssistantMessage(fauxToolCall('bash', { command: 'echo $$ > shell.pid; sleep 30 & echo $! > child.pid; echo effect >> effects; wait' }), { stopReason: 'toolUse' }), fauxAssistantMessage('Finished')];
   const service = await system(t, messages); let server = await service.start(), client = await service.client();

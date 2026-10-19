@@ -2,69 +2,98 @@ local M = {}
 
 function M.new(transport, actions)
   local self = { snapshots = {}, items = {}, collapsed = {} }
-  local rows, refreshing, refresh_again, selected = {}, false, false, nil
-  local configuration, failure
+  local rows, refreshing, refresh_again, selected, failure = {}, false, false, nil, nil
 
   local function window()
-    return self.buffer and vim.fn.win_findbuf(self.buffer)[1]
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.api.nvim_win_get_buf(win) == self.buffer then return win end
+    end
+  end
+
+  local function name(item)
+    return type(item.name) == 'string' and item.name or 'New chat'
   end
 
   local function render()
     if not self.buffer or not vim.api.nvim_buf_is_valid(self.buffer) then return end
     local win = window()
+    if win and self.directory then
+      vim.wo[win].winbar = '%#Title# ' .. vim.fn.fnamemodify(self.directory, ':t'):gsub('%%', '%%%%') .. ' · Agents%*'
+    end
     local cursor = win and vim.api.nvim_win_get_cursor(win)[1] or 1
-    local lines = { 'Agents', 'Enter open/fold   n new', 'g setup  s stop  r refresh', 'q hide  ; toggle' }
-    local message = failure or (configuration and (configuration.ready and 'Ready to create an agent.' or configuration.message))
-    if message then
-      local line = ''
-      for word in message:gmatch('%S+') do
-        if vim.fn.strdisplaywidth(line .. word) > 29 and line ~= '' then lines[#lines + 1] = line; line = '' end
-        line = line .. (line == '' and '' or ' ') .. word
-      end
-      if line ~= '' then lines[#lines + 1] = line end
-    end
-    lines[#lines + 1] = refreshing and 'Loading...' or ''
-    rows = {}
-    local groups = { [self.directory] = {} }
+    local lines, items, lookup, names, suffixes, children, seen = { '+ New chat' }, {}, {}, {}, {}, {}, {}
+    rows = { { new = true, workspace = self.directory } }
+    if failure then lines[#lines + 1] = failure
+    elseif refreshing then lines[#lines + 1] = 'Loading...' end
     for _, item in ipairs(self.items) do
-      groups[item.workspace] = groups[item.workspace] or {}
-      table.insert(groups[item.workspace], item)
-    end
-    local paths = vim.tbl_keys(groups)
-    table.sort(paths)
-    for _, path in ipairs(paths) do
-      lines[#lines + 1] = (self.collapsed[path] and '+ ' or '- ') .. vim.fn.fnamemodify(path, ':t') .. ' (' .. path .. ')'
-      rows[#lines] = { workspace = path }
-      if not self.collapsed[path] then
-        if #groups[path] == 0 then lines[#lines + 1] = '  No agents. Press n to create.' end
-        table.sort(groups[path], function(a, b) return a.session_id < b.session_id end)
-        for _, item in ipairs(groups[path]) do
-          local snapshot = self.snapshots[item.session_id]
-          local state = transport.connected and snapshot and snapshot.state or 'unknown'
-          lines[#lines + 1] = (selected == item.session_id and '  * ' or '    ') .. item.session_id .. ' [' .. state .. ']'
-          rows[#lines] = item
-        end
+      if item.workspace == self.directory then
+        items[#items + 1], lookup[item.session_id] = item, item
+        names[name(item)] = (names[name(item)] or 0) + 1
+        local key = name(item) .. '\0' .. item.session_id:sub(-8)
+        suffixes[key] = (suffixes[key] or 0) + 1
       end
     end
+    table.sort(items, function(a, b)
+      if name(a) == name(b) then return a.session_id < b.session_id end
+      return name(a) < name(b)
+    end)
+    local roots = {}
+    for _, item in ipairs(items) do
+      local parent = type(item.parent_session_id) == 'string' and lookup[item.parent_session_id]
+      local list = roots
+      if parent and parent ~= item then
+        children[parent.session_id] = children[parent.session_id] or {}
+        list = children[parent.session_id]
+      end
+      list[#list + 1] = item
+    end
+    local function branch(item, depth, hidden)
+      local id = item.session_id
+      if seen[id] then return end
+      seen[id] = true
+      if not hidden then
+        local snapshot = self.snapshots[id]
+        local state = transport.connected and snapshot and snapshot.state or 'unknown'
+        local suffix = id:sub(-8)
+        if suffixes[name(item) .. '\0' .. suffix] > 1 then suffix = id end
+        local label = name(item) .. (names[name(item)] > 1 and ' (' .. suffix .. ')' or '')
+        local marker = children[id] and (self.collapsed[id] and '+ ' or '- ') or '  '
+        lines[#lines + 1] = string.rep('  ', depth) .. (selected == id and '*' or ' ') .. marker .. label .. ' [' .. state .. ']'
+        rows[#lines] = item
+      end
+      for _, child in ipairs(children[id] or {}) do branch(child, depth + 1, hidden or self.collapsed[id]) end
+    end
+    for _, item in ipairs(roots) do branch(item, 0) end
+    -- Malformed legacy ancestry must not hide a chat or cause recursion forever.
+    for _, item in ipairs(items) do branch(item, 0) end
     vim.bo[self.buffer].modifiable = true
     vim.api.nvim_buf_set_lines(self.buffer, 0, -1, false, lines)
     vim.bo[self.buffer].modifiable = false
     if win then vim.api.nvim_win_set_cursor(win, { math.min(cursor, #lines), 0 }) end
   end
 
-  local function request(method, params, callback)
-    transport.request(method, params, function(value, err)
-      if err then refreshing, refresh_again = false, false; self.message(err); actions.report(err); return end
-      callback(value)
-    end)
-  end
-
-  function self.refresh()
+  function self.refresh(directory)
+    if directory then
+      self.directory = vim.uv.fs_realpath(directory) or directory
+      render()
+    end
     if refreshing then refresh_again = true; return end
-    refreshing = true; render()
+    local directory = self.directory
+    refreshing, failure = true, nil
+    render()
+    local function fail(err)
+      refreshing = false
+      if refresh_again then refresh_again = false; self.refresh(); return end
+      failure = err
+      render(); actions.report(err)
+    end
+    local function request(method, params, callback)
+      transport.request(method, params, function(value, err)
+        if err then fail(err) else callback(value) end
+      end)
+    end
     transport.connect(function(_, err)
-      if err then refreshing, refresh_again = false, false; self.message(err); actions.report(err); return end
-      actions.configuration()
+      if err then fail(err); return end
       local items = {}
       local function states(index)
         if not items[index] then
@@ -78,43 +107,35 @@ function M.new(transport, actions)
         end)
       end
       local function page(cursor)
-        request('session.list', { limit = 100, cursor = cursor }, function(value)
-          vim.list_extend(items, value.items)
+        request('session.list', { workspace = directory, limit = 100, cursor = cursor }, function(value)
+          for _, item in ipairs(value.items) do if item.workspace == directory then items[#items + 1] = item end end
           if value.next_cursor ~= vim.NIL then page(value.next_cursor)
-          else self.items = items; states(1) end
+          else
+            if self.directory == directory then self.items = items end
+            states(1)
+          end
         end)
       end
       page()
     end)
   end
 
-  function self.message(message)
-    failure = message
-    render()
-  end
-
-  function self.configuration(value, err)
-    configuration, failure = value, err
-    render()
-  end
+  function self.message(message) failure = message; render() end
 
   function self.update(snapshot)
-    if snapshot then
-      selected = snapshot.session.session_id
-      self.snapshots[selected] = snapshot
-    end
+    if snapshot then selected = snapshot.session.session_id; self.snapshots[selected] = snapshot end
     render()
   end
 
   function self.hide()
     local win = window()
     if not win then return end
-    if #vim.api.nvim_list_wins() == 1 then vim.cmd('enew') else vim.api.nvim_win_close(win, false) end
+    if #vim.api.nvim_tabpage_list_wins(0) == 1 then vim.cmd('enew') else vim.api.nvim_win_close(win, false) end
   end
 
   function self.toggle(directory)
     if window() then self.hide(); return end
-    self.directory = directory
+    self.directory = vim.uv.fs_realpath(directory) or directory
     if not self.buffer or not vim.api.nvim_buf_is_valid(self.buffer) then
       self.buffer = vim.api.nvim_create_buf(false, true)
       vim.api.nvim_buf_set_name(self.buffer, 'harness://agents')
@@ -124,28 +145,32 @@ function M.new(transport, actions)
       local function map(key, action) vim.keymap.set('n', key, action, { buffer = self.buffer, silent = true }) end
       map('q', self.hide)
       map('r', self.refresh)
-      map('g', actions.setup)
+      map('n', function() actions.create(self.directory) end)
       map('<CR>', function()
         local item = row(); if not item then return end
-        if item.session_id then actions.select(item.session_id)
-        else self.collapsed[item.workspace] = not self.collapsed[item.workspace]; render() end
+        if item.new then actions.create(self.directory) else actions.select(item.session_id) end
       end)
-      map('n', function()
-        local directory = row() and row().workspace or self.directory
-        actions.create(directory)
-      end)
+      for key, collapsed in pairs({ h = true, l = false }) do
+        map(key, function()
+          local item = row(); if not item or not item.session_id then return end
+          self.collapsed[item.session_id] = collapsed; render()
+        end)
+      end
       map('s', function()
         local item = row()
         if not item or not item.session_id then return end
         local snapshot = self.snapshots[item.session_id]
         if not transport.connected or not snapshot then actions.report('Session state is unknown. Press r to reconnect.'); return end
         if snapshot.active_submission_id == vim.NIL then return end
-        request('run.stop', { session_id = item.session_id, submission_id = snapshot.active_submission_id }, self.refresh)
+        transport.request('run.stop', { session_id = item.session_id, submission_id = snapshot.active_submission_id }, function(_, err)
+          if err then actions.report(err) else self.refresh() end
+        end)
       end)
     end
-    vim.cmd('topleft 32vsplit')
+    vim.cmd('topleft ' .. math.min(32, math.max(20, math.floor(vim.o.columns / 3))) .. 'vsplit')
     vim.api.nvim_win_set_buf(0, self.buffer)
     vim.wo.number, vim.wo.relativenumber, vim.wo.wrap, vim.wo.winfixwidth = false, false, false, true
+    vim.wo.statusline = 'Enter open · n new · h/l fold · s stop · q hide'
     render(); self.refresh()
   end
 

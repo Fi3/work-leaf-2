@@ -133,6 +133,64 @@
       "id": "configuration",
       "method": "configuration.get",
       "params": {}
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "new_15",
+      "method": "session.create",
+      "params": {
+        "session_id": "child",
+        "workspace": "/tmp/work",
+        "parent_session_id": "work",
+        "name": "Check tests"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "new_16",
+      "method": "session.configure",
+      "params": {
+        "session_id": "work",
+        "provider": "faux",
+        "model": "test",
+        "instructions": "Be concise."
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "new_17",
+      "method": "session.configure",
+      "params": {
+        "session_id": "work",
+        "name": "Review λ"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "new_18",
+      "method": "configuration.get",
+      "params": {
+        "session_id": "work"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "new_19",
+      "method": "session.list",
+      "params": {
+        "workspace": "/tmp/work",
+        "limit": 50
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "root_retry",
+      "method": "session.create",
+      "params": {
+        "session_id": "root",
+        "workspace": "/tmp/work",
+        "parent_session_id": null
+      }
     }
   ],
   "invalid": [
@@ -228,6 +286,66 @@
         }
       },
       "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid",
+        "method": "session.configure",
+        "params": {
+          "session_id": "work"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid",
+        "method": "session.configure",
+        "params": {
+          "session_id": "work",
+          "provider": "anthropic"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid",
+        "method": "session.configure",
+        "params": {
+          "session_id": "work",
+          "name": "bad\nname"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid",
+        "method": "session.create",
+        "params": {
+          "session_id": "child",
+          "workspace": "/tmp/work",
+          "parent_session_id": "../bad"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "blank-bom-name",
+        "method": "session.configure",
+        "params": {
+          "session_id": "work",
+          "name": "﻿"
+        }
+      },
+      "code": -32602
     }
   ],
   "snapshot": {
@@ -243,7 +361,9 @@
         "write",
         "edit",
         "bash"
-      ]
+      ],
+      "name": "work",
+      "parent_session_id": null
     },
     "state": "idle",
     "active_submission_id": null,
@@ -304,7 +424,9 @@
           "write",
           "edit",
           "bash"
-        ]
+        ],
+        "name": "work",
+        "parent_session_id": null
       },
       "state": "idle",
       "active_submission_id": null,
@@ -347,7 +469,9 @@
             "write",
             "edit",
             "bash"
-          ]
+          ],
+          "name": "work",
+          "parent_session_id": null
         },
         "state": "idle",
         "active_submission_id": null,
@@ -391,7 +515,9 @@
           "write",
           "edit",
           "bash"
-        ]
+        ],
+        "name": "work",
+        "parent_session_id": null
       }
     ],
     "next_cursor": null

@@ -1,6 +1,5 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
-   Compiling harness v0.1.0 (/home/user/src/work-leaf-2)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.51s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.03s
      Running unittests src/lib.rs (target/debug/deps/harness-454b097f4f32f61c)
 
 running 0 tests
@@ -15,28 +14,30 @@ test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; fini
 
      Running tests/client.rs (target/debug/deps/client-f19397af46c37d1e)
 
-running 19 tests
+running 21 tests
 test explicit_socket_can_select_an_endpoint_outside_default_configuration ... ok
-test standard_output_preserves_inherited_terminal_flags ... ok
 test fragments_and_unicode_preserve_response_values ... ok
-test client_configuration_selects_socket_and_checks_state ... ok
-test default_configuration_checks_state_before_mutations ... ok
-test proxy_rejects_duplicate_pending_ids_and_capacity_overflow ... ok
+test standard_output_preserves_inherited_terminal_flags ... ok
+test proxy_releases_watch_at_eof_without_stopping ... ok
 test scripts_create_send_and_stop_without_terminal ... ok
+test invalid_arguments_fail_before_connection ... ok
 test handshake_rejects_wrong_version_state_and_unsafe_socket ... ok
 test watch_stream_reports_initial_and_later_state ... ok
-test proxy_releases_watch_at_eof_without_stopping ... ok
-test standard_output_preserves_file_offsets_and_flags_on_failure ... ok
-test invalid_arguments_fail_before_connection ... ok
-test wait_text_reads_complete_utf8_chunks ... ok
+test client_configuration_selects_socket_and_checks_state ... ok
 test exact_wait_outcomes_map_to_exit_status ... ok
+test default_configuration_checks_state_before_mutations ... ok
+test standard_output_preserves_file_offsets_and_flags_on_failure ... ok
+test proxy_rejects_duplicate_pending_ids_and_capacity_overflow ... ok
+test incomplete_chat_settings_and_key_arguments_fail_before_connecting ... ok
+test chat_commands_preserve_settings_and_parent_precedence ... ok
+test wait_text_reads_complete_utf8_chunks ... ok
 test malformed_incoming_and_outgoing_records_fail ... ok
 test proxy_preserves_ids_values_out_of_order_and_drains_eof ... ok
 test sigint_interrupts_wait_and_standard_input_without_stop ... ok
 test standard_output_preserves_caller_flags_and_later_pipe_output ... ok
 test sigint_interrupts_full_standard_output ... ok
 
-test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.63s
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.62s
 
      Running tests/editor.rs (target/debug/deps/editor-77db53c993e4a858)
 
@@ -55,15 +56,15 @@ test shared_contract ... ok
 test input_and_frame_limits_are_byte_limits ... ok
 test invalid_field_names_cannot_expand_error_replies ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
 
      Running tests/server.rs (target/debug/deps/server-30f9c519d17d149c)
 
 running 10 tests
-test state_identity_symlinks_and_explicit_paths_are_checked ... ok
-test two_starters_converge_and_permissions_are_private ... ok
 test applying_a_key_rejects_an_existing_server_without_replacing_it ... ok
+test two_starters_converge_and_permissions_are_private ... ok
 test partial_and_combined_frames_preserve_correlation ... ok
+test state_identity_symlinks_and_explicit_paths_are_checked ... ok
 test orphan_worker_keeps_storage_ownership ... ok
 test pending_wait_does_not_block_stop_and_lost_watch_is_released ... ok
 test slow_client_cannot_block_another_stop ... ok
@@ -71,87 +72,101 @@ test pending_requests_and_watches_have_separate_limits ... ok
 test framing_validation_and_connection_limits_are_enforced ... ok
 test worker_restart_limit_and_manual_attempt_are_bounded ... ok
 
-test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.72s
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.71s
 
      Running tests/setup.rs (target/debug/deps/setup-1b74ed22a6973381)
 
-running 8 tests
+running 11 tests
 test setup_preserves_raw_fields_and_rejects_concurrent_or_changed_files ... ok
 test unsafe_or_invalid_configuration_is_never_replaced ... ok
-test secret_input_stays_hidden_and_sigint_restores_echo ... ok
 test failed_staging_write_keeps_configuration_and_server ... ok
+test secret_input_stays_hidden_and_sigint_restores_echo ... ok
 test whitespace_keys_fail_before_settings_or_server_change ... ok
+test auth_has_no_model_prompt_and_cancellation_keeps_the_server ... ok
 test first_setup_is_explicit_cancellable_and_usable_without_credentials ... ok
+test auth_only_replaces_the_server_key_and_never_writes_configuration ... ok
 test a_key_is_given_only_to_the_server_environment_and_can_be_reused ... ok
-test active_work_rejects_setup_without_changing_file_or_instance ... ok
+test active_work_rejects_setup_and_auth_without_changing_file_or_instance ... ok
+test chat_configuration_and_parent_links_survive_restart_without_stopping_other_work ... ok
 
-test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.34s
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.68s
 
-   Compiling harness v0.1.0 (/home/user/src/work-leaf-2)
-    Finished `release` profile [optimized] target(s) in 1.37s
-✔ configuration lists the Pi catalog and explains missing or unsupported choices without requests (17.141977ms)
-✔ configuration checks only credential presence and returns no credential material (5.079213ms)
-✔ configuration reads preserve an active run and the fixed configuration of its session (76.369116ms)
-✔ the default demo response explains its limit and how to configure an AI model (69.914977ms)
-✔ atomic creation is idempotent and preserves fixed configuration after reopen (7.021838ms)
-✔ duplicate identifiers preserve input while busy and after restart; old stop cannot stop new work (66.483314ms)
-✔ session admission permits concurrent input, creation, and consistent duplicate receipts (288.516307ms)
-✔ watches start with complete state and converge; full answer is available as byte chunks (2699.102056ms)
-✔ explicit unsaved context is stored without changing disk and rejects escape through symbolic links (137.489973ms)
-✔ global capacity is four sessions and duplicate receipts bypass new admission checks (73.921769ms)
-✔ blocked recovery keeps shared scheduling paused for reads, duplicate inputs, waits, and stops (33.815266ms)
+    Finished `release` profile [optimized] target(s) in 0.01s
+✔ configuration lists the Pi catalog and explains missing or unsupported choices without requests (18.207393ms)
+✔ configuration checks only credential presence and returns no credential material (4.510064ms)
+✔ configuration reads preserve an active run and the fixed configuration of its session (75.956586ms)
+✔ the default demo response explains its limit and how to configure an AI model (76.547614ms)
+✔ creation preserves existing settings and inherits the latest configured chat after reopen (15.724321ms)
+✔ an empty chat persists without a model and accepts settings before credentials (85.838807ms)
+✔ parents and workspace inheritance persist, and list cursors belong to their directory (12.328088ms)
+✔ settings are atomic in watch frames and reject only the active target (115.957465ms)
+✔ a long workspace path produces a usable scoped continuation cursor (7.964771ms)
+✔ a watch attached before settings change starts with the latest committed name and model (15.032996ms)
+✔ legacy chats retain their public identifiers as names and have no parent (6.686086ms)
+✔ concurrent settings and submission use one selected model and keep duplicate admission exact (109.948795ms)
+✔ duplicate identifiers preserve input while busy and after restart; old stop cannot stop new work (69.033914ms)
+✔ session admission permits concurrent input, creation, and consistent duplicate receipts (292.528647ms)
+✔ watches start with complete state and converge; full answer is available as byte chunks (2707.469066ms)
+✔ explicit unsaved context is stored without changing disk and rejects escape through symbolic links (144.615904ms)
+✔ global capacity is four sessions and duplicate receipts bypass new admission checks (67.006417ms)
+✔ blocked recovery keeps shared scheduling paused for reads, duplicate inputs, waits, and stops (34.325102ms)
 Pi reported an internal failure
-✔ storage commit failure never returns false admission and committed metadata survives (13.358121ms)
-✔ stop terminates built-in bash and its ordinary descendants (48.865109ms)
-✔ provider failure appears in the public snapshot without provider diagnostic text (10.745335ms)
-✔ large metadata and escaped transcript pages remain bounded and retain all items (118.495655ms)
-✔ releasing a wait during lookup cancels only that wait (107.104133ms)
-✔ a long wait timeout is not shortened to the Node timer maximum (110.701746ms)
-✔ watch attachment during generation starts with current text and converges to the stored answer (254.468802ms)
-✔ process kill admit-before preserves atomic admission and exact outcomes (234.974234ms)
-✔ process kill admit-after preserves atomic admission and exact outcomes (230.94247ms)
-✔ process kill abort-before preserves atomic admission and exact outcomes (234.303886ms)
-✔ process kill abort-after preserves atomic admission and exact outcomes (230.044066ms)
-✔ process kill stop-before preserves atomic admission and exact outcomes (228.960019ms)
-✔ process kill stop-after preserves atomic admission and exact outcomes (242.135207ms)
-✔ process kill final-before preserves atomic admission and exact outcomes (247.240123ms)
-✔ process kill final-after preserves atomic admission and exact outcomes (235.967009ms)
-✔ shared requests use the same contract in Node and Rust (10.8253ms)
-✔ Unicode previews and chunks preserve original text for varied byte limits (3.788512ms)
-✔ cursors reject another session or query (0.304245ms)
-✔ encoded snapshot and page bounds include JSON escape expansion (20.211075ms)
-✔ SIGKILL follows Pi safe tool replay policy (263.422381ms)
-✔ SIGKILL follows Pi unsafe tool replay policy (242.832689ms)
-✔ actual worker parses split UTF-8, handles concurrent wait and stop, and preserves stop across process kill (484.855544ms)
-✔ parent EOF preserves an admitted run for recovery (544.296728ms)
-✔ database symbolic links are rejected before Pi opens storage (2.123957ms)
-✔ worker lifecycle checks keep active work during rejected idle shutdown (282.843653ms)
-✔ worker output pressure preserves receipts, stop, and idle close replies (3668.575607ms)
-✔ invalid private requests apply input backpressure until the parent drains replies (3398.585161ms)
-✔ worker SIGKILL cleans ordinary bash descendants and recovers without repeating the unsafe call (682.763028ms)
-✔ server SIGKILL cleans ordinary bash descendants and recovers without repeating the unsafe call (600.574883ms)
-✔ orphan actual Pi worker holds the database lock until it exits (596.703393ms)
-✔ stopped targets remain stopped across server restart and do not stop a later run (771.115831ms)
-✔ global blocked preflight permits terminal reads and rejects every operation that can resume pending work (1192.110405ms)
-✔ shutdown admission race has either a stored input or an idle closed server (1266.41243ms)
-✔ unsafe storage endpoint never reports readiness or admission (533.021305ms)
-✔ start retries after an orphan worker releases storage ownership (1450.982643ms)
-✔ standalone scripts use actual Pi tools, full answer text, and idle startup without a generation call (546.14315ms)
-✔ duplicate receipts survive actual worker and server restart and preserve original input (1530.166884ms)
-✔ actual watch streams and proxy EOF preserve admitted work and drain an outstanding wait (374.388651ms)
-ℹ tests 49
+✔ storage commit failure never returns false admission and committed metadata survives (8.364698ms)
+✔ stop terminates built-in bash and its ordinary descendants (55.762489ms)
+✔ provider failure appears in the public snapshot without provider diagnostic text (9.725925ms)
+✔ large metadata and escaped transcript pages remain bounded and retain all items (103.476667ms)
+✔ releasing a wait during lookup cancels only that wait (107.776965ms)
+✔ a long wait timeout is not shortened to the Node timer maximum (109.369085ms)
+✔ watch attachment during generation starts with current text and converges to the stored answer (247.486101ms)
+✔ process kill admit-before preserves atomic admission and exact outcomes (245.098561ms)
+✔ process kill admit-after preserves atomic admission and exact outcomes (243.914113ms)
+✔ process kill abort-before preserves atomic admission and exact outcomes (239.09955ms)
+✔ process kill abort-after preserves atomic admission and exact outcomes (232.631868ms)
+✔ process kill stop-before preserves atomic admission and exact outcomes (230.761585ms)
+✔ process kill stop-after preserves atomic admission and exact outcomes (220.550475ms)
+✔ process kill final-before preserves atomic admission and exact outcomes (243.98575ms)
+✔ process kill final-after preserves atomic admission and exact outcomes (244.382463ms)
+✔ process kill configure-before preserves atomic admission and exact outcomes (476.102422ms)
+✔ process kill configure-after preserves atomic admission and exact outcomes (483.553082ms)
+✔ shared requests use the same contract in Node and Rust (10.304766ms)
+✔ Unicode previews and chunks preserve original text for varied byte limits (3.458653ms)
+✔ cursors reject another session or query (0.281381ms)
+✔ encoded snapshot and page bounds include JSON escape expansion (19.670851ms)
+✔ SIGKILL follows Pi safe tool replay policy (261.67922ms)
+✔ SIGKILL follows Pi unsafe tool replay policy (250.630895ms)
+✔ actual worker parses split UTF-8, handles concurrent wait and stop, and preserves stop across process kill (504.682503ms)
+✔ parent EOF preserves an admitted run for recovery (563.727645ms)
+✔ database symbolic links are rejected before Pi opens storage (2.147112ms)
+✔ worker lifecycle checks keep active work during rejected idle shutdown (283.54759ms)
+✔ worker output pressure preserves receipts, stop, and idle close replies (3663.740149ms)
+✔ invalid private requests apply input backpressure until the parent drains replies (4721.408428ms)
+✔ large settings replies reserve output space before committing changes (768.632858ms)
+✔ real Bash creates nested children through the standard client with separate histories (946.721968ms)
+✔ stopping a parent Bash wait keeps its independently admitted child active (495.49616ms)
+✔ worker SIGKILL cleans ordinary bash descendants and recovers without repeating the unsafe call (717.165767ms)
+✔ server SIGKILL cleans ordinary bash descendants and recovers without repeating the unsafe call (641.147793ms)
+✔ orphan actual Pi worker holds the database lock until it exits (601.334375ms)
+✔ stopped targets remain stopped across server restart and do not stop a later run (764.482955ms)
+✔ global blocked preflight permits terminal reads and rejects every operation that can resume pending work (1152.300424ms)
+✔ shutdown admission race has either a stored input or an idle closed server (1093.87128ms)
+✔ unsafe storage endpoint never reports readiness or admission (491.365726ms)
+✔ start retries after an orphan worker releases storage ownership (1399.035856ms)
+✔ standalone scripts use actual Pi tools, full answer text, and idle startup without a generation call (550.523054ms)
+✔ duplicate receipts survive actual worker and server restart and preserve original input (1540.217663ms)
+✔ actual watch streams and proxy EOF preserve admitted work and drain an outstanding wait (445.377846ms)
+ℹ tests 61
 ℹ suites 0
-ℹ pass 49
+ℹ pass 61
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 8622.530189
-Neovim component checks passed: lazy startup, panels, Unicode framing, context, streams, stop, reconnect and duplicate retry.Neovim view checks passed: visible controls, readable messages, responsive layout, retained drafts and focus.Dependencies verified: Rust 3 direct + 9 transitive = 12; npm 3 direct + 88 transitive = 91; Lua 0.
+ℹ duration_ms 10754.227591
+Neovim component checks passed: chat commands, stored children, directory filter, lazy startup, context, streams, stop, reconnect and duplicate retry.Neovim view checks passed: direct chat, bottom input, tab isolation, drafts, resize, workspace filter and parent-child tree.Dependencies verified: Rust 3 direct + 9 transitive = 12; npm 3 direct + 88 transitive = 91; Lua 0.
 npm optional-only 0; npm development 0; Rust build/test declarations 0; reviewed Rust build scripts 7.
-{"passed": 43, "evidence": "/tmp/harness-nvim-ui-evidence-lkk0j6zu/results.json"}
-{"passed": 40, "evidence": "/tmp/harness-nvim-ui-evidence-a3n41oaw/results.json"}
-{"passed": 17, "evidence": "/tmp/harness-nvim-ui-evidence-logi29oo/results.json"}
+{"passed": 43, "evidence": "/tmp/harness-nvim-ui-evidence-i08mtgq0/results.json"}
+{"passed": 40, "evidence": "/tmp/harness-nvim-ui-evidence-3erlfnfj/results.json"}
+{"passed": 19, "evidence": "/tmp/harness-nvim-ui-evidence-5zx8p2_3/results.json"}
     Finished `release` profile [optimized] target(s) in 0.01s
 npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
 
@@ -161,5 +176,5 @@ added 91 packages, and audited 92 packages in 1s
   run `npm fund` for details
 
 found 0 vulnerabilities
-Installed /tmp/harness-install-G8niAN/prefix/bin/harness
+Installed /tmp/harness-install-p03p2j/prefix/bin/harness
 Clean installation passed: installed Rust, Pi adapter, and Neovim runtime; no provider credentials.

@@ -7,6 +7,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { once } from 'node:events';
 import { fauxAssistantMessage } from '@earendil-works/pi-ai/providers/faux';
+import { AgentDoc } from '@earendil-works/pi-durable';
+import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { openApplication } from '../pi.mjs';
 
@@ -14,12 +16,13 @@ const phase = process.env.HARNESS_CRASH_TEST_PHASE;
 async function childRun() {
   const config = JSON.parse(process.env.HARNESS_CRASH_TEST_CONFIG);
   const storage = await openNodeSqliteStorage(join(config.state_dir, 'agent.sqlite'));
+  let configuring = false;
   const crash = value => { writeFileSync(join(config.state_dir, 'crash.json'), JSON.stringify(value)); process.kill(process.pid, 'SIGKILL'); };
   const target = writes => writes.find(write => phase.startsWith('admit') ? write.type === 'submission' && write.value.requestId === 'task' && write.value.status === 'placed' : phase.startsWith('abort') ? write.type === 'task' && write.value.abortRequested : phase.startsWith('stop') ? write.type === 'submission' && write.value.status === 'unanswered' && write.value.reason === 'aborted' : write.type === 'submission' && write.value.status === 'done');
   const injected = new Proxy(storage, { get(object, key) {
     const value = object[key];
     if (key === 'commit') return async (writes, context) => {
-      const match = target(writes);
+      const match = configuring ? { value: { configuring: true } } : target(writes);
       if (match && phase.endsWith('before')) crash(match.value);
       const committed = await value.call(object, writes, context);
       if (match && phase.endsWith('after')) crash(match.value);
@@ -29,6 +32,11 @@ async function childRun() {
   } });
   const app = await openApplication(config, injected);
   await app.dispatch('session.create', { session_id: 'work', workspace: config.state_dir }, 'create');
+  if (phase.startsWith('configure')) {
+    configuring = true;
+    await app.dispatch('session.configure', { session_id: 'work', provider: 'faux', model: 'test', instructions: 'Configured instructions', name: 'Configured' }, 'configure');
+    throw Error('Configure crash point was not reached');
+  }
   const receipt = await app.dispatch('input.submit', { session_id: 'work', request_id: 'task', text: 'Original task', context: [] }, 'send');
   if (phase.startsWith('abort') || phase.startsWith('stop')) await app.dispatch('run.stop', { session_id: 'work', submission_id: receipt.submission_id }, 'stop');
   if (phase.startsWith('final')) await app.dispatch('submission.wait', { session_id: 'work', request_id: 'task' }, 'wait');
@@ -36,10 +44,11 @@ async function childRun() {
 }
 if (phase) await childRun();
 else {
-  for (const stage of ['admit-before', 'admit-after', 'abort-before', 'abort-after', 'stop-before', 'stop-after', 'final-before', 'final-after']) {
+  for (const stage of ['admit-before', 'admit-after', 'abort-before', 'abort-after', 'stop-before', 'stop-after', 'final-before', 'final-after', 'configure-before', 'configure-after']) {
     test(`process kill ${stage} preserves atomic admission and exact outcomes`, async t => {
       const directory = await mkdtemp(join(tmpdir(), 'harness-commit-crash-'));
       const config = { state_dir: directory, provider: 'faux', model: 'test', instructions: '' };
+      if (stage.startsWith('configure')) Object.assign(config, { provider: null, model: null });
       const fixture = join(directory, 'response.json');
       await writeFile(fixture, JSON.stringify([fauxAssistantMessage(stage.startsWith('final') ? 'Exact final answer' : 'x'.repeat(1000))]));
       const child = spawn(process.execPath, [new URL(import.meta.url).pathname], { env: { ...process.env, HARNESS_CRASH_TEST_PHASE: stage, HARNESS_CRASH_TEST_CONFIG: JSON.stringify(config), HARNESS_FAUX_RESPONSES: fixture, HARNESS_FAUX_TOKENS_PER_SECOND: stage.startsWith('final') ? '100000' : '10' }, stdio: ['ignore', 'ignore', 'pipe'] });
@@ -52,7 +61,21 @@ else {
       const app = await openApplication(config);
       t.after(async () => { await app.close(); delete process.env.HARNESS_FAUX_RESPONSES; delete process.env.HARNESS_FAUX_TOKENS_PER_SECOND; await rm(directory, { recursive: true, force: true }); });
       const run = (method, params) => app.dispatch(method, params, method);
-      if (stage === 'admit-before') {
+      if (stage.startsWith('configure')) {
+        const session = (await run('session.get', { session_id: 'work' })).session;
+        const agent = await app.harness.snapshot(AgentDoc, app.sessions.get('work').conversation.id, context);
+        if (stage === 'configure-before') {
+          assert.equal(session.provider, null); assert.equal(session.model, null); assert.equal(session.name, 'work');
+          assert.equal(agent.model, undefined); assert.ok(!agent.instructions.includes('Configured instructions'));
+        } else {
+          assert.equal(session.provider, 'faux'); assert.equal(session.model, 'test'); assert.equal(session.name, 'Configured');
+          assert.deepEqual(agent.model, { provider: 'faux', modelId: 'test' }); assert.match(agent.instructions, /^Configured instructions/);
+        }
+        assert.deepEqual((await run('transcript.list', { session_id: 'work' })).items, []);
+        await run('session.configure', { session_id: 'work', provider: 'faux', model: 'test', instructions: 'Configured instructions', name: 'Configured' });
+        await run('input.submit', { session_id: 'work', request_id: 'task', text: 'Run after configuration recovery', context: [] });
+        assert.equal((await run('submission.wait', { session_id: 'work', request_id: 'task', timeout_ms: 3000 })).status, 'done');
+      } else if (stage === 'admit-before') {
         await assert.rejects(run('submission.get', { session_id: 'work', request_id: 'task' }), error => error.data?.kind === 'not_found');
         const history = await run('transcript.list', { session_id: 'work' }); assert.equal(history.items.filter(e => e.kind === 'user').length, 0);
       } else {

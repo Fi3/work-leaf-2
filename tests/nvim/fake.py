@@ -28,6 +28,14 @@ def snapshot(session):
     result['history_cursor'] = session.get('cursor')
     return result
 
+def configuration(state, session=None):
+    selected = session['metadata'] if session else state.get('configuration', {'provider': 'faux', 'model': 'test'})
+    provider, model = selected.get('provider'), selected.get('model')
+    issue = 'missing_model' if not provider or not model else 'missing_key' if provider == 'anthropic' and not state.get('authenticated', False) else None
+    return {'provider': provider, 'model': model, 'ready': issue is None, 'issue': issue,
+            'message': 'Choose a model with \\model.' if issue == 'missing_model' else 'Use \\login to enter a key.' if issue else 'Ready.',
+            'models': [{'id': 'hosted', 'name': 'Hosted model'}]}
+
 def emit(value):
     line = (json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\n').encode()
     # Vary byte boundaries, including boundaries within Unicode characters.
@@ -40,15 +48,17 @@ if sys.argv[-1] == 'start':
     state['starts'] = state.get('starts', 0) + 1
     save(state)
     sys.exit(0)
-if sys.argv[-1] == 'setup':
-    print('Choose demo, failure, or q to cancel:', flush=True)
+if sys.argv[-1] in ('setup', 'auth'):
+    state['auth_calls'] = state.get('auth_calls', 0) + 1
+    save(state)
+    print('Test credential: success, failure, or q to cancel:', flush=True)
     choice = input()
     if choice == 'q': sys.exit(130)
     if choice == 'failure':
-        print('Cannot save configuration.', flush=True)
+        print('Cannot update server credentials.', flush=True)
         sys.exit(2)
     state = load()
-    state['configuration'] = {'provider': 'faux', 'model': 'test', 'ready': True, 'issue': None, 'message': 'Ready.', 'models': [{'id': 'test', 'name': 'Demo'}]}
+    state['authenticated'] = True
     save(state)
     sys.exit(0)
 
@@ -66,13 +76,25 @@ for line in sys.stdin:
     if method == 'system.hello':
         result = {'api_version': 1}
     elif method == 'configuration.get':
-        result = state.get('configuration', {'provider': 'faux', 'model': 'test', 'ready': True, 'issue': None, 'message': 'Ready.', 'models': [{'id': 'test', 'name': 'Demo'}]})
+        result = configuration(state, session)
     elif method == 'session.create':
-        metadata = dict(fixture['snapshot']['session'], session_id=params['session_id'], workspace=os.path.realpath(params['workspace']))
+        time.sleep(state.get('create_delay', 0))
+        parent = state['sessions'].get(params.get('parent_session_id'))
+        settings = parent['metadata'] if parent else state.get('configuration', {'provider': 'faux', 'model': 'test'})
+        metadata = dict(fixture['snapshot']['session'], session_id=params['session_id'], name=params.get('name', params['session_id']), parent_session_id=params.get('parent_session_id'), workspace=os.path.realpath(params['workspace']))
+        metadata.update(provider=settings.get('provider'), model=settings.get('model'), instructions=settings.get('instructions', ''))
         session = state['sessions'].setdefault(params['session_id'], {'metadata': metadata})
         result = session['metadata']
+    elif method == 'session.configure':
+        if session.get('active'):
+            failure = {'code': -32000, 'message': 'Session has active work', 'data': {'kind': 'busy'}}
+        elif 'model' in params and (params['provider'], params['model']) not in (('faux', 'test'), ('anthropic', 'hosted')):
+            failure = {'code': -32602, 'message': 'Choose a model from the available catalog'}
+        else:
+            session['metadata'].update({key: value for key, value in params.items() if key in ('provider', 'model', 'instructions', 'name')})
+            result = session['metadata']
     elif method == 'session.list':
-        result = {'items': [s['metadata'] for s in state['sessions'].values()], 'next_cursor': None}
+        result = {'items': [s['metadata'] for s in state['sessions'].values() if 'workspace' not in params or s['metadata']['workspace'] == os.path.realpath(params['workspace'])], 'next_cursor': None}
     elif method in ('session.get', 'session.watch'):
         if not session:
             failure = {'code': -32000, 'message': 'Unknown session', 'data': {'kind': 'not_found'}}
@@ -118,7 +140,7 @@ for line in sys.stdin:
     if method == 'session.watch':
         for receipt in deferred: emit(receipt)
         deferred.clear()
-    if method in ('input.submit', 'run.stop'):
+    if method in ('input.submit', 'run.stop', 'session.configure'):
         for watch, session_id in watches.items():
             sequence += 1
             emit({'jsonrpc': '2.0', 'method': 'session.state', 'params': {'watch_id': watch, 'sequence': sequence, 'snapshot': snapshot(state['sessions'][session_id])}})

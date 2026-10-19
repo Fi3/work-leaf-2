@@ -49,7 +49,10 @@ pub struct Application {
 }
 
 fn mutation(method: &str) -> bool {
-    matches!(method, "session.create" | "input.submit" | "run.stop")
+    matches!(
+        method,
+        "session.create" | "session.configure" | "input.submit" | "run.stop"
+    )
 }
 
 impl Application {

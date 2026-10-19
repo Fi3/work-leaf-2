@@ -4,14 +4,17 @@ function M.new(options)
   local self = {}
   local namespace = vim.api.nvim_create_namespace('HarnessView')
   local hint_namespace = vim.api.nvim_create_namespace('HarnessPrompt')
-  local narrow, resizing
   local function window(buf)
-    return buf and vim.api.nvim_buf_is_valid(buf) and vim.fn.win_findbuf(buf)[1] or nil
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then return nil end
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.api.nvim_win_get_buf(win) == buf then return win end
+    end
   end
-  local function width()
-    local sidebar = vim.fn.win_findbuf(vim.fn.bufnr('harness://agents'))[1]
-    if not sidebar then return options.width end
-    return math.min(options.width, math.max(1, math.floor((vim.o.columns - vim.api.nvim_win_get_width(sidebar) - 2) / 2)))
+  local function prompt_height()
+    return math.min(options.prompt_height or 3, math.max(1, math.floor(vim.o.lines / 6)))
+  end
+  local function transcript_height()
+    return math.max(3, math.min(10, math.floor(vim.o.lines / 3) - prompt_height()))
   end
   local function buffer(kind, editable)
     local buf = vim.api.nvim_create_buf(false, true)
@@ -20,14 +23,23 @@ function M.new(options)
     vim.bo[buf].swapfile, vim.bo[buf].modifiable = false, editable
     vim.bo[buf].filetype = 'harness'
     if editable then
-      vim.keymap.set({ 'n', 'i' }, '<C-s>', function() vim.cmd('stopinsert'); vim.cmd('Harness send') end,
-        { buffer = buf, silent = true, desc = 'Send agent prompt' })
-      vim.keymap.set('n', '<CR>', '<Cmd>Harness send<CR>', { buffer = buf, silent = true, desc = 'Send agent prompt' })
+      local function send() vim.cmd('stopinsert'); vim.cmd('Harness send') end
+      local function keys(value) vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(value, true, false, true), 'n', false) end
+      vim.keymap.set({ 'n', 'i' }, '<C-s>', send, { buffer = buf, silent = true, desc = 'Send message' })
+      vim.keymap.set({ 'n', 'i' }, '<CR>', function()
+        if vim.fn.pumvisible() == 1 then keys('<C-y>') else send() end
+      end, { buffer = buf, silent = true, desc = 'Send message' })
+      vim.keymap.set('i', '<C-j>', '<CR>', { buffer = buf, silent = true, desc = 'Insert a new line' })
+      vim.keymap.set('i', '<S-CR>', '<CR>', { buffer = buf, silent = true, desc = 'Insert a new line' })
+      vim.keymap.set('i', '<Tab>', function()
+        if vim.fn.pumvisible() == 1 then keys('<C-n>')
+        elseif not require('harness.commands').complete() then keys('<Tab>') end
+      end, { buffer = buf, silent = true, desc = 'Complete a chat command' })
       local function hint()
         vim.api.nvim_buf_clear_namespace(buf, hint_namespace, 0, -1)
         if table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '') == '' then
           vim.api.nvim_buf_set_extmark(buf, hint_namespace, 0, 0, {
-            virt_text = { { 'Describe a task. Ctrl-S sends.', 'Comment' } }, virt_text_pos = 'overlay',
+            virt_text = { { 'Message or \\command', 'Comment' } }, virt_text_pos = 'overlay',
           })
         end
       end
@@ -40,27 +52,31 @@ function M.new(options)
     return buf
   end
 
-  function self.open()
-    if not self.transcript or not vim.api.nvim_buf_is_valid(self.transcript) then
-      self.transcript, self.prompt = buffer('transcript', false), buffer('prompt', true)
+  local function style(win, editable)
+    vim.wo[win].wrap, vim.wo[win].linebreak = true, true
+    vim.wo[win].number, vim.wo[win].relativenumber, vim.wo[win].signcolumn = false, false, 'no'
+    vim.wo[win].winfixheight, vim.wo[win].winfixwidth = editable, false
+    vim.wo[win].winbar = editable and '%#FloatTitle# Message%*  %#Comment#Enter send · Shift-Enter newline · \\ commands%*'
+      or '%#Title# Conversation%*'
+    if editable then
+      vim.wo[win].winhighlight = 'Normal:NormalFloat'
+      vim.wo[win].statusline = '%#FloatBorder#' .. string.rep('─', vim.api.nvim_win_get_width(win))
     end
-    narrow = vim.o.columns < 110
+  end
+
+  function self.open()
+    if not self.transcript or not vim.api.nvim_buf_is_valid(self.transcript) then self.transcript = buffer('transcript', false) end
+    if not self.prompt or not vim.api.nvim_buf_is_valid(self.prompt) then self.prompt = buffer('prompt', true) end
     if not window(self.transcript) then
-      local size = narrow and math.max(4, math.floor(vim.o.lines * 0.6)) or width()
-      vim.cmd('botright ' .. size .. (narrow and 'split' or 'vsplit'))
+      vim.cmd('botright ' .. (transcript_height() + prompt_height() + 2) .. 'split')
       vim.api.nvim_win_set_buf(0, self.transcript)
-      vim.wo.wrap, vim.wo.linebreak, vim.wo.winfixwidth = true, true, false
-      vim.wo.number, vim.wo.relativenumber, vim.wo.signcolumn = false, false, 'no'
-      vim.wo.winbar = '%#Title# Conversation%*  %#Comment#h: history  p: write%*'
+      style(vim.api.nvim_get_current_win(), false)
     end
     if not window(self.prompt) then
       vim.api.nvim_set_current_win(window(self.transcript))
-      local height = narrow and math.min(options.prompt_height, math.max(2, math.floor(vim.o.lines / 6))) or options.prompt_height
-      vim.cmd('belowright ' .. height .. 'split')
+      vim.cmd('belowright ' .. prompt_height() .. 'split')
       vim.api.nvim_win_set_buf(0, self.prompt)
-      vim.wo.wrap, vim.wo.linebreak, vim.wo.winfixwidth = true, true, false
-      vim.wo.number, vim.wo.relativenumber, vim.wo.signcolumn = false, false, 'no'
-      vim.wo.winbar = '%#Title# Your task%*  %#Comment#Ctrl-S: send%*'
+      style(vim.api.nvim_get_current_win(), true)
     end
     vim.api.nvim_set_current_win(window(self.prompt))
   end
@@ -71,29 +87,22 @@ function M.new(options)
   end
 
   function self.resize()
-    local win, prompt = window(self.transcript), window(self.prompt)
-    if not win or resizing then return end
-    if narrow == (vim.o.columns < 110) then
-      if not narrow then vim.api.nvim_win_set_width(win, width()) end
-      return
-    end
-    resizing = true
-    local focused, original = vim.api.nvim_get_current_buf(), vim.api.nvim_get_current_win()
-    local position = vim.api.nvim_win_call(win, vim.fn.winsaveview)
-    local sidebar = window(vim.fn.bufnr('harness://agents'))
-    if vim.o.columns < 110 and sidebar and #vim.api.nvim_list_wins() > 1 then
-      vim.api.nvim_win_close(sidebar, false)
-    end
-    if prompt and #vim.api.nvim_list_wins() > 1 then vim.api.nvim_win_close(prompt, false) end
-    if #vim.api.nvim_list_wins() > 1 then vim.api.nvim_win_close(win, false) end
-    self.open()
-    vim.api.nvim_win_call(window(self.transcript), function() vim.fn.winrestview(position) end)
-    local previous = vim.api.nvim_win_is_valid(original) and original or window(focused)
-    if previous then vim.api.nvim_set_current_win(previous) end
-    resizing = false
+    local prompt = window(self.prompt)
+    if not prompt then return end
+    vim.api.nvim_win_set_height(prompt, prompt_height())
+    style(prompt, true)
   end
 
-  vim.api.nvim_create_autocmd('VimResized', { callback = function() self.resize() end })
+  vim.api.nvim_create_autocmd('VimResized', { callback = function()
+    if vim.o.columns < 90 and window(self.prompt) then
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win)) == 'harness://agents' then
+          vim.api.nvim_win_close(win, false)
+        end
+      end
+    end
+    self.resize()
+  end })
 
   function self.draft()
     if not self.prompt or not vim.api.nvim_buf_is_valid(self.prompt) then return '' end
@@ -108,7 +117,7 @@ function M.new(options)
     end
   end
 
-  function self.render(connection, snapshot, history, attachments)
+  function self.render(connection, snapshot, history, attachments, notice)
     if not self.transcript or not vim.api.nvim_buf_is_valid(self.transcript) then return end
     local lines, highlights = { 'Connection: ' .. connection }, {}
     local function text(value)
@@ -123,13 +132,12 @@ function M.new(options)
       if item.truncated then lines[#lines + 1] = '[Text truncated. Use the command client to read the complete entry.]' end
     end
     if snapshot then
-      lines[#lines + 1] = 'Session: ' .. snapshot.session.session_id
+      lines[#lines + 1] = 'Session: ' .. (type(snapshot.session.name) == 'string' and snapshot.session.name or snapshot.session.session_id)
       lines[#lines + 1] = 'State: ' .. (connection == 'connected' and snapshot.state or 'unknown')
-      lines[#lines + 1] = snapshot.session.provider == 'faux' and 'Local demo - fixed replies, no AI coding' or snapshot.session.provider .. ' / ' .. snapshot.session.model
-      if snapshot.error ~= vim.NIL then text(snapshot.error.message) end
-      if #snapshot.entries == 0 and #(history or {}) == 0 then
-        text('\nWhat would you like to work on?\nType a task below, then press Ctrl-S.\nUse :Harness context buffer to attach this file.')
+      if type(snapshot.session.provider) == 'string' and type(snapshot.session.model) == 'string' then
+        lines[#lines + 1] = snapshot.session.provider == 'faux' and 'Local demo' or snapshot.session.provider .. ' / ' .. snapshot.session.model
       end
+      if snapshot.error ~= vim.NIL then text(snapshot.error.message) end
       local seen = {}
       for _, item in ipairs(snapshot.entries) do seen[item.entry_id] = true end
       for _, item in ipairs(history or {}) do if not seen[item.entry_id] then entry(item) end end
@@ -162,6 +170,7 @@ function M.new(options)
         lines[#lines + 1] = 'Context snapshot: ' .. item.path .. ' (' .. item.kind .. selection .. ')'
       end
     end
+    if notice and notice ~= '' then lines[#lines + 1] = ''; text(notice) end
     local positions, old_count = {}, vim.api.nvim_buf_line_count(self.transcript)
     for _, win in ipairs(vim.fn.win_findbuf(self.transcript)) do
       positions[win] = {

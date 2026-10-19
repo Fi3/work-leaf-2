@@ -1,0 +1,49 @@
+{
+  "case": "chat-login-cancel-retry",
+  "passed": true,
+  "mode": "actual Neovim PTY, actual Rust server, actual Pi adapter and Anthropic catalog; synthetic key only",
+  "model": "claude-fable-5",
+  "session_id": "chat_4edb159f24f92adc51af5c7b86b2b4ec",
+  "initial_issue": "missing_model",
+  "selected_issue": "missing_key",
+  "cancel_preserved_draft": true,
+  "cancel_preserved_model": true,
+  "retry_preserved_draft": true,
+  "final_ready": true,
+  "final_issue": null,
+  "configuration_reply_fields": [
+    "issue",
+    "message",
+    "model",
+    "models",
+    "provider",
+    "ready"
+  ],
+  "key_absent_from_terminal_and_protocol": true,
+  "model_request_admitted": false,
+  "transcript_entries": 0,
+  "config_file_created": false,
+  "runtime_versions": {
+    "ai": "1.3.0",
+    "chord": "1.3.0",
+    "durable": "1.3.0",
+    "node": "v26.10.0",
+    "rust": "1.94.1"
+  },
+  "commands": [
+    "./harness.sh",
+    ";",
+    "n",
+    "\\model anthropic/claude-fable-5",
+    "\\login",
+    "Enter cancels",
+    ":Harness login",
+    "hidden synthetic key + Enter",
+    ":qa"
+  ],
+  "terminal": "tests/evidence/nvim-auth-terminal.raw.gz",
+  "terminal_sha256": "ba3f47c43c9fa08e8892ab1d54e7193f98b2f9bb13bd6011a1980d3d79f51fd3",
+  "nvim": "NVIM v0.12.6",
+  "rust": "1.94.1",
+  "node": "v26.10.0"
+}

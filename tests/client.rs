@@ -4,6 +4,7 @@ use serde_json::{Value, json};
 use std::fs;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+use std::os::unix::ffi::OsStringExt;
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
@@ -57,6 +58,7 @@ impl Fixture {
             .arg(&self.socket)
             .env("XDG_CONFIG_HOME", &self.dir)
             .env("XDG_STATE_HOME", &self.dir)
+            .env_remove("HARNESS_SESSION_ID")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
@@ -377,6 +379,144 @@ fn scripts_create_send_and_stop_without_terminal() {
             "unanswered"
         );
     }
+}
+
+#[test]
+fn chat_commands_preserve_settings_and_parent_precedence() {
+    for (args, inherited_parent, method, params) in [
+        (
+            vec![
+                "session",
+                "create",
+                "--id",
+                "child",
+                "--workspace",
+                "/tmp",
+                "--name",
+                "Review λ",
+            ],
+            "parent",
+            "session.create",
+            json!({"session_id":"child","workspace":"/tmp","parent_session_id":"parent","name":"Review λ"}),
+        ),
+        (
+            vec![
+                "session",
+                "create",
+                "--id",
+                "child",
+                "--workspace",
+                "/tmp",
+                "--parent",
+                "explicit",
+            ],
+            "inherited",
+            "session.create",
+            json!({"session_id":"child","workspace":"/tmp","parent_session_id":"explicit"}),
+        ),
+        (
+            vec![
+                "session",
+                "configure",
+                "--session",
+                "chat",
+                "--provider",
+                "faux",
+                "--model",
+                "test",
+                "--instructions",
+                "Keep λ\nTwo lines",
+                "--name",
+                "Review",
+            ],
+            "not/a/valid/id",
+            "session.configure",
+            json!({"session_id":"chat","provider":"faux","model":"test","instructions":"Keep λ\nTwo lines","name":"Review"}),
+        ),
+        (
+            vec![
+                "session",
+                "configure",
+                "--session",
+                "chat",
+                "--instructions",
+                "",
+            ],
+            "ignored",
+            "session.configure",
+            json!({"session_id":"chat","instructions":""}),
+        ),
+        (
+            vec!["session", "list", "--workspace", "/tmp"],
+            "ignored",
+            "session.list",
+            json!({"workspace":"/tmp"}),
+        ),
+    ] {
+        let fixture = Fixture::new(move |stream| {
+            hello(stream);
+            let input = request(stream);
+            assert_eq!(input["method"], method);
+            assert_eq!(input["params"], params);
+            reply(stream, &input, json!({"ok":true}));
+            disconnected(stream);
+        });
+        let output = fixture
+            .command(&args)
+            .env("HARNESS_SESSION_ID", inherited_parent)
+            .output()
+            .unwrap();
+        success(&output);
+    }
+}
+
+#[test]
+fn incomplete_chat_settings_and_key_arguments_fail_before_connecting() {
+    for args in [
+        vec!["session", "configure", "--session", "chat"],
+        vec![
+            "session",
+            "configure",
+            "--session",
+            "chat",
+            "--provider",
+            "anthropic",
+        ],
+        vec![
+            "session",
+            "configure",
+            "--session",
+            "chat",
+            "--model",
+            "test",
+        ],
+        vec!["auth", "--api-key", "must-not-appear"],
+    ] {
+        let output = Command::new(env!("CARGO_BIN_EXE_harness"))
+            .args(args)
+            .arg("--socket")
+            .arg("/nonexistent/harness.sock")
+            .output()
+            .unwrap();
+        assert_eq!(
+            output.status.code(),
+            Some(2),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        assert!(output.stdout.is_empty());
+        assert!(!String::from_utf8_lossy(&output.stderr).contains("must-not-appear"));
+    }
+    let output = Command::new(env!("CARGO_BIN_EXE_harness"))
+        .args(["session", "create", "--id", "child", "--workspace", "/tmp"])
+        .env(
+            "HARNESS_SESSION_ID",
+            std::ffi::OsString::from_vec(vec![0xff]),
+        )
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("HARNESS_SESSION_ID must be UTF-8"));
 }
 
 #[test]

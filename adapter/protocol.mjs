@@ -6,8 +6,10 @@ export const invalid = message => new RpcError(-32602, message);
 export const appError = (kind, message) => new RpcError(-32000, message, kind);
 export const identifier = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 const fields = {
-  'system.hello': [['api_version'], []], 'configuration.get': [[], []], 'session.create': [['session_id', 'workspace'], []],
-  'session.list': [[], ['cursor', 'limit']], 'session.get': [['session_id'], []], 'session.watch': [['session_id'], []],
+  'system.hello': [['api_version'], []], 'configuration.get': [[], ['session_id']],
+  'session.create': [['session_id', 'workspace'], ['parent_session_id', 'name']],
+  'session.configure': [['session_id'], ['provider', 'model', 'instructions', 'name']],
+  'session.list': [[], ['cursor', 'limit', 'workspace']], 'session.get': [['session_id'], []], 'session.watch': [['session_id'], []],
   'session.unwatch': [['watch_id'], []], 'input.submit': [['session_id', 'request_id', 'text', 'context'], []],
   'submission.get': [['session_id', 'request_id'], []], 'submission.wait': [['session_id', 'request_id'], ['timeout_ms']],
   'run.stop': [['session_id', 'submission_id'], []], 'transcript.list': [['session_id'], ['cursor', 'limit']],
@@ -25,7 +27,12 @@ function integer(value, min = 0, max = Number.MAX_SAFE_INTEGER) {
 export function validate(method, params) {
   if (!Object.hasOwn(fields, method)) throw new RpcError(-32601, 'Unknown method');
   object(params, ...fields[method]);
-  for (const key of ['session_id', 'request_id']) if (key in params && !identifier(params[key])) throw invalid(`Invalid ${key}`);
+  for (const key of ['session_id', 'request_id', 'parent_session_id']) if (key in params && !(key === 'parent_session_id' && params[key] === null) && !identifier(params[key])) throw invalid(`Invalid ${key}`);
+  for (const key of ['provider', 'model', 'name']) {
+    if (key in params && (typeof params[key] !== 'string' || !params[key].trim() || Buffer.byteLength(params[key]) > 128 || /[\u0000-\u001f\u007f-\u009f]/.test(params[key]))) throw invalid(`Invalid ${key}`);
+  }
+  if ('instructions' in params && (typeof params.instructions !== 'string' || Buffer.byteLength(params.instructions) > limits.input_bytes || params.instructions.includes('\0'))) throw invalid('Invalid instructions');
+  if (method === 'session.configure' && (Object.keys(params).length === 1 || ('provider' in params) !== ('model' in params))) throw invalid('Supply settings; provider and model must be supplied together');
   for (const key of ['submission_id', 'entry_id', 'watch_id', 'cursor', 'workspace']) {
     const value = params[key];
     if (key in params && (typeof value !== 'string' || !value || Buffer.byteLength(value) > 4096 || value.includes('\0'))) throw invalid(`Invalid ${key}`);

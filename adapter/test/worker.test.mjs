@@ -131,3 +131,22 @@ test('invalid private requests apply input backpressure until the parent drains 
   assert.equal(worker.unclaimed(), 300000, 'All buffered records must be processed after output resumes');
   await worker.request('worker.shutdown', {}); await worker.exit;
 });
+
+test('large settings replies reserve output space before committing changes', async t => {
+  const data = await fixture(t), instructions = 'x'.repeat(480000);
+  const worker = start(t, data);
+  await worker.request('system.hello', { api_version: 1 });
+  await worker.request('session.create', { session_id: 'work', workspace: data.workspace });
+  await worker.request('session.configure', { session_id: 'work', instructions });
+  worker.child.stdout.pause();
+  const pending = Array.from({ length: 32 }, (_, index) => worker.request('session.configure', { session_id: 'work', name: `Change ${index}` }));
+  await delay(500); assert.equal(worker.child.exitCode, null);
+  worker.child.stdout.resume();
+  const results = await Promise.all(pending), accepted = results.filter(value => value.result);
+  assert.ok(accepted.length > 0); assert.ok(results.some(value => value.error?.data?.kind === 'resource_limit'));
+  for (const value of accepted) assert.equal(value.result.instructions, instructions);
+  const current = (await worker.request('session.get', { session_id: 'work' })).result.session;
+  assert.equal(current.name, accepted.at(-1).result.name);
+  assert.deepEqual((await worker.request('session.configure', { session_id: 'work', name: current.name })).result, current);
+  await worker.request('worker.shutdown', {}); await worker.exit;
+});

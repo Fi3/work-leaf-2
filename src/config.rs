@@ -165,7 +165,7 @@ impl Config {
             path,
             temporary,
             original,
-            _lock: lock,
+            lock,
         };
         let mut file = OpenOptions::new()
             .create_new(true)
@@ -294,7 +294,7 @@ pub struct SetupFile {
     path: PathBuf,
     temporary: PathBuf,
     original: Option<Vec<u8>>,
-    _lock: File,
+    lock: File,
 }
 
 impl SetupFile {
@@ -319,5 +319,7 @@ impl SetupFile {
 impl Drop for SetupFile {
     fn drop(&mut self) {
         let _ = std::fs::remove_file(&self.temporary);
+        // Setup owns this lock only for staging, even if a concurrent fork copied the descriptor.
+        let _ = self.lock.unlock();
     }
 }

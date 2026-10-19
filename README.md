@@ -24,28 +24,30 @@ Use Rust **1.94.1**, Node **26.10.0**, npm **12.2.0**, and Neovim **0.12.6**.
 The Rust toolchain file selects the required compiler, formatter, and Clippy.
 Older editor versions are not supported by the current test evidence.
 
-Press `n` in the tree to create an agent. If setup is needed, a terminal opens
-inside Neovim **before** the name prompt. Choose one of these options:
+Press `n`, or select **+ New chat** and press Enter. A saved chat opens at once.
+No name or setup dialog blocks it. The small message box is at the bottom of the
+tab. Type a task and press **Enter** to send it. **Shift-Enter** adds a line.
+Use **Ctrl-J** if your terminal does not send Shift-Enter. Ctrl-S also sends.
 
-- `1`: Connect to Anthropic. Select a model from the supplied list, then enter
-  your API key. The key is hidden while you type. Model use can incur charges.
-- `2`: Try the local demo. It uses fixed replies and needs no key. It does not
-  provide AI coding. Choose Anthropic when you want to perform real tasks.
-- `q`: Cancel setup. Your settings, open files, and drafts stay unchanged.
+For the first AI chat, type `\model` and press Enter. Select an Anthropic model
+from the list. Type `\login` to enter your API key in a private terminal. Model
+use can incur charges. For a test without a key, type `\model demo`. The local
+demo gives fixed replies; it does not provide AI coding.
 
-When setup completes, enter an agent name. The prompt opens in insert mode.
-Type a task and press `Ctrl-S`. Press `Esc` to return to normal Neovim editing.
-The tree shows setup errors until you correct them. Press `g` in the tree, or
-use `:Harness setup`, to open setup again. You can also run `harness setup` from
-a shell. Setup checks local credentials; it makes no model request and cannot
-prove that a key is valid with the provider.
+New chats use the settings of the newest chat in that directory that has a model.
+A child uses its parent's settings. Model, instructions, and name changes apply
+to an idle chat without a server restart. Each chat keeps its own conversation.
+An unconfigured chat keeps your draft and shows how to select a model.
 
-Settings are saved in `${XDG_CONFIG_HOME:-$HOME/.config}/harness/config.json`.
-Setup keeps other settings and writes the file with private permissions. The
-key stays only in the server environment. It is not saved to disk. After the
-server stops, enter the key again, or set `ANTHROPIC_API_KEY` in the environment
-before startup. Setup changes apply only when all work is idle. Active or
-unfinished work prevents the change and is preserved.
+The key stays only in the server environment. It is not saved to disk. After the
+server stops, use `\login` again, or set `ANTHROPIC_API_KEY` before startup.
+Key replacement requires an idle server. Active or unfinished work prevents
+replacement and is preserved. Key entry makes no model request; it cannot prove
+that the provider accepts the key.
+
+`harness setup` remains available to set startup defaults in
+`${XDG_CONFIG_HOME:-$HOME/.config}/harness/config.json`. Chat settings are stored
+with their Pi conversation and do not require this file.
 
 Optional configuration keys include `instructions`, `node_path`, `worker_path`,
 `state_dir`, and `socket_path`. Relative paths use the configuration directory.
@@ -53,65 +55,69 @@ A custom state directory requires a distinct socket path. Unknown keys fail.
 
 ## Use the agent tree
 
-An agent is a stored session. The tree groups agents under their project folders.
-This nesting does not create parent and child agents that control each other.
+An agent is a stored chat session. The tree lists agents in the current directory.
+It does not list agents from other directories. A child appears under the agent
+that created it. A child has its own task and history. Stopping a parent does not
+stop its children.
 
 | Key | Action |
 | --- | --- |
 | `;` in normal mode | Show or hide the left tree. |
-| `Enter` on a folder | Expand or close the folder. |
-| `Enter` on an agent | Open its transcript and prompt. |
-| `n` in the tree | Complete setup if needed, then name an agent in that folder. |
-| `g` in the tree | Open provider and model setup. |
+| `Enter` on an agent | Select its chat. |
+| `n`, or Enter on **+ New chat** | Open a new chat immediately. |
+| `h` / `l` in the tree | Close / expand the selected agent's children. |
 | `s` on an agent | Stop that agent's active task. |
 | `r` in the tree | Refresh the stored agent list. |
 | `q` in the tree | Hide the tree. |
-| `Ctrl-S` in the prompt | Send the text. |
-| `Enter` in the prompt, normal mode | Send the text. |
-| `Enter` in the prompt, insert mode | Add a new line. |
-| `p` in the conversation | Move to the prompt and start typing. |
+| `Enter` or `Ctrl-S` in the message box | Send the prompt. |
+| `Shift-Enter` or `Ctrl-J` in insert mode | Add a line. |
+| `Tab` after `\` | Complete a chat command. |
+| `p` in the conversation | Move to the message box. |
 | `h` in the conversation | Load older messages. |
 
-Type in the prompt with normal Neovim editing commands. You can switch agents or
-hide the tree while work continues. Use the exit confirmation described below
-to keep or stop active tasks.
+Type these commands in the message box and press Enter. `/` also works as the
+command prefix. Commands are local controls; they are not submitted as tasks.
 
-The conversation shows who spoke, tool activity, and task state. The prompt has
-a visible send instruction. Empty prompts show a hint that is never submitted.
-At widths below 110 columns, the conversation opens below your source file.
-Selecting an agent hides the tree to leave room for your text. Resize the
-terminal at any time; your draft and source focus remain available.
+| Command | Action |
+| --- | --- |
+| `\model` | Choose a model. `\model provider/model` selects it directly. |
+| `\model demo` | Use fixed local replies without a key. |
+| `\provider` | Choose a provider, then a model. |
+| `\login` | Enter the Anthropic key in a private terminal. `\auth` also works. |
+| `\name Review` | Rename this chat to Review. |
+| `\instructions Give short answers.` | Set instructions for later tasks. No text clears them. |
+| `\new` | Open another chat in this directory. An optional name follows. |
+| `\child` | Open a child of this agent. An optional name follows. |
+| `\context buffer` | Attach the source buffer, including unsaved text. |
+| `\context selection` | Attach the last visual selection as complete lines. |
+| `\stop` | Stop this chat's active task. |
+| `\history` | Load older messages. |
+| `\status` | Show local model and credential readiness. |
+| `\help` | Show chat commands. |
+
+The source file stays above the conversation and the three-line message box.
+You can switch agents or tabs, or hide the panels. Each chat keeps its draft.
+Each tab restores its selected chat. The tree follows that tab's directory.
+During startup, the first action waits for chat creation. Later text stays in
+the box. It cannot replace that action or become a task in another chat.
+
+The conversation shows streamed replies, tool activity, and task state. At
+narrow widths, a terminal resize hides the tree to leave room for the source.
+Press `;` to show it again. Normal Neovim window commands still work.
 
 The interface uses the saved [Pi TUI guidance](dev-docs/interfaces/pi-tui/overview.md)
-and [Neovim layout guidance](dev-docs/neovim-ui/layout.md): visible next steps,
-native input, retained state, and layouts that fit the terminal. Setup uses a
-native Neovim terminal. The Rust command reads credentials directly; Lua does
-not receive the key. No UI library was added.
+and [Neovim layout guidance](dev-docs/neovim-ui/layout.md): native input, visible
+controls, retained drafts, and layouts that fit the terminal. Key entry uses a
+native terminal. Rust reads the key directly; Lua does not receive it.
 
 ## Watch the demonstration
 
-[Open the screen recording](tests/evidence/harness-demo.mp4). The 47-second video
-has text that explains each action. It records an actual Neovim window with the
-Rust server and Pi adapter, starting with no configuration file or provider key.
-The setup menu offers a paid connection or the local demo. This recording chooses
-the demo, which supplies fixed text. It does not perform AI coding or run tools.
-The [recording report](tests/evidence/harness-demo.json) contains the checks,
-times, and video hash.
-
-| Time | Action |
-| --- | --- |
-| 00:00 | Run the script from the project directory. |
-| 00:05 | Press `;` to show the empty tree and its instructions. |
-| 00:09 | Press `n`. Setup opens before the name prompt. |
-| 00:13 | Choose `2` for the local demo. |
-| 00:17 | Enter `review`. The prompt opens in insert mode. |
-| 00:20 | Type two lines. Press Ctrl-S to send them. |
-| 00:26 | Read the fixed reply and the demo label. |
-| 00:30 | Return to the source file with normal window commands. |
-| 00:33 | Open the tree and find the `g` setup control. |
-| 00:37 | Select the saved agent with Enter. |
-| 00:40 | Press Escape, then close Neovim with `:qa`. |
-| 00:43 | Read how to select Anthropic for real tasks. |
+[Open the screen recording](tests/evidence/harness-demo.mp4). Text below the
+recording explains each action. It shows the actual Neovim window, Rust server,
+and Pi adapter. The recording starts without a configuration file or key and
+uses the Pi faux provider for repeatable replies and tool calls. It makes no
+paid model request. See the [recording report](tests/evidence/harness-demo.json)
+for the action times, checks, and video hash.
 
 ## Install the command
 
@@ -144,14 +150,23 @@ The source script accepts the same options: `./harness.sh --config PATH`.
 ```sh
 harness start
 harness session create --id work --workspace "$PWD"
+harness session configure --session work --provider faux --model test
 printf '%s\n' 'Run the tests and explain failures.' |
   harness send --session work --request-id tests_001 --stdin
 harness wait --session work --request-id tests_001 --text
 ```
 
 The workspace must be an existing absolute directory. Its canonical path stays
-fixed for that session. The model, instructions, and tools also stay fixed.
-Create another session to change these settings.
+fixed for that session. Use `session configure` to change the model, instructions,
+or name while the chat is idle. The example selects the local demo. Select an
+Anthropic catalog model and supply a key to perform AI tasks.
+
+`session create` accepts `--name` and `--parent`. `session list --workspace "$PWD"`
+filters by the canonical directory. Built-in Bash tools receive the current
+`HARNESS_SESSION_ID`, `HARNESS_SOCKET`, and `HARNESS_EXECUTABLE`. A `session create`
+command from that tool uses the current session as its parent unless `--parent`
+is supplied. The agent can use the existing send, wait, and stop commands for
+children. No second tool system is required.
 
 Keep each request identifier until its admission is known. A retry with the same
 identifier returns the original submission. Replacement text does not run. Use
@@ -175,7 +190,7 @@ It preserves unfinished work. Use `harness start` to recover that work.
 Changing provider credentials requires a new server environment.
 
 Server and script commands accept `--socket PATH`, `--config PATH`, and `--state-dir PATH`.
-`start`, `setup`, and the editor startup path can start a missing server.
+`start`, `auth`, `setup`, and the editor startup path can start a missing server.
 Standard output contains JSON results, NDJSON streams, or the requested answer
 text. Diagnostics go to standard error.
 
@@ -206,14 +221,15 @@ require('harness').enable_sidebar()
 
 Optional settings are `config_path`, `socket_path`, `workspace`, `autostart`,
 `width`, and `prompt_height`. Defaults are local autostart, width 72, and prompt
-height 6. Loading the plugin starts no process and makes no provider request.
+height 3. The legacy `width` option is accepted; chat panels use the tab width.
+Loading the plugin starts no process and makes no provider request.
 
 | Command | Action |
 | --- | --- |
 | `:Harness` | Open the transcript and prompt; start or reconnect. |
 | `:Harness sidebar` | Show or hide the agent tree. |
-| `:Harness new` | Check setup, then create a session in the source window's workspace. |
-| `:Harness setup` | Set the provider, model, and server credential. |
+| `:Harness new` | Open a new chat in the source window's directory. |
+| `:Harness login` or `:Harness setup` | Open the private credential terminal. |
 | `:Harness sessions` | Select a stored session. |
 | `:Harness attach ID` | Attach to a specified session. |
 | `:Harness send` | Send the prompt and explicit context snapshots. |
@@ -253,11 +269,18 @@ Notifications are only for watches. Each `session.state` notification replaces
 the previous snapshot. A reconnect needs a new watch. There is no event replay.
 See [the shared fixtures](tests/fixtures/protocol.json) for exact record shapes.
 
-`configuration.get` takes an empty object. It returns the selected provider and
-model, local readiness, an explanatory message, and the supplied Anthropic
-model list. Its `issue` is `missing_model`, `invalid_model`, `missing_key`, or
+`configuration.get` takes an optional `session_id`. It returns the chat settings
+when supplied, or the server defaults otherwise: provider and model, local
+readiness, an explanatory message, and the supplied Anthropic model list. Its `issue` is `missing_model`, `invalid_model`, `missing_key`, or
 null. It never returns a key or calls the model. This local configuration status
 is separate from the recovery status in `system.hello`.
+
+`session.create` accepts optional `name` and `parent_session_id`. It can create a
+chat without a model or key. A supplied parent must be in the same canonical
+workspace. The parent link stays fixed. `session.configure` accepts `session_id`
+and one or more of `name`, `instructions`, or the `provider`/`model` pair. It
+updates Pi settings and metadata in one transaction. Active chats reject changes.
+`session.list` accepts an optional `workspace`; its cursor belongs to that filter.
 
 `harness rpc` proxies these records through standard input and output. Keep its
 input open for watches. On input EOF, it drains pending responses, releases its
@@ -383,46 +406,46 @@ test uses temporary workspaces, state directories, and sockets. No test needs
 paid provider access. The faux provider controls responses and actual coding
 tools execute local test commands.
 
-The initial integration probes passed atomic metadata creation and rollback,
-SQLite reopen, duplicate lookup before busy checks, atomic watch attachment,
-stored cancellation, paused preflight reads, and safe/unsafe replay. The initial
-editor proof passed 35 real terminal cases on Neovim 0.12.6. It also proved that
-scheduled callbacks continue during the modal prompt. Source review confirmed
-that invalidating the original window cancels the original exit command.
+The complete release gate passed on **2026-10-19** with the final source files. It passed
+formatting, Clippy with warnings denied, 49 Rust tests, the release build, four
+adapter syntax checks, and 61 Node tests. The Node tests include 48 adapter tests,
+three actual server script tests, and ten actual server recovery tests. Independent
+Node test files run concurrently with separate temporary directories and sockets.
 
-The complete release gate passed locally on **2026-10-18** with the final source
-files. It passed formatting, Clippy with warnings denied, 44 Rust tests, the
-release build, four adapter syntax checks, and 49 Node tests. The Node tests
-include 38 adapter tests, three actual server script tests, and eight actual
-server recovery tests. Independent Node test files ran concurrently with separate
-temporary workspaces and sockets.
+Neovim passed both headless suites, **59 actual terminal cases with the Rust
+server and Pi faux provider**, and 43 terminal cases with controlled protocol
+fixtures. The actual tests cover each normal exit command, exact answers, write
+failures, hidden modified buffers, multiple sessions, another client, completion
+and new work during the prompt, connection failure, and Escape during a pending
+stop. They also cover streamed text, tool output, editor response, unsaved context,
+startup, retained drafts, duplicate retries, and forced-exit recovery.
 
-Neovim passed its headless checks, **57 actual terminal cases with the Rust server
-and Pi faux provider**, and 43 terminal cases with controlled protocol fixtures.
-The actual tests include each normal exit command, exact answers, write failures,
-hidden modified buffers, multiple sessions, another client, run completion and
-new work during the prompt, connection failure, and Escape during a pending stop.
-They also cover layout, streamed text, tool output, editor response, unsaved
-context, startup, retained drafts, duplicate retries, and forced-exit recovery.
-Two cases use the source script and `harness nvim`. They verify normal user
-configuration, no server before `;`, named agent creation, panel width, text
-wrapping, Ctrl-S input, streaming, and normal exit. Another case checks tree
-groups, selection, targeted stop, retained drafts, and invalid names.
+The new interface checks start without a configuration file or key. They verify
+immediate chat creation, model/name/instruction commands, retained input when a
+model is missing, Enter to send, Shift-Enter for a new line, and 120-, 80-, and
+60-column layouts. They check exact directory filtering, real child branches,
+selection, folding, targeted stop, and separate drafts and source windows in two
+tabs. A real Bash tool creates a child through the Rust command client; Enter
+then opens that child's separate conversation.
 
-Two more cases start with no configuration or key and resize the actual terminal.
-They verify setup cancellation, explicit demo selection before the name prompt,
-insert-mode focus, multiline input, send controls, and widths of 120, 80, and 60
-columns. The headless view checks also preserve source focus when two windows
-show the same file. Eight Rust setup tests use actual terminal devices and Pi.
-They check hidden key input, restored terminal flags after interruption, private
-configuration writes, retained settings, credential precedence, write failures,
-and rejection while work is active. A separate server test rejects credential
-replacement through a competing server. Provider readiness checks make no paid
-request; they verify credential presence only.
+Headless tests delay startup and receipts. They verify that the first action
+keeps its text and target, later text stays in the draft, empty Enter does not
+block commands, and queued model changes cannot be overtaken by a task. They also
+check native command completion, private key entry callbacks, and reconnection.
+Eleven Rust setup tests use actual terminal devices and Pi. They check hidden
+key input, restored terminal flags, private writes, retained settings, credential
+precedence, write failures, and rejection while work is active.
+An additional [actual key-entry test](tests/evidence/nvim-auth.json) uses Neovim,
+the Rust server, Pi, and a synthetic key. It checks cancellation, retry, retained
+drafts, server readiness, hidden input, and zero model requests. Its compressed
+[terminal recording](tests/evidence/nvim-auth-terminal.raw.gz) contains no key.
 
-Regression checks cover the `admission` session name, unchanged caller output
+Regression tests cover the `admission` session name, unchanged caller output
 flags, default configuration state identity, late receipts after session changes,
-and retained transcript entries across newer snapshots and reconnect gaps.
+and retained history across new snapshots. New backend tests cover atomic chat
+settings through process kills, metadata watch updates, inherited settings,
+directory-scoped cursors, response capacity, and nested child recovery. A child
+continues when its parent is stopped. No test makes a paid model request.
 
 The clean-install check built and installed into a new temporary prefix. It used
 the complete locked npm tree with install scripts disabled. The installed Rust
@@ -488,7 +511,7 @@ stored Pi outcomes. They also retain the terminal output.
 | A21 | Actual create, send, wait, watch, full text, stop, and proxy operations in `tests/scripts.test.mjs`. |
 | A22 | Shared invalid requests, frame boundaries, combined records, versions, and byte limits in Rust and Node; shared Unicode snapshots and transport in Neovim. |
 | A23 | Complete Unicode answers larger than previews, with byte chunks and invalid-offset checks. |
-| A24 | Idle startup, no generation before input, fixed metadata, and credential exclusion in the script and adapter tests. |
+| A24 | Idle startup, no generation before input, stored metadata, and credential exclusion in the script and adapter tests. |
 | A25 | Four active sessions, client/request/watch bounds, worker restart limits, independent sessions, and output limits. |
 | A26 | Paused recovery rejects every operation that can resume pending work; terminal reads remain available. |
 | A27 | Shutdown races and state-directory identity in the actual recovery and server tests. |

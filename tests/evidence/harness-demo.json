@@ -1,13 +1,13 @@
 {
-  "recorded_at": "2026-10-18T16:27:09.899981+00:00",
+  "recorded_at": "2026-10-19T10:41:40.014188+00:00",
   "mode": "actual X11 screen capture of a dedicated Kitty window; actual Neovim, Rust server, and Pi adapter",
   "model": "Pi faux provider with fixed responses; no provider credentials supplied",
-  "tools": "no tools in this first-run demonstration; tool execution is covered by the actual terminal integration tests",
+  "tools": "actual Bash tool creates a stored child agent through the Rust command client; faux responses prescribe the tool call",
   "input": "keys sent to the terminal with Kitty remote control",
   "capture": "FFmpeg x11grab restricted to the terminal window",
   "video": "harness-demo.mp4",
-  "video_sha256": "b5b434901ecdd286257fda14d943bc15200aae165f32a971fbb16f64be9ba503",
-  "duration_seconds": 46.6,
+  "video_sha256": "da927b3219168df7cd4b0aeb152c95007a055f30e4d8fa42d2bee3b8720877b3",
+  "duration_seconds": 45.134,
   "frames_per_second": 15,
   "screen_pixels": [
     1280,
@@ -18,64 +18,65 @@
   "steps": [
     {
       "seconds": 0.0,
-      "text": "Run ./harness.sh from your project. No configuration file or API key is present."
+      "text": "Run ./harness.sh from your project. This test starts without a configuration file or key."
     },
     {
-      "seconds": 5.5,
-      "text": "Press ; to open the tree. The empty state explains how to begin."
+      "seconds": 5.3,
+      "text": "Press ;. The left tree lists agents from this directory. Select + New chat."
     },
     {
-      "seconds": 9.5,
-      "text": "Press n. Setup opens before the agent name is requested."
+      "seconds": 8.4,
+      "text": "Press Enter. The chat opens at once, with a small message box at the bottom."
     },
     {
-      "seconds": 13.6,
-      "text": "Choose 2 for the local demo. It uses fixed replies and needs no API key."
+      "seconds": 11.5,
+      "text": "Type \\model demo and press Enter. This selects fixed local replies without a key."
     },
     {
-      "seconds": 17.1,
-      "text": "Enter review as the agent name. The prompt opens ready for typing."
+      "seconds": 14.5,
+      "text": "Type \\name Review and press Enter. The name is optional; no name dialog blocks creation."
     },
     {
-      "seconds": 20.2,
-      "text": "Type a task. Ctrl-S sends it; Enter adds a line while you type."
+      "seconds": 17.6,
+      "text": "Write a task. Shift-Enter adds a line; Enter sends the complete prompt."
     },
     {
-      "seconds": 26.3,
-      "text": "Read the reply. The demo label states that no AI model is connected."
+      "seconds": 23.9,
+      "text": "The actual Bash tool creates the child through the command client. The editor stays available."
     },
     {
-      "seconds": 30.3,
-      "text": "Move back to your source file with normal Neovim window commands."
+      "seconds": 27.4,
+      "text": "Press Escape, then ; twice and r. Tests is nested under the Review agent that created it."
     },
     {
-      "seconds": 33.4,
-      "text": "Press ; twice to focus the tree. Press g whenever you want to change setup."
+      "seconds": 31.5,
+      "text": "Select Tests with Enter. This child opens with an empty, separate conversation."
     },
     {
-      "seconds": 37.5,
-      "text": "Press Enter on review to return to its saved conversation and prompt."
+      "seconds": 34.6,
+      "text": "Return to the source with normal Neovim window commands. Press ; to hide the tree."
     },
     {
-      "seconds": 40.5,
-      "text": "Press Escape, then :qa to close. Settings and conversation remain saved."
+      "seconds": 38.7,
+      "text": "The chats stay saved. Press Escape, then :qa to close the idle editor."
     },
     {
-      "seconds": 43.5,
-      "text": "For AI coding, choose Anthropic in setup, select a model, and enter your API key."
+      "seconds": 41.7,
+      "text": "For AI coding, use \\model to select Anthropic, then \\login to enter your key."
     }
   ],
   "assertions": [
-    "no configuration file before startup",
+    "no configuration file or credentials before startup",
     "normal editor starts with one window",
-    "semicolon shows an empty project tree and next steps",
-    "n opens setup before asking for an agent name",
-    "explicit demo choice saves configuration without credentials",
-    "named agent is selected and input mode begins",
-    "multiline task appears in the stored transcript",
-    "fixed demo answer appears and reaches idle",
-    "saved agent can be selected from the tree",
-    "normal exit closes Neovim"
+    "semicolon shows only New chat in the empty directory tree",
+    "Enter on New opens chat without setup or name dialogs",
+    "model and name are set through local chat commands",
+    "Shift-Enter inserts a line and Enter submits the prompt",
+    "actual Bash tool creates a child with the correct stored parent",
+    "child appears nested under its creator",
+    "child selection opens separate empty history",
+    "no configuration file is written by chat settings",
+    "normal idle exit closes Neovim"
   ],
   "cleanup": "all demonstration sessions stopped; private server shut down; terminal closed"
 }

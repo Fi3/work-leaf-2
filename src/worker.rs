@@ -33,6 +33,7 @@ impl Worker {
         let mut command = Command::new(&config.node_path);
         command
             .arg(&config.worker_path)
+            .env("HARNESS_EXECUTABLE", std::env::current_exe()?)
             .env(
                 "HARNESS_CONFIG",
                 serde_json::to_string(config).map_err(|_| {

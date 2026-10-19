@@ -131,9 +131,13 @@ fn integer(params: &Value, name: &str, min: u64, max: u64) -> Result<(), RpcErro
 pub fn validate(method: &str, params: &Value) -> Result<(), RpcError> {
     let (required, optional): (&[&str], &[&str]) = match method {
         "system.hello" => (&["api_version"], &[]),
-        "configuration.get" => (&[], &[]),
-        "session.create" => (&["session_id", "workspace"], &[]),
-        "session.list" => (&[], &["cursor", "limit"]),
+        "configuration.get" => (&[], &["session_id"]),
+        "session.create" => (&["session_id", "workspace"], &["parent_session_id", "name"]),
+        "session.configure" => (
+            &["session_id"],
+            &["provider", "model", "instructions", "name"],
+        ),
+        "session.list" => (&[], &["cursor", "limit", "workspace"]),
         "session.get" | "session.watch" => (&["session_id"], &[]),
         "session.unwatch" => (&["watch_id"], &[]),
         "input.submit" => (&["session_id", "request_id", "text", "context"], &[]),
@@ -164,10 +168,39 @@ pub fn validate(method: &str, params: &Value) -> Result<(), RpcError> {
             return Err(RpcError::invalid("Unknown parameter field"));
         }
     }
-    for key in ["session_id", "request_id"] {
+    for key in ["session_id", "request_id", "parent_session_id"] {
+        if key == "parent_session_id" && params[key].is_null() {
+            continue;
+        }
         if object.contains_key(key) && !identifier(string(params, key)?) {
             return Err(RpcError::invalid(format!("Invalid {key}")));
         }
+    }
+    for key in ["provider", "model", "name"] {
+        if object.contains_key(key) {
+            let value = string(params, key)?;
+            if value
+                .trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}')
+                .is_empty()
+                || value.len() > 128
+                || value.chars().any(char::is_control)
+            {
+                return Err(RpcError::invalid(format!("Invalid {key}")));
+            }
+        }
+    }
+    if object.contains_key("instructions") {
+        let value = string(params, "instructions")?;
+        if value.len() > MAX_INPUT || value.contains('\0') {
+            return Err(RpcError::invalid("Invalid instructions"));
+        }
+    }
+    if method == "session.configure"
+        && (object.len() == 1 || object.contains_key("provider") != object.contains_key("model"))
+    {
+        return Err(RpcError::invalid(
+            "Supply settings; provider and model must be supplied together",
+        ));
     }
     for key in [
         "submission_id",
@@ -251,8 +284,10 @@ pub struct Context {
 pub struct Session {
     pub session_id: String,
     pub workspace: String,
-    pub provider: String,
-    pub model: String,
+    pub provider: Option<String>,
+    pub model: Option<String>,
+    pub parent_session_id: Option<String>,
+    pub name: Option<String>,
     pub instructions: String,
     pub schema_version: u64,
     pub tools: Vec<String>,

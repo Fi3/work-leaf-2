@@ -56,8 +56,83 @@ fn model(status: &Value) -> Result<Option<String>, RpcError> {
 }
 
 fn cancel() -> i32 {
-    println!("Setup cancelled. Configuration was not changed.");
+    println!("Cancelled. Configuration was not changed.");
     130
+}
+
+fn terminal() -> Result<(), RpcError> {
+    if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
+        return Err(RpcError::invalid(
+            "Credentials and setup require a terminal. Use \\auth in the chat for credentials",
+        ));
+    }
+    Ok(())
+}
+
+fn credential() -> Result<Option<String>, RpcError> {
+    println!(
+        "The key stays in the server environment. It is not saved to disk.\nAfter the server stops, supply the key again or set ANTHROPIC_API_KEY before startup."
+    );
+    let inherited = std::env::var("ANTHROPIC_API_KEY")
+        .ok()
+        .filter(|key| !key.trim().is_empty());
+    let key = if let Some(key) = inherited {
+        match process::terminal_line("Use ANTHROPIC_API_KEY from this terminal? [Y/n/q]: ", false)?
+            .as_deref()
+        {
+            Some("" | "y" | "Y") => Some(key),
+            Some("n" | "N") => input("API key (hidden; Enter cancels): ", true)?,
+            _ => None,
+        }
+    } else {
+        input("API key (hidden; Enter cancels): ", true)?
+    };
+    if key
+        .as_ref()
+        .is_some_and(|key| key.trim().is_empty() || key.chars().any(char::is_control))
+    {
+        return Err(RpcError::invalid(
+            "API key must contain text and no control characters",
+        ));
+    }
+    Ok(key)
+}
+
+fn shutdown(mut client: Client, hello: &Value, config: &Config) -> Result<std::fs::File, RpcError> {
+    println!("Apply settings. Active work prevents restart; it will not be stopped.");
+    if let Err(error) = client.request("server.shutdown", json!({})) {
+        if error.kind() == Some("busy") {
+            return Err(RpcError::app(
+                "busy",
+                if hello["ready"] == false {
+                    "Unfinished work is blocked. Settings were not changed and work was preserved. Restore the required server environment: send SIGTERM to the server, set ANTHROPIC_API_KEY, then run harness start with the same configuration. Do not stop the runs to change credentials"
+                } else {
+                    "Work is active. Settings were not changed and work was preserved. Wait for completion, then retry this command"
+                },
+            ));
+        }
+        return Err(error);
+    }
+    drop(client);
+    released(config)
+}
+
+pub fn auth(config: &Config) -> Result<i32, RpcError> {
+    terminal()?;
+    println!("Anthropic credential\nNo model request is made. Press Ctrl-C to cancel.");
+    let hello = server::start(config)?;
+    let client = Client::connect(&config.socket_path, Some(&config.state_dir))?;
+    let Some(key) = credential()? else {
+        return Ok(cancel());
+    };
+    let ownership = shutdown(client, &hello, config)?;
+    drop(ownership);
+    server::start_with_key(config, Some(&key))?;
+    drop(key);
+    println!(
+        "Credential loaded in the server environment. The provider has not checked it. Select a model in the chat."
+    );
+    Ok(0)
 }
 
 fn released(config: &Config) -> Result<std::fs::File, RpcError> {
@@ -86,11 +161,7 @@ fn released(config: &Config) -> Result<std::fs::File, RpcError> {
 }
 
 pub fn run(config: &Config) -> Result<i32, RpcError> {
-    if !io::stdin().is_terminal() || !io::stdout().is_terminal() {
-        return Err(RpcError::invalid(
-            "Setup requires a terminal. Use :Harness setup in Neovim",
-        ));
-    }
+    terminal()?;
     println!(
         "Harness setup\nConfiguration: {}",
         config.setup_path()?.display()
@@ -132,60 +203,14 @@ pub fn run(config: &Config) -> Result<i32, RpcError> {
     }
     let mut key = None;
     if provider == "anthropic" {
-        println!(
-            "The key stays in the server environment. It is not saved to disk.\nAfter the server stops, supply the key again or set ANTHROPIC_API_KEY before startup."
-        );
-        let present = std::env::var("ANTHROPIC_API_KEY").is_ok_and(|key| !key.trim().is_empty());
-        let replace = if present {
-            match process::terminal_line(
-                "Use ANTHROPIC_API_KEY from this terminal? [Y/n/q]: ",
-                false,
-            )?
-            .as_deref()
-            {
-                Some("" | "y" | "Y") => {
-                    key = std::env::var("ANTHROPIC_API_KEY").ok();
-                    false
-                }
-                Some("n" | "N") => true,
-                _ => return Ok(cancel()),
-            }
-        } else {
-            true
-        };
-        if replace {
-            key = input("API key (hidden; Enter cancels): ", true)?;
-            if key.is_none() {
-                return Ok(cancel());
-            }
-        }
-        if key
-            .as_ref()
-            .is_some_and(|key| key.trim().is_empty() || key.chars().any(char::is_control))
-        {
-            return Err(RpcError::invalid(
-                "API key must contain text and no control characters",
-            ));
+        key = credential()?;
+        if key.is_none() {
+            return Ok(cancel());
         }
     }
     let staged = config.stage_setup(provider, &model, &original)?;
     staged.unchanged()?;
-    println!("Apply settings. Active work prevents restart; it will not be stopped.");
-    if let Err(error) = client.request("server.shutdown", json!({})) {
-        if error.kind() == Some("busy") {
-            return Err(RpcError::app(
-                "busy",
-                if hello["ready"] == false {
-                    "Unfinished work is blocked. Settings were not changed and work was preserved. Restore the required server environment: send SIGTERM to the server, set ANTHROPIC_API_KEY, then run harness start with the same configuration. Do not stop the runs to change credentials"
-                } else {
-                    "Work is active. Settings were not changed and work was preserved. Wait for completion, then run setup again"
-                },
-            ));
-        }
-        return Err(error);
-    }
-    drop(client);
-    let ownership = released(config)?;
+    let ownership = shutdown(client, &hello, config)?;
     staged.commit()?;
     let updated = config.reload()?;
     drop(ownership);

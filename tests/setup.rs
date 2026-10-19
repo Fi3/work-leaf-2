@@ -1,4 +1,4 @@
-use harness::{client::Client, config::Config};
+use harness::{client::Client, config::Config, process};
 use serde_json::{Value, json};
 use std::fs::{self, File};
 use std::io::{Read, Write};
@@ -68,22 +68,7 @@ impl Fixture {
 
     fn peer(&self) -> Option<i32> {
         let socket = UnixStream::connect(&self.socket).ok()?;
-        // This socket belongs to this fixture. SO_PEERCRED initializes the supplied credential value.
-        unsafe {
-            let mut credentials: libc::ucred = std::mem::zeroed();
-            let mut size = std::mem::size_of_val(&credentials) as libc::socklen_t;
-            assert_eq!(
-                libc::getsockopt(
-                    socket.as_raw_fd(),
-                    libc::SOL_SOCKET,
-                    libc::SO_PEERCRED,
-                    (&mut credentials as *mut libc::ucred).cast(),
-                    &mut size
-                ),
-                0
-            );
-            Some(credentials.pid)
-        }
+        Some(process::peer_pid(&socket).unwrap().try_into().unwrap())
     }
 }
 
@@ -316,6 +301,22 @@ fn setup_preserves_raw_fields_and_rejects_concurrent_or_changed_files() {
     let staged = config.stage_setup("faux", "test", &expected).unwrap();
     assert_eq!(fs::read(&fixture.path).unwrap(), original);
     assert!(config.stage_setup("faux", "test", &expected).is_err());
+    let lock_path = parent.join(".config.json.setup.lock");
+    let descriptor = fs::read_dir("/proc/self/fd")
+        .unwrap()
+        .filter_map(Result::ok)
+        .find(|entry| fs::read_link(entry.path()).is_ok_and(|path| path == lock_path))
+        .unwrap()
+        .file_name()
+        .to_str()
+        .unwrap()
+        .parse::<i32>()
+        .unwrap();
+    // A fork before exec holds the same open-file description after the staging owner drops it.
+    let inherited = unsafe { libc::fcntl(descriptor, libc::F_DUPFD_CLOEXEC, 0) };
+    assert!(inherited >= 0);
+    // This descriptor is a new owned copy; retain it through the next setup attempt.
+    let inherited = unsafe { File::from_raw_fd(inherited) };
     staged.commit().unwrap();
     let saved: Value = serde_json::from_slice(&fs::read(&fixture.path).unwrap()).unwrap();
     let mut wanted: Value = serde_json::from_slice(&original).unwrap();
@@ -329,6 +330,7 @@ fn setup_preserves_raw_fields_and_rejects_concurrent_or_changed_files() {
     drop(staged);
     let saved = config.setup_bytes().unwrap();
     let staged = config.stage_setup("anthropic", "new", &saved).unwrap();
+    drop(inherited);
     fs::write(&fixture.path, b"{\"instructions\":\"User edit\"}").unwrap();
     assert!(staged.commit().is_err());
     drop(staged);
@@ -549,7 +551,7 @@ fn failed_staging_write_keeps_configuration_and_server() {
 }
 
 #[test]
-fn active_work_rejects_setup_without_changing_file_or_instance() {
+fn active_work_rejects_setup_and_auth_without_changing_file_or_instance() {
     let fixture = Fixture::new();
     let original =
         fixture.write(&json!({"provider":"faux", "model":"test", "instructions":"Preserve me"}));
@@ -573,31 +575,295 @@ fn active_work_rejects_setup_without_changing_file_or_instance() {
             json!({"session_id":"running","request_id":"task","text":"Continue","context":[]}),
         )
         .unwrap();
-    let mut setup = Terminal::spawn(fixture.command(&["setup"]));
-    setup.until("Provider [1/2/q]: ");
-    setup.send("1\n");
-    setup.until("Model number (q cancels): ");
-    setup.send("1\n");
-    setup.until("API key (hidden; Enter cancels): ");
-    setup.send(&format!("{KEY}\n"));
-    setup.finish(6);
-    assert!(
-        setup
-            .output
-            .contains("Settings were not changed and work was preserved")
-    );
-    assert_eq!(fs::read(&fixture.path).unwrap(), original);
-    assert_eq!(fixture.peer(), Some(pid));
-    assert_eq!(
-        client
-            .request("session.get", json!({"session_id":"running"}))
-            .unwrap()["snapshot"]["active_submission_id"],
-        receipt["submission_id"]
-    );
+    for command in ["setup", "auth"] {
+        let mut setup = Terminal::spawn(fixture.command(&[command]));
+        if command == "setup" {
+            setup.until("Provider [1/2/q]: ");
+            setup.send("1\n");
+            setup.until("Model number (q cancels): ");
+            setup.send("1\n");
+        }
+        setup.until("API key (hidden; Enter cancels): ");
+        setup.send(&format!("{KEY}\n"));
+        setup.finish(6);
+        assert!(
+            setup
+                .output
+                .contains("Settings were not changed and work was preserved")
+        );
+        assert_eq!(fs::read(&fixture.path).unwrap(), original);
+        assert_eq!(fixture.peer(), Some(pid));
+        assert_eq!(
+            client
+                .request("session.get", json!({"session_id":"running"}))
+                .unwrap()["snapshot"]["active_submission_id"],
+            receipt["submission_id"]
+        );
+    }
     client
         .request(
             "run.stop",
             json!({"session_id":"running","submission_id":receipt["submission_id"]}),
         )
         .unwrap();
+}
+
+#[test]
+fn auth_has_no_model_prompt_and_cancellation_keeps_the_server() {
+    let fixture = Fixture::new();
+    for answer in ["", "q", "\u{1b}", "interrupt"] {
+        let mut auth = Terminal::spawn(fixture.command(&["auth"]));
+        auth.until("API key (hidden; Enter cancels): ");
+        assert_eq!(terminal_flags(&auth.slave) & libc::ECHO, 0);
+        let pid = fixture.peer();
+        if answer == "interrupt" {
+            auth.send(KEY);
+            // Interrupt only this fixture's live credential command.
+            unsafe { libc::kill(auth.child.id() as i32, libc::SIGINT) };
+        } else {
+            auth.send(&format!("{answer}\n"));
+        }
+        auth.finish(130);
+        assert_eq!(fixture.peer(), pid);
+        assert!(!fixture.path.exists());
+        assert!(!auth.output.contains("Provider ["));
+        assert!(!auth.output.contains("Model number"));
+    }
+}
+
+#[test]
+fn auth_only_replaces_the_server_key_and_never_writes_configuration() {
+    for existing_config in [false, true] {
+        let fixture = Fixture::new();
+        let original = existing_config.then(|| {
+            fixture.write(
+                &json!({"provider":"faux","model":"test","instructions":"Keep defaults unchanged"}),
+            )
+        });
+        let mut command = fixture.command(&["auth"]);
+        command
+            .env("ANTHROPIC_AUTH_TOKEN", "unused-auth-token")
+            .env("ANTHROPIC_OAUTH_TOKEN", "unused-oauth-token");
+        if existing_config {
+            command.env("ANTHROPIC_API_KEY", KEY);
+        }
+        let mut auth = Terminal::spawn(command);
+        if existing_config {
+            auth.until("Use ANTHROPIC_API_KEY from this terminal? [Y/n/q]: ");
+        } else {
+            auth.until("API key (hidden; Enter cancels): ");
+            assert_eq!(terminal_flags(&auth.slave) & libc::ECHO, 0);
+        }
+        let old_pid = fixture.peer();
+        auth.send(&if existing_config {
+            "\n".into()
+        } else {
+            format!("{KEY}\n")
+        });
+        auth.finish(0);
+        let pid = fixture.peer().unwrap();
+        assert_ne!(Some(pid), old_pid);
+        assert_eq!(fs::read(&fixture.path).ok(), original);
+        let environment = fs::read(format!("/proc/{pid}/environ")).unwrap();
+        assert!(
+            environment
+                .split(|byte| *byte == 0)
+                .any(|entry| entry == format!("ANTHROPIC_API_KEY={KEY}").as_bytes())
+        );
+        assert!(
+            !environment
+                .split(|byte| *byte == 0)
+                .any(|entry| entry.starts_with(b"ANTHROPIC_AUTH_TOKEN=")
+                    || entry.starts_with(b"ANTHROPIC_OAUTH_TOKEN="))
+        );
+        assert!(
+            !fs::read(format!("/proc/{pid}/cmdline"))
+                .unwrap()
+                .windows(KEY.len())
+                .any(|bytes| bytes == KEY.as_bytes())
+        );
+        let status = fixture
+            .client()
+            .request("configuration.get", json!({}))
+            .unwrap();
+        assert_eq!(
+            status["provider"],
+            if existing_config {
+                json!("faux")
+            } else {
+                Value::Null
+            }
+        );
+        assert!(!status.to_string().contains(KEY));
+        assert!(auth.output.contains("The provider has not checked it"));
+        for file in fs::read_dir(fixture.state.join("logs")).unwrap() {
+            assert!(
+                !fs::read_to_string(file.unwrap().path())
+                    .unwrap()
+                    .contains(KEY)
+            );
+        }
+    }
+}
+
+#[test]
+fn chat_configuration_and_parent_links_survive_restart_without_stopping_other_work() {
+    let fixture = Fixture::new();
+    let output = fixture
+        .command(&["start"])
+        .env("HARNESS_FAUX_TOKENS_PER_SECOND", "1")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let pid = fixture.peer();
+    let workspace = fixture.root.to_str().unwrap();
+    for id in ["parent", "other"] {
+        let output = fixture
+            .command(&["session", "create", "--id", id, "--workspace", workspace])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let metadata: Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(metadata["provider"], Value::Null);
+    }
+    for id in ["parent", "other"] {
+        let output = fixture
+            .command(&[
+                "session",
+                "configure",
+                "--session",
+                id,
+                "--provider",
+                "faux",
+                "--model",
+                "test",
+            ])
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    let mut client = fixture.client();
+    let receipt = client
+        .request(
+            "input.submit",
+            json!({"session_id":"other","request_id":"active","text":"Continue","context":[]}),
+        )
+        .unwrap();
+    let output = fixture
+        .command(&[
+            "session",
+            "configure",
+            "--session",
+            "parent",
+            "--name",
+            "Review λ",
+            "--instructions",
+            "Keep my changes",
+            "--provider",
+            "faux",
+            "--model",
+            "test",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let parent: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let output = fixture
+        .command(&[
+            "session",
+            "create",
+            "--id",
+            "child",
+            "--workspace",
+            workspace,
+            "--name",
+            "Child λ",
+        ])
+        .env("HARNESS_SESSION_ID", "parent")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let child: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(child["parent_session_id"], "parent");
+    assert_eq!(child["instructions"], "Keep my changes");
+    assert_eq!(child["provider"], "faux");
+    assert_eq!(fixture.peer(), pid);
+    assert!(!fixture.path.exists());
+    assert_eq!(
+        client
+            .request("session.get", json!({"session_id":"other"}))
+            .unwrap()["snapshot"]["active_submission_id"],
+        receipt["submission_id"]
+    );
+    let invalid = fixture
+        .command(&[
+            "session",
+            "configure",
+            "--session",
+            "parent",
+            "--provider",
+            "faux",
+            "--model",
+            "absent",
+        ])
+        .output()
+        .unwrap();
+    assert!(!invalid.status.success());
+    assert_eq!(
+        client
+            .request("session.get", json!({"session_id":"parent"}))
+            .unwrap()["session"],
+        parent
+    );
+    client
+        .request(
+            "run.stop",
+            json!({"session_id":"other","submission_id":receipt["submission_id"]}),
+        )
+        .unwrap();
+    client.request("server.shutdown", json!({})).unwrap();
+    drop(client);
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while fixture.socket.exists() && Instant::now() < deadline {
+        thread::sleep(Duration::from_millis(10));
+    }
+    let output = fixture.command(&["start"]).output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let mut client = fixture.client();
+    assert_eq!(
+        client
+            .request("session.get", json!({"session_id":"parent"}))
+            .unwrap()["session"],
+        parent
+    );
+    assert_eq!(
+        client
+            .request("session.get", json!({"session_id":"child"}))
+            .unwrap()["session"],
+        child
+    );
 }

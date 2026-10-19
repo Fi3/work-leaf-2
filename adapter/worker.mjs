@@ -59,8 +59,8 @@ async function dispatch(bytes) {
     if (requests.has(request.id)) throw appError('conflict', 'Request id is already pending');
     if (requests.size >= limits.clients * limits.pending_requests) throw appError('resource_limit', 'Worker request limit reached');
     if (!greeted && request.method !== 'system.hello') throw appError('incompatible_version', 'Call system.hello first');
-    const control = !['session.create', 'session.watch', 'session.get', 'session.list', 'transcript.list', 'entry.read'].includes(request.method);
-    const cost = request.method === 'session.create' ? limits.snapshot_bytes + 1024 : 2048;
+    const control = !['configuration.get', 'session.create', 'session.configure', 'session.watch', 'session.get', 'session.list', 'transcript.list', 'entry.read'].includes(request.method);
+    const cost = ['session.create', 'session.configure'].includes(request.method) ? limits.snapshot_bytes + 1024 : 2048;
     if (queuedBytes() + cost > limits.output_bytes - (control ? 0 : controlReserve)) throw appError('resource_limit', 'Worker output capacity is reserved');
     reservation = cost; reservedBytes += reservation;
     requests.add(request.id); admitted = true;
@@ -73,7 +73,7 @@ async function dispatch(bytes) {
       if (send({ jsonrpc: '2.0', id: request.id, result: value.result }, true)) value.start();
       else await application.unwatch(value.result.watch_id);
     }
-    else send({ jsonrpc: '2.0', id: request.id, result: value }, ['session.list', 'session.get', 'transcript.list', 'entry.read'].includes(request.method));
+    else send({ jsonrpc: '2.0', id: request.id, result: value }, ['configuration.get', 'session.list', 'session.get', 'transcript.list', 'entry.read'].includes(request.method));
     if (request.method === 'worker.close' || request.method === 'worker.shutdown') { ending = true; closingOutput = true; watches.clear(); process.stdin.destroy(); }
   } catch (error) {
     reservedBytes -= reservation; reservation = 0;

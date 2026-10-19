@@ -13,10 +13,12 @@ use std::time::Duration;
 
 const HELP: &str = "harness nvim [--config PATH] [--socket PATH]\n\
 harness setup [--config PATH] [--socket PATH]\n\
+harness auth [--config PATH] [--socket PATH]\n\
 harness start|serve [--config PATH] [--state-dir PATH] [--socket PATH]\n\
 harness status|shutdown|restart-worker|rpc [--socket PATH]\n\
-harness session create --id ID --workspace PATH [--socket PATH]\n\
-harness session list [--socket PATH]\n\
+harness session create --id ID --workspace PATH [--parent ID] [--name NAME] [--socket PATH]\n\
+harness session configure --session ID [--provider ID --model ID] [--instructions TEXT] [--name NAME]\n\
+harness session list [--workspace PATH] [--socket PATH]\n\
 harness send --session ID --request-id ID --stdin [--socket PATH]\n\
 harness wait --session ID --request-id ID [--timeout-ms N] [--text] [--socket PATH]\n\
 harness watch --session ID [--socket PATH]\n\
@@ -77,9 +79,19 @@ impl Arguments {
         let command = positional.join(" ");
         let allowed: &[&str] = match command.as_str() {
             "start" | "serve" => &["--socket", "--config", "--state-dir"],
-            "nvim" | "setup" | "status" | "shutdown" | "restart-worker" | "rpc"
-            | "session list" => &["--socket"],
-            "session create" => &["--socket", "--id", "--workspace"],
+            "nvim" | "setup" | "auth" | "status" | "shutdown" | "restart-worker" | "rpc" => {
+                &["--socket"]
+            }
+            "session create" => &["--socket", "--id", "--workspace", "--parent", "--name"],
+            "session configure" => &[
+                "--socket",
+                "--session",
+                "--provider",
+                "--model",
+                "--instructions",
+                "--name",
+            ],
+            "session list" => &["--socket", "--workspace"],
             "send" => &["--socket", "--session", "--request-id", "--stdin"],
             "wait" => &[
                 "--socket",
@@ -127,7 +139,7 @@ fn execute(args: Vec<String>) -> Result<i32, RpcError> {
     let args = Arguments::parse(args)?;
     let (method, params) = operation(&args)?;
     crate::protocol::validate(method, &params)?;
-    let load = if args.command == "setup" {
+    let load = if matches!(args.command.as_str(), "setup" | "auth") {
         Config::load_setup
     } else {
         Config::load
@@ -144,6 +156,7 @@ fn execute(args: Vec<String>) -> Result<i32, RpcError> {
     match args.command.as_str() {
         "nvim" => return crate::editor::open(&config),
         "setup" => return crate::setup::run(&config),
+        "auth" => return crate::setup::auth(&config),
         "serve" => {
             server::serve(config)?;
             return Ok(0);
@@ -185,11 +198,43 @@ fn operation(args: &Arguments) -> Result<(&'static str, Value), RpcError> {
     let session = || args.required("--session");
     Ok(match args.command.as_str() {
         "status" => ("system.hello", json!({"api_version":1})),
-        "session create" => (
-            "session.create",
-            json!({"session_id":args.required("--id")?, "workspace":args.required("--workspace")?}),
-        ),
-        "session list" => ("session.list", json!({})),
+        "session create" => {
+            let mut params = json!({"session_id":args.required("--id")?, "workspace":args.required("--workspace")?});
+            let parent = if let Some(parent) = args.get("--parent") {
+                Some(parent.to_owned())
+            } else {
+                std::env::var_os("HARNESS_SESSION_ID")
+                    .map(|parent| {
+                        parent
+                            .into_string()
+                            .map_err(|_| RpcError::invalid("HARNESS_SESSION_ID must be UTF-8"))
+                    })
+                    .transpose()?
+            };
+            if let Some(parent) = parent {
+                params["parent_session_id"] = json!(parent);
+            }
+            if let Some(name) = args.get("--name") {
+                params["name"] = json!(name);
+            }
+            ("session.create", params)
+        }
+        "session configure" => {
+            let mut params = json!({"session_id":session()?});
+            for key in ["provider", "model", "instructions", "name"] {
+                if let Some(value) = args.get(&format!("--{key}")) {
+                    params[key] = json!(value);
+                }
+            }
+            ("session.configure", params)
+        }
+        "session list" => {
+            let mut params = json!({});
+            if let Some(workspace) = args.get("--workspace") {
+                params["workspace"] = json!(workspace);
+            }
+            ("session.list", params)
+        }
         "send" => {
             let session = session()?;
             let request = args.required("--request-id")?;
