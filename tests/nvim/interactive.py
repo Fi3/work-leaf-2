@@ -17,7 +17,8 @@ REPO = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((REPO / 'tests/fixtures/protocol.json').read_text())
 PARSER = argparse.ArgumentParser()
 PARSER.add_argument('--evidence', type=Path)
-PARSER.add_argument('--group', choices=['all', 'exit', 'integration'], default='all')
+PARSER.add_argument('--group', choices=['all', 'exit', 'integration', 'legacy'], default='all')
+PARSER.add_argument('--legacy-root', type=Path, help='Prior source tree with target/debug/harness and its original adapter')
 ARGS = PARSER.parse_args()
 EVIDENCE = ARGS.evidence or Path(tempfile.mkdtemp(prefix='harness-nvim-ui-evidence-'))
 EVIDENCE.mkdir(parents=True, exist_ok=True)
@@ -93,13 +94,21 @@ class Editor:
         fcntl.ioctl(self.master, termios.TIOCSWINSZ, struct.pack('HHHH', lines, columns, 0, 0))
         self.pump(.2)
 
+    @staticmethod
+    def panel(kind='transcript'):
+        if kind == 'agents': return 'vim.fn.bufnr("harness://agents")'
+        # Read native buffer names, without reaching into plugin state.
+        chat = '(function() for _,w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do local b=vim.api.nvim_win_get_buf(w); if vim.api.nvim_buf_get_name(b):match("^harness://chat/") then vim.t.harness_test_chat=b; return b end end; return vim.t.harness_test_chat or -1 end)()'
+        if kind == 'transcript': return chat
+        return '(function() local b=' + chat + '; if b<0 then return -1 end; return vim.fn.bufnr((vim.api.nvim_buf_get_name(b):gsub("^harness://chat/","harness://prompt/"))) end)()'
+
     def source(self, only=False):
-        self.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"))[1])' + ('; vim.cmd("only")' if only else ''))
+        self.command('lua local b=vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"); local w=vim.fn.win_findbuf(b)[1] or vim.fn.win_findbuf(' + self.panel() + ')[1]; if w then vim.api.nvim_set_current_win(w) end; vim.cmd("hide buffer " .. b)' + ('; vim.cmd("only")' if only else ''))
 
     def panel_text(self, kind='transcript'):
         path = self.root / (kind + '.txt')
         path.unlink(missing_ok=True)
-        self.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://' + kind + '"), 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/' + kind + '.txt")')
+        self.command('lua local b=' + self.panel(kind) + '; vim.fn.writefile(b>=0 and vim.api.nvim_buf_get_lines(b, 0, -1, false) or {}, vim.env.HARNESS_WORKSPACE .. "/' + kind + '.txt")')
         self.wait(path.exists, 'read actual transcript')
         return path.read_text()
 

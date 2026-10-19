@@ -20,10 +20,12 @@ const state = join(directory, 'state'), socket = join(directory, 'control.sock')
 const config = join(directory, 'config.json'), responses = join(directory, 'responses.json');
 const { fauxAssistantMessage } = await import(pathToFileURL(join(share, 'node_modules/@earendil-works/pi-ai/dist/providers/faux.js')));
 await mkdir(workspace); await mkdir(state);
+await writeFile(join(workspace, 'installed.txt'), 'Installed source file.\n');
 await writeFile(config, JSON.stringify({ provider: 'faux', model: 'test', state_dir: state, socket_path: socket }));
 await writeFile(responses, JSON.stringify([
   fauxAssistantMessage('Installed answer. é世界🙂'),
   fauxAssistantMessage('Pending answer. '.repeat(2000)),
+  fauxAssistantMessage('Installed Enter answer.'),
 ]));
 const env = { PATH: process.env.PATH, HOME: process.env.HOME, LANG: 'C.UTF-8',
   XDG_CONFIG_HOME: directory, XDG_STATE_HOME: directory,
@@ -79,6 +81,16 @@ try {
   const answer = await cli(['wait', '--session', 'work', '--request-id', 'first', '--timeout-ms', '10000', '--text']);
   assert.equal(answer, 'Installed answer. é世界🙂');
   const pending = await json(['send', '--session', 'work', '--request-id', 'second', '--stdin'], 'Second task');
+  let streaming = false;
+  for (let attempt = 0; attempt < 100 && !streaming; attempt++) {
+    const records = (await cli(['rpc'], [
+      { jsonrpc: '2.0', id: 'hello', method: 'system.hello', params: { api_version: 1 } },
+      { jsonrpc: '2.0', id: 'get', method: 'session.get', params: { session_id: 'work' } },
+    ].map(value => JSON.stringify(value)).join('\n') + '\n')).trim().split('\n').map(JSON.parse);
+    streaming = records.find(value => value.id === 'get').result.snapshot.assistant.text.length > 0;
+    if (!streaming) await delay(20);
+  }
+  assert.ok(streaming, 'The cancellable response must start before testing stop');
   const stopped = await json(['stop', '--session', 'work', '--submission-id', pending.submission_id]);
   assert.equal(stopped.reason, 'cancelled');
   assert.deepEqual(await json(['wait', '--session', 'work', '--request-id', 'second'], '', 5), stopped);
@@ -92,6 +104,9 @@ try {
 vim.g.install_user_config_loaded = true
 vim.opt.number = true
 vim.o.columns, vim.o.lines = 120, 40
+vim.cmd.edit('installed.txt')
+local content_window = vim.api.nvim_get_current_win()
+local source_buffer = vim.api.nvim_get_current_buf()
 vim.api.nvim_create_autocmd('VimEnter', { once = true, callback = function()
   vim.schedule(function()
     local ok, message = pcall(function()
@@ -120,16 +135,32 @@ vim.api.nvim_create_autocmd('VimEnter', { once = true, callback = function()
       assert(vim.wait(10000, function()
         for _, buffer in ipairs(vim.api.nvim_list_bufs()) do
           local name = vim.api.nvim_buf_get_name(buffer)
-          if name == 'harness://transcript' then transcript = buffer end
-          if name == 'harness://prompt' then prompt = buffer end
+          if name == 'harness://chat/work' then transcript = buffer end
+          if name == 'harness://prompt/work' then prompt = buffer end
         end
         if not transcript then return false end
         local text = table.concat(vim.api.nvim_buf_get_lines(transcript, 0, -1, false), '\\n')
         return text:find('Connection: connected', 1, true) and text:find('Session: work', 1, true)
           and text:find('State: idle', 1, true) and text:find('Installed answer.', 1, true)
       end, 20), 'Selecting an agent must show the stored answer')
-      assert(#vim.api.nvim_list_wins() == 4, 'Tree, source, transcript, and prompt windows')
+      assert(#vim.api.nvim_list_wins() == 3, 'Tree, main chat, and prompt windows')
+      assert(vim.fn.win_findbuf(transcript)[1] == content_window, 'Use the normal file window for chat history')
+      assert(vim.bo[transcript].buflisted, 'Chat history must be a listed buffer')
       assert(not vim.bo[transcript].modifiable and vim.bo[prompt].modifiable)
+      vim.api.nvim_set_current_win(vim.fn.win_findbuf(prompt)[1])
+      vim.api.nvim_buf_set_lines(prompt, 0, -1, false, { 'Installed Enter task' })
+      vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, false, true), 'xt', false)
+      assert(vim.wait(10000, function()
+        local text = table.concat(vim.api.nvim_buf_get_lines(transcript, 0, -1, false), '\\n')
+        return text:find('Installed Enter task', 1, true) and text:find('Installed Enter answer.', 1, true)
+          and text:find('State: idle', 1, true)
+      end, 20), 'Enter must send a task and show its final answer through the installed runtime')
+      vim.cmd('buffer ' .. source_buffer)
+      assert(vim.api.nvim_get_current_win() == content_window and vim.api.nvim_get_current_buf() == source_buffer)
+      assert(#vim.api.nvim_list_wins() == 2 and vim.wo.number, 'File selection hides input and restores file options')
+      vim.cmd('buffer ' .. transcript)
+      assert(vim.api.nvim_get_current_win() == content_window and vim.api.nvim_get_current_buf() == transcript)
+      assert(vim.wait(1000, function() return #vim.api.nvim_list_wins() == 3 end), 'Chat selection restores its input')
       local pid = vim.fn.getpid()
       local children = assert(io.open('/proc/' .. pid .. '/task/' .. pid .. '/children'))
       local processes = children:read('*a'); children:close()
@@ -166,7 +197,9 @@ end })
       'stop and retained cancelled outcome', 'harness nvim loads normal user configuration and enables the sidebar key',
       'installed runtime uses the installed command client and shows stored answer',
       'semicolon opens the tree; Enter selects an agent',
-      'four windows with agent tree, source, read-only transcript and editable prompt', 'server and worker shutdown'],
+      'three windows with agent tree, main chat and editable prompt',
+      'Enter sends through installed client and displays the final answer',
+      'native buffer commands switch between file and chat in one content window', 'server and worker shutdown'],
     neovim_mode: 'installed harness nvim launcher with actual Neovim in headless mode; interactive interface evidence is separate',
   };
   await writeFile(resolve(root, 'tests/evidence/clean-install.json'), JSON.stringify(report, null, 2) + '\n');

@@ -1,3 +1,4 @@
+export const apiRevision = 2;
 export const limits = Object.freeze({ record_bytes: 4194304, input_bytes: 1048576, context_items: 16, snapshot_bytes: 524288, recent_items: 50, preview_bytes: 8192, chunk_bytes: 65536, clients: 32, pending_requests: 32, watches: 8, active_sessions: 4, output_bytes: 4194304 });
 export class RpcError extends Error {
   constructor(code, message, kind) { super(message); this.code = code; if (kind) this.data = { kind }; }

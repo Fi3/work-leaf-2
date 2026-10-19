@@ -4,7 +4,7 @@ use std::fs;
 use std::io::{BufReader, Read, Write};
 use std::os::unix::{
     fs::{MetadataExt, PermissionsExt, symlink},
-    net::UnixStream,
+    net::{UnixListener, UnixStream},
 };
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -162,6 +162,193 @@ fn two_starters_converge_and_permissions_are_private() {
             & 0o777,
         0o600
     );
+}
+
+#[test]
+fn an_explicit_upgrade_replaces_an_idle_legacy_server_after_release() {
+    let mut server = Server::new();
+    let state = server.root.join("state");
+    let lock = process::lock(&state).unwrap();
+    let listener = UnixListener::bind(&server.socket).unwrap();
+    fs::set_permissions(&server.socket, fs::Permissions::from_mode(0o600)).unwrap();
+    let socket = server.socket.clone();
+    let old = std::thread::spawn(move || {
+        for attempt in 0..3 {
+            let (stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            let mut stream = BufReader::new(stream);
+            let hello = read(&mut stream);
+            assert_eq!(hello["method"], "system.hello");
+            assert_eq!(hello["params"], json!({"api_version":1}));
+            stream.get_mut().write_all(&protocol::encode(&protocol::response(hello["id"].clone(), Ok(json!({"api_version":1,"state_dir":state,"instance_id":"legacy","ready":true,"storage_ready":true})))).unwrap()).unwrap();
+            if attempt < 2 {
+                assert!(protocol::read_frame(&mut stream).unwrap().is_none());
+            } else {
+                let shutdown = read(&mut stream);
+                assert_eq!(shutdown["method"], "server.shutdown");
+                assert_eq!(shutdown["params"], json!({}));
+                stream
+                    .get_mut()
+                    .write_all(
+                        &protocol::encode(&protocol::response(
+                            shutdown["id"].clone(),
+                            Ok(json!({})),
+                        ))
+                        .unwrap(),
+                    )
+                    .unwrap();
+            }
+        }
+        drop(listener);
+        fs::remove_file(socket).unwrap();
+        drop(lock);
+    });
+    let rejected = server
+        .command("start")
+        .stderr(Stdio::piped())
+        .output()
+        .unwrap();
+    assert_eq!(rejected.status.code(), Some(3));
+    assert!(
+        String::from_utf8(rejected.stderr)
+            .unwrap()
+            .contains("harness upgrade")
+    );
+    assert!(server.workers().is_empty());
+    assert!(process::lock(&server.root.join("state")).is_err());
+    let upgraded = server
+        .command("upgrade")
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .unwrap();
+    assert!(
+        upgraded.status.success(),
+        "{}",
+        String::from_utf8_lossy(&upgraded.stderr)
+    );
+    old.join().unwrap();
+    let hello: Value = serde_json::from_slice(&upgraded.stdout).unwrap();
+    assert_eq!(hello["api_revision"], 2);
+    assert_eq!(hello["state_dir"], json!(server.root.join("state")));
+    assert_ne!(hello["instance_id"], "legacy");
+    server.pid = Some(process::peer_pid(&UnixStream::connect(&server.socket).unwrap()).unwrap());
+    assert_eq!(server.workers().len(), 1);
+}
+
+#[test]
+fn upgrade_checks_legacy_state_before_shutdown() {
+    let server = Server::new();
+    let listener = UnixListener::bind(&server.socket).unwrap();
+    fs::set_permissions(&server.socket, fs::Permissions::from_mode(0o600)).unwrap();
+    let task = std::thread::spawn(move || {
+        let (stream, _) = listener.accept().unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .unwrap();
+        let mut stream = BufReader::new(stream);
+        let hello = read(&mut stream);
+        stream.get_mut().write_all(&protocol::encode(&protocol::response(hello["id"].clone(), Ok(json!({"api_version":1,"state_dir":"/another/state","ready":true,"storage_ready":true})))).unwrap()).unwrap();
+        assert!(
+            protocol::read_frame(&mut stream).unwrap().is_none(),
+            "Upgrade sent a request to another state"
+        );
+    });
+    let result = server
+        .command("upgrade")
+        .stderr(Stdio::piped())
+        .output()
+        .unwrap();
+    assert_eq!(result.status.code(), Some(6));
+    assert!(
+        String::from_utf8(result.stderr)
+            .unwrap()
+            .contains("state directory")
+    );
+    task.join().unwrap();
+    assert!(server.workers().is_empty());
+}
+
+#[test]
+fn upgrade_never_shuts_down_an_unknown_or_newer_interface() {
+    for after_probe in [false, true] {
+        for revision in [json!(3), json!("2"), Value::Null] {
+            let server = Server::new();
+            let state = server.root.join("state");
+            process::private_dir(&state).unwrap();
+            let listener = UnixListener::bind(&server.socket).unwrap();
+            fs::set_permissions(&server.socket, fs::Permissions::from_mode(0o600)).unwrap();
+            let task = std::thread::spawn(move || {
+                for attempt in 0..=usize::from(after_probe) {
+                    let (stream, _) = listener.accept().unwrap();
+                    stream
+                        .set_read_timeout(Some(Duration::from_secs(5)))
+                        .unwrap();
+                    let mut stream = BufReader::new(stream);
+                    let hello = read(&mut stream);
+                    assert_eq!(hello["method"], "system.hello");
+                    let mut value = json!({"api_version":1,"state_dir":state,"ready":true,"storage_ready":true});
+                    if attempt == usize::from(after_probe) {
+                        value["api_revision"] = revision.clone();
+                    }
+                    stream
+                        .get_mut()
+                        .write_all(
+                            &protocol::encode(&protocol::response(hello["id"].clone(), Ok(value)))
+                                .unwrap(),
+                        )
+                        .unwrap();
+                    assert!(
+                        protocol::read_frame(&mut stream).unwrap().is_none(),
+                        "Upgrade sent shutdown to an unsupported interface"
+                    );
+                }
+            });
+            let result = server
+                .command("upgrade")
+                .stderr(Stdio::piped())
+                .output()
+                .unwrap();
+            assert_eq!(result.status.code(), Some(3));
+            assert!(
+                String::from_utf8(result.stderr)
+                    .unwrap()
+                    .contains("Update Harness")
+            );
+            task.join().unwrap();
+            assert!(server.workers().is_empty());
+        }
+    }
+}
+
+#[test]
+fn an_old_worker_interface_never_becomes_ready_or_accepts_mutations() {
+    let mut server = Server::new();
+    server.child = Some(
+        server
+            .command("serve")
+            .env("HARNESS_FAKE_MODE", "old-interface")
+            .spawn()
+            .unwrap(),
+    );
+    server.pid = Some(server.child.as_ref().unwrap().id());
+    until(|| server.workers().len() == 4);
+    let mut client = server.client().unwrap();
+    let hello = client
+        .request("system.hello", json!({"api_version":1}))
+        .unwrap();
+    assert_eq!(hello["api_revision"], 2);
+    assert_eq!(hello["storage_ready"], false);
+    assert_eq!(hello["ready"], false);
+    let error = client
+        .request(
+            "session.create",
+            json!({"session_id":"blocked","workspace":server.root,"name":"New chat"}),
+        )
+        .unwrap_err();
+    assert_eq!(error.kind(), Some("not_ready"));
 }
 
 #[test]

@@ -34,7 +34,7 @@ function M.new(options, changed, notification)
   end
 
   local function proxy(callback)
-    local partial = ''
+    local partial, stderr = '', ''
     local job
     job = vim.fn.jobstart(self.arguments('rpc'), {
       on_stdout = function(_, data)
@@ -68,15 +68,26 @@ function M.new(options, changed, notification)
           end
         end)
       end,
+      on_stderr = function(_, data)
+        stderr = (stderr .. table.concat(data, '\n')):sub(-8192)
+      end,
       on_exit = function()
-        vim.schedule(function() if self.job == job then fail('Connection closed. Use :Harness to reconnect.') end end)
+        vim.schedule(function()
+          if self.job ~= job then return end
+          local message = stderr:gsub('harness upgrade', ':Harness upgrade'):gsub('%s+$', '')
+          fail(message ~= '' and message or 'Connection closed. Use :Harness to reconnect.')
+        end)
       end,
     })
     if job <= 0 then callback(nil, 'Cannot start the harness client.'); return end
     self.job = job
     self.request('system.hello', { api_version = 1 }, function(result, err)
       if err then fail(err); callback(nil, err); return end
-      if result.api_version ~= 1 then fail('Incompatible server version.'); callback(nil, 'Incompatible server version.'); return end
+      if type(result) ~= 'table' or result.api_version ~= 1 then fail('Incompatible server version.'); callback(nil, 'Incompatible server version.'); return end
+      if result.api_revision ~= 2 then
+        local message = 'Server uses a different chat interface. Use :Harness upgrade for an older server.'
+        fail(message); callback(nil, message); return
+      end
       self.connected = true
       changed(nil)
       callback(result)
@@ -100,14 +111,14 @@ function M.new(options, changed, notification)
     if not options.autostart then proxy(finish); return end
     vim.system(self.arguments('start'), { text = true, timeout = 11000 }, function(result)
       vim.schedule(function()
-        if result.code ~= 0 then finish(nil, (result.stderr or ''):gsub('%s+$', '')); return end
+        if result.code ~= 0 then finish(nil, (result.stderr or ''):gsub('harness upgrade', ':Harness upgrade'):gsub('%s+$', '')); return end
         proxy(finish)
       end)
     end)
   end
 
   function self.disconnect()
-    fail('Reconnecting after setup.')
+    fail('Reconnecting.')
   end
 
   return self

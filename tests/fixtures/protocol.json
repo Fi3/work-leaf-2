@@ -534,5 +534,13 @@
         "name": "Claude Sonnet 4.6"
       }
     ]
+  },
+  "hello": {
+    "api_version": 1,
+    "api_revision": 2,
+    "instance_id": "fixture",
+    "state_dir": "/tmp/work",
+    "ready": true,
+    "storage_ready": true
   }
 }

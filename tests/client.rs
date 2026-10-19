@@ -99,7 +99,7 @@ fn hello(stream: &mut BufReader<UnixStream>) {
     reply(
         stream,
         &input,
-        json!({"api_version":1,"instance_id":"test","state_dir":"/tmp","ready":true}),
+        json!({"api_version":1,"api_revision":2,"instance_id":"test","state_dir":"/tmp","ready":true}),
     );
 }
 
@@ -329,6 +329,58 @@ fn handshake_rejects_wrong_version_state_and_unsafe_socket() {
         Some("not_ready")
     );
     fs::remove_dir_all(dir).unwrap();
+}
+
+#[test]
+fn chat_revision_is_checked_before_any_operation() {
+    for revision in [None, Some(json!(1)), Some(json!(3)), Some(Value::Null)] {
+        for command in [
+            vec![
+                "session",
+                "create",
+                "--id",
+                "work",
+                "--workspace",
+                "/tmp",
+                "--name",
+                "New chat",
+            ],
+            vec![
+                "send",
+                "--session",
+                "work",
+                "--request-id",
+                "task",
+                "--stdin",
+            ],
+            vec!["rpc"],
+        ] {
+            let revision = revision.clone();
+            let legacy = revision.is_none() || revision == Some(json!(1));
+            let fixture = Fixture::new(move |stream| {
+                let input = request(stream);
+                assert_eq!(input["method"], "system.hello");
+                let mut hello = json!({"api_version":1,"state_dir":"/tmp"});
+                if let Some(revision) = revision {
+                    hello["api_revision"] = revision;
+                }
+                reply(stream, &input, hello);
+                disconnected(stream);
+            });
+            let output = fixture.run(&command, b"Preserve this draft\n");
+            assert_eq!(output.status.code(), Some(3));
+            assert!(output.stdout.is_empty());
+            assert!(
+                String::from_utf8(output.stderr)
+                    .unwrap()
+                    .contains(if legacy {
+                        "harness upgrade"
+                    } else {
+                        "Update Harness"
+                    })
+            );
+        }
+    }
 }
 
 #[test]
@@ -964,7 +1016,11 @@ fn client_configuration_selects_socket_and_checks_state() {
             let input = request(stream);
             let state = stream.get_ref().local_addr().unwrap();
             let state = state.as_pathname().unwrap().parent().unwrap();
-            reply(stream, &input, json!({"api_version":1,"state_dir":state}));
+            reply(
+                stream,
+                &input,
+                json!({"api_version":1,"api_revision":2,"state_dir":state}),
+            );
             let input = request(stream);
             assert_eq!(input["method"], "session.list");
             reply(stream, &input, json!({"items":[]}));

@@ -14,7 +14,7 @@ use std::time::Duration;
 const HELP: &str = "harness nvim [--config PATH] [--socket PATH]\n\
 harness setup [--config PATH] [--socket PATH]\n\
 harness auth [--config PATH] [--socket PATH]\n\
-harness start|serve [--config PATH] [--state-dir PATH] [--socket PATH]\n\
+harness start|serve|upgrade [--config PATH] [--state-dir PATH] [--socket PATH]\n\
 harness status|shutdown|restart-worker|rpc [--socket PATH]\n\
 harness session create --id ID --workspace PATH [--parent ID] [--name NAME] [--socket PATH]\n\
 harness session configure --session ID [--provider ID --model ID] [--instructions TEXT] [--name NAME]\n\
@@ -78,7 +78,7 @@ impl Arguments {
         }
         let command = positional.join(" ");
         let allowed: &[&str] = match command.as_str() {
-            "start" | "serve" => &["--socket", "--config", "--state-dir"],
+            "start" | "serve" | "upgrade" => &["--socket", "--config", "--state-dir"],
             "nvim" | "setup" | "auth" | "status" | "shutdown" | "restart-worker" | "rpc" => {
                 &["--socket"]
             }
@@ -163,6 +163,10 @@ fn execute(args: Vec<String>) -> Result<i32, RpcError> {
         }
         "start" => {
             output(&server::start(&config)?)?;
+            return Ok(0);
+        }
+        "upgrade" => {
+            output(&server::upgrade(&config)?)?;
             return Ok(0);
         }
         "rpc" => {

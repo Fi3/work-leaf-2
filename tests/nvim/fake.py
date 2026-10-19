@@ -43,6 +43,10 @@ def emit(value):
         os.write(1, line[start:start + 13])
 
 state = load()
+if sys.argv[-1] == 'upgrade':
+    state['api_revision'] = 2
+    save(state)
+    sys.exit(0)
 if sys.argv[-1] == 'start':
     time.sleep(float(os.environ.get('HARNESS_TEST_START_DELAY', '0')))
     state['starts'] = state.get('starts', 0) + 1
@@ -74,7 +78,7 @@ for line in sys.stdin:
     failure = None
     session = state['sessions'].get(params.get('session_id'))
     if method == 'system.hello':
-        result = {'api_version': 1}
+        result = {'api_version': 1, 'api_revision': state.get('api_revision', 2)}
     elif method == 'configuration.get':
         result = configuration(state, session)
     elif method == 'session.create':

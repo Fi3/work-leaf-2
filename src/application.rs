@@ -105,7 +105,7 @@ impl Application {
     }
 
     fn hello(&self) -> Value {
-        json!({"api_version":1,"instance_id":self.instance_id,"state_dir":self.config.state_dir,"ready":self.handshake.as_ref().is_some_and(|v|v["ready"]==true),"storage_ready":self.handshake.is_some(),"versions":{"rust":"1.94.1","node":"v26.10.0","durable":"1.3.0","ai":"1.3.0","chord":"1.3.0"},"limits":protocol::limits()})
+        json!({"api_version":protocol::API_VERSION,"api_revision":protocol::API_REVISION,"instance_id":self.instance_id,"state_dir":self.config.state_dir,"ready":self.handshake.as_ref().is_some_and(|v|v["ready"]==true),"storage_ready":self.handshake.is_some(),"versions":{"rust":"1.94.1","node":"v26.10.0","durable":"1.3.0","ai":"1.3.0","chord":"1.3.0"},"limits":protocol::limits()})
     }
 
     pub fn request(&mut self, client: u64, request: Request) {
@@ -316,6 +316,7 @@ impl Application {
         if id == "_hello" {
             let hello = &record["result"];
             if hello["api_version"] != 1
+                || hello["api_revision"] != protocol::API_REVISION
                 || hello["node_version"] != "v26.10.0"
                 || ["durable", "ai", "chord"]
                     .iter()

@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-10-19T10:47:13.494Z",
+  "verified_at": "2026-10-19T15:11:18.637Z",
   "platform": "linux",
   "architecture": "x64",
   "node": "v26.10.0",
@@ -7,7 +7,7 @@
   "rust": "rustc 1.94.1 (e408947bf 2026-03-25)",
   "neovim": "NVIM v0.12.6",
   "install": "npm ci --ignore-scripts --omit=dev with npm_config_offline=true in a new temporary prefix",
-  "binary_sha256": "ceca2a327197161d46632601e6559a4c6ee3f77e02c1b713ef7c60ba8b83d8de",
+  "binary_sha256": "5f01d75edcc03007be294cc3977944979d9d97adab2bdbfdcaa7271ef8623dc3",
   "npm_lock_sha256": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041",
   "npm_packages": 91,
   "worker_path": "share/harness/adapter/worker.mjs",
@@ -22,7 +22,9 @@
     "harness nvim loads normal user configuration and enables the sidebar key",
     "installed runtime uses the installed command client and shows stored answer",
     "semicolon opens the tree; Enter selects an agent",
-    "four windows with agent tree, source, read-only transcript and editable prompt",
+    "three windows with agent tree, main chat and editable prompt",
+    "Enter sends through installed client and displays the final answer",
+    "native buffer commands switch between file and chat in one content window",
     "server and worker shutdown"
   ],
   "neovim_mode": "installed harness nvim launcher with actual Neovim in headless mode; interactive interface evidence is separate"

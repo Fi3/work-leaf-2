@@ -62,6 +62,14 @@ fn unavailable(message: impl Into<String>) -> RpcError {
 
 impl Client {
     pub fn connect(socket: &Path, expected_state: Option<&Path>) -> Result<Self, RpcError> {
+        Self::open(socket, expected_state, true)
+    }
+
+    pub(crate) fn connect_for_upgrade(socket: &Path, state: &Path) -> Result<Self, RpcError> {
+        Self::open(socket, Some(state), false)
+    }
+
+    fn open(socket: &Path, expected_state: Option<&Path>, current: bool) -> Result<Self, RpcError> {
         process::check_endpoint(socket)?;
         let socket = UnixStream::connect(socket)?;
         socket.set_read_timeout(Some(POLL))?;
@@ -90,6 +98,7 @@ impl Client {
                 ));
             }
         }
+        protocol::check_revision(&hello, !current)?;
         client.deadline = None;
         Ok(client)
     }

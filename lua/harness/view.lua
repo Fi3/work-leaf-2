@@ -1,9 +1,18 @@
 local M = {}
 
-function M.new(options)
-  local self = {}
+function M.new(options, actions)
+  local self, chats, hosts = {}, {}, {}
+  local changing = false
+  actions = actions or {}
   local namespace = vim.api.nvim_create_namespace('HarnessView')
   local hint_namespace = vim.api.nvim_create_namespace('HarnessPrompt')
+  local function change_windows(callback)
+    local previous = changing
+    changing = true
+    local ok, err = pcall(callback)
+    changing = previous
+    if not ok then error(err) end
+  end
   local function window(buf)
     if not buf or not vim.api.nvim_buf_is_valid(buf) then return nil end
     for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
@@ -13,12 +22,10 @@ function M.new(options)
   local function prompt_height()
     return math.min(options.prompt_height or 3, math.max(1, math.floor(vim.o.lines / 6)))
   end
-  local function transcript_height()
-    return math.max(3, math.min(10, math.floor(vim.o.lines / 3) - prompt_height()))
-  end
-  local function buffer(kind, editable)
-    local buf = vim.api.nvim_create_buf(false, true)
-    vim.api.nvim_buf_set_name(buf, 'harness://' .. kind)
+  local function buffer(kind, id, editable)
+    local buf = vim.api.nvim_create_buf(not editable, true)
+    vim.api.nvim_buf_set_name(buf, 'harness://' .. kind .. '/' .. id)
+    vim.b[buf].harness_session_id = id
     vim.bo[buf].buftype, vim.bo[buf].bufhidden = 'nofile', 'hide'
     vim.bo[buf].swapfile, vim.bo[buf].modifiable = false, editable
     vim.bo[buf].filetype = 'harness'
@@ -29,6 +36,14 @@ function M.new(options)
       vim.keymap.set({ 'n', 'i' }, '<CR>', function()
         if vim.fn.pumvisible() == 1 then keys('<C-y>') else send() end
       end, { buffer = buf, silent = true, desc = 'Send message' })
+      vim.keymap.set({ 'n', 'i' }, '<C-^>', function()
+        local host = hosts[vim.api.nvim_get_current_tabpage()]
+        if host and vim.api.nvim_win_is_valid(host.main) then
+          vim.cmd('stopinsert')
+          vim.api.nvim_set_current_win(host.main)
+          vim.cmd('buffer #')
+        end
+      end, { buffer = buf, silent = true, desc = 'Switch to the previous file or chat' })
       vim.keymap.set('i', '<C-j>', '<CR>', { buffer = buf, silent = true, desc = 'Insert a new line' })
       vim.keymap.set('i', '<S-CR>', '<CR>', { buffer = buf, silent = true, desc = 'Insert a new line' })
       vim.keymap.set('i', '<Tab>', function()
@@ -64,22 +79,95 @@ function M.new(options)
     end
   end
 
-  function self.open()
-    if not self.transcript or not vim.api.nvim_buf_is_valid(self.transcript) then self.transcript = buffer('transcript', false) end
-    if not self.prompt or not vim.api.nvim_buf_is_valid(self.prompt) then self.prompt = buffer('prompt', true) end
-    if not window(self.transcript) then
-      vim.cmd('botright ' .. (transcript_height() + prompt_height() + 2) .. 'split')
-      vim.api.nvim_win_set_buf(0, self.transcript)
-      style(vim.api.nvim_get_current_win(), false)
-    end
-    if not window(self.prompt) then
-      vim.api.nvim_set_current_win(window(self.transcript))
-      vim.cmd('belowright ' .. prompt_height() .. 'split')
-      vim.api.nvim_win_set_buf(0, self.prompt)
-      style(vim.api.nvim_get_current_win(), true)
-    end
-    vim.api.nvim_set_current_win(window(self.prompt))
+  function self.session(buf)
+    if buf and vim.api.nvim_buf_is_valid(buf) then return vim.b[buf].harness_session_id end
   end
+
+  function self.select(id)
+    if not id then self.transcript, self.prompt = nil, nil; return end
+    local chat = chats[id] or {}
+    chats[id] = chat
+    if not chat.transcript or not vim.api.nvim_buf_is_valid(chat.transcript) then chat.transcript = buffer('chat', id, false) end
+    if not chat.prompt or not vim.api.nvim_buf_is_valid(chat.prompt) then chat.prompt = buffer('prompt', id, true) end
+    self.transcript, self.prompt = chat.transcript, chat.prompt
+  end
+
+  local function current_window(win)
+    return win and vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_tabpage(win) == vim.api.nvim_get_current_tabpage()
+  end
+
+  function self.hide_prompt()
+    local host = hosts[vim.api.nvim_get_current_tabpage()]
+    if not host then return end
+    if current_window(host.prompt) and #vim.api.nvim_tabpage_list_wins(0) > 1 then
+      change_windows(function() vim.api.nvim_win_close(host.prompt, false) end)
+    end
+    host.prompt = nil
+  end
+
+  local function show_prompt(main)
+    local tab, focused = vim.api.nvim_get_current_tabpage(), vim.api.nvim_get_current_win()
+    local host = hosts[tab] or {}
+    hosts[tab] = host
+    if current_window(host.prompt) and host.main ~= main then self.hide_prompt() end
+    host.main = main
+    if not current_window(host.prompt) then
+      vim.api.nvim_set_current_win(main)
+      vim.cmd('belowright ' .. prompt_height() .. 'split')
+      host.prompt = vim.api.nvim_get_current_win()
+    end
+    vim.api.nvim_win_set_buf(host.prompt, self.prompt)
+    host.promptbuf = self.prompt
+    style(main, false)
+    style(host.prompt, true)
+    vim.api.nvim_win_set_height(host.prompt, prompt_height())
+    if current_window(focused) then vim.api.nvim_set_current_win(focused) end
+  end
+
+  function self.open(id, preferred)
+    self.select(id or self.session(self.transcript))
+    if not self.transcript then return end
+    change_windows(function()
+      local host = hosts[vim.api.nvim_get_current_tabpage()]
+      local main = window(self.transcript)
+      if not main and current_window(preferred) and (not host or preferred ~= host.prompt) then main = preferred end
+      if not main and host and current_window(host.main) then main = host.main end
+      if not main then
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          if vim.api.nvim_win_get_config(win).relative == '' and vim.bo[vim.api.nvim_win_get_buf(win)].buftype == '' then main = win; break end
+        end
+      end
+      main = main or vim.api.nvim_get_current_win()
+      vim.api.nvim_set_current_win(main)
+      if vim.api.nvim_win_get_buf(main) ~= self.transcript then vim.cmd('hide buffer ' .. self.transcript) end
+      show_prompt(main)
+      vim.api.nvim_set_current_win(hosts[vim.api.nvim_get_current_tabpage()].prompt)
+    end)
+  end
+
+  vim.api.nvim_create_autocmd('BufEnter', { callback = function()
+    if changing then return end
+    local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+    if vim.api.nvim_win_get_config(win).relative ~= '' then return end
+    change_windows(function()
+      local host = hosts[vim.api.nvim_get_current_tabpage()]
+      -- Native buffer commands from the input still use the main editor area.
+      if host and win == host.prompt and buf ~= host.promptbuf and current_window(host.main) then
+        if vim.wo[win].winhighlight == 'Normal:NormalFloat' then vim.wo[win].winhighlight = vim.wo[host.main].winhighlight end
+        vim.api.nvim_set_current_win(host.main)
+        vim.cmd('hide buffer ' .. buf)
+        vim.api.nvim_win_close(win, false)
+        host.prompt = nil
+        win = host.main
+      end
+      local id = self.session(buf)
+      if actions.activate then actions.activate(id, buf, win) end
+      if id then
+        self.select(id)
+        if buf == self.transcript then show_prompt(win) end
+      elseif vim.bo[buf].buftype == '' then self.hide_prompt() end
+    end)
+  end })
 
   function self.focus()
     local win = window(self.prompt)
@@ -104,16 +192,18 @@ function M.new(options)
     self.resize()
   end })
 
-  function self.draft()
-    if not self.prompt or not vim.api.nvim_buf_is_valid(self.prompt) then return '' end
-    return table.concat(vim.api.nvim_buf_get_lines(self.prompt, 0, -1, false), '\n')
+  function self.draft(id)
+    local prompt = id and chats[id] and chats[id].prompt or not id and self.prompt
+    if not prompt or not vim.api.nvim_buf_is_valid(prompt) then return '' end
+    return table.concat(vim.api.nvim_buf_get_lines(prompt, 0, -1, false), '\n')
   end
 
-  function self.set_draft(text)
-    if self.prompt and vim.api.nvim_buf_is_valid(self.prompt) then
-      vim.api.nvim_buf_set_lines(self.prompt, 0, -1, false, vim.split(text, '\n', { plain = true }))
-      vim.bo[self.prompt].modified = false
-      vim.api.nvim_exec_autocmds('TextChanged', { buffer = self.prompt })
+  function self.set_draft(text, id)
+    local prompt = id and chats[id] and chats[id].prompt or not id and self.prompt
+    if prompt and vim.api.nvim_buf_is_valid(prompt) then
+      vim.api.nvim_buf_set_lines(prompt, 0, -1, false, vim.split(text, '\n', { plain = true }))
+      vim.bo[prompt].modified = false
+      vim.api.nvim_exec_autocmds('TextChanged', { buffer = prompt })
     end
   end
 

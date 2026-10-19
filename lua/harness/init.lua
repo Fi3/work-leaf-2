@@ -8,7 +8,7 @@ local connection, watch, watch_sequence = 'disconnected', nil, 0
 local attachment = 0
 local pending_attachment
 local message
-local render, send
+local render, send, activate
 
 local function report(message, target)
   local id = target or selected
@@ -26,10 +26,6 @@ end
 
 local function random_id()
   return (vim.uv.random(16):gsub('.', function(byte) return string.format('%02x', byte:byte()) end))
-end
-
-local function save_draft()
-  if selected then sessions[selected].draft = view.draft() end
 end
 
 local function merge_entries(entries, incoming, before)
@@ -72,7 +68,7 @@ end
 
 local function initialize()
   if view then return end
-  view = require('harness.view').new(options)
+  view = require('harness.view').new(options, { activate = function(...) if activate then activate(...) end end })
   transport = require('harness.transport').new(options, function(err)
     connection = err or 'connected'
     if err then watch, watch_sequence = nil, 0 end
@@ -95,7 +91,21 @@ local function rpc(method, params, callback)
   end)
 end
 
+local function select_session(id)
+  if selected ~= id then
+    attachment = attachment + 1
+    pending_attachment = nil
+    if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
+    watch, watch_sequence = nil, 0
+  end
+  selected = id
+  if id then sessions[id] = sessions[id] or { context = {}, history = {} } end
+  view.select(id)
+end
+
 local function attach(id, callback, focus)
+  select_session(id)
+  if focus then view.open(id, source_window) end
   if pending_attachment and pending_attachment.id == id then
     if callback then
       if #pending_attachment.callbacks >= 32 then report('Too many pending commands.'); return end
@@ -103,17 +113,17 @@ local function attach(id, callback, focus)
     end
     return
   end
-  save_draft()
   attachment = attachment + 1
   local attempt = attachment
   local pending = { id = id, callbacks = callback and { callback } or {} }
   pending_attachment = pending
   if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
   watch, watch_sequence = nil, 0
+  render()
   transport.request('session.watch', { session_id = id }, function(value, err)
     if err then
       if attempt == attachment then pending_attachment = nil end
-      report(err)
+      report(err, id)
       return
     end
     if attempt ~= attachment then
@@ -121,18 +131,20 @@ local function attach(id, callback, focus)
       return
     end
     pending_attachment = nil
-    save_draft()
-    local switching = selected ~= id
-    sessions[id] = sessions[id] or { draft = '', context = {}, history = {} }
-    selected, attached[id] = id, true
+    attached[id] = true
     watch, watch_sequence = value.watch_id, 0
     update(value.snapshot)
-    if switching then view.set_draft(sessions[id].draft) end
     render()
     if focus then
       view.focus()
     end
-    for _, ready in ipairs(pending.callbacks) do ready() end
+    local queued = sessions[id].after_create
+    sessions[id].after_create = nil
+    if queued then queued() end
+    for _, ready in ipairs(pending.callbacks) do
+      if attempt ~= attachment then break end
+      ready()
+    end
   end)
 end
 
@@ -168,25 +180,20 @@ local function admit_chat(id)
       if queued then send(queued, id) end
       if sidebar then sidebar.refresh() end
       if selected ~= id then return end
-      attach(id, function()
-        local queued = session.after_create
-        session.after_create = nil
-        if queued then queued() end
-      end, vim.api.nvim_get_current_buf() == view.prompt)
+      attach(id, nil, vim.api.nvim_get_current_buf() == view.prompt)
     end)
   end)
 end
 
 local function create(directory, name, parent)
-  save_draft()
   if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
   attachment = attachment + 1
   watch, watch_sequence, pending_attachment = nil, 0, nil
   local id = 'chat_' .. random_id()
-  selected = id
-  sessions[id] = { draft = '', context = {}, history = {}, notice = 'Opening chat...',
+  sessions[id] = { context = {}, history = {}, notice = 'Opening chat...',
     creation = { session_id = id, workspace = directory, name = name and name ~= '' and name or 'New chat', parent_session_id = parent } }
-  view.open()
+  select_session(id)
+  view.open(id, source_window)
   view.set_draft('')
   render()
   view.focus()
@@ -194,7 +201,6 @@ local function create(directory, name, parent)
 end
 
 local function authenticate()
-  save_draft()
   setup.open(function()
     if selected and sessions[selected].snapshot then attach(selected, function() notice('Key received. Send your task when ready.'); view.focus() end)
     else notice('Key received.'); view.focus() end
@@ -234,11 +240,7 @@ local function submit(session)
     end
     if receipt.submission_id == nil then report('Missing submission receipt.'); return end
     session.pending, session.notice = nil, nil
-    local draft = selected == envelope.session_id and view.draft() or session.draft
-    if draft == envelope.text then
-      session.draft = ''
-      if selected == envelope.session_id then view.set_draft('') end
-    end
+    if view.draft(envelope.session_id) == envelope.text then view.set_draft('', envelope.session_id) end
     for _ = 1, #envelope.context do table.remove(session.context, 1) end
     render()
   end)
@@ -370,6 +372,39 @@ local function chat_command(name, argument, captured)
   else notice('Unknown command. Use \\help or press Tab after \\.'); view.focus() end
 end
 
+activate = function(id, buf, win)
+  if not id then
+    if vim.bo[buf].buftype == '' then source, source_window = buf, win end
+    return
+  end
+  local changed = selected ~= id
+  select_session(id)
+  render()
+  if not changed and (watch or pending_attachment) then return end
+  if sessions[id].creation then admit_chat(id); return end
+  transport.connect(function(_, failure)
+    if failure then report(failure, id)
+    elseif selected == id then attach(id) end
+  end)
+end
+
+local function upgrade()
+  transport.disconnect()
+  vim.system(transport.arguments('upgrade'), { text = true, timeout = 20000 }, function(result)
+    vim.schedule(function()
+      if result.code ~= 0 then report((result.stderr or ''):gsub('%s+$', '')); return end
+      transport.connect(function(_, err)
+        if err then report(err); return end
+        if selected then
+          if sessions[selected].creation then admit_chat(selected) else attach(selected) end
+        end
+        if sidebar then sidebar.refresh(workspace()) end
+        notice('Server upgraded. Your chats are available. Use \\login if a provider key is needed.')
+      end)
+    end)
+  end)
+end
+
 function M.setup(settings)
   if view then error('Set Harness options before the first command.') end
   for key, value in pairs(settings or {}) do
@@ -390,7 +425,7 @@ end
 function M.sidebar()
   initialize()
   local buf = vim.api.nvim_get_current_buf()
-  if buf ~= view.prompt and buf ~= view.transcript and buf ~= setup.buffer and (not sidebar or buf ~= sidebar.buffer) then
+  if not view.session(buf) and vim.bo[buf].buftype == '' then
     source, source_window = buf, vim.api.nvim_get_current_win()
   end
   sidebar = sidebar or require('harness.sidebar').new(transport, {
@@ -399,7 +434,9 @@ function M.sidebar()
     report = report,
   })
   if selected then sidebar.update(sessions[selected].snapshot) end
+  local previous_source, previous_window = source, source_window
   sidebar.toggle(workspace())
+  source, source_window = previous_source, previous_window
   view.resize()
 end
 
@@ -408,7 +445,7 @@ function M.command(command)
     if command.fargs[1] == 'sidebar' then M.sidebar(); return end
     initialize()
     local buf = vim.api.nvim_get_current_buf()
-    if buf ~= view.prompt and buf ~= view.transcript and buf ~= setup.buffer and (not sidebar or buf ~= sidebar.buffer) then
+    if not view.session(buf) and vim.bo[buf].buftype == '' then
       source, source_window = buf, vim.api.nvim_get_current_win()
     end
     local context_source = source
@@ -417,6 +454,8 @@ function M.command(command)
     local origin_tab = vim.api.nvim_get_current_tabpage()
     local send_text = action == 'send' and view.draft() or nil
     local send_command = send_text and require('harness.commands').parse(send_text)
+    if send_command == 'upgrade' then view.set_draft(''); upgrade(); return end
+    if action == 'upgrade' then upgrade(); return end
     if action == 'setup' or action == 'login' then authenticate(); return end
     if action == 'new' then create(workspace(), command.fargs[2]); return end
     if action == 'status' then
@@ -431,7 +470,7 @@ function M.command(command)
       stop_session, stop_target = selected, sessions[selected].snapshot.active_submission_id
     end
     local directory = (not selected or action == 'sessions') and workspace() or nil
-    view.open()
+    if selected and not action then view.open(selected, source_window) end
     render()
     transport.connect(function(_, failure)
       if failure then report(failure); return end
@@ -482,7 +521,6 @@ end
 
 vim.api.nvim_create_autocmd('TabLeave', { callback = function()
   if not view then return end
-  save_draft()
   tabs[vim.api.nvim_get_current_tabpage()] = { selected = selected, source = source, source_window = source_window }
 end })
 
@@ -493,8 +531,8 @@ vim.api.nvim_create_autocmd('TabEnter', { callback = function()
   if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
   watch, watch_sequence = nil, 0
   local tab = tabs[vim.api.nvim_get_current_tabpage()] or {}
-  selected, source, source_window = tab.selected, tab.source, tab.source_window
-  view.set_draft(selected and sessions[selected].draft or '')
+  source, source_window = tab.source, tab.source_window
+  select_session(tab.selected)
   render()
   if sidebar then sidebar.refresh(workspace()) end
   if not selected then return end

@@ -95,9 +95,11 @@ class RealEditor(Editor):
             command = [str(REPO / 'harness.sh')] + ([] if first_run else ['--config', str(self.config)]) if launcher == 'plain' else [str(BINARY), '--config', str(self.config), 'nvim']
             self.launch(self.env, command)
             self.wait(lambda: b'one' in self.output, 'normal Neovim startup', timeout=15)
-            self.command('lua vim.fn.writefile({vim.json.encode({windows=#vim.api.nvim_list_wins(), loaded=vim.g.loaded_harness, mapped=vim.fn.maparg(";","n")~="", panels=vim.fn.bufnr("harness://prompt")>0})}, vim.env.HARNESS_WORKSPACE .. "/before-sidebar.json")')
+            self.command('lua vim.fn.writefile({vim.json.encode({window=vim.api.nvim_get_current_win(), windows=#vim.api.nvim_list_wins(), loaded=vim.g.loaded_harness, mapped=vim.fn.maparg(";","n")~="", panels=vim.fn.bufnr("harness://prompt/.*")>0})}, vim.env.HARNESS_WORKSPACE .. "/before-sidebar.json")')
             self.wait(lambda: (self.root / 'before-sidebar.json').exists(), 'normal editor before opening sidebar')
-            assert json.loads((self.root / 'before-sidebar.json').read_text()) == {'windows': 1, 'loaded': True, 'mapped': True, 'panels': False}
+            before = json.loads((self.root / 'before-sidebar.json').read_text())
+            self.content_window = before.pop('window')
+            assert before == {'windows': 1, 'loaded': True, 'mapped': True, 'panels': False}
             assert not self.socket_path.exists(), 'Loading the launcher must not start the server'
             self.keys(';')
         else:
@@ -126,7 +128,7 @@ class RealEditor(Editor):
         return result.stdout
 
     def chat(self, text):
-        self.command('lua for _,w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do if vim.api.nvim_win_get_buf(w)==vim.fn.bufnr("harness://prompt") then vim.api.nvim_set_current_win(w); break end end; vim.cmd("startinsert!")')
+        self.command('lua for _,w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(w)):match("^harness://prompt/") then vim.api.nvim_set_current_win(w); break end end; vim.cmd("startinsert!")')
         self.keys(text + '\r')
 
     def create(self, session_id):
@@ -270,24 +272,75 @@ def launcher_cases():
         editor = RealEditor('launcher-' + launcher, active=False, startup=True, launcher=launcher, rate=400)
         initial = (editor.root / 'config/nvim/init.lua').read_text()
         assert ("require('harness')" in initial) == (launcher == 'configured')
-        editor.command('lua local p=vim.fn.bufnr("harness://prompt"); local t=vim.fn.bufnr("harness://transcript"); local w=vim.fn.win_findbuf(p)[1]; local s=vim.fn.win_findbuf(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"))[1]; vim.fn.writefile({vim.json.encode({init=vim.g.launcher_user_init, cwd=vim.fn.getcwd(), windows=#vim.api.nvim_list_wins(), prompt=vim.bo[p].modifiable, transcript=vim.bo[t].modifiable, width=vim.api.nvim_win_get_width(w), height=vim.api.nvim_win_get_height(w), source=vim.api.nvim_win_get_width(s), source_wrap=vim.wo[s].wrap, prompt_wrap=vim.wo[w].wrap, transcript_wrap=vim.wo[vim.fn.win_findbuf(t)[1]].wrap, cleared=vim.env.HARNESS_NVIM_RUNTIME==nil and vim.env.HARNESS_NVIM_OPTIONS==nil})}, vim.env.HARNESS_WORKSPACE .. "/launcher.json")')
+        editor.command('lua local p=' + editor.panel('prompt') + '; local t=' + editor.panel() + '; local w=vim.fn.win_findbuf(p)[1]; local tw=vim.fn.win_findbuf(t)[1]; local source=vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"); vim.fn.writefile({vim.json.encode({init=vim.g.launcher_user_init, cwd=vim.fn.getcwd(), windows=#vim.api.nvim_list_wins(), prompt=vim.bo[p].modifiable, transcript=vim.bo[t].modifiable, listed=vim.bo[t].buflisted, width=vim.api.nvim_win_get_width(w), chat_width=vim.api.nvim_win_get_width(tw), height=vim.api.nvim_win_get_height(w), content_window=tw, source_loaded=vim.api.nvim_buf_is_loaded(source), source_hidden=#vim.fn.win_findbuf(source)==0, prompt_wrap=vim.wo[w].wrap, transcript_wrap=vim.wo[tw].wrap, cleared=vim.env.HARNESS_NVIM_RUNTIME==nil and vim.env.HARNESS_NVIM_OPTIONS==nil})}, vim.env.HARNESS_WORKSPACE .. "/launcher.json")')
         editor.wait(lambda: (editor.root / 'launcher.json').exists(), 'launcher loads user configuration and native panels')
         observed = json.loads((editor.root / 'launcher.json').read_text())
-        assert observed == {'init': True, 'cwd': str(editor.root), 'windows': 4, 'prompt': True, 'transcript': False, 'width': 120, 'height': 5 if launcher == 'configured' else 3, 'source': 87, 'source_wrap': launcher != 'configured', 'prompt_wrap': True, 'transcript_wrap': True, 'cleared': True}, observed
+        assert observed == {'init': True, 'cwd': str(editor.root), 'windows': 3, 'prompt': True, 'transcript': False, 'listed': True, 'width': 87, 'chat_width': 87, 'height': 5 if launcher == 'configured' else 3, 'content_window': editor.content_window, 'source_loaded': True, 'source_hidden': True, 'prompt_wrap': True, 'transcript_wrap': True, 'cleared': True}, observed
         assert editor.snapshot(editor.session_id)['session']['workspace'] == str(editor.root)
-        editor.keys('iLauncher task λ 世界\x13')
+        editor.chat('Launcher task λ 世界')
         editor.wait(lambda: editor.snapshot(editor.session_id)['active_submission_id'], 'launcher input admission')
         editor.wait(lambda: 'assistant progress' in editor.panel_text(), 'launcher streamed output', timeout=10)
         editor.wait(lambda: editor.snapshot(editor.session_id)['state'] == 'idle', 'launcher stored final result', timeout=15)
         assert any(item['kind'] == 'user' and item['text'] == 'Launcher task λ 世界' for item in editor.snapshot(editor.session_id)['entries'])
         assert (editor.root / 'config/nvim/init.lua').read_text() == initial
+        editor.source()
+        editor.command('lua vim.fn.writefile({vim.json.encode({window=vim.api.nvim_get_current_win(), wrap=vim.wo.wrap, number=vim.wo.number, windows=#vim.api.nvim_tabpage_list_wins(0), text=vim.api.nvim_get_current_line()})}, vim.env.HARNESS_WORKSPACE .. "/restored-file.json")')
+        editor.wait(lambda: (editor.root / 'restored-file.json').exists(), 'return to file in the same window')
+        assert json.loads((editor.root / 'restored-file.json').read_text()) == {'window': editor.content_window, 'wrap': launcher != 'configured', 'number': True, 'windows': 2, 'text': 'one'}
         editor.command('qa')
         editor.exits()
         assert b'Keep the listed agent runs in the background?' not in editor.output
         editor.finish()
 
+def buffer_switch_case():
+    editor = RealEditor('files-and-chat-buffers', active=False, startup=True, launcher='configured', rate=25)
+    first = editor.session_id
+    editor.source()
+    editor.command('set nohidden | call setline(1, "Unsaved source λ 世界")')
+    editor.command('Harness attach ' + first)
+    editor.wait(lambda: 'Session: New chat' in editor.panel_text(), 'open chat over a modified file with nohidden')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]); vim.cmd("startinsert!")')
+    editor.keys('Original draft\x1b[13;2uSecond draft line')
+    editor.command('buffer ' + str(editor.root / 'one'))
+    editor.command('lua vim.fn.writefile({vim.json.encode({name=vim.api.nvim_buf_get_name(0), window=vim.api.nvim_get_current_win(), text=vim.api.nvim_buf_get_lines(0,0,-1,false), modified=vim.bo.modified, wrap=vim.wo.wrap, number=vim.wo.number, windows=#vim.api.nvim_tabpage_list_wins(0)})}, vim.env.HARNESS_WORKSPACE .. "/file-switch.json")')
+    editor.wait(lambda: (editor.root / 'file-switch.json').exists(), 'native buffer command restores the source file')
+    assert json.loads((editor.root / 'file-switch.json').read_text()) == {'name': str(editor.root / 'one'), 'window': editor.content_window, 'text': ['Unsaved source λ 世界'], 'modified': True, 'wrap': False, 'number': True, 'windows': 2}
+    assert editor.panel_text('prompt') == 'Original draft\nSecond draft line\n'
+    editor.command('set hidden')
+    editor.keys('\x1e')
+    editor.wait(lambda: 'Session: New chat' in editor.panel_text(), 'Ctrl-^ returns to the chat buffer')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]); vim.cmd("startinsert!")')
+    editor.keys('\r')
+    editor.wait(lambda: editor.snapshot(first)['active_submission_id'], 'Enter sends the retained multiline draft')
+    entries = [item for item in editor.snapshot(first)['entries'] if item['kind'] == 'user']
+    assert len(entries) == 1 and entries[0]['text'] == 'Original draft\nSecond draft line', entries
+    editor.command('buffer ' + str(editor.root / 'one'))
+    editor.wait(lambda: editor.snapshot(first)['assistant']['text'], 'chat streams while a file is selected')
+    editor.pump(.3)
+    editor.command('lua vim.fn.writefile({vim.json.encode({name=vim.api.nvim_buf_get_name(0), window=vim.api.nvim_get_current_win(), text=vim.api.nvim_get_current_line(), windows=#vim.api.nvim_tabpage_list_wins(0)})}, vim.env.HARNESS_WORKSPACE .. "/stream-focus.json")')
+    editor.wait(lambda: (editor.root / 'stream-focus.json').exists(), 'streaming leaves file focus unchanged')
+    assert json.loads((editor.root / 'stream-focus.json').read_text()) == {'name': str(editor.root / 'one'), 'window': editor.content_window, 'text': 'Unsaved source λ 世界', 'windows': 2}
+    editor.command('Harness new')
+    editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 2, 'second chat opens over the unsaved file')
+    second = next(item['session_id'] for item in editor.rpc.request('session.list')['items'] if item['session_id'] != first)
+    editor.chat('\\name Second buffer')
+    editor.wait(lambda: editor.snapshot(second)['session']['name'] == 'Second buffer', 'second chat is selected')
+    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ',0,-1,false,{"Second chat draft"})')
+    editor.command('buffer harness://chat/' + first)
+    editor.wait(lambda: 'Original draft' in editor.panel_text(), 'buffer command restores the first chat history')
+    assert editor.panel_text('prompt') == '\n'
+    editor.command('bnext')
+    editor.wait(lambda: 'Session: Second buffer' in editor.panel_text(), ':bnext selects the next listed chat')
+    assert editor.panel_text('prompt') == 'Second chat draft\n'
+    editor.command('buffer ' + str(editor.root / 'one'))
+    editor.command('bnext')
+    editor.wait(lambda: 'Original draft' in editor.panel_text(), ':bnext moves from the file to a chat')
+    assert (editor.root / 'one').read_text() == 'one\n'
+    editor.finish()
+
 def integration_cases():
     launcher_cases()
+    buffer_switch_case()
     editor = RealEditor('first-run-setup', active=False, startup=True, launcher='plain', first_run=True, rate=400)
     assert not editor.config.exists()
     assert editor.snapshot()['session']['provider'] is None
@@ -296,7 +349,7 @@ def integration_cases():
     editor.wait(lambda: '\\model' in editor.panel_text(), 'missing-model remedy stays inside chat')
     assert not editor.snapshot()['entries'], 'A missing model cannot admit a task'
     assert editor.panel_text('prompt') == 'Task before model choice\n'
-    editor.command('lua vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt"), 0, -1, false, {""})')
+    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {""})')
     editor.chat('\\model demo')
     editor.wait(lambda: editor.snapshot()['session']['provider'] == 'faux', 'chat command sets model without setup')
     editor.chat('\\name First chat')
@@ -316,19 +369,19 @@ def integration_cases():
     editor.finish()
 
     editor = RealEditor('narrow-screen-controls', active=False, startup=True, launcher='configured', rate=400)
-    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(vim.fn.bufnr("harness://prompt"))[1]); vim.cmd("startinsert")')
+    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]); vim.cmd("startinsert")')
     editor.keys('Draft λ 世界 across sizes\x1b')
     for columns, lines in ((80, 24), (60, 20), (120, 40)):
         editor.resize(columns, lines)
         path = editor.root / 'layout.json'
         path.unlink(missing_ok=True)
-        editor.command('lua local p=vim.fn.win_findbuf(vim.fn.bufnr("harness://prompt"))[1]; local t=vim.fn.win_findbuf(vim.fn.bufnr("harness://transcript"))[1]; local s=vim.fn.win_findbuf(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"))[1]; vim.fn.writefile({vim.json.encode({columns=vim.o.columns, lines=vim.o.lines, prompt_width=vim.api.nvim_win_get_width(p), transcript_width=vim.api.nvim_win_get_width(t), source_width=vim.api.nvim_win_get_width(s), prompt_row=vim.fn.win_screenpos(p)[1], transcript_row=vim.fn.win_screenpos(t)[1], source_row=vim.fn.win_screenpos(s)[1], prompt_help=vim.wo[p].winbar, source_wrap=vim.wo[s].wrap})}, vim.env.HARNESS_WORKSPACE .. "/layout.json")')
+        editor.command('lua local p=vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]; local t=vim.fn.win_findbuf(' + editor.panel() + ')[1]; vim.fn.writefile({vim.json.encode({columns=vim.o.columns, lines=vim.o.lines, prompt_width=vim.api.nvim_win_get_width(p), transcript_width=vim.api.nvim_win_get_width(t), prompt_row=vim.fn.win_screenpos(p)[1], transcript_row=vim.fn.win_screenpos(t)[1], prompt_help=vim.wo[p].winbar, windows=#vim.api.nvim_tabpage_list_wins(0)})}, vim.env.HARNESS_WORKSPACE .. "/layout.json")')
         editor.wait(path.exists, 'read responsive layout')
         layout = json.loads(path.read_text())
         assert layout['columns'] == columns and layout['lines'] == lines, layout
-        assert 'send' in layout['prompt_help'] and layout['source_wrap'] is False, layout
-        assert layout['prompt_width'] >= 35 and layout['transcript_width'] >= 35 and layout['source_width'] >= 35, layout
-        assert layout['source_row'] < layout['transcript_row'] < layout['prompt_row'], layout
+        assert 'send' in layout['prompt_help'], layout
+        assert layout['prompt_width'] >= 35 and layout['transcript_width'] >= 35, layout
+        assert layout['transcript_row'] < layout['prompt_row'] and layout['windows'] == 2, layout
         assert layout['prompt_width'] == columns and layout['transcript_width'] == columns, layout
         assert editor.panel_text('prompt') == 'Draft λ 世界 across sizes\n'
     editor.finish()
@@ -380,7 +433,7 @@ def integration_cases():
     first = editor.session_id
     editor.chat('\\name First tab')
     editor.wait(lambda: editor.snapshot(first)['session']['name'] == 'First tab', 'first tab name')
-    editor.command('lua vim.g.first_source = vim.fn.win_findbuf(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"))[1]; vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt"),0,-1,false,{"Draft in first tab"})')
+    editor.command('lua vim.g.first_source = vim.fn.win_findbuf(' + editor.panel() + ')[1]; vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ',0,-1,false,{"Draft in first tab"})')
     (editor.root / 'other').mkdir()
     editor.command('tabnew | execute "tcd " .. fnameescape($HARNESS_WORKSPACE .. "/other")')
     editor.keys(';')
@@ -393,13 +446,13 @@ def integration_cases():
     editor.wait(lambda: 'Session: New chat' in editor.panel_text(), 'second tab selected')
     editor.chat('\\name Second tab')
     editor.wait(lambda: editor.snapshot(second)['session']['name'] == 'Second tab', 'second tab name')
-    editor.command('lua vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt"),0,-1,false,{"Draft in second tab"})')
+    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ',0,-1,false,{"Draft in second tab"})')
     editor.command('tabprevious')
     editor.wait(lambda: 'Session: First tab' in editor.panel_text(), 'first tab selection restored')
     assert editor.panel_text('prompt') == 'Draft in first tab\n'
     editor.wait(lambda: 'First tab [' in editor.panel_text('agents'), 'first directory tree restored')
     assert 'Second tab [' not in editor.panel_text('agents')
-    editor.command('lua vim.fn.writefile({tostring(vim.api.nvim_win_is_valid(vim.g.first_source) and vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(vim.g.first_source)) == vim.env.HARNESS_WORKSPACE .. "/one")}, vim.env.HARNESS_WORKSPACE .. "/source-preserved")')
+    editor.command('lua vim.fn.writefile({tostring(vim.api.nvim_win_is_valid(vim.g.first_source) and vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(vim.g.first_source)):match("^harness://chat/") ~= nil and vim.api.nvim_buf_is_loaded(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one")))}, vim.env.HARNESS_WORKSPACE .. "/source-preserved")')
     editor.wait(lambda: (editor.root / 'source-preserved').exists(), 'source window preserved')
     assert (editor.root / 'source-preserved').read_text() == 'true\n'
     editor.command('tabnext')
@@ -499,11 +552,11 @@ def integration_cases():
     editor.finish()
 
     editor = RealEditor('hidden-unsent-draft', active=False)
-    editor.command('lua vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt"), 0, -1, false, {"Retained unsent text"})')
+    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Retained unsent text"})')
     editor.source(True)
     editor.command('Harness')
     editor.wait(lambda: 'Connection: connected' in editor.panel_text(), 'reopen hidden panels')
-    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt"), 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/draft.txt")')
+    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(' + editor.panel('prompt') + ', 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/draft.txt")')
     editor.wait(lambda: (editor.root / 'draft.txt').exists(), 'draft after panel hide')
     assert (editor.root / 'draft.txt').read_text() == 'Retained unsent text\n'
     assert editor.snapshot()['active_submission_id'] is None
@@ -515,7 +568,7 @@ def integration_cases():
     editor.command('Harness context buffer')
     editor.source()
     editor.command('2,2Harness context selection')
-    editor.command('lua vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt"), 0, -1, false, {"Context request"})')
+    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Context request"})')
     editor.command('Harness send')
     editor.wait(lambda: editor.snapshot()['active_submission_id'], 'actual input admission')
     entries = editor.snapshot()['entries']
@@ -528,7 +581,7 @@ def integration_cases():
     editor.command('lua vim.fn.writefile({vim.json.encode({modified=vim.bo.modified, unchanged=vim.g.context_tick == vim.api.nvim_buf_get_changedtick(0), windows=#vim.api.nvim_list_wins()})}, vim.env.HARNESS_WORKSPACE .. "/buffer.json")')
     editor.wait(lambda: (editor.root / 'buffer.json').exists(), 'editor responds during model output')
     observed = json.loads((editor.root / 'buffer.json').read_text())
-    assert observed == {'modified': True, 'unchanged': True, 'windows': 3}, observed
+    assert observed == {'modified': True, 'unchanged': True, 'windows': 1}, observed
     editor.finish()
 
     tool = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import {fauxAssistantMessage,fauxToolCall} from '@earendil-works/pi-ai/providers/faux'; console.log(JSON.stringify(fauxAssistantMessage(fauxToolCall('bash',{command:'echo tool-visible; sleep 1; echo tool-complete'}),{stopReason:'toolUse'})));"], cwd=REPO, text=True))
@@ -559,31 +612,113 @@ def integration_cases():
     editor.finish()
 
     editor = RealEditor('lost-receipt-draft-and-duplicate', active=False, drop_receipt=True)
-    editor.command('lua vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt"), 0, -1, false, {"Original request"})')
+    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Original request"})')
     editor.command('Harness send')
     editor.wait(lambda: (editor.root / 'dropped.json').exists(), 'durable receipt before injected disconnect')
     receipt = json.loads((editor.root / 'dropped.json').read_text())
     editor.wait(lambda: 'Connection closed' in editor.panel_text(), 'visible uncertain receipt')
-    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt"), 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/draft.txt")')
+    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(' + editor.panel('prompt') + ', 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/draft.txt")')
     editor.wait(lambda: (editor.root / 'draft.txt').exists(), 'retained draft')
     assert (editor.root / 'draft.txt').read_text() == 'Original request\n'
     editor.command('Harness')
     editor.wait(lambda: 'Connection: connected' in editor.panel_text(), 'reconnect after receipt loss')
-    editor.command('lua vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt"), 0, -1, false, {"New unsent request"})')
+    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"New unsent request"})')
     editor.command('Harness send')
     editor.pump(.3)
     stored = editor.rpc.request('submission.get', {'session_id': 'work', 'request_id': receipt['request_id']})
     assert stored['submission_id'] == receipt['submission_id']
     inputs = [item for item in editor.snapshot()['entries'] if item['kind'] == 'user']
     assert len(inputs) == 1 and inputs[0]['text'] == 'Original request', inputs
-    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt"), 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/new-draft.txt")')
+    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(' + editor.panel('prompt') + ', 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/new-draft.txt")')
     editor.wait(lambda: (editor.root / 'new-draft.txt').exists(), 'new draft after duplicate retry')
     assert (editor.root / 'new-draft.txt').read_text() == 'New unsent request\n'
     editor.finish()
 
+def legacy_case(prior):
+    root = EVIDENCE / 'legacy-server-upgrade-and-enter'
+    root.mkdir()
+    (root / 'one').write_text('one\n')
+    (root / 'two').write_text('two\n')
+    config, socket_path = root / 'config.json', root / 'control.sock'
+    config.write_text(json.dumps({'provider': 'faux', 'model': 'test', 'state_dir': str(root / 'state'), 'socket_path': str(socket_path)}))
+    responses = root / 'responses.json'
+    old_answer = dict(MESSAGE, content=[{'type': 'text', 'text': 'History from the prior server.'}])
+    responses.write_text(json.dumps([old_answer, MESSAGE]))
+    env = dict(os.environ, TERM='xterm-256color', HARNESS_REPO=str(REPO), HARNESS_EXECUTABLE=str(BINARY),
+               HARNESS_WORKSPACE=str(root), HARNESS_CONFIG=str(config), HARNESS_SOCKET=str(socket_path),
+               HARNESS_FAUX_RESPONSES=str(responses), HARNESS_FAUX_TOKENS_PER_SECOND='100', HARNESS_INITIAL_COMMAND='Harness new')
+    old_binary = prior / 'target/debug/harness'
+    start = subprocess.run([str(old_binary), '--config', str(config), 'start'], env=env, text=True, capture_output=True, timeout=15)
+    assert start.returncode == 0, start.stderr
+    original = Rpc(socket_path)
+    original_hello = original.request('system.hello', {'api_version': 1})
+    assert original_hello.get('api_revision', 0) < 2, original_hello
+    original.request('session.create', {'session_id': 'stored', 'workspace': str(root)})
+    original.request('input.submit', {'session_id': 'stored', 'request_id': 'history', 'text': 'Preserve the prior history.', 'context': []})
+    history_outcome = original.request('submission.wait', {'session_id': 'stored', 'request_id': 'history', 'timeout_ms': 10000})
+    assert history_outcome['status'] == 'done'
+    active = original.request('input.submit', {'session_id': 'stored', 'request_id': 'active', 'text': 'Keep accepted work until an explicit stop.', 'context': []})
+    editor = Editor.__new__(Editor)
+    editor.name, editor.root = 'legacy-server-upgrade-and-enter', root
+    editor.launch(env)
+    current = None
+    try:
+        editor.wait(lambda: b'harness upgrade' in editor.output.lower(), 'old live server is identified before any chat request')
+        RealEditor.chat(editor, 'il cane di dio')
+        assert 'il cane di dio' in editor.panel_text('prompt')
+        assert b'Unknown parameter field' not in editor.output
+        editor.command('Harness upgrade')
+        editor.wait(lambda: b'Active work prevents shutdown' in editor.output, 'explicit upgrade refuses active prior work')
+        assert original.request('system.hello', {'api_version': 1})['instance_id'] == original_hello['instance_id']
+        assert original.request('submission.get', {'session_id': 'stored', 'request_id': 'active'})['submission_id'] == active['submission_id']
+        assert len(original.request('session.list')['items']) == 1, 'Rejected creation must not create a chat on the old server'
+        original.request('run.stop', {'session_id': 'stored', 'submission_id': active['submission_id']})
+        after_answer = dict(MESSAGE, content=[{'type': 'text', 'text': 'The upgraded chat received the Enter task.'}])
+        responses.write_text(json.dumps([after_answer]))
+        editor.command('Harness upgrade')
+        editor.wait(lambda: 'Session: New chat' in editor.panel_text(), 'explicit idle upgrade finishes and reconnects', timeout=20)
+        original.close()
+        current = Rpc(socket_path)
+        hello = current.request('system.hello', {'api_version': 1})
+        assert hello['api_revision'] == 2 and hello['instance_id'] != original_hello['instance_id']
+        assert hello['state_dir'] == original_hello['state_dir']
+        editor.wait(lambda: len(current.request('session.list')['items']) == 2, 'retained new chat is admitted after upgrade')
+        created = next(item['session_id'] for item in current.request('session.list')['items'] if item['session_id'] != 'stored')
+        assert editor.panel_text('prompt') == 'il cane di dio\n'
+        editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]); vim.cmd("startinsert!")')
+        editor.keys('\r')
+        editor.wait(lambda: 'The upgraded chat received the Enter task.' in editor.panel_text(), 'Enter submits through the upgraded real Rust and Pi processes', timeout=10)
+        snapshot = current.request('session.get', {'session_id': created})['snapshot']
+        assert snapshot['state'] == 'idle'
+        assert [entry['text'] for entry in snapshot['entries'] if entry['kind'] == 'user'] == ['il cane di dio']
+        editor.command('Harness attach stored')
+        editor.wait(lambda: 'History from the prior server.' in editor.panel_text(), 'prior chat history is visible after upgrade')
+        assert current.request('submission.get', {'session_id': 'stored', 'request_id': 'history'}) == history_outcome
+        (root / 'observed.json').write_text(json.dumps({'prior_api_revision': original_hello.get('api_revision'), 'current_api_revision': hello['api_revision'],
+            'prior_binary_sha256': hashlib.sha256(old_binary.read_bytes()).hexdigest(),
+            'current_binary_sha256': hashlib.sha256(BINARY.read_bytes()).hexdigest(),
+            'prior_adapter_sha256': hashlib.sha256((prior / 'adapter/pi.mjs').read_bytes()).hexdigest(),
+            'current_adapter_sha256': hashlib.sha256((REPO / 'adapter/pi.mjs').read_bytes()).hexdigest(),
+            'busy_upgrade_preserved_instance_and_submission': True, 'state_directory_preserved': True,
+            'prior_history_and_exact_outcome_preserved': True, 'draft_preserved': True, 'enter_submitted_once': True}, indent=2))
+    finally:
+        editor.finish()
+        connection = Rpc(socket_path)
+        for session in connection.request('session.list')['items']:
+            snapshot = connection.request('session.get', {'session_id': session['session_id']})['snapshot']
+            if snapshot['active_submission_id']:
+                connection.request('run.stop', {'session_id': session['session_id'], 'submission_id': snapshot['active_submission_id']})
+        connection.request('server.shutdown')
+        connection.close()
+        if current: current.close()
+        original.close()
+
 def main():
     if ARGS.group in ('all', 'exit'): exit_cases()
     if ARGS.group in ('all', 'integration'): integration_cases()
+    if ARGS.group == 'legacy' or ARGS.legacy_root:
+        assert ARGS.legacy_root, '--group legacy requires --legacy-root'
+        legacy_case(ARGS.legacy_root)
     evidence = {'nvim': subprocess.check_output(['nvim', '--version'], text=True).splitlines()[0], 'mode': 'real terminal, actual Rust server, actual Pi faux provider', 'cases': RESULTS}
     (EVIDENCE / 'results.json').write_text(json.dumps(evidence, indent=2))
     print(json.dumps({'passed': len(RESULTS), 'evidence': str(EVIDENCE / 'results.json')}))

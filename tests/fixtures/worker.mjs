@@ -9,7 +9,7 @@ process.on('SIGHUP', () => {});
 createInterface({ input: process.stdin }).on('line', line => {
   const request = JSON.parse(line), { id, method, params } = request;
   if (method === 'system.hello') {
-    send(id, { api_version: 1, node_version: process.version, artifacts: { durable: '1.3.0', ai: '1.3.0', chord: '1.3.0' }, ready: mode !== 'paused', scheduling_enabled: mode !== 'paused' });
+    send(id, { api_version: 1, ...(mode === 'old-interface' ? {} : { api_revision: 2 }), node_version: process.version, artifacts: { durable: '1.3.0', ai: '1.3.0', chord: '1.3.0' }, ready: mode !== 'paused', scheduling_enabled: mode !== 'paused' });
     if (mode === 'crash') setTimeout(() => process.exit(9), 60);
   } else if (method === 'session.watch') {
     setTimeout(() => {

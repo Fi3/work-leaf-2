@@ -25,10 +25,28 @@ local function save(value)
   vim.fn.writefile({ vim.json.encode(value) }, vim.env.HARNESS_TEST_STATE .. '.external')
   assert(vim.uv.fs_rename(vim.env.HARNESS_TEST_STATE .. '.external', vim.env.HARNESS_TEST_STATE))
 end
+local active_id
 local function named(name)
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_get_name(buf) == 'harness://' .. name then return buf end
+  if name == 'transcript' or name == 'prompt' then
+    local current = vim.api.nvim_buf_get_name(0):match('^harness://[^/]+/(.+)$')
+    if current then active_id = current else
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        local id = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win)):match('^harness://[^/]+/(.+)$')
+        if id then active_id = id; break end
+      end
+    end
+    if not active_id then return nil end
+    name = (name == 'transcript' and 'chat/' or 'prompt/') .. active_id
   end
+  local buf = vim.fn.bufnr('harness://' .. name)
+  return buf ~= -1 and buf or nil
+end
+local function show_file(buf)
+  local chat = named('transcript')
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if vim.api.nvim_win_get_buf(win) == chat then vim.api.nvim_set_current_win(win); break end
+  end
+  vim.cmd('hide buffer ' .. buf)
 end
 local function text(buf) return table.concat(vim.api.nvim_buf_get_lines(buf, 0, -1, false), '\n') end
 local function has(value)
@@ -37,6 +55,7 @@ local function has(value)
 end
 local function chat(value)
   vim.cmd('stopinsert')
+  if #vim.fn.win_findbuf(named('prompt')) == 0 then vim.cmd('Harness') end
   vim.api.nvim_set_current_win(vim.fn.win_findbuf(named('prompt'))[1])
   vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, vim.split(value, '\n', { plain = true }))
   vim.cmd('Harness send')
@@ -78,7 +97,8 @@ wait(function() return has('Choose a model from the available catalog') end, 'In
 check(state().sessions[initial_id].metadata.model == 'test' and #calls('input.submit') == 0, 'Invalid settings preserve the current model and do not submit input')
 wait(function() return text(named('transcript')):match('^Connection: connected\n') end, 'Settings retain the live chat watch')
 vim.ui.input = input
-check(#vim.api.nvim_list_wins() == 3, 'Source, transcript and prompt windows')
+check(#vim.api.nvim_list_wins() == 2, 'Chat uses the file window with one input split')
+check(vim.bo[named('transcript')].buflisted and not vim.bo[named('prompt')].buflisted, 'Only chat history belongs to the native buffer list')
 check(not vim.bo[named('transcript')].modifiable and vim.bo[named('prompt')].modifiable, 'Panel edit flags')
 local highlights = vim.api.nvim_buf_get_extmarks(named('transcript'), vim.api.nvim_get_namespaces().HarnessView, 0, -1, { details = true })
 for row, group in ipairs({ 'DiagnosticOk', 'Title', 'Comment' }) do
@@ -88,7 +108,7 @@ for row, group in ipairs({ 'DiagnosticOk', 'Title', 'Comment' }) do
 end
 check(state().starts == 1, 'Start on first invocation only')
 vim.cmd('Harness context buffer')
-vim.api.nvim_set_current_buf(source)
+show_file(source)
 vim.cmd('2,2Harness context selection')
 vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'First request' })
 vim.cmd('Harness send')
@@ -109,7 +129,7 @@ vim.cmd('Harness send')
 wait(function() return has('Connection closed') end, 'Connection loss is visible')
 check(text(named('prompt')) == 'drop', 'Uncertain draft retained')
 local before = calls('input.submit')[2].params
-vim.api.nvim_set_current_win(vim.fn.win_findbuf(source)[1])
+show_file(source)
 vim.env.HARNESS_TEST_START_DELAY = '0.1'
 vim.cmd('Harness context buffer')
 vim.env.HARNESS_TEST_START_DELAY = nil
@@ -198,7 +218,7 @@ check(messages[#messages]:find('file buffer', 1, true), 'Reject non-file context
 
 local outside = vim.fn.tempname()
 vim.fn.writefile({ 'outside' }, outside)
-vim.api.nvim_set_current_win(vim.fn.win_findbuf(source)[1])
+show_file(source)
 vim.cmd('hide edit ' .. vim.fn.fnameescape(outside))
 vim.cmd('Harness context buffer')
 check(messages[#messages]:find('outside the session workspace', 1, true), 'Reject outside context')
@@ -230,7 +250,7 @@ for _, newer in ipairs({ false, true }) do
   wait(function() return has('Session: second') end, 'Switch before receipt')
   vim.cmd('Harness attach ' .. id)
   wait(function() return has('Session: ' .. id) end, 'Return after receipt')
-  check(text(named('prompt')) == (newer and 'New saved draft' or ''), 'Receipt clears only its matching saved draft')
+  wait(function() return text(named('prompt')) == (newer and 'New saved draft' or '') end, 'Receipt clears only its matching saved draft')
   if not newer then
     vim.cmd('Harness send')
     check(#calls('input.submit') == sent + 1 and text(named('prompt')) == '', 'Returning to a session cannot resend its admitted draft')
@@ -247,7 +267,7 @@ local function tree_row(value)
   end
   error('Missing sidebar row: ' .. value)
 end
-vim.api.nvim_set_current_win(vim.fn.win_findbuf(source)[1])
+show_file(source)
 vim.api.nvim_win_set_buf(0, source)
 require('harness').enable_sidebar()
 key(';')
@@ -287,12 +307,12 @@ tree_row('second [')
 key('<CR>')
 wait(function() return has('Session: second') end, 'Sidebar Enter attaches the chosen chat')
 vim.cmd('Harness context buffer')
-check(has('Context snapshot: source.txt'), 'Sidebar selection preserves the source buffer for context')
+wait(function() return has('Context snapshot: source.txt') end, 'Sidebar selection preserves the source buffer for context')
 vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'Hidden sidebar draft' })
 tree_row('second [')
 key('q')
 check(#vim.fn.win_findbuf(named('agents')) == 0 and text(named('prompt')) == 'Hidden sidebar draft', 'Hiding the sidebar preserves the draft')
-vim.api.nvim_set_current_win(vim.fn.win_findbuf(source)[1])
+show_file(source)
 key(';')
 wait(function() return #vim.fn.win_findbuf(named('agents')) == 1 end, 'Semicolon reopens the sidebar')
 local creates, names = #calls('session.create'), 0
@@ -441,7 +461,7 @@ wait(function() return text(named('prompt')) == 'Tab two draft' end, 'Returning 
 vim.api.nvim_set_current_tabpage(first_tab)
 
 if #vim.fn.win_findbuf(named('agents')) > 0 then tree_row('+ New chat'); key('q') end
-vim.api.nvim_set_current_win(vim.fn.win_findbuf(source)[1])
+show_file(source)
 vim.cmd('lcd ' .. vim.fn.fnameescape(temp .. '/other'))
 key(';')
 wait(function() return text(named('agents')):find('Foreign chat', 1, true) and not text(named('agents')):find('Loading...', 1, true) end, 'Tree follows the current source-window directory')
@@ -451,5 +471,102 @@ tree_row('+ New chat')
 key('n')
 wait(function() return #calls('session.create') == create_other + 1 end, 'New chat is available in another directory')
 check(calls('session.create')[create_other + 1].params.workspace == temp .. '/other', 'New chat uses the current directory')
+local old_server = state()
+old_server.api_revision = 1
+save(old_server)
+chat('drop')
+wait(function() return has('Connection closed') end, 'Disconnect before old-server handshake')
+local old_calls = #calls('input.submit')
+vim.cmd('Harness')
+wait(function() return has('different chat interface') end, 'A stale server fails during the handshake')
+chat('Retain input until server upgrade')
+vim.wait(100, function() return false end)
+check(#calls('input.submit') == old_calls, 'Incompatible infrastructure cannot receive a new task')
+check(text(named('prompt')) == 'Retain input until server upgrade', 'Compatibility failure preserves the draft')
+vim.cmd('Harness upgrade')
+wait(function() return state().api_revision == 2 and has('Connection: connected') end, 'Explicit upgrade reconnects to the current contract')
+check(text(named('prompt')) == 'Retain input until server upgrade', 'Upgrade preserves unsent input')
+
+-- A local command queued during creation still belongs to that chat after a switch.
+local delayed_command = state()
+delayed_command.create_delay = 0.2
+save(delayed_command)
+local create_count, configure_count = #calls('session.create'), #calls('session.configure')
+vim.cmd('Harness new')
+local queued_id = vim.api.nvim_buf_get_name(named('transcript')):match('^harness://chat/(.+)$')
+chat('\\name Rename while creating')
+vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'Later draft in the first chat' })
+vim.cmd('Harness new')
+local other_id = vim.api.nvim_buf_get_name(named('transcript')):match('^harness://chat/(.+)$')
+vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'Keep the second chat draft' })
+wait(function()
+  local current = state()
+  return #calls('session.create') == create_count + 2 and current.sessions[queued_id] and current.sessions[other_id]
+    and text(named('transcript')):match('^Connection: connected\n')
+end, 'Both chats are stored before returning to the queued command')
+check(#calls('session.configure') == configure_count and state().sessions[other_id].metadata.name == 'New chat', 'A queued command cannot change the selected second chat')
+delayed_command = state(); delayed_command.create_delay = nil; save(delayed_command)
+vim.cmd('Harness attach ' .. queued_id)
+wait(function()
+  return state().sessions[queued_id].metadata.name == 'Rename while creating'
+    and text(named('transcript')):match('^Connection: connected\n') and has('Session: Rename while creating')
+end, 'Returning to the first chat completes its queued command')
+local configured = calls('session.configure')
+check(#configured == configure_count + 1 and configured[#configured].params.session_id == queued_id
+  and configured[#configured].params.name == 'Rename while creating', 'The queued command configures its exact chat once')
+check(text(named('prompt')) == 'Later draft in the first chat', 'A queued command preserves later input in its chat')
+check(text(vim.fn.bufnr('harness://prompt/' .. other_id)) == 'Keep the second chat draft'
+  and state().sessions[other_id].metadata.name == 'New chat', 'The other chat keeps its draft and settings')
+vim.cmd('Harness attach ' .. other_id)
+wait(function() return text(named('transcript')):match('^Connection: connected\n') end, 'The second chat can be reopened after the command')
+vim.cmd('Harness attach ' .. queued_id)
+wait(function() return text(named('transcript')):match('^Connection: connected\n') end, 'The first chat can be reopened again')
+check(#calls('session.configure') == configure_count + 1, 'Reopening does not repeat a completed queued command')
+
+-- A real Rust proxy can reject an old server before it returns a Lua handshake.
+local proxy_path = temp .. '/reject-old-proxy'
+vim.fn.writefile({
+  '#!/usr/bin/env python3',
+  'import os, sys',
+  'assert sys.argv[1:] == ["rpc"]',
+  'sys.stdin.readline()',
+  'os.write(2, b"Discard this old diagnostic prefix\\n" + b"x" * 16384)',
+  'os.write(2, b"\\nharness: Server uses an older chat interface. Run harness upgrade with the same configuration.\\n")',
+  'sys.exit(3)',
+}, proxy_path)
+assert(vim.uv.fs_chmod(proxy_path, 448))
+local failures, connection_errors = {}, {}
+local proxy = require('harness.transport').new({ executable = proxy_path, autostart = false }, function(err)
+  if err then connection_errors[#connection_errors + 1] = err end
+end, function() error('The rejected proxy must not publish a session update') end)
+for _ = 1, 2 do
+  proxy.connect(function(value, err)
+    check(not value and type(err) == 'string', 'A proxy rejection completes every waiting connection with an error')
+    failures[#failures + 1] = err
+  end)
+end
+wait(function() return #failures == 2 end, 'Proxy stderr reaches all waiting connections')
+for _, failure in ipairs(failures) do
+  check(failure:find('Run :Harness upgrade with the same configuration.', 1, true), 'Proxy rejection gives an editor command to repair the server')
+  check(#failure <= 9 * 1024 and not failure:find('Discard this old diagnostic prefix', 1, true), 'Proxy diagnostics retain a bounded tail')
+end
+check(#connection_errors > 0 and connection_errors[#connection_errors] == failures[1], 'The connection view receives the same actionable failure')
+vim.fn.writefile({
+  '#!/usr/bin/env python3',
+  'import json, sys',
+  'assert sys.argv[1:] == ["rpc"]',
+  'for line in sys.stdin:',
+  '    request = json.loads(line)',
+  '    print(json.dumps({"jsonrpc": "2.0", "id": request["id"], "result": {"api_version": 1, "api_revision": 2}}), flush=True)',
+}, proxy_path)
+local reconnected = false
+proxy.connect(function(value, err)
+  check(value and not err, 'A repaired proxy can complete a fresh handshake')
+  reconnected = true
+end)
+wait(function() return reconnected end, 'Proxy rejection leaves connection startup available for retry')
+check(#failures == 2, 'Each failed connection callback completes once')
+proxy.disconnect()
+
 print('Neovim component checks passed: chat commands, stored children, directory filter, lazy startup, context, streams, stop, reconnect and duplicate retry.')
 vim.cmd('noautocmd qa!')

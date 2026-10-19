@@ -1,13 +1,13 @@
 {
-  "recorded_at": "2026-10-19T10:41:40.014188+00:00",
-  "mode": "actual X11 screen capture of a dedicated Kitty window; actual Neovim, Rust server, and Pi adapter",
+  "recorded_at": "2026-10-19T15:08:45.078394+00:00",
+  "mode": "actual X11 screen capture of a dedicated Kitty window on an isolated Xvfb display; actual Neovim, Rust server, and Pi adapter",
   "model": "Pi faux provider with fixed responses; no provider credentials supplied",
   "tools": "actual Bash tool creates a stored child agent through the Rust command client; faux responses prescribe the tool call",
   "input": "keys sent to the terminal with Kitty remote control",
   "capture": "FFmpeg x11grab restricted to the terminal window",
   "video": "harness-demo.mp4",
-  "video_sha256": "da927b3219168df7cd4b0aeb152c95007a055f30e4d8fa42d2bee3b8720877b3",
-  "duration_seconds": 45.134,
+  "video_sha256": "98bf7095b74b5fc533dbb4992aa848c764846ae8486ef0b0fc410dd570d52b57",
+  "duration_seconds": 54.6,
   "frames_per_second": 15,
   "screen_pixels": [
     1280,
@@ -26,18 +26,18 @@
     },
     {
       "seconds": 8.4,
-      "text": "Press Enter. The chat opens at once, with a small message box at the bottom."
+      "text": "Press Enter. Chat history fills the normal file area. The small message box is below it."
     },
     {
-      "seconds": 11.5,
+      "seconds": 11.6,
       "text": "Type \\model demo and press Enter. This selects fixed local replies without a key."
     },
     {
-      "seconds": 14.5,
+      "seconds": 14.6,
       "text": "Type \\name Review and press Enter. The name is optional; no name dialog blocks creation."
     },
     {
-      "seconds": 17.6,
+      "seconds": 17.7,
       "text": "Write a task. Shift-Enter adds a line; Enter sends the complete prompt."
     },
     {
@@ -45,23 +45,35 @@
       "text": "The actual Bash tool creates the child through the command client. The editor stays available."
     },
     {
-      "seconds": 27.4,
+      "seconds": 27.6,
       "text": "Press Escape, then ; twice and r. Tests is nested under the Review agent that created it."
     },
     {
-      "seconds": 31.5,
+      "seconds": 31.8,
       "text": "Select Tests with Enter. This child opens with an empty, separate conversation."
     },
     {
-      "seconds": 34.6,
-      "text": "Return to the source with normal Neovim window commands. Press ; to hide the tree."
+      "seconds": 34.9,
+      "text": "Press Escape, then Ctrl-^ to return to the previous chat. Native buffers hold each conversation."
     },
     {
-      "seconds": 38.7,
+      "seconds": 38.0,
+      "text": "Use :buffer app.py to return to the file. The message box closes; the file uses the full height."
+    },
+    {
+      "seconds": 41.1,
+      "text": "Press Ctrl-^ to return to Review. The chat and its message box return in the same editor area."
+    },
+    {
+      "seconds": 45.2,
+      "text": "Press ; to hide the tree. The chat remains in the normal file area."
+    },
+    {
+      "seconds": 48.3,
       "text": "The chats stay saved. Press Escape, then :qa to close the idle editor."
     },
     {
-      "seconds": 41.7,
+      "seconds": 51.3,
       "text": "For AI coding, use \\model to select Anthropic, then \\login to enter your key."
     }
   ],
@@ -75,8 +87,40 @@
     "actual Bash tool creates a child with the correct stored parent",
     "child appears nested under its creator",
     "child selection opens separate empty history",
+    "chat history occupies the normal file window",
+    "Ctrl-^ switches between chat buffers",
+    "buffer command opens the source file and hides the message box",
+    "Ctrl-^ returns to the prior chat and restores its message box",
     "no configuration file is written by chat settings",
     "normal idle exit closes Neovim"
   ],
-  "cleanup": "all demonstration sessions stopped; private server shut down; terminal closed"
+  "cleanup": "all demonstration sessions stopped; private server shut down; terminal closed",
+  "source_sha256": {
+    "src/application.rs": "91433fc2fca4341e8254a478c815435d3ab3ac1c402c9ad0547344ebf97c787a",
+    "src/cli.rs": "37d91ebbd18d0ea188e6d3abf6a247d33a66c3bd553d5ef4655a03408ea5f99f",
+    "src/client.rs": "79eb0e12d2338c52c8a56970c3fef06496b631d42b9b8168e08cf9c1b94d4103",
+    "src/config.rs": "804b9928b001e61aafe718342b0382da26bf890d838249489c0ea5a1d987c4e4",
+    "src/editor.rs": "c81ceb4d7dc462b4897d95eabb86c40c7fcec1a899bb2ef6112ec9d0d547d5ad",
+    "src/lib.rs": "671a36164ded2fc2c3e027faae1636c879ba7db4c56d16cd8ee4fbf69f25031f",
+    "src/main.rs": "316b18972c30f3a6a92d6ae1f309e5019efca6369fed83dd5aa23a5fe18fe856",
+    "src/process.rs": "543915fe0b4bd22bf40a99f3c8f105c8b21108b57a2ef55e1ff231a0ffce71fc",
+    "src/protocol.rs": "f20ddab10cd74d797e3dbcb597d5f91def2ab82a494112130c3f033c905299b6",
+    "src/server.rs": "80beb8f4a9e07cd65dcb0959ebf62b3558dcceea3627ad0954e6684ba96dd7fa",
+    "src/setup.rs": "11495fcfdfed9c74121d8fc9930c31a8bab4091b38c240cfe56577814e543d68",
+    "src/worker.rs": "9a565790fb9aa2fcd0ed1c21d1955b68a2b6e29d23b3a57f5a691a524a8045ab",
+    "adapter/pi.mjs": "6c499e572b7d51358c9fe55de29953dab399b73e22e39b140b2110ad5fe7376c",
+    "adapter/protocol.mjs": "f8b56cc27fde859db5d2361a34777d7cbebc66e061ad86e8992026f29e860478",
+    "adapter/view.mjs": "133ca08bb4e42a48af493a03afd08782512f82728cff62be28bfdc69a50f6511",
+    "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+    "lua/harness/commands.lua": "ca88183111ee1d05c455c1d68ee1dd94e9218d9c8426e6af952291e0f1dec0da",
+    "lua/harness/context.lua": "938d5161702d32f55c11a53ea3186932ecaa74bdda5a7bde8f15439d0dd5c95b",
+    "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
+    "lua/harness/init.lua": "1db1881216e0c9859ab348e69b1f5a162d660ed2e598fcdd974abd5cc4428c34",
+    "lua/harness/setup.lua": "fa73f912c70fd696046272838fa379d431ca2cfb4ddb6d38c855e2d9eb201bde",
+    "lua/harness/sidebar.lua": "c2b52c7bec5a74c1c99644ed5f1d7e431d0c5f3ca4d867ef98767eed4f705f91",
+    "lua/harness/transport.lua": "a57027006fc9de53c0b6a40a52fb1ca3033d9cdb2743d5ac64fa1b6340258820",
+    "lua/harness/view.lua": "54f46a086c18335be25a8c9a008d905b8c72ffb1a984cebec789711890c69fed",
+    "plugin/harness.lua": "966ecd73ee630914f9cc5c31c5334fac8542adfa875220e84b9aeb2eea07ec7e"
+  },
+  "binary_sha256": "af0983792e9a0e9b23bfd9e1e38356c3047d4fcf120165bde4f4ca6fc4abb5b2"
 }

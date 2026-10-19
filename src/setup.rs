@@ -1,7 +1,6 @@
 use crate::{client::Client, config::Config, process, protocol::RpcError, server};
 use serde_json::{Value, json};
 use std::io::{self, IsTerminal};
-use std::time::{Duration, Instant};
 
 fn input(prompt: &str, secret: bool) -> Result<Option<String>, RpcError> {
     let value = process::terminal_line(prompt, secret)?;
@@ -114,7 +113,7 @@ fn shutdown(mut client: Client, hello: &Value, config: &Config) -> Result<std::f
         return Err(error);
     }
     drop(client);
-    released(config)
+    server::released(config)
 }
 
 pub fn auth(config: &Config) -> Result<i32, RpcError> {
@@ -133,31 +132,6 @@ pub fn auth(config: &Config) -> Result<i32, RpcError> {
         "Credential loaded in the server environment. The provider has not checked it. Select a model in the chat."
     );
     Ok(0)
-}
-
-fn released(config: &Config) -> Result<std::fs::File, RpcError> {
-    let deadline = Instant::now() + Duration::from_secs(10);
-    loop {
-        if process::interrupted() {
-            return Err(RpcError::app(
-                "not_ready",
-                "Setup interrupted; configuration was not changed",
-            ));
-        }
-        match process::lock(&config.state_dir) {
-            Ok(lock) if !config.socket_path.exists() => return Ok(lock),
-            Ok(_) => {}
-            Err(error) if error.kind() == Some("conflict") => {}
-            Err(error) => return Err(error),
-        }
-        if Instant::now() >= deadline {
-            return Err(RpcError::app(
-                "not_ready",
-                "The old server did not close; configuration was not changed",
-            ));
-        }
-        std::thread::sleep(Duration::from_millis(25));
-    }
 }
 
 pub fn run(config: &Config) -> Result<i32, RpcError> {

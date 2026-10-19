@@ -236,7 +236,11 @@ fn run(listener: UnixListener, config: Config, lock: std::fs::File) -> Result<()
     Ok(())
 }
 
-fn existing(config: &Config, expected_pid: Option<u32>) -> Result<Option<Value>, RpcError> {
+fn existing(
+    config: &Config,
+    expected_pid: Option<u32>,
+    current: bool,
+) -> Result<Option<Value>, RpcError> {
     process::check_endpoint(&config.socket_path)?;
     let mut stream = match UnixStream::connect(&config.socket_path) {
         Ok(stream) => stream,
@@ -287,7 +291,41 @@ fn existing(config: &Config, expected_pid: Option<u32>) -> Result<Option<Value>,
             "Existing server has another protocol or state directory",
         ));
     }
+    protocol::check_revision(&value["result"], !current)?;
     Ok(Some(value["result"].clone()))
+}
+
+pub(crate) fn released(config: &Config) -> Result<std::fs::File, RpcError> {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        if process::interrupted() {
+            return Err(RpcError::app("not_ready", "Server restart interrupted"));
+        }
+        match process::lock(&config.state_dir) {
+            Ok(lock) if !config.socket_path.exists() => return Ok(lock),
+            Ok(_) => {}
+            Err(error) if error.kind() == Some("conflict") => {}
+            Err(error) => return Err(error),
+        }
+        if Instant::now() >= deadline {
+            return Err(RpcError::app(
+                "not_ready",
+                "The old server did not release its storage and socket",
+            ));
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
+pub fn upgrade(config: &Config) -> Result<Value, RpcError> {
+    if existing(config, None, false)?.is_some() {
+        let mut client =
+            crate::client::Client::connect_for_upgrade(&config.socket_path, &config.state_dir)?;
+        client.request("server.shutdown", json!({}))?;
+        drop(client);
+        drop(released(config)?);
+    }
+    start(config)
 }
 
 pub fn start(config: &Config) -> Result<Value, RpcError> {
@@ -296,7 +334,7 @@ pub fn start(config: &Config) -> Result<Value, RpcError> {
 
 pub fn start_with_key(config: &Config, key: Option<&str>) -> Result<Value, RpcError> {
     let deadline = Instant::now() + Duration::from_secs(10);
-    if let Some(hello) = existing(config, key.map(|_| 0))?
+    if let Some(hello) = existing(config, key.map(|_| 0), true)?
         && hello["storage_ready"] == true
     {
         return Ok(hello);
@@ -336,6 +374,7 @@ pub fn start_with_key(config: &Config, key: Option<&str>) -> Result<Value, RpcEr
         let connected = existing(
             config,
             key.map(|_| child.as_ref().map_or(0, |child| child.id())),
+            true,
         )?;
         if let Some(hello) = &connected
             && hello["storage_ready"] == true

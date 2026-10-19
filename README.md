@@ -93,16 +93,24 @@ command prefix. Commands are local controls; they are not submitted as tasks.
 | `\stop` | Stop this chat's active task. |
 | `\history` | Load older messages. |
 | `\status` | Show local model and credential readiness. |
+| `\upgrade` | Replace an idle older server and reconnect. |
 | `\help` | Show chat commands. |
 
-The source file stays above the conversation and the three-line message box.
-You can switch agents or tabs, or hide the panels. Each chat keeps its draft.
-Each tab restores its selected chat. The tree follows that tab's directory.
+The conversation uses the normal file area. The three-line message box is below
+it. Files and chats are normal listed buffers: use `:buffers`, `:buffer NAME`,
+`:bnext`, or **Ctrl-^** to switch between them. From the message box, press Escape
+before a normal command. Ctrl-^ also works directly in the message box.
+The message box closes when you select a file and returns when you select a chat.
+Opening a chat preserves unsaved file text. Normal Neovim write checks still
+apply when you switch away from a modified file.
+
+Each chat keeps its own draft. Each tab restores its selected chat. The tree
+follows that tab's directory.
 During startup, the first action waits for chat creation. Later text stays in
 the box. It cannot replace that action or become a task in another chat.
 
 The conversation shows streamed replies, tool activity, and task state. At
-narrow widths, a terminal resize hides the tree to leave room for the source.
+narrow widths, a terminal resize hides the tree to leave room for the conversation.
 Press `;` to show it again. Normal Neovim window commands still work.
 
 The interface uses the saved [Pi TUI guidance](dev-docs/interfaces/pi-tui/overview.md)
@@ -144,6 +152,14 @@ tree starts or connects to the server. Loading the plugin alone starts no work.
 Use `harness nvim --config PATH` for another server configuration. The launcher
 also accepts `--socket PATH`. Put a custom `state_dir` in the configuration file.
 The source script accepts the same options: `./harness.sh --config PATH`.
+
+After an update, an older running server can use an incompatible chat interface.
+Harness detects this before it sends a task. Run `harness upgrade`, or use
+`:Harness upgrade` in Neovim. The chat command `\upgrade` also works. Upgrade
+keeps stored chats and unsent editor drafts. It replaces the server only when all
+work is finished. It waits for the old worker to release storage before startup.
+An active task, a different state directory, or a newer unknown interface blocks
+the upgrade. After replacement, use `\login` if a provider key is needed.
 
 ## Use from a script
 
@@ -226,10 +242,11 @@ Loading the plugin starts no process and makes no provider request.
 
 | Command | Action |
 | --- | --- |
-| `:Harness` | Open the transcript and prompt; start or reconnect. |
+| `:Harness` | Open the chat in the file area; start or reconnect. |
 | `:Harness sidebar` | Show or hide the agent tree. |
 | `:Harness new` | Open a new chat in the source window's directory. |
 | `:Harness login` or `:Harness setup` | Open the private credential terminal. |
+| `:Harness upgrade` | Replace an idle older server and reconnect. |
 | `:Harness sessions` | Select a stored session. |
 | `:Harness attach ID` | Attach to a specified session. |
 | `:Harness send` | Send the prompt and explicit context snapshots. |
@@ -240,9 +257,10 @@ Loading the plugin starts no process and makes no provider request.
 | `:'<,'>Harness context selection` | Attach the complete selected lines. |
 | `:HarnessQuit` | Request normal editor exit. |
 
-The transcript is read-only. The prompt is editable. Hide either panel with
-normal window commands. The draft remains available. The launcher enables the
-normal-mode `;` mapping. A direct plugin load adds it only when you call
+Chat history is read-only. Each chat is a listed `harness://chat/ID` buffer.
+Its editable input is an unlisted `harness://prompt/ID` buffer. Use normal buffer
+commands to switch between chats and files. The draft remains available.
+The launcher enables the normal-mode `;` mapping. A direct plugin load adds it only when you call
 `enable_sidebar()`. File context must be inside the session workspace. Context
 does not save the buffer. Pi tools read and change server files. Normal Neovim
 file-change checks apply to clean buffers.
@@ -265,6 +283,9 @@ They never imply a stop. Reconnect with `:Harness` to get the actual stored stat
 The socket uses a JSON-RPC 2.0 subset. Each UTF-8 JSON object ends with LF.
 Call `system.hello` with `api_version: 1` before other operations. Request IDs
 are connection-local strings; `request_id` is the durable input identifier.
+The current reply includes `api_revision: 2`. Clients check this revision before
+they use chat settings or directory filters. The explicit upgrade command also
+accepts the known older revision for identity checks and idle shutdown only.
 Notifications are only for watches. Each `session.state` notification replaces
 the previous snapshot. A reconnect needs a new watch. There is no event replay.
 See [the shared fixtures](tests/fixtures/protocol.json) for exact record shapes.
@@ -407,12 +428,12 @@ paid provider access. The faux provider controls responses and actual coding
 tools execute local test commands.
 
 The complete release gate passed on **2026-10-19** with the final source files. It passed
-formatting, Clippy with warnings denied, 49 Rust tests, the release build, four
+formatting, Clippy with warnings denied, 54 Rust tests, the release build, four
 adapter syntax checks, and 61 Node tests. The Node tests include 48 adapter tests,
 three actual server script tests, and ten actual server recovery tests. Independent
 Node test files run concurrently with separate temporary directories and sockets.
 
-Neovim passed both headless suites, **59 actual terminal cases with the Rust
+Neovim passed both headless suites, **60 actual terminal cases with the Rust
 server and Pi faux provider**, and 43 terminal cases with controlled protocol
 fixtures. The actual tests cover each normal exit command, exact answers, write
 failures, hidden modified buffers, multiple sessions, another client, completion
@@ -428,10 +449,17 @@ selection, folding, targeted stop, and separate drafts and source windows in two
 tabs. A real Bash tool creates a child through the Rust command client; Enter
 then opens that child's separate conversation.
 
+The file and chat tests use the normal content window. They check `:buffer`,
+`:bnext`, and Ctrl-^ from chat history and input, separate drafts, modified files
+with `nohidden`, preserved file settings, multiple tabs, and focus during streamed
+output. The screen recording also shows these file and chat transitions.
+
 Headless tests delay startup and receipts. They verify that the first action
 keeps its text and target, later text stays in the draft, empty Enter does not
 block commands, and queued model changes cannot be overtaken by a task. They also
 check native command completion, private key entry callbacks, and reconnection.
+They check a queued settings command after switching during creation, and clear
+upgrade errors when autostart is disabled.
 Eleven Rust setup tests use actual terminal devices and Pi. They check hidden
 key input, restored terminal flags, private writes, retained settings, credential
 precedence, write failures, and rejection while work is active.
@@ -447,11 +475,28 @@ settings through process kills, metadata watch updates, inherited settings,
 directory-scoped cursors, response capacity, and nested child recovery. A child
 continues when its parent is stopped. No test makes a paid model request.
 
+An additional [prior-server test](tests/evidence/legacy-upgrade.json) reproduces
+`Unknown parameter field` when Enter uses the previous chat client with an old
+server.
+The fixed client detects the mismatch before admission. The actual terminal test
+then checks refusal during active work, explicit idle upgrade, retained history
+and draft, and one successful Enter submission with its final answer. Unknown
+newer interfaces are rejected without shutdown. Rust tests also check state
+identity and storage ownership release during upgrade.
+
+The [installed-server check](tests/evidence/live-runtime.json) records replacement
+of the old local server with the checked release binary. The state directory is
+unchanged. The server and Pi worker report ready, and the chat configuration
+request succeeds. This check creates no chat and makes no model request. The
+default server has no model selected; use `\model` in a new chat.
+
 The clean-install check built and installed into a new temporary prefix. It used
 the complete locked npm tree with install scripts disabled. The installed Rust
 binary, installed Pi worker, and installed Neovim runtime passed the smoke test.
 The installed `harness nvim` command loaded the normal user configuration without
 manual plugin setup. Pressing `;` opened the tree; Enter opened the selected agent.
+Enter then sent a task and displayed its final answer. Normal buffer commands
+switched between the installed chat and a file in the same content window.
 A separate first-use source check started with no npm packages or build output.
 The script installed the locked packages and used its own Rust toolchain, even
 when the caller's project selected another compiler and target. Actual Neovim

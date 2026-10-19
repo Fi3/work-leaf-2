@@ -9,7 +9,7 @@ import { Harness, createRegistry, defineDoc, configure, LiveDoc } from '@earendi
 import { CodingTools } from '@earendil-works/pi-durable/tools';
 import { NodeExecutionEnv } from '@earendil-works/pi-durable/env/node';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
-import { appError, invalid, limits, validate, RpcError } from './protocol.mjs';
+import { apiRevision, appError, invalid, limits, validate, RpcError } from './protocol.mjs';
 import { chunk, cursor, entryPreview, entryText, fitPage, outcome, parseCursor, snapshot } from './view.mjs';
 
 export const SessionDoc = defineDoc({ kind: 'app.session', version: 1, scope: 'conversation', history: 'latest', fork: 'initial', initial: () => ({}) });
@@ -126,7 +126,7 @@ class Application {
     if (!model || !(await this.models.getAuth(model))) throw appError('not_ready', 'The provider or model is not configured');
   }
   hello() {
-    return { api_version: 1, node_version: process.version, artifacts: { durable: '1.3.0', ai: '1.3.0', chord: '1.3.0' }, ready: !this.blocked && !this.closing, scheduling_enabled: !this.blocked && !this.closing };
+    return { api_version: 1, api_revision: apiRevision, node_version: process.version, artifacts: { durable: '1.3.0', ai: '1.3.0', chord: '1.3.0' }, ready: !this.blocked && !this.closing, scheduling_enabled: !this.blocked && !this.closing };
   }
   async configuration(params) {
     const current = params.session_id ? this.session(params.session_id).metadata : this.config;

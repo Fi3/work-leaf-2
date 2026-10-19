@@ -551,7 +551,7 @@ fn failed_staging_write_keeps_configuration_and_server() {
 }
 
 #[test]
-fn active_work_rejects_setup_and_auth_without_changing_file_or_instance() {
+fn active_work_rejects_setup_auth_and_upgrade_without_changing_file_or_instance() {
     let fixture = Fixture::new();
     let original =
         fixture.write(&json!({"provider":"faux", "model":"test", "instructions":"Preserve me"}));
@@ -600,6 +600,21 @@ fn active_work_rejects_setup_and_auth_without_changing_file_or_instance() {
             receipt["submission_id"]
         );
     }
+    let upgrade = fixture.command(&["upgrade"]).output().unwrap();
+    assert_eq!(upgrade.status.code(), Some(6));
+    assert!(
+        String::from_utf8(upgrade.stderr)
+            .unwrap()
+            .contains("Active work prevents shutdown")
+    );
+    assert_eq!(fs::read(&fixture.path).unwrap(), original);
+    assert_eq!(fixture.peer(), Some(pid));
+    assert_eq!(
+        client
+            .request("session.get", json!({"session_id":"running"}))
+            .unwrap()["snapshot"]["active_submission_id"],
+        receipt["submission_id"]
+    );
     client
         .request(
             "run.stop",

@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::io::{self, BufRead};
 
 pub const API_VERSION: u64 = 1;
+pub const API_REVISION: u64 = 2;
 pub const MAX_RECORD: usize = 4 * 1024 * 1024;
 pub const MAX_INPUT: usize = 1024 * 1024;
 pub const MAX_SNAPSHOT: usize = 512 * 1024;
@@ -13,6 +14,24 @@ pub const MAX_PENDING: usize = 32;
 pub const MAX_WATCHES: usize = 8;
 pub const MAX_ACTIVE: usize = 4;
 pub const MAX_OUTPUT: usize = MAX_RECORD;
+
+pub fn check_revision(hello: &Value, allow_legacy: bool) -> Result<(), RpcError> {
+    if hello["api_revision"].as_u64() == Some(API_REVISION) {
+        return Ok(());
+    }
+    let legacy = hello.get("api_revision").is_none() || hello["api_revision"].as_u64() == Some(1);
+    if legacy && allow_legacy {
+        return Ok(());
+    }
+    Err(RpcError::app(
+        "incompatible_version",
+        if legacy {
+            "Server uses an older chat interface. Run harness upgrade with the same configuration after active work finishes"
+        } else {
+            "Server uses an unsupported chat interface. Update Harness to a compatible version before connecting"
+        },
+    ))
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]

@@ -1,0 +1,62 @@
+{
+  "verified_at": "2026-10-19T15:08:14.237496+00:00",
+  "runtimes": {
+    "neovim": "NVIM v0.12.6",
+    "node": "v26.10.0",
+    "rust": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "python": "Python 3.14.7",
+    "pi": {
+      "pi-durable": "1.3.0",
+      "pi-ai": "1.3.0",
+      "chord": "1.3.0"
+    }
+  },
+  "mode": "Actual Neovim terminal, prior and current Rust executables, actual Pi faux provider",
+  "command": "python3 tests/nvim/real.py --group legacy --legacy-root PRIOR_SOURCE_TREE",
+  "prior_source_commit": "2a4843978ce419c956946fbf245c23f4d9501a74",
+  "before_fix_client_commit": "aff43dc381551d0a02d1a56f60ed8086d2964923",
+  "prior_build": "git archive REVISION into a new temporary tree; locked cargo build; shared unchanged locked node_modules",
+  "temporary_state_only": true,
+  "provider_credentials_supplied": false,
+  "passed": 1,
+  "baseline": {
+    "reported_error_reproduced": true,
+    "prior_commit": "2a48439",
+    "current_commit": "aff43dc",
+    "draft": "il cane di dio\n",
+    "stored_entries": [],
+    "terminal": "nvim-terminal/legacy/prior-client-reproduces-enter-error.ansi.gz",
+    "terminal_bytes": 26610,
+    "terminal_sha256": "7dd154f276e82d1479acd5b87e05783efdaee4dc839ef5ba5042046bc2c73d64",
+    "server_binary_sha256": "030d9c1ac8e175f59349a3fa99c0e5a2af3d2226f0e603c5bb6cb5a98b500da0",
+    "client_binary_sha256": "edf141f02ee55bf3f20256c44a607483bd7d9a8ae743cc89681074d1767f3b2b",
+    "server_adapter_sha256": "eafd2ba9d76e212280224e4b070f03a74743788f73915226666f0a16250e5e48",
+    "client_adapter_sha256": "c5795c753f7170777e394976d20421c23a4c445809e77ec5fbd5d2fe7283dcbc"
+  },
+  "upgrade": {
+    "prior_api_revision": null,
+    "current_api_revision": 2,
+    "prior_binary_sha256": "030d9c1ac8e175f59349a3fa99c0e5a2af3d2226f0e603c5bb6cb5a98b500da0",
+    "current_binary_sha256": "af0983792e9a0e9b23bfd9e1e38356c3047d4fcf120165bde4f4ca6fc4abb5b2",
+    "prior_adapter_sha256": "eafd2ba9d76e212280224e4b070f03a74743788f73915226666f0a16250e5e48",
+    "current_adapter_sha256": "6c499e572b7d51358c9fe55de29953dab399b73e22e39b140b2110ad5fe7376c",
+    "busy_upgrade_preserved_instance_and_submission": true,
+    "state_directory_preserved": true,
+    "prior_history_and_exact_outcome_preserved": true,
+    "draft_preserved": true,
+    "enter_submitted_once": true,
+    "terminal": "nvim-terminal/legacy/explicit-upgrade-preserves-history-and-enter.ansi.gz",
+    "terminal_bytes": 61007,
+    "terminal_sha256": "95fd7fd83009e77304f374a7a43f894d0eaac6d13e91b0f3ae8b524b7763c9ed"
+  },
+  "source_sha256": {
+    "lua/harness/init.lua": "1db1881216e0c9859ab348e69b1f5a162d660ed2e598fcdd974abd5cc4428c34",
+    "lua/harness/transport.lua": "a57027006fc9de53c0b6a40a52fb1ca3033d9cdb2743d5ac64fa1b6340258820",
+    "lua/harness/view.lua": "54f46a086c18335be25a8c9a008d905b8c72ffb1a984cebec789711890c69fed",
+    "adapter/pi.mjs": "6c499e572b7d51358c9fe55de29953dab399b73e22e39b140b2110ad5fe7376c",
+    "adapter/protocol.mjs": "f8b56cc27fde859db5d2361a34777d7cbebc66e061ad86e8992026f29e860478",
+    "tests/nvim/real.py": "b762f434677e1fe253aea95c6fdd15c589e553e740ca76560c8ac289bd39231f",
+    "tests/nvim/interactive.py": "a14c2bdd52241153b2051e679d5b0a73c655708e011c4338fd07fa6a6417da4b",
+    "target/debug/harness": "af0983792e9a0e9b23bfd9e1e38356c3047d4fcf120165bde4f4ca6fc4abb5b2"
+  }
+}
