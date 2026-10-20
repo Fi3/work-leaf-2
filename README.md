@@ -55,6 +55,12 @@ Pi stores account tokens and API keys in the private application database. They
 remain available after a restart. Login does not replace the worker or stop
 existing work. API key entry makes no model request; it cannot prove that the
 provider accepts the key. Provider environment variables also remain available.
+Saved login credentials take precedence over the provider's environment variable.
+If a run fails, the chat shows the cause and a recovery action after your message.
+For a quota or credit error, check the provider's billing or use `\login` to
+connect another account. For an OpenAI account login, use `\login openai` and
+select **Sign in with ChatGPT**. Login does not resend a failed task. Send it again
+after you correct the account. Partial replies and unsent drafts remain available.
 The login menu contains the methods supplied by the pinned Pi release: 41 key
 or environment methods and nine account methods across 42 providers. The local
 demo is a separate choice and needs no login.
@@ -152,6 +158,20 @@ paid model request. It also shows OpenAI account login with synthetic provider
 replies, model selection, and normal NERDTree Enter, `s`, and `i` actions.
 See the [recording report](tests/evidence/harness-demo.json)
 for the action times, checks, and video hash.
+
+The [account recovery recording](tests/evidence/provider-recovery.mp4) shows the
+reported OpenAI failure, account login, a second task, streamed output, and a
+Bash tool result. It uses the actual OpenAI SDK with synthetic provider replies.
+It also checks typing after Enter, opening a file, and restoring the chat draft.
+Captions explain each action. The [report](tests/evidence/provider-recovery.json)
+identifies the test responses and records the checked source hashes.
+
+The separate [real provider recording](tests/evidence/real-provider-failure.mp4)
+uses the available OpenAI API key. The provider rejects it for billing or credits.
+The corrected interface shows that error and keeps the next draft. A successful
+real reply remains unverified until a working account is connected.
+The [real provider report](tests/evidence/real-provider-failure.json) records
+this limit explicitly.
 
 ## Install the command
 
@@ -537,17 +557,19 @@ tools execute local test commands.
 
 The complete release gate passed on **2026-10-20** with the final source files. It passed
 formatting, Clippy with warnings denied, 56 Rust tests, the release build, five
-adapter syntax checks, and 109 Node tests. The Node tests include 62 adapter tests,
-34 OAuth tests, three actual server script tests, and ten actual server recovery tests. Independent
+adapter syntax checks, and 127 Node tests. The Node tests include 65 adapter tests,
+34 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
+and ten actual server recovery tests. Independent
 Node test files run concurrently with separate temporary directories and sockets.
 
-Neovim passed three headless suites, **70 actual terminal cases with the Rust
-server and Pi faux provider**, and 43 terminal cases with controlled protocol
+Neovim passed three headless suites, **71 actual terminal cases with the Rust
+server and Pi**, and 43 terminal cases with controlled protocol
 fixtures. The actual tests cover each normal exit command, exact answers, write
 failures, hidden modified buffers, multiple sessions, another client, completion
 and new work during the prompt, connection failure, and Escape during a pending
 stop. They also cover streamed text, tool output, editor response, unsaved context,
 startup, retained drafts, duplicate retries, and forced-exit recovery.
+These tests use the faux provider or synthetic replies to the actual OpenAI SDK.
 
 The new interface checks start without a configuration file or key. They verify
 immediate chat creation, model/name/instruction commands, retained input when a
@@ -592,14 +614,27 @@ cancellation, token refresh, multiple accounts, and exclusion of secrets from
 public records. Actual Neovim login tests type `\login`, select the provider and
 method, then type into the terminal immediately. They check cancellation, retry,
 browser callback completion without Enter, retained drafts, and unchanged chats.
-No test needs a paid model request.
+The OpenAI tests exercise the actual SDK and Pi through controlled HTTP responses
+and streamed events. They check API keys, ChatGPT account tokens, Unicode,
+Bash execution, the next request with its tool result, retries, cancellation,
+and stored outcomes after restart. Failure cases include login, access, models,
+quota, billing, request format, network loss, and incomplete streams.
+The terminal recovery case sends with Enter, connects a ChatGPT account, and
+sends with Ctrl-S. It checks every character of the next draft after each send.
+Recorded requests prove that the saved account replaces the environment key.
+All these checks reject unexpected network requests and use synthetic credentials.
+
+The separate real-provider screen check reproduced the reported billing or credit
+failure with the available key. It verified the visible error, complete next
+draft, and native file/chat switching. It did not obtain a successful real reply.
+This account restriction remains outside the passing deterministic release gate.
 
 Regression tests cover the `admission` session name, unchanged caller output
 flags, default configuration state identity, late receipts after session changes,
 and retained history across new snapshots. New backend tests cover atomic chat
 settings through process kills, metadata watch updates, inherited settings,
 directory-scoped cursors, response capacity, and nested child recovery. A child
-continues when its parent is stopped. No test makes a paid model request.
+continues when its parent is stopped. These regression tests make no paid model request.
 
 An additional [prior-server test](tests/evidence/legacy-upgrade.json) reproduces
 `Unknown parameter field` when Enter uses the previous chat client with an old
@@ -611,10 +646,11 @@ newer interfaces are rejected without shutdown. Rust tests also check state
 identity and storage ownership release during upgrade.
 
 The [installed-runtime check](tests/evidence/live-runtime.json) verifies the local
-release binary, worker, and editor files. The idle revision 2 server was upgraded
-to revision 3. Its state directory, two saved chats, metadata, and recent history
-were preserved. The server and Pi worker report ready. This check creates no chat
-and makes no model request. Reopen Neovim to load the updated editor files.
+release binary, worker, and editor files. The idle server was restarted with its
+original environment. Its state directory, saved chats, metadata, and recent
+entry identifiers were preserved. Empty failed answers now display safe errors.
+The server and Pi worker report ready. This check creates no chat and makes no
+model request. Reopen Neovim to load the updated editor files.
 
 The clean-install check built and installed into a new temporary prefix. It used
 the complete locked npm tree with install scripts disabled. The installed Rust

@@ -30,7 +30,7 @@ function M.new(options, actions)
     vim.bo[buf].swapfile, vim.bo[buf].modifiable = false, editable
     vim.bo[buf].filetype = 'harness'
     if editable then
-      local function send() vim.cmd('stopinsert'); vim.cmd('Harness send') end
+      local function send() vim.cmd('Harness send') end
       local function keys(value) vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(value, true, false, true), 'n', false) end
       vim.keymap.set({ 'n', 'i' }, '<C-s>', send, { buffer = buf, silent = true, desc = 'Send message' })
       vim.keymap.set({ 'n', 'i' }, '<CR>', function()
@@ -327,11 +327,14 @@ function M.new(options, actions)
     local function text(value)
       vim.list_extend(lines, vim.split(value or '', '\n', { plain = true }))
     end
-    local function entry(item)
+    local function entry(item, label)
+      if item.kind == 'assistant' and not item.truncated and not item.text:find('%S') then return end
+      if item.kind == 'error' and snapshot and snapshot.error ~= vim.NIL
+        and item == snapshot.entries[#snapshot.entries] and item.text == snapshot.error.message then return end
       lines[#lines + 1] = ''
-      local labels = { user = 'You', assistant = 'Agent', tool = 'Tool result', compaction = 'Earlier conversation summary', system = 'Notice' }
-      lines[#lines + 1] = '[' .. item.kind .. '] ' .. (labels[item.kind] or item.kind)
-      highlights[#highlights + 1] = { row = #lines, group = item.kind == 'user' and 'Title' or 'Special' }
+      local labels = { user = 'You', assistant = 'Agent', tool = 'Tool result', compaction = 'Earlier conversation summary', system = 'Notice', error = 'Run failed' }
+      lines[#lines + 1] = '[' .. item.kind .. '] ' .. (label or labels[item.kind] or item.kind)
+      highlights[#highlights + 1] = { row = #lines, group = item.kind == 'error' and 'DiagnosticError' or item.kind == 'user' and 'Title' or 'Special' }
       text(item.text)
       if item.truncated then lines[#lines + 1] = '[Text truncated. Use the command client to read the complete entry.]' end
     end
@@ -343,7 +346,6 @@ function M.new(options, actions)
       elseif #snapshot.entries == 0 then
         lines[#lines + 1] = 'Choose a model: \\model · Connect an account: \\login'
       end
-      if snapshot.error ~= vim.NIL then text(snapshot.error.message) end
       local seen = {}
       for _, item in ipairs(snapshot.entries) do seen[item.entry_id] = true end
       for _, item in ipairs(history or {}) do if not seen[item.entry_id] then entry(item) end end
@@ -377,6 +379,10 @@ function M.new(options, actions)
       end
     end
     if notice and notice ~= '' then lines[#lines + 1] = ''; text(notice) end
+    if snapshot and snapshot.error ~= vim.NIL then
+      entry({ kind = 'error', text = snapshot.error.message },
+        snapshot.error.kind == 'provider_error' and 'Run failed' or 'Cannot run')
+    end
     local positions, old_count = {}, vim.api.nvim_buf_line_count(self.transcript)
     for _, win in ipairs(vim.fn.win_findbuf(self.transcript)) do
       positions[win] = {

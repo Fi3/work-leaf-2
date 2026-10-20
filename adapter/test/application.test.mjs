@@ -404,6 +404,53 @@ test('provider failure appears in the public snapshot without provider diagnosti
   assert.equal(view.error.kind,'provider_error'); assert.ok(!JSON.stringify(view).includes('SECRET_PROVIDER_DETAIL'));
 });
 
+test('failed entries and exact stored outcomes keep safe diagnostics across later runs and reopen', async t => {
+  const secret = 'SECRET_PROVIDER_DETAIL';
+  const { app, call, create, config } = await setup(t, [
+    fauxAssistantMessage('', { stopReason: 'error', errorMessage: `OpenAI API error (401): ${secret}` }),
+    fauxAssistantMessage(' \n', { stopReason: 'error', errorMessage: `OpenAI API error (404): ${secret}` }),
+    fauxAssistantMessage('Partial answer λ', { stopReason: 'error', errorMessage: `OpenAI API error (403): ${secret}` }),
+    fauxAssistantMessage('Complete answer'),
+  ]);
+  await create('work'); const outcomes = [];
+  for (const request_id of ['login', 'model', 'partial', 'success']) {
+    await call('input.submit', input('work', request_id));
+    outcomes.push(await call('submission.wait', { session_id: 'work', request_id, timeout_ms: 3000 }));
+    const view = (await call('session.get', { session_id: 'work' })).snapshot;
+    const entry = view.entries.at(-1);
+    if (request_id === 'login' || request_id === 'model') {
+      assert.equal(entry.kind, 'error'); assert.equal(entry.text, view.error.message);
+      assert.equal(entry.text, outcomes.at(-1).message);
+      assert.deepEqual(await call('entry.read', { session_id: 'work', entry_id: entry.entry_id }),
+        { text: entry.text, next_offset: Buffer.byteLength(entry.text), end: true });
+    } else if (request_id === 'partial') {
+      assert.equal(entry.kind, 'assistant'); assert.equal(entry.text, 'Partial answer λ');
+      assert.equal(view.assistant.text, 'Partial answer λ'); assert.match(view.error.message, /denied access/);
+    } else {
+      assert.equal(view.error, null); assert.equal(entry.text, 'Complete answer');
+    }
+    assert.doesNotMatch(JSON.stringify(view), new RegExp(secret));
+  }
+  assert.match(outcomes[0].message, /\\login/); assert.match(outcomes[1].message, /\\model/);
+  const history = await call('transcript.list', { session_id: 'work' });
+  assert.equal(history.items.filter(entry => entry.kind === 'error').length, 2);
+  assert.doesNotMatch(JSON.stringify(history), new RegExp(secret));
+  await app.close();
+  const reopened = await openApplication(config); t.after(() => reopened.close());
+  const run = (method, params) => reopened.dispatch(method, params, 'reopened');
+  assert.deepEqual(await run('transcript.list', { session_id: 'work' }), history);
+  for (const [index, request_id] of ['login', 'model', 'partial', 'success'].entries()) {
+    const params = { session_id: 'work', request_id };
+    assert.deepEqual(await run('submission.get', params), outcomes[index]);
+    assert.deepEqual(await run('submission.wait', params), outcomes[index]);
+    assert.deepEqual(await run('input.submit', input('work', request_id, 'Must not run')), outcomes[index]);
+    assert.deepEqual(await run('run.stop', { session_id: 'work', submission_id: outcomes[index].submission_id }), outcomes[index]);
+  }
+  for (const entry of history.items.filter(entry => entry.kind === 'error')) {
+    assert.equal((await run('entry.read', { session_id: 'work', entry_id: entry.entry_id })).text, entry.text);
+  }
+});
+
 test('large metadata and escaped transcript pages remain bounded and retain all items', async t => {
   const {app,call,create} = await setup(t); app.config.instructions='x'.repeat(500000);
   for(let index=0;index<10;index++) await create(`s${index}`);

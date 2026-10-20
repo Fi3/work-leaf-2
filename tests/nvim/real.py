@@ -45,7 +45,7 @@ class Rpc:
         self.socket.close()
 
 class RealEditor(Editor):
-    def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None, first_run=False, oauth_mock=False):
+    def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None, first_run=False, oauth_mock=False, generation=None):
         self.name = name
         self.root = EVIDENCE / name
         self.root.mkdir()
@@ -62,11 +62,18 @@ class RealEditor(Editor):
         response_file = self.root / 'responses.json'
         response_file.write_text(json.dumps(responses or [message or MESSAGE] * 12))
         self.env = dict(os.environ, TERM='xterm-256color', HARNESS_REPO=str(REPO), HARNESS_EXECUTABLE=str(BINARY), HARNESS_WORKSPACE=str(self.root), HARNESS_CONFIG=str(self.config), HARNESS_SOCKET=str(self.socket_path), HARNESS_FAUX_RESPONSES=str(response_file), HARNESS_FAUX_TOKENS_PER_SECOND=str(rate))
-        if oauth_mock:
+        if oauth_mock or generation is not None:
             self.env = {name:value for name,value in self.env.items() if name.startswith('HARNESS_') or name in ('PATH','TERM','LANG','LC_ALL','CARGO_HOME','RUSTUP_HOME')}
             self.env['HOME'] = str(self.root / 'home')
             self.env.update(NODE_OPTIONS='--import=' + str(REPO / 'tests/fixtures/oauth.mjs'),
                             HARNESS_TEST_OAUTH_RECORD=str(self.root / 'oauth-requests.jsonl'))
+        if generation is not None:
+            control = self.root / 'generation.json'
+            control.write_text(json.dumps({'responses': generation}))
+            self.env.update(NODE_OPTIONS='--import=' + str(REPO / 'tests/fixtures/generation.mjs'),
+                            HARNESS_TEST_GENERATION_RECORD=str(self.root / 'generation-requests.jsonl'),
+                            HARNESS_TEST_GENERATION_CONTROL=str(control),
+                            OPENAI_API_KEY='sk-generation-test-NOT-FOR-OUTPUT')
         if first_run:
             self.env.pop('ANTHROPIC_API_KEY', None)
             self.env.update(HOME=str(self.root / 'home'), XDG_RUNTIME_DIR=str(self.root / 'runtime'),
@@ -505,6 +512,89 @@ def login_case():
     editor.finish()
 
 
+def provider_generation_case():
+    editor = RealEditor('openai-generation-login-and-retry', active=False, generation=[
+        {'kind': 'failed', 'message': 'The API organization has no credit. Check billing.'},
+        {'kind': 'tool'}, {'kind': 'answer', 'delay_ms': 80},
+    ])
+    editor.observe('true')
+    editor.keys('i\\model openai/gpt-6-sol\r')
+    editor.wait(lambda: editor.snapshot()['session']['model']=='gpt-6-sol', 'select the reported OpenAI model')
+    assert editor.observe('vim.fn.mode(1)')=='i', 'Model selection must leave the prompt ready for typing'
+    instance = editor.rpc.request('system.hello', {'api_version': 1})['instance_id']
+    config = editor.config.read_bytes()
+    def draft():
+        return editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')
+    def transcript():
+        return '\n'.join(line for window in editor.windows() if window['name']=='harness://chat/work' for line in window['lines'])
+    def terminal_text():
+        return '\n'.join(line for window in editor.windows() if window['name']=='harness://setup' for line in window['lines'])
+
+    editor.keys('Run the provider test.\r')
+    assert editor.observe('vim.fn.mode(1)') == 'i', 'Enter must leave the prompt ready for the next draft'
+    editor.keys('Unsent draft stays here.')
+    editor.wait(lambda: editor.snapshot()['error'] is not None, 'actual OpenAI SDK reports the API credit failure')
+    editor.wait(lambda: '[error] Run failed' in transcript(), 'provider failure appears in the visible chat')
+    failed = editor.snapshot()
+    failure = failed['entries'][-1]
+    assert failed['error']['kind']=='provider_error'
+    assert 'quota or credit' in failure['text'] and 'usage and billing' in failure['text'] and '\\login' in failure['text']
+    assert failure['kind']=='error'
+    assert editor.rpc.request('entry.read', {'session_id':'work','entry_id':failure['entry_id']})['text']==failure['text']
+    assert transcript().count('[error] Run failed')==1 and '[assistant] Agent' not in transcript()
+    assert transcript().endswith(failure['text']), 'The current failure must appear after usage and notices'
+    assert draft()==['Unsent draft stays here.'], 'Typing after Enter must preserve every character'
+
+    editor.command('Harness login openai')
+    editor.wait(lambda: any(window['name']=='harness://select' for window in editor.windows()), 'OpenAI login methods')
+    choices = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
+    row = next(index for index,line in enumerate(choices,1) if 'Sign in with ChatGPT' in line)
+    editor.keys(str(row) + 'G\r')
+    editor.wait(lambda: 'code_challenge_method=S256' in terminal_text().replace('\n',''), 'actual Pi ChatGPT account login')
+    assert editor.observe('vim.fn.mode(1)')=='t', 'Account login must immediately accept terminal input'
+    joined = terminal_text().replace('\n','')
+    start = joined.index('https://auth.openai.com/api/accounts/authorize?')
+    end = joined.index('code_challenge_method=S256',start) + len('code_challenge_method=S256')
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(joined[start:end]).query)
+    callback = urllib.parse.urlsplit(query['redirect_uri'][0])
+    assert callback.scheme=='http' and callback.hostname in ('localhost','127.0.0.1')
+    parameters = urllib.parse.urlencode({'code':'test-code','state':query['state'][0],'client_id':'test-issued-client'})
+    with urllib.request.urlopen(query['redirect_uri'][0] + '?' + parameters, timeout=5) as response:
+        assert response.status==200
+    editor.wait(lambda: not any(window['name']=='harness://setup' for window in editor.windows()), 'account callback completes without Enter')
+    editor.wait(lambda: editor.observe('vim.fn.mode(1)')=='i', 'login returns to the same draft')
+    assert draft()==['Unsent draft stays here.']
+    assert editor.snapshot()['session']['model']=='gpt-6-sol'
+    assert editor.rpc.request('system.hello', {'api_version':1})['instance_id']==instance
+    assert editor.config.read_bytes()==config
+    editor.keys('\x13')
+    assert editor.observe('vim.fn.mode(1)')=='i', 'Ctrl-S must also leave the prompt ready for the next draft'
+    editor.keys('Next draft stays intact.')
+    editor.wait(lambda: editor.snapshot()['active_submission_id'] is not None
+                and 'λ 世界' in editor.snapshot()['assistant']['text'], 'actual OpenAI SDK streams Unicode into the same chat')
+    editor.wait(lambda: editor.snapshot()['state']=='idle' and editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.',
+                'actual OpenAI SDK receives the tool result and completes the reply')
+    editor.wait(lambda: 'OpenAI streamed λ 世界 and completed the task.' in transcript(), 'successful reply is displayed')
+    current = editor.snapshot()
+    assert current['error'] is None
+    assert [entry['text'] for entry in current['entries'] if entry['kind']=='user']==['Run the provider test.','Unsent draft stays here.']
+    assert sum(entry['kind']=='error' and entry['entry_id']==failure['entry_id'] for entry in current['entries'])==1
+    assert transcript().count('[error] Run failed')==1
+    assert transcript().count('[assistant] Agent')==2, 'The tool request and final reply each have a nonempty assistant entry'
+    assert transcript().count('OpenAI streamed λ 世界 and completed the task.')==1
+    assert draft()==['Next draft stays intact.']
+    assert (editor.root/'provider-result.txt').read_text()=='provider tool ran\n'
+    requests = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
+    assert [request['credential_kind'] for request in requests]==['api_key','oauth','oauth'], 'Saved account credentials must replace the inherited API key on actual requests'
+    assert [request['response'] for request in requests]==['failed','tool','answer']
+    assert all(request['model']=='gpt-6-sol' for request in requests)
+    public = editor.output + json.dumps(current).encode()
+    for path in (editor.root/'state/logs').glob('*'): public += path.read_bytes()
+    for secret in (b'sk-generation-test-NOT-FOR-OUTPUT',b'generation-account-token-NOT-FOR-OUTPUT',b'oauth-test-secret-DO-NOT-PRINT'):
+        assert secret not in public, 'Provider errors, logs, and terminal output must not expose credentials'
+    editor.finish()
+
+
 def chat_write_case():
     editor = RealEditor('chat-native-write-commands', active=False)
     editor.observe('true')
@@ -679,6 +769,7 @@ def integration_cases():
     buffer_switch_case()
     model_picker_case()
     login_case()
+    provider_generation_case()
     chat_write_case()
     prompt_window_case()
     if os.environ.get('HARNESS_TEST_NERDTREE'):
@@ -1061,7 +1152,7 @@ def main():
     if ARGS.group == 'legacy' or ARGS.legacy_root:
         assert ARGS.legacy_root, '--group legacy requires --legacy-root'
         legacy_case(ARGS.legacy_root)
-    evidence = {'nvim': subprocess.check_output(['nvim', '--version'], text=True).splitlines()[0], 'mode': 'real terminal, actual Rust server, actual Pi faux provider', 'cases': RESULTS}
+    evidence = {'nvim': subprocess.check_output(['nvim', '--version'], text=True).splitlines()[0], 'mode': 'real terminal, actual Rust server and Pi; faux provider and fail-closed OpenAI SDK fixtures', 'cases': RESULTS}
     (EVIDENCE / 'results.json').write_text(json.dumps(evidence, indent=2))
     print(json.dumps({'passed': len(RESULTS), 'evidence': str(EVIDENCE / 'results.json')}))
 

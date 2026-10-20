@@ -85,7 +85,7 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/q-space.ansi.gz",
       "terminal_bytes": 25984,
-      "terminal_sha256": "a40dfffb6ed1d0949b588adb5c6252b6b078c2d05706c43e4309ea8a8cb3a11f"
+      "terminal_sha256": "8adfbd9a6b175c85451e98012375ac93601c915fb9f6fda5d7a16571a15bca77"
     },
     {
       "case": "q-yes",
@@ -218,7 +218,7 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/wq-no.ansi.gz",
       "terminal_bytes": 24801,
-      "terminal_sha256": "80511143244aa78352112b6270325368f9cddd4a31ee18249124e26624d30f0e"
+      "terminal_sha256": "8b65e8e20d96c6f17260643bc8f8d30a140c6680c5915d1b31c7e79db78f1045"
     },
     {
       "case": "wq-space",
@@ -246,7 +246,7 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/wq-yes-escape.ansi.gz",
       "terminal_bytes": 26304,
-      "terminal_sha256": "d2da4ad1d61c7de87bc42f423ba9e9555045751985954997b0cedf71c59f6e26"
+      "terminal_sha256": "a7351a99bd923afa5687d457ee154ef41f9d8264e8403b4f3e15010bfd511ca4"
     },
     {
       "case": "wqa-empty",

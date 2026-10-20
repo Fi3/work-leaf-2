@@ -1,0 +1,380 @@
+{
+  "recorded_at": "2026-10-20T10:24:03.182396+00:00",
+  "mode": "Actual X11 capture of Neovim in Kitty, with the Rust server and Pi adapter",
+  "provider": "openai",
+  "model": "gpt-6-sol",
+  "provider_replies": "Synthetic HTTP and SSE responses; actual pinned OpenAI SDK and Pi model loop",
+  "authentication": "Synthetic API key, then actual Pi ChatGPT login with synthetic tokens and a local browser callback",
+  "submitted_tasks": 2,
+  "external_provider_requests": false,
+  "input": "Normal terminal keys through Kitty; Neovim RPC observes state only",
+  "video": "provider-recovery.mp4",
+  "video_sha256": "0d7c0b2e2fa92a117a8705ca37bf838b28bc25b5774d320d6bdcab908677b593",
+  "duration_seconds": 25.6,
+  "frames_per_second": 15,
+  "screen_pixels": [
+    1280,
+    800
+  ],
+  "caption_bar_pixels": 96,
+  "audio": false,
+  "steps": [
+    {
+      "seconds": 0.0,
+      "text": "Actual Neovim, Rust and Pi. OpenAI responses are synthetic in this repeatable account recovery test."
+    },
+    {
+      "seconds": 3.2,
+      "text": "Create a chat. Select OpenAI gpt-6-sol with a chat command."
+    },
+    {
+      "seconds": 3.9,
+      "text": "Send a task with Enter, then write the next draft. Input must stay in Insert mode."
+    },
+    {
+      "seconds": 7.5,
+      "text": "The error gives an account action. Replace the unsent draft with \\login openai to connect another account."
+    },
+    {
+      "seconds": 10.0,
+      "text": "Sign in with ChatGPT uses Pi login. This test supplies synthetic tokens through the local callback."
+    },
+    {
+      "seconds": 13.4,
+      "text": "Send again. The saved account replaces the environment key. The real OpenAI SDK reads streamed tool calls."
+    },
+    {
+      "seconds": 18.0,
+      "text": "Write another draft. Open app.py through NERDTree with Enter. The message box closes in file mode."
+    },
+    {
+      "seconds": 21.2,
+      "text": "Ctrl-^ returns to the chat. The answer and draft remain. Close the idle editor with :qa."
+    }
+  ],
+  "checks": [
+    "New chat opens from the agent tree",
+    "Chat command selects the reported OpenAI model",
+    "Enter sends and leaves Insert mode active",
+    "Complete next draft is retained",
+    "Billing or credit failure has a visible recovery action and no empty assistant answer",
+    "Native file opening hides the prompt",
+    "Ctrl-^ restores the conversation and its draft",
+    "Normal qa closes the idle editor",
+    "Native ChatGPT login completes without an extra Enter",
+    "Saved account replaces the inherited API key on both SDK requests",
+    "Bash writes the expected local file and its result reaches the next model request",
+    "Streamed Unicode and the final answer appear in the same chat",
+    "The older failure remains in history without a false current failure"
+  ],
+  "cleanup": "Separate temporary workspace, state, configuration and HOME; server, terminal and Xvfb stopped; user chats untouched",
+  "result": "Account switch, streamed answer and actual Bash tool completed",
+  "provider_requests": [
+    {
+      "model": "gpt-6-sol",
+      "stream": true,
+      "credential_kind": "api_key",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "bash"
+      ],
+      "input_items": 2,
+      "response": "failed"
+    },
+    {
+      "model": "gpt-6-sol",
+      "stream": true,
+      "credential_kind": "oauth",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "bash"
+      ],
+      "input_items": 3,
+      "response": "tool"
+    },
+    {
+      "model": "gpt-6-sol",
+      "stream": true,
+      "credential_kind": "oauth",
+      "tools": [
+        "read",
+        "write",
+        "edit",
+        "bash"
+      ],
+      "input_items": 5,
+      "response": "answer"
+    }
+  ],
+  "source_sha256": {
+    "src/application.rs": "a767179cff42e61db0c0129fd3da04341421f72c7511a64f8b10050dc7aa9b99",
+    "src/cli.rs": "2c40c5a580d43904437a6085d742999fd19ef0a9ca299dc4b40bbfbd8735b785",
+    "src/client.rs": "79eb0e12d2338c52c8a56970c3fef06496b631d42b9b8168e08cf9c1b94d4103",
+    "src/config.rs": "804b9928b001e61aafe718342b0382da26bf890d838249489c0ea5a1d987c4e4",
+    "src/editor.rs": "c81ceb4d7dc462b4897d95eabb86c40c7fcec1a899bb2ef6112ec9d0d547d5ad",
+    "src/lib.rs": "671a36164ded2fc2c3e027faae1636c879ba7db4c56d16cd8ee4fbf69f25031f",
+    "src/main.rs": "316b18972c30f3a6a92d6ae1f309e5019efca6369fed83dd5aa23a5fe18fe856",
+    "src/process.rs": "f3f831fff448057a6d0803e492ba5a73ef6bc3ac83e7d60fc311c64a601b4447",
+    "src/protocol.rs": "8c7440e81235e4536dab2cfb1e4701a8c9892e8b8fb7da227b6e6f5ef2141cbd",
+    "src/server.rs": "f54bc5d83df0de34e6442528cb80b1860b167dcc004a85033d6deffcc7cf0f57",
+    "src/setup.rs": "f2a35f5d578bc4170ecf6d3bc271413fa301de17a84fb9c449a22be9fc1b7c18",
+    "src/worker.rs": "9a565790fb9aa2fcd0ed1c21d1955b68a2b6e29d23b3a57f5a691a524a8045ab",
+    "adapter/auth.mjs": "5abf85eab88b1b0163e38086a5bb9432873f7d9a13b30a7da3dbc77f1d304136",
+    "adapter/pi.mjs": "bc7d9f2a20ead27a9319a227f5490111895d977832b27ddcb25aa66bfcf9b366",
+    "adapter/protocol.mjs": "6141e4cbd38873b9b2bfb86a65a93d7e0d154f8f6cc6647bb1bbf3f5278970d8",
+    "adapter/view.mjs": "d6f2b1d0dc90132d07f84ac9571cce56be9079dba00659cebdabb7fe5b0f2870",
+    "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+    "lua/harness/commands.lua": "7db758e9918811784a8efbd88e0ba6d046bb5ad7c2599bff4ed03900bbb39967",
+    "lua/harness/context.lua": "1e4493139655687c8ed827223806ad494c83c284b307f9e8c6bb3d178a5dcd5d",
+    "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
+    "lua/harness/init.lua": "e1b86eff0d6e0496631f25652d9a6ce642f54789f1c8ccc4346fe495cb1102bf",
+    "lua/harness/select.lua": "3a5a6d77786aae27d1a334ee096069e5ff1f6b0fcb059cd8b1676918d5feaee6",
+    "lua/harness/setup.lua": "14bc79db56e4d7876834da26fc70df96b6443a2577cbba409208234704bcce2d",
+    "lua/harness/sidebar.lua": "e17e2e03cb4c72efc34023528c6b82770c8750655ae359c16d515f8f771f2e40",
+    "lua/harness/transport.lua": "90d9e13d5601bb429a9805e5401948bc0eb08ccbd6586bf2de8d2c1cbca0fb67",
+    "lua/harness/view.lua": "337c5d77982b8a06afb9c0aff8ead3fbcdf86ff4d3ddc4c7ea5b9f5d9edc5fc5",
+    "plugin/harness.lua": "966ecd73ee630914f9cc5c31c5334fac8542adfa875220e84b9aeb2eea07ec7e"
+  },
+  "binary_sha256": "c40829cdc36536b710cea294032c68463f516c227f5a8a7768cbd4c0132c8214",
+  "frames": {
+    "01-configured": {
+      "sha256": "7978544b44c422abe956ffb5eb06af5261c7c04a5ae6ccda8dfeced47c7d6d39",
+      "windows": [
+        {
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "id": 1002,
+          "col": 0,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "row": 0,
+          "width": 95,
+          "height": 30,
+          "name": "harness://chat/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1000,
+          "col": 33,
+          "current": false,
+          "line_count": 6
+        },
+        {
+          "row": 31,
+          "width": 95,
+          "height": 3,
+          "name": "harness://prompt/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1003,
+          "col": 33,
+          "current": true,
+          "line_count": 1
+        }
+      ]
+    },
+    "02-safe-error": {
+      "sha256": "b40cf33a2bb6c1ff49eccb668e6380b302171597ce17a8ad4f4e1a4a583a7939",
+      "windows": [
+        {
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "id": 1002,
+          "col": 0,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "row": 0,
+          "width": 95,
+          "height": 30,
+          "name": "harness://chat/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1000,
+          "col": 33,
+          "current": false,
+          "line_count": 10
+        },
+        {
+          "row": 31,
+          "width": 95,
+          "height": 3,
+          "name": "harness://prompt/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1003,
+          "col": 33,
+          "current": true,
+          "line_count": 1
+        }
+      ]
+    },
+    "03-methods": {
+      "sha256": "c31a16f0b17700c2c26130619c126aee1b5480ac6ba6ca8bc4c521916dbfc504",
+      "windows": [
+        {
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "id": 1002,
+          "col": 0,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "row": 0,
+          "width": 95,
+          "height": 30,
+          "name": "harness://chat/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1000,
+          "col": 33,
+          "current": false,
+          "line_count": 10
+        },
+        {
+          "row": 31,
+          "width": 95,
+          "height": 3,
+          "name": "harness://prompt/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1003,
+          "col": 33,
+          "current": false,
+          "line_count": 1
+        },
+        {
+          "row": 16,
+          "width": 40,
+          "height": 2,
+          "name": "harness://select",
+          "id": 1004,
+          "col": 43,
+          "current": true,
+          "line_count": 2
+        }
+      ]
+    },
+    "04-account-login": {
+      "sha256": "d037c8ddf70130d3c51c31555086ea28be653cbdd7deff919610d5896260c0c2",
+      "windows": [
+        {
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "id": 1002,
+          "col": 0,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "row": 0,
+          "width": 95,
+          "height": 30,
+          "name": "harness://chat/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1000,
+          "col": 33,
+          "current": false,
+          "line_count": 10
+        },
+        {
+          "row": 31,
+          "width": 95,
+          "height": 3,
+          "name": "harness://prompt/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1003,
+          "col": 33,
+          "current": false,
+          "line_count": 1
+        },
+        {
+          "row": 6,
+          "width": 76,
+          "height": 22,
+          "name": "harness://setup",
+          "id": 1005,
+          "col": 26,
+          "current": true,
+          "line_count": 22
+        }
+      ]
+    },
+    "05-answer": {
+      "sha256": "a0613fcde1b2d8e9e3cac5f0a5fb42d480917c9b650f949475228925bd765cfe",
+      "windows": [
+        {
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "id": 1002,
+          "col": 0,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "row": 0,
+          "width": 95,
+          "height": 30,
+          "name": "harness://chat/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1000,
+          "col": 33,
+          "current": false,
+          "line_count": 23
+        },
+        {
+          "row": 31,
+          "width": 95,
+          "height": 3,
+          "name": "harness://prompt/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1003,
+          "col": 33,
+          "current": true,
+          "line_count": 1
+        }
+      ]
+    },
+    "06-file": {
+      "sha256": "7dc20739b788d3528a721fb2e6184d3407f98bb116968ff4f191265d0dbee296",
+      "windows": [
+        {
+          "row": 0,
+          "width": 128,
+          "height": 34,
+          "name": "/tmp/harness-human-em_o8rn9/demo-project/app.py",
+          "id": 1000,
+          "col": 0,
+          "current": true,
+          "line_count": 5
+        }
+      ]
+    },
+    "07-restored-chat": {
+      "sha256": "184d02ca1ea78e3ed35dc295ab8e2ce33af9e00837d4d1cf8f083401ebdfc62d",
+      "windows": [
+        {
+          "row": 0,
+          "width": 128,
+          "height": 30,
+          "name": "harness://chat/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1000,
+          "col": 0,
+          "current": true,
+          "line_count": 23
+        },
+        {
+          "row": 31,
+          "width": 128,
+          "height": 3,
+          "name": "harness://prompt/chat_78624dffc943863d97c0e10fb79ad908",
+          "id": 1007,
+          "col": 0,
+          "current": false,
+          "line_count": 1
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "recorded_at": "2026-10-20T10:24:58.820577+00:00",
+  "mode": "Actual X11 capture of Neovim in Kitty, with the Rust server and Pi adapter",
+  "provider": "openai",
+  "model": "gpt-6-sol",
+  "provider_replies": "Actual external OpenAI service",
+  "authentication": "Existing environment API key, held only in process memory; no account login",
+  "submitted_tasks": 1,
+  "external_provider_requests": true,
+  "input": "Normal terminal keys through Kitty; Neovim RPC observes state only",
+  "video": "real-provider-failure.mp4",
+  "video_sha256": "ff7b8f43c0264835018f220ddcc4d1f64cdffd7a6e94c903fdd64954761bc707",
+  "duration_seconds": 24.134,
+  "frames_per_second": 15,
+  "screen_pixels": [
+    1280,
+    800
+  ],
+  "caption_bar_pixels": 96,
+  "audio": false,
+  "steps": [
+    {
+      "seconds": 0.0,
+      "text": "Real OpenAI request test. Start Harness in an isolated project and state directory."
+    },
+    {
+      "seconds": 3.2,
+      "text": "Create a chat. Select the same OpenAI model as the reported failure."
+    },
+    {
+      "seconds": 3.9,
+      "text": "Press Enter to send one short request to the actual provider. No tool use is requested."
+    },
+    {
+      "seconds": 10.2,
+      "text": "The provider reports a credit or quota error. The chat shows an account action and keeps the unsent draft."
+    },
+    {
+      "seconds": 15.2,
+      "text": "Open a file with normal Vim commands. The chat input disappears. Ctrl-^ restores the chat and draft."
+    },
+    {
+      "seconds": 19.7,
+      "text": "A successful real run still needs an account with available credit. Close the isolated test with :qa."
+    }
+  ],
+  "checks": [
+    "New chat opens from the agent tree",
+    "Chat command selects the reported OpenAI model",
+    "Enter sends and leaves Insert mode active",
+    "Complete next draft is retained",
+    "Billing or credit failure has a visible recovery action and no empty assistant answer",
+    "Native file opening hides the prompt",
+    "Ctrl-^ restores the conversation and its draft",
+    "Normal qa closes the idle editor"
+  ],
+  "cleanup": "Separate temporary workspace, state, configuration and HOME; server, terminal and Xvfb stopped; user chats untouched",
+  "result": "provider_error: organization billing or credit restriction",
+  "limitation": "A successful real external-provider run remains unverified because the available API key is rejected for billing or credits.",
+  "source_sha256": {
+    "src/application.rs": "a767179cff42e61db0c0129fd3da04341421f72c7511a64f8b10050dc7aa9b99",
+    "src/cli.rs": "2c40c5a580d43904437a6085d742999fd19ef0a9ca299dc4b40bbfbd8735b785",
+    "src/client.rs": "79eb0e12d2338c52c8a56970c3fef06496b631d42b9b8168e08cf9c1b94d4103",
+    "src/config.rs": "804b9928b001e61aafe718342b0382da26bf890d838249489c0ea5a1d987c4e4",
+    "src/editor.rs": "c81ceb4d7dc462b4897d95eabb86c40c7fcec1a899bb2ef6112ec9d0d547d5ad",
+    "src/lib.rs": "671a36164ded2fc2c3e027faae1636c879ba7db4c56d16cd8ee4fbf69f25031f",
+    "src/main.rs": "316b18972c30f3a6a92d6ae1f309e5019efca6369fed83dd5aa23a5fe18fe856",
+    "src/process.rs": "f3f831fff448057a6d0803e492ba5a73ef6bc3ac83e7d60fc311c64a601b4447",
+    "src/protocol.rs": "8c7440e81235e4536dab2cfb1e4701a8c9892e8b8fb7da227b6e6f5ef2141cbd",
+    "src/server.rs": "f54bc5d83df0de34e6442528cb80b1860b167dcc004a85033d6deffcc7cf0f57",
+    "src/setup.rs": "f2a35f5d578bc4170ecf6d3bc271413fa301de17a84fb9c449a22be9fc1b7c18",
+    "src/worker.rs": "9a565790fb9aa2fcd0ed1c21d1955b68a2b6e29d23b3a57f5a691a524a8045ab",
+    "adapter/auth.mjs": "5abf85eab88b1b0163e38086a5bb9432873f7d9a13b30a7da3dbc77f1d304136",
+    "adapter/pi.mjs": "bc7d9f2a20ead27a9319a227f5490111895d977832b27ddcb25aa66bfcf9b366",
+    "adapter/protocol.mjs": "6141e4cbd38873b9b2bfb86a65a93d7e0d154f8f6cc6647bb1bbf3f5278970d8",
+    "adapter/view.mjs": "d6f2b1d0dc90132d07f84ac9571cce56be9079dba00659cebdabb7fe5b0f2870",
+    "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+    "lua/harness/commands.lua": "7db758e9918811784a8efbd88e0ba6d046bb5ad7c2599bff4ed03900bbb39967",
+    "lua/harness/context.lua": "1e4493139655687c8ed827223806ad494c83c284b307f9e8c6bb3d178a5dcd5d",
+    "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
+    "lua/harness/init.lua": "e1b86eff0d6e0496631f25652d9a6ce642f54789f1c8ccc4346fe495cb1102bf",
+    "lua/harness/select.lua": "3a5a6d77786aae27d1a334ee096069e5ff1f6b0fcb059cd8b1676918d5feaee6",
+    "lua/harness/setup.lua": "14bc79db56e4d7876834da26fc70df96b6443a2577cbba409208234704bcce2d",
+    "lua/harness/sidebar.lua": "e17e2e03cb4c72efc34023528c6b82770c8750655ae359c16d515f8f771f2e40",
+    "lua/harness/transport.lua": "90d9e13d5601bb429a9805e5401948bc0eb08ccbd6586bf2de8d2c1cbca0fb67",
+    "lua/harness/view.lua": "337c5d77982b8a06afb9c0aff8ead3fbcdf86ff4d3ddc4c7ea5b9f5d9edc5fc5",
+    "plugin/harness.lua": "966ecd73ee630914f9cc5c31c5334fac8542adfa875220e84b9aeb2eea07ec7e"
+  },
+  "binary_sha256": "c40829cdc36536b710cea294032c68463f516c227f5a8a7768cbd4c0132c8214",
+  "frames": {
+    "01-configured": {
+      "sha256": "7ba8d8ebd490d27fa83160b4fe8a9a464b75f2cc29ac4f7f7c3e850124a604d2",
+      "windows": [
+        {
+          "id": 1002,
+          "current": false,
+          "col": 0,
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "line_count": 2
+        },
+        {
+          "id": 1000,
+          "current": false,
+          "col": 33,
+          "row": 0,
+          "width": 95,
+          "height": 30,
+          "name": "harness://chat/chat_51b66014dc2d013998eed8ac0323f74d",
+          "line_count": 6
+        },
+        {
+          "id": 1003,
+          "current": true,
+          "col": 33,
+          "row": 31,
+          "width": 95,
+          "height": 3,
+          "name": "harness://prompt/chat_51b66014dc2d013998eed8ac0323f74d",
+          "line_count": 1
+        }
+      ]
+    },
+    "02-provider-result": {
+      "sha256": "020da79710ad15e8ba17f9a63ecf60ea69beec887ccbca491e2dbdbf3e16ed05",
+      "windows": [
+        {
+          "id": 1002,
+          "current": false,
+          "col": 0,
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "line_count": 2
+        },
+        {
+          "id": 1000,
+          "current": false,
+          "col": 33,
+          "row": 0,
+          "width": 95,
+          "height": 30,
+          "name": "harness://chat/chat_51b66014dc2d013998eed8ac0323f74d",
+          "line_count": 10
+        },
+        {
+          "id": 1003,
+          "current": true,
+          "col": 33,
+          "row": 31,
+          "width": 95,
+          "height": 3,
+          "name": "harness://prompt/chat_51b66014dc2d013998eed8ac0323f74d",
+          "line_count": 1
+        }
+      ]
+    },
+    "03-file": {
+      "sha256": "a4009330a8dc57545a2ba76d4f6e494b6df01b9c700c2be79cdbc5593ca18100",
+      "windows": [
+        {
+          "id": 1002,
+          "current": false,
+          "col": 0,
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "line_count": 2
+        },
+        {
+          "id": 1000,
+          "current": true,
+          "col": 33,
+          "row": 0,
+          "width": 95,
+          "height": 34,
+          "name": "/tmp/harness-human-yp4tzsy6/demo-project/app.py",
+          "line_count": 5
+        }
+      ]
+    },
+    "04-restored-chat": {
+      "sha256": "e7d7ad9497c1fc00c4db280a6ffe3495e3ccd3d9e48df9ef850aeea886e7773a",
+      "windows": [
+        {
+          "id": 1002,
+          "current": false,
+          "col": 0,
+          "row": 0,
+          "width": 32,
+          "height": 34,
+          "name": "harness://agents",
+          "line_count": 2
+        },
+        {
+          "id": 1000,
+          "current": true,
+          "col": 33,
+          "row": 0,
+          "width": 95,
+          "height": 30,
+          "name": "harness://chat/chat_51b66014dc2d013998eed8ac0323f74d",
+          "line_count": 10
+        },
+        {
+          "id": 1004,
+          "current": false,
+          "col": 33,
+          "row": 31,
+          "width": 95,
+          "height": 3,
+          "name": "harness://prompt/chat_51b66014dc2d013998eed8ac0323f74d",
+          "line_count": 1
+        }
+      ]
+    }
+  }
+}

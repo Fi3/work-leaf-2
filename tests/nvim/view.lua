@@ -50,6 +50,52 @@ assert(view.draft() == '', 'The input hint must not become submitted text')
 assert(text(chat):find('New chat', 1, true), 'An unconfigured chat opens without a model')
 assert(text(chat):find('\\model', 1, true) and text(chat):find('\\login', 1, true), 'An empty chat shows the next model and account actions')
 assert(not text(chat):find('Type a task', 1, true), 'The conversation contains no opening instructions')
+local failed = vim.deepcopy(snapshot)
+local diagnostic = 'The provider rejected this model. Choose another model with \\model, then send the task again.'
+failed.state, failed.error = 'idle', { kind = 'provider_error', message = diagnostic }
+failed.entries = {
+  { entry_id = 'request', kind = 'user', text = 'Answer this task.', truncated = false },
+  { entry_id = 'empty', kind = 'assistant', text = '', truncated = false },
+  { entry_id = 'spaces', kind = 'assistant', text = ' \n\t', truncated = false },
+  { entry_id = 'failure', kind = 'error', text = diagnostic, truncated = false },
+}
+failed.usage = { models = { model = { usage = { totalTokens = 5 } } } }
+view.set_draft('Draft written while the request was running')
+view.render('connected', failed, {}, { { kind = 'buffer', path = 'source.txt' } }, 'Task has ended.')
+assert(not text(chat):find('[assistant] Agent', 1, true), 'Empty failed attempts must not appear as assistant answers')
+assert(text(chat):find('[error] Run failed', 1, true), 'The failed run must have an explicit error label')
+local _, copies = text(chat):gsub(vim.pesc(diagnostic), '')
+assert(copies == 1 and vim.api.nvim_buf_get_lines(chat, -2, -1, false)[1] == diagnostic,
+  'The latest failure and remedy appear once at the end of the conversation')
+local marked = false
+for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(chat, vim.api.nvim_create_namespace('HarnessView'), 0, -1, { details = true })) do
+  if mark[4].hl_group == 'DiagnosticError' then marked = true end
+end
+assert(marked, 'The failed run uses the native error highlight')
+assert(view.draft() == 'Draft written while the request was running', 'Failure rendering keeps the later unsent draft')
+table.insert(failed.entries, 1, { entry_id = 'earlier-failure', kind = 'error', text = diagnostic, truncated = false })
+view.render('connected', failed, {}, {}, 'Task has ended.')
+_, copies = text(chat):gsub(vim.pesc(diagnostic), '')
+assert(copies == 2 and vim.api.nvim_buf_get_lines(chat, -2, -1, false)[1] == diagnostic,
+  'An earlier identical failure remains in history while the latest failure stays last')
+failed.entries = {
+  { entry_id = 'partial', kind = 'assistant', text = 'Partial answer before the failure.', truncated = false },
+  { entry_id = 'truncated', kind = 'assistant', text = '', truncated = true },
+}
+view.render('connected', failed, {}, {})
+assert(text(chat):find('Partial answer before the failure.', 1, true)
+  and text(chat):find('[Text truncated.', 1, true), 'Partial and truncated assistant entries remain visible')
+assert(vim.api.nvim_buf_get_lines(chat, -2, -1, false)[1] == diagnostic, 'A snapshot error remains visible when it has no matching entry')
+failed.error, failed.entries = vim.NIL, { { entry_id = 'answer', kind = 'assistant', text = 'The next task succeeded.', truncated = false } }
+view.render('connected', failed, {}, {})
+assert(text(chat):find('The next task succeeded.', 1, true) and not text(chat):find('[error]', 1, true),
+  'A later successful snapshot removes the current failure without changing the draft')
+failed.state, failed.error = 'blocked', { kind = 'not_ready', message = 'Restore the workspace before resuming the pending run.' }
+view.render('connected', failed, {}, {})
+assert(text(chat):find('State: blocked', 1, true) and text(chat):find('[error] Cannot run', 1, true),
+  'Blocked recovery remains distinct from a terminal provider failure')
+view.set_draft('')
+view.render('connected', snapshot, {}, {})
 assert(vim.wo[win(prompt)].wrap and vim.wo[main].wrap, 'Conversation and input wrap long lines')
 assert(vim.bo[source].modified and vim.api.nvim_buf_is_loaded(source), 'An unsaved file remains loaded when replaced by chat')
 assert(not text(chat):find('Submission:', 1, true), 'The main view must not require protocol identifiers')
