@@ -60,10 +60,17 @@ local function closed()
   assert(calls == 1, 'Closing and child exit cannot call completion twice')
 end
 open()
+local controls = vim.api.nvim_eval_statusline(vim.wo[window].winbar, { winid = window, use_winbar = true }).str
+assert(controls:find('Open browser', 1, true) < controls:find('Copy link', 1, true)
+  and controls:find('Full link', 1, true) and controls:find('Cancel', 1, true),
+  'The first visible action opens the browser; copying is optional')
+assert(vim.inspect(vim.api.nvim_win_get_config(window).footer):find('Keep this window open', 1, true),
+  'Browser login tells the user to keep the callback window open')
 keys('<C-x>')
 assert(copied == url and vim.api.nvim_get_current_buf() == buffer, 'Copy uses the complete fixed-id URL through the native clipboard')
 keys('<C-o>')
 assert(opened == url, 'Open passes the complete URL to the client browser handler')
+assert(calls == 0 and vim.fn.jobwait({ channel }, 0)[1] == -1, 'Opening the browser keeps the same login process active')
 copy_failed, copied = true, nil
 keys('<C-x>')
 assert(copied == nil and vim.inspect(vim.api.nvim_win_get_config(window).footer):find('Copy requested', 1, true),
@@ -71,16 +78,31 @@ assert(copied == nil and vim.inspect(vim.api.nvim_win_get_config(window).footer)
 keys('<C-l>')
 assert(vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == url and vim.fn.getreg() == url,
   'The complete selectable link stays available when a configured clipboard does not deliver')
+assert(vim.wo[window].winbar:find('Open browser', 1, true) and vim.wo[window].winbar:find('Cancel', 1, true),
+  'The selectable link retains the visible browser and cancellation controls')
 keys('<CR>')
+assert(vim.wo[window].winbar:find('Open browser', 1, true), 'Returning to terminal input retains the browser control')
+keys('<C-l>')
+vim.o.columns, vim.o.lines = 50, 16
+vim.api.nvim_exec_autocmds('VimResized', {})
+setup.open({ id = 'test', name = 'Test provider' }, { id = 'oauth', name = 'Test account' }, function() error('Login was replaced') end)
+local reopened = vim.api.nvim_eval_statusline(vim.wo[window].winbar, { winid = window, use_winbar = true, maxwidth = 1000 }).str
+assert(setup.window == window and vim.api.nvim_get_current_buf() == buffer and vim.bo[buffer].channel == channel,
+  'Opening login again returns to the same private input, window and process')
+assert(reopened:find('Open', 1, true) and reopened:find('Cancel', 1, true)
+  and vim.fn.strdisplaywidth(reopened) <= vim.api.nvim_win_get_width(window),
+  'Returning from a resized Full link view retains visible controls that fit')
 copy_failed = false
 for _, size in ipairs({ { 50, 16 }, { 30, 12 }, { 120, 40 } }) do
   vim.o.columns, vim.o.lines = size[1], size[2]
   vim.api.nvim_exec_autocmds('VimResized', {})
   local config = vim.api.nvim_win_get_config(window)
   assert(config.col + config.width + 2 <= size[1] and config.row + config.height + 2 <= size[2], 'Login fits the resized terminal')
-  local bar = vim.api.nvim_eval_statusline(vim.wo[window].winbar, { winid = window, use_winbar = true }).str
-  assert(vim.fn.strdisplaywidth(bar) <= config.width and bar:find('Copy') and bar:find('Open') and bar:find('Esc'),
+  local bar = vim.api.nvim_eval_statusline(vim.wo[window].winbar, { winid = window, use_winbar = true, maxwidth = 1000 }).str
+  assert(vim.fn.strdisplaywidth(bar) <= config.width and bar:find('Copy') and bar:find('Open')
+    and (bar:find('Cancel') or bar:find('Esc')),
     'Copy, browser and cancellation controls remain visible on a narrow screen')
+  assert(vim.inspect(config.footer):find('Keep', 1, true), 'The waiting instruction remains visible after resizing')
 end
 keys('v<Esc>')
 closed()

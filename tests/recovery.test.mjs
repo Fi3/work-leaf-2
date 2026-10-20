@@ -23,7 +23,11 @@ const deadline = async (check, message, timeout = 8000) => {
   throw Error(`Timed out: ${message}`);
 };
 const activeProcess = async pid => {
-  try { const value = await readFile(`/proc/${pid}/stat`, 'utf8'); return !value.includes(') Z '); } catch { return false; }
+  try {
+    const value = await readFile(`/proc/${pid}/stat`, 'utf8'), fields = value.slice(value.lastIndexOf(')') + 2).split(' ');
+    // A zombie leader can still have threads that hold its shared storage descriptor.
+    return fields[0] !== 'Z' || fields[17] !== '1';
+  } catch (error) { if (error.code === 'ENOENT') return false; throw error; }
 };
 const signal = (pid, name) => { try { process.kill(pid, name); } catch (error) { if (error.code !== 'ESRCH') throw error; } };
 async function rpc(socketPath) {
@@ -80,6 +84,30 @@ async function system(t, messages, tokens = 100000) {
 }
 const input = (session_id, request_id) => ({ session_id, request_id, text: 'Run the task', context: [] });
 const create = (client, service, id = 'work') => client.call('session.create', { session_id: id, workspace: service.workspace });
+
+test('exit observation waits for surviving threads to release their file lock', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'harness-thread-exit-')), lock = join(directory, 'owner.lock');
+  const child = spawn('python3', ['-c', `
+import ctypes, fcntl, os, sys, threading
+lock = open(sys.argv[1], 'w')
+fcntl.flock(lock, fcntl.LOCK_EX)
+threading.Thread(target=lambda: (os.read(0, 1), os._exit(0))).start()
+ctypes.CDLL(None).pthread_exit(None)
+`, lock], { stdio: ['pipe', 'ignore', 'pipe'] });
+  const exited = once(child, 'exit');
+  t.after(async () => {
+    if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    await exited; await rm(directory, { recursive: true, force: true });
+  });
+  await deadline(async () => /\) Z /.test(await readFile(`/proc/${child.pid}/stat`, 'utf8')), 'zombie leader with surviving thread');
+  assert.equal(await activeProcess(child.pid), true, 'A remaining thread still owns the process file descriptors');
+  const acquire = ['-c', "import fcntl,sys; file=open(sys.argv[1]); fcntl.flock(file,fcntl.LOCK_EX|fcntl.LOCK_NB)", lock];
+  await assert.rejects(execute('python3', acquire), error => error.code === 1 && error.stderr.includes('BlockingIOError'));
+  child.stdin.end('x');
+  assert.deepEqual(await exited, [0, null]);
+  assert.equal(await activeProcess(child.pid), false);
+  await execute('python3', acquire);
+});
 
 const delegate = id => `set -eu
 "$HARNESS_EXECUTABLE" --socket "$HARNESS_SOCKET" session create --id ${id} --workspace "$PWD" > ${id}.json

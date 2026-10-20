@@ -57,7 +57,7 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/q-escape.ansi.gz",
       "terminal_bytes": 25970,
-      "terminal_sha256": "46ac05cf8983af4b275fc04415b032479902e5bdd2fb6deb8e1ad2a05ea24985"
+      "terminal_sha256": "7f7f616228c01a44ea8dfb4b93806a7e15f2af4e5d6376b4c2c2c8adc6e31620"
     },
     {
       "case": "q-invalid",

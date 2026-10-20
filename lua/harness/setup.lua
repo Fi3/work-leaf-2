@@ -21,6 +21,7 @@ end
 
 function M.new(transport, report)
   local self = {}
+  local input
   local function enter()
     local window = self.window
     vim.schedule(function()
@@ -31,8 +32,7 @@ function M.new(transport, report)
   function self.open(provider, method, callback)
     if self.window and vim.api.nvim_win_is_valid(self.window) then
       vim.api.nvim_set_current_win(self.window)
-      vim.api.nvim_win_set_buf(self.window, self.buffer)
-      enter()
+      input()
       return
     end
     local previous = vim.api.nvim_get_current_win()
@@ -79,20 +79,26 @@ function M.new(transport, report)
     local function toolbar()
       if closed or not vim.api.nvim_win_is_valid(window) then return end
       local width = vim.api.nvim_win_get_width(window)
-      local labels = width >= 54 and { 'Copy Ctrl-X', 'Open Ctrl-O', 'Link Ctrl-L', 'Esc cancel' }
-        or width >= 34 and { 'Copy ^X', 'Open ^O', 'Link ^L', 'Esc' } or { 'Copy', 'Open', 'Link', 'Esc' }
-      if ended then labels = { 'Close' } elseif not link then labels = { 'Esc cancel' } end
+      local labels = width >= 54 and { '[ Open browser ]', 'Copy link', 'Full link', 'Cancel' }
+        or width >= 30 and { '[Open]', 'Copy', 'Link', 'Cancel' }
+        or width >= 26 and { 'Open', 'Copy', 'Link', 'Cancel' } or { 'Open', 'Copy', 'Link', 'Esc' }
+      if ended then labels = { 'Close' } elseif not link then labels = { 'Cancel' } end
       local parts = {}
       for index, label in ipairs(labels) do
-        local action = ended and 1 or not link and 3 or ({ 1, 2, 4, 3 })[index]
+        local action = ended and 1 or not link and 3 or ({ 2, 1, 4, 3 })[index]
         parts[#parts + 1] = '%' .. action .. "@v:lua.require'harness.setup'.click@ " .. label .. ' %T'
       end
       vim.wo[window].winbar = table.concat(parts)
-      if link then vim.api.nvim_win_set_config(window, { footer = ' Ctrl-L: full link ', footer_pos = 'left' }) end
+      if link then
+        local hint = width >= 54 and 'Finish sign-in in browser. Keep this window open.'
+          or width >= 34 and 'Finish in browser. Keep open.' or 'Keep login open.'
+        vim.api.nvim_win_set_config(window, { footer = ' ' .. hint .. ' ', footer_pos = 'left' })
+      end
     end
-    local function input()
+    input = function()
       if closed then return end
       vim.api.nvim_win_set_buf(window, buffer)
+      toolbar()
       enter()
     end
     local function show_link(message, value)
@@ -116,6 +122,16 @@ function M.new(transport, report)
         vim.keymap.set({ 'n', 'v' }, '<C-o>', function() actions[2]() end, { buffer = link_buffer, silent = true })
         vim.keymap.set({ 'n', 'v' }, '<C-l>', function() actions[4]() end, { buffer = link_buffer, silent = true })
         vim.keymap.set({ 'n', 'v' }, '<C-y>', function() actions[5]() end, { buffer = link_buffer, silent = true })
+        vim.keymap.set('n', '<LeftRelease>', function()
+          local mouse = vim.fn.getmousepos()
+          if mouse.winid == window and mouse.winrow > 2 and mouse.line == 1
+            and vim.api.nvim_buf_get_lines(link_buffer, 0, 1, false)[1] == link then
+            vim.schedule(function()
+              if not closed and vim.api.nvim_get_current_win() == window then actions[2]() end
+            end)
+          end
+          return '<LeftRelease>'
+        end, { buffer = link_buffer, expr = true })
       end
       vim.bo[link_buffer].modifiable = true
       vim.api.nvim_buf_set_lines(link_buffer, 0, -1, false, { value, '', message,
@@ -123,6 +139,7 @@ function M.new(transport, report)
       vim.bo[link_buffer].modifiable = false
       vim.cmd('stopinsert')
       vim.api.nvim_win_set_buf(window, link_buffer)
+      toolbar()
       vim.wo[window].wrap = true
       vim.api.nvim_win_set_cursor(window, { 1, 0 })
     end

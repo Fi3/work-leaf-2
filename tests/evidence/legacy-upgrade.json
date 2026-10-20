@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-10-20T11:32:00.780850+00:00",
+  "verified_at": "2026-10-20T14:06:05.463533+00:00",
   "runtimes": {
     "neovim": "NVIM v0.12.6",
     "node": "v26.10.0",
@@ -12,7 +12,7 @@
     }
   },
   "mode": "Actual Neovim terminal, prior and current Rust executables, actual Pi faux provider",
-  "command": "python3 tests/nvim/real.py --group legacy --legacy-root /tmp/harness-old-live-EoifRC --evidence /tmp/harness-legacy-refresh-8bbyqcyc/evidence",
+  "command": "python3 tests/nvim/real.py --group legacy --legacy-root /tmp/harness-old-live-EoifRC --evidence /tmp/harness-legacy-refresh-0jty3i0e/evidence",
   "prior_source_commit": "2a4843978ce419c956946fbf245c23f4d9501a74",
   "before_fix_client_commit": "aff43dc381551d0a02d1a56f60ed8086d2964923",
   "prior_build": "git archive REVISION into a new temporary tree; locked cargo build; shared unchanged locked node_modules",
@@ -46,14 +46,14 @@
     "draft_preserved": true,
     "enter_submitted_once": true,
     "terminal": "nvim-terminal/legacy/explicit-upgrade-preserves-history-and-enter.ansi.gz",
-    "terminal_bytes": 44558,
-    "terminal_sha256": "6f403570ec1b57c08ebed22ac733dbfa193e05a56d2ff1efb1a85614337f2245",
-    "terminal_gzip_sha256": "26e12640354200eba691590163287db478508710aa81069e5ea50bd77512bf72"
+    "terminal_bytes": 44541,
+    "terminal_sha256": "def49ea9778baa152ed4c194ae27a5d0edd5e90ae11d84d91944e531b874d57a",
+    "terminal_gzip_sha256": "80f03a99216d8417208779c04d99bb2e411920dc09cc01e19313076f093f2bc8"
   },
   "source_sha256": {
     "Cargo.lock": "a4c99f2f6de51c390ae2d11db28c27dcf2a57a675c17e8c2fd8e2669e5dc172f",
     "Cargo.toml": "c1eb829ab24118016fc496e703955cd1d4b5ade296bead9f1551af171598757d",
-    "adapter/auth.mjs": "136f044422322778ec1f49615e857b405dca65d73f616ea0fd2a9f284c6fba21",
+    "adapter/auth.mjs": "fd2096cd7b94b2cde38c608bbd691f9774ed7846d153f56bc42b42beed6651e3",
     "adapter/pi.mjs": "bc7d9f2a20ead27a9319a227f5490111895d977832b27ddcb25aa66bfcf9b366",
     "adapter/protocol.mjs": "6141e4cbd38873b9b2bfb86a65a93d7e0d154f8f6cc6647bb1bbf3f5278970d8",
     "adapter/view.mjs": "d6f2b1d0dc90132d07f84ac9571cce56be9079dba00659cebdabb7fe5b0f2870",
@@ -64,7 +64,7 @@
     "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
     "lua/harness/init.lua": "dd166f60c174a50b216bf39f6b97699c5be683d70d24b82c22a8d3898f470b23",
     "lua/harness/select.lua": "3a5a6d77786aae27d1a334ee096069e5ff1f6b0fcb059cd8b1676918d5feaee6",
-    "lua/harness/setup.lua": "de4a871e2bd2c5adfe04378ed760bed52923f63797ff636e61e037d7731beaec",
+    "lua/harness/setup.lua": "0501130a3669dfe3a81c6db304227bc5529ff10f95f9a41675d6f94106780231",
     "lua/harness/sidebar.lua": "2b7ed858b37aad752fb99a0a866572e73518c073c68602fd726c3d3712336323",
     "lua/harness/transport.lua": "90d9e13d5601bb429a9805e5401948bc0eb08ccbd6586bf2de8d2c1cbca0fb67",
     "lua/harness/view.lua": "527ec752fe31900d7ddd335175960950b046c4c8e951979405343ec55d470316",
@@ -91,8 +91,8 @@
     "tests/nvim/real.py": "00293fb006179ead51c537d92187399ae43b23361dd1e0d2879f11ddca370649"
   },
   "baseline_note": "Historical reproduction is retained from its recorded prior and client revisions. The upgrade case was rerun against the current source hashes.",
-  "started_at": "2026-10-20T11:31:57.674002+00:00",
-  "elapsed_seconds": 3.092,
+  "started_at": "2026-10-20T14:06:02.383275+00:00",
+  "elapsed_seconds": 3.07,
   "source_unchanged_during_run": true,
   "prior_source_files_verified": 26,
   "prior_source_verified_against_commit": true,

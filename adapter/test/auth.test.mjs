@@ -337,6 +337,40 @@ test('provider prompt cancellation leaves the login alive, and private provider 
   assert.ok(!failed.text.includes(oauthSecret));
 });
 
+test('empty manual callback input keeps waiting, accepts private input, and preserves cancellation', async t => {
+  for (const finish of ['manual', 'callback', 'cancel']) {
+    const tty = await pty(t), controller = new AbortController(), callback = new AbortController();
+    let received = false;
+    const model = { refresh: async () => ({ errors: new Map() }),
+      getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
+      async login(_provider, _method, ui) {
+        const answer = ui.prompt({ type: 'manual_code', message: 'Private callback', signal: callback.signal });
+        if (finish === 'callback') {
+          await assert.rejects(answer);
+          assert.equal(controller.signal.aborted, false, 'A browser callback cancels only its manual prompt');
+        } else {
+          assert.equal(await answer, secret);
+          received = true;
+        }
+      } };
+    const pending = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, controller, 'id');
+    await tty.wait('Private callback');
+    for (const input of ['\r', '   \r']) {
+      const before = tty.text.split('Private callback').length;
+      tty.write(input);
+      await until(() => tty.text.split('Private callback').length > before, 'Blank input must keep the private prompt open');
+      assert.equal(received, false);
+      assert.equal(controller.signal.aborted, false);
+    }
+    assert.match(tty.text, /Wait for your browser, or paste the complete code or redirect URL\. Escape cancels\./);
+    if (finish === 'callback') callback.abort();
+    else tty.write(finish === 'cancel' ? '\x1b' : secret + '\r');
+    assert.equal(await pending, finish === 'cancel');
+    assert.equal(received, finish === 'manual');
+    assert.ok(!tty.text.includes(secret));
+  }
+});
+
 test('characters entered while a provider saves credentials do not become visible', async t => {
   const tty = await pty(t);
   let finish, saved = false;

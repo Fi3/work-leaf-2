@@ -1,0 +1,172 @@
+{
+  "case": "login-browser-delayed-return",
+  "passed": true,
+  "terminal": "nvim-terminal/desktop/login-browser-delayed-return.ansi.gz",
+  "sha256": "514726a3917c7f050950a7f5e242f20f29c15af3ed7192d7591baaf44f9fde82",
+  "checks": {
+    "browser": "actual Firefox with a fresh profile per attempt",
+    "external_browser_requests": "blocked by a local proxy",
+    "browser_profile_paths": [
+      "firefox-profile-1",
+      "firefox-profile-2"
+    ],
+    "user_browser_profile_changed": false,
+    "test_browser_proxy": {
+      "type": "manual",
+      "http": "127.0.0.1",
+      "https": "127.0.0.1",
+      "port": 35551,
+      "bypass": [
+        "localhost",
+        "127.0.0.1"
+      ],
+      "dns_over_https": false
+    },
+    "url_source": "native Open browser button; no clipboard or RPC URL extraction",
+    "callback_source": "Firefox form submission followed by HTTP redirect to the real Pi listener",
+    "blank_and_whitespace_input_preserved_listener": true,
+    "browser_wait_seconds": 16.22,
+    "cancelled_state_rejected_by_real_callback": true,
+    "current_state_authenticated": true,
+    "token_exchanges": 1,
+    "exact_draft": "Unsent browser task. Retry. Done.",
+    "steps": [
+      {
+        "time": 1.04,
+        "text": "Press Enter with no text. The browser sign-in must stay open."
+      },
+      {
+        "time": 1.29,
+        "text": "Click Open browser. Firefox opens a local test account page."
+      },
+      {
+        "time": 2.48,
+        "text": "Cancel this sign-in in Neovim. The unsent task stays ready."
+      },
+      {
+        "time": 4.66,
+        "text": "The cancelled browser page cannot finish the new sign-in."
+      },
+      {
+        "time": 4.93,
+        "text": "Leave the current account page open for 15 seconds, as during a normal sign-in."
+      },
+      {
+        "time": 19.93,
+        "text": "Continue in the current Firefox page. The browser returns to the live local listener."
+      },
+      {
+        "time": 20.65,
+        "text": "Return to Neovim and continue the complete unsent task."
+      }
+    ]
+  },
+  "screenshots": {
+    "browser-login-screens/browser-callback-success.png": "1f6517c89d804d9ed6f0d31c058359b509231ef3210168fb7b2bb55d30fd8a88",
+    "browser-login-screens/browser-cancelled-state.png": "cd1b1e115a134593ffdc1ea5874cdbce175ad8a7a2f6fe595e1fcfb561330978",
+    "browser-login-screens/browser-return-draft.png": "f2a876c6afeebc8349e67675d6ef8e25c823f20d3d3cbfd1979734263b33dad7",
+    "browser-login-screens/browser-test-account.png": "f0109773d25632071fbec77de22145a7901596e6958347dc5195e8dfa2aec4c5"
+  },
+  "source_video_sha256": "b468c8c807078f11cf293e8a000c5edf7e670f6ae974e9a935f159ab58f4a628",
+  "video": "browser-login.mp4",
+  "video_sha256": "41bac939e3432b134b15c21d56a3cab738020188a9e2d6fc7b36dd29132e69e3",
+  "duration_seconds": 49.266667,
+  "source_duration_seconds": 21.134,
+  "initial_frame_hold_seconds": 3,
+  "playback_speed": 0.5,
+  "final_frame_hold_seconds": 4,
+  "steps": [
+    {
+      "seconds": 0,
+      "text": "Actual Neovim, Firefox, Rust and Pi. Test account replies; playback at half speed."
+    },
+    {
+      "seconds": 5.08,
+      "text": "Empty Enter keeps login open. Click Open browser to start Firefox."
+    },
+    {
+      "seconds": 7.96,
+      "text": "Cancel sign-in. The draft stays ready; start a fresh login."
+    },
+    {
+      "seconds": 12.32,
+      "text": "The cancelled page is rejected. Wait 15 seconds on the current account page."
+    },
+    {
+      "seconds": 42.86,
+      "text": "Continue in Firefox. Pi accepts the callback; return to the complete draft."
+    }
+  ],
+  "source_video_case": "login-browser-delayed-return",
+  "editing": "Continuous desktop recording at half speed, with explanatory captions above the screen. Hold the first actual frame for three seconds and the last for four seconds. No actions or screen regions removed.",
+  "scope": "Actual browser, Neovim, Rust, Pi, and loopback callback listener. Synthetic account page and token replies. No real subscription was validated.",
+  "source_sha256": {
+    "adapter/auth.mjs": "fd2096cd7b94b2cde38c608bbd691f9774ed7846d153f56bc42b42beed6651e3",
+    "adapter/pi.mjs": "bc7d9f2a20ead27a9319a227f5490111895d977832b27ddcb25aa66bfcf9b366",
+    "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+    "lua/harness/setup.lua": "0501130a3669dfe3a81c6db304227bc5529ff10f95f9a41675d6f94106780231",
+    "tests/nvim/login_gui.py": "31b31ddb1016f70b302a077071c8f0ed5c71e575c427e077c0ed6280c0185e56",
+    "adapter/test/auth.test.mjs": "9fc5a5b00fd67c149d43c3469d13f1ee2ef3a4fb3996bf52b3a832ced77c6ff6"
+  },
+  "runtimes": {
+    "xvfb_vendor_release": 12101024,
+    "firefox_version": "Mozilla Firefox 157.0.1",
+    "firefox_executable": "/tmp/harness-firefox-157.0.1/firefox/firefox",
+    "mode": "Actual Kitty/Xvfb desktop, Neovim, Rust, Pi and Firefox; native clipboard paste and browser callbacks",
+    "kitty_version": "kitty 0.49.2 created by Kovid Goyal",
+    "xvfb_executable": "/tmp/harness-xvfb/usr/bin/Xvfb",
+    "xvfb_sha256": "567a9b39284e303522fdc178059fe60d0e9917b811bd5066fb63260fd198a97c",
+    "credentials": "synthetic only",
+    "url_source": "native Open browser action or copy and actual system paste; no RPC URL extraction"
+  },
+  "callback_probes": {
+    "baseline_revision": "fa3a93f24c2ebe27bed8b9f0dd9a867c455968ff",
+    "baseline_auth_sha256": "136f044422322778ec1f49615e857b405dca65d73f616ea0fd2a9f284c6fba21",
+    "method": "Private pseudo-terminal using the pinned actual Pi login, synthetic token response, and real HTTP callback on 127.0.0.1:1455. Each case uses an isolated state directory.",
+    "baseline_results": [
+      {
+        "probe": "delayed-callback",
+        "wait_ms": 21000,
+        "unrelated_path_statuses": [
+          404,
+          404,
+          404
+        ],
+        "wrong_state_status": 400,
+        "correct_callback_status": 200,
+        "login_saved": true
+      },
+      {
+        "probe": "empty-manual-enter",
+        "result": {
+          "ok": false,
+          "kind": "provider_error"
+        },
+        "callback_connection_refused": true
+      },
+      {
+        "probe": "whitespace-manual-enter",
+        "result": {
+          "ok": false,
+          "kind": "provider_error"
+        }
+      }
+    ],
+    "fixed_results": [
+      {
+        "probe": "blank-then-browser",
+        "blank_attempts": 2,
+        "callback_status": 200,
+        "authenticated": true,
+        "cancelled": false,
+        "provider_requests": 1
+      },
+      {
+        "probe": "blank-then-paste",
+        "authenticated": true,
+        "cancelled": false
+      }
+    ],
+    "interpretation": "Empty or whitespace manual input could close the callback listener. These tests reproduce the reported browser error, but do not establish which input the user entered."
+  }
+}

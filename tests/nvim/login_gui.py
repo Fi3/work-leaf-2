@@ -3,11 +3,13 @@
 import contextlib
 import ctypes
 import hashlib
+import http.server
 import json
 import os
 import shutil
 import signal
 import subprocess
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -16,6 +18,145 @@ from pathlib import Path
 from real import RealEditor, EVIDENCE, RESULTS
 
 DESKTOP = {}
+
+class Browser:
+    """Run a real browser against a local test authorization page."""
+    def __init__(self, root, display, env):
+        self.root, self.display, self.attempts = root, display, []
+        self.env = dict(env)
+        self.closed = False
+        self.executable = os.environ.get('HARNESS_TEST_FIREFOX') or shutil.which('firefox')
+        assert self.executable, 'Browser login tests require Firefox; HARNESS_TEST_FIREFOX can select it'
+        DESKTOP['firefox_version'] = subprocess.check_output([self.executable,'--version'],text=True).strip()
+        DESKTOP['firefox_executable'] = self.executable
+        owner = self
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *_): pass
+            def do_CONNECT(self): self.send_error(403)
+            def do_POST(self):
+                if self.path != '/open': self.send_error(403); return
+                url = self.rfile.read(min(int(self.headers.get('Content-Length',0)),8193)).decode()
+                owner.open(url)
+                self.send_response(204); self.end_headers()
+            def do_GET(self):
+                if self.path.startswith('/authorize/'):
+                    number = int(self.path.rsplit('/',1)[1])
+                    body = (f'<!doctype html><title>Harness test account {number}</title>'
+                            '<style>body{font:24px sans-serif;max-width:800px;margin:80px auto}'
+                            'button{font:inherit;padding:16px 30px}</style><h1>Connect the test account</h1>'
+                            '<p>This local page uses a synthetic account. No real sign-in is sent.</p>'
+                            '<p>Keep the login window open in Neovim. Continue when ready.</p>'
+                            f'<form action="/approve/{number}"><button autofocus>Continue to Neovim</button></form>').encode()
+                    self.send_response(200); self.send_header('Content-Type','text/html'); self.end_headers(); self.wfile.write(body)
+                elif self.path.startswith('/approve/'):
+                    number = int(self.path.rsplit('/',1)[1].split('?')[0])
+                    attempt = owner.attempts[number-1]
+                    attempt['approved_at'] = time.monotonic()
+                    self.send_response(302); self.send_header('Location',attempt['callback']); self.end_headers()
+                else: self.send_error(403)
+        self.server = http.server.ThreadingHTTPServer(('127.0.0.1',0),Handler)
+        self.address = 'http://127.0.0.1:'+str(self.server.server_port)
+        self.thread = threading.Thread(target=self.server.serve_forever,daemon=True)
+        self.thread.start()
+        self.x11 = ctypes.CDLL('libX11.so.6')
+        self.xtest = ctypes.CDLL('libXtst.so.6')
+        pointer, window = ctypes.c_void_p, ctypes.c_ulong
+        self.x11.XOpenDisplay.restype = pointer
+        self.x11.XDefaultRootWindow.argtypes = [pointer]
+        self.x11.XDefaultRootWindow.restype = window
+        self.x11.XQueryTree.argtypes = [pointer,window,ctypes.POINTER(window),ctypes.POINTER(window),ctypes.POINTER(ctypes.POINTER(window)),ctypes.POINTER(ctypes.c_uint)]
+        self.x11.XFetchName.argtypes = [pointer,window,ctypes.POINTER(ctypes.c_void_p)]
+        self.x11.XInternAtom.argtypes = [pointer,ctypes.c_char_p,ctypes.c_int]
+        self.x11.XInternAtom.restype = window
+        self.x11.XGetWindowProperty.argtypes = [pointer,window,window,ctypes.c_long,ctypes.c_long,ctypes.c_int,window,
+                                               ctypes.POINTER(window),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(window),
+                                               ctypes.POINTER(window),ctypes.POINTER(pointer)]
+        self.x11.XFree.argtypes = [pointer]
+        self.x11.XRaiseWindow.argtypes = [pointer,window]
+        self.x11.XSetInputFocus.argtypes = [pointer,window,ctypes.c_int,window]
+        self.x11.XKeysymToKeycode.argtypes = [pointer,window]
+        self.x11.XFlush.argtypes = self.x11.XCloseDisplay.argtypes = [pointer]
+        self.xtest.XTestFakeKeyEvent.argtypes = [pointer,ctypes.c_uint,ctypes.c_int,window]
+        self.connection = self.x11.XOpenDisplay(display.encode())
+        assert self.connection, 'Cannot connect to the isolated browser display'
+
+    def open(self, url):
+        parsed = urllib.parse.urlsplit(url)
+        assert parsed.scheme=='https' and parsed.hostname=='auth.openai.com' and len(url)<8192
+        query = urllib.parse.parse_qs(parsed.query)
+        assert query['redirect_uri']==['http://127.0.0.1:1455/auth/callback']
+        callback = query['redirect_uri'][0]+'?'+urllib.parse.urlencode({'code':'test-code','state':query['state'][0],'client_id':'test-issued-client'})
+        number = len(self.attempts)+1
+        profile = self.root/('firefox-profile-'+str(number)); profile.mkdir()
+        prefs = {'network.proxy.type':1,'network.proxy.http':'127.0.0.1','network.proxy.http_port':self.server.server_port,
+                 'network.proxy.ssl':'127.0.0.1','network.proxy.ssl_port':self.server.server_port,
+                 'network.proxy.no_proxies_on':'localhost,127.0.0.1','network.trr.mode':5,
+                 'network.dns.disablePrefetch':True,'network.prefetch-next':False,
+                 'browser.shell.checkDefaultBrowser':False,'browser.aboutwelcome.enabled':False,
+                 'browser.startup.firstrunSkipsHomepage':True,'termsofuse.bypassNotification':True,
+                 'datareporting.policy.dataSubmissionEnabled':False}
+        (profile/'user.js').write_text(''.join('user_pref('+json.dumps(key)+','+json.dumps(value)+');\n' for key,value in prefs.items()))
+        log = (profile/'browser.log').open('wb')
+        env = dict(self.env,DISPLAY=self.display,MOZ_ENABLE_WAYLAND='0',GDK_BACKEND='x11')
+        env.pop('WAYLAND_DISPLAY',None); env.pop('XAUTHORITY',None)
+        process = subprocess.Popen([self.executable,'--no-remote','--new-instance','--profile',str(profile),self.address+'/authorize/'+str(number)],
+                                   env=env,stdout=log,stderr=log)
+        self.attempts.append({'callback':callback,'opened_at':time.monotonic(),'process':process,'log':log})
+
+    def title(self, window):
+        atom = self.x11.XInternAtom(self.connection,b'_NET_WM_NAME',0)
+        kind,length,remaining = ctypes.c_ulong(),ctypes.c_ulong(),ctypes.c_ulong()
+        size,value = ctypes.c_int(),ctypes.c_void_p()
+        self.x11.XGetWindowProperty(self.connection,window,atom,0,1024,0,0,ctypes.byref(kind),ctypes.byref(size),
+                                   ctypes.byref(length),ctypes.byref(remaining),ctypes.byref(value))
+        if value.value:
+            try: title = ctypes.string_at(value,length.value).decode(errors='replace')
+            finally: self.x11.XFree(value)
+            if title: return title
+        value = ctypes.c_void_p()
+        if not self.x11.XFetchName(self.connection,window,ctypes.byref(value)) or not value.value: return ''
+        try: return ctypes.string_at(value).decode(errors='replace')
+        finally: self.x11.XFree(value)
+
+    def find(self, title, window=None):
+        window = window or self.x11.XDefaultRootWindow(self.connection)
+        if title in self.title(window): return window
+        root,parent = ctypes.c_ulong(),ctypes.c_ulong()
+        children,count = ctypes.POINTER(ctypes.c_ulong)(),ctypes.c_uint()
+        if not self.x11.XQueryTree(self.connection,window,ctypes.byref(root),ctypes.byref(parent),ctypes.byref(children),ctypes.byref(count)): return None
+        try: items = [children[index] for index in range(count.value)]
+        finally:
+            if children: self.x11.XFree(children)
+        return next((found for child in items if (found:=self.find(title,child))),None)
+
+    def focus(self, window):
+        self.x11.XRaiseWindow(self.connection,window)
+        self.x11.XSetInputFocus(self.connection,window,1,0)
+        self.x11.XFlush(self.connection)
+
+    def approve(self, window):
+        self.focus(window)
+        code = self.x11.XKeysymToKeycode(self.connection,0xff0d)
+        self.xtest.XTestFakeKeyEvent(self.connection,code,1,0)
+        self.xtest.XTestFakeKeyEvent(self.connection,code,0,0)
+        self.x11.XFlush(self.connection)
+
+    def screenshot(self, name):
+        subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-f','x11grab','-video_size','1280x960',
+                        '-i',self.display,'-frames:v','1','-y',str(self.root/(name+'.png'))],check=True)
+
+    def close(self):
+        if self.closed: return
+        self.closed = True
+        for attempt in self.attempts:
+            process = attempt['process']
+            if process.poll() is None:
+                process.terminate()
+                try: process.wait(timeout=10)
+                except subprocess.TimeoutExpired: process.kill(); process.wait(timeout=5)
+            attempt['log'].close()
+        self.server.shutdown(); self.server.server_close(); self.thread.join(timeout=5)
+        self.x11.XCloseDisplay(self.connection)
 
 
 @contextlib.contextmanager
@@ -47,8 +188,9 @@ def desktop():
 class GuiEditor(RealEditor):
     instances = []
 
-    def __init__(self, name, display, pending=0, clipboard=True):
+    def __init__(self, name, display, pending=0, clipboard=True, browser=False):
         self.display, self.pending = display, pending
+        self.use_browser, self.browser = browser, None
         self.clipboard_enabled, self.finished = clipboard, False
         self.video = None
         self.steps = []
@@ -60,14 +202,18 @@ class GuiEditor(RealEditor):
         directory = self.root/'bin'
         directory.mkdir(exist_ok=True)
         opener = directory/'xdg-open'
-        opener.write_text('#!/usr/bin/env python3\nimport json,os,sys\nwith open(os.environ["HARNESS_GUI_BROWSER_LOG"],"a") as output: output.write(json.dumps(sys.argv[1:])+"\\n")\n')
+        if self.use_browser and self.browser is None: self.browser = Browser(self.root,self.display,self.env)
+        opener.write_text('#!/usr/bin/env python3\nimport json,os,sys,urllib.request\nwith open(os.environ["HARNESS_GUI_BROWSER_LOG"],"a") as output: output.write(json.dumps(sys.argv[1:])+"\\n")\n'
+                          + (f'urllib.request.urlopen({self.browser.address+"/open"!r},data=sys.argv[1].encode(),timeout=10).close()\n' if self.browser else ''))
         opener.chmod(0o700)
         self.env.update(DISPLAY=self.display, PATH=str(directory)+':'+os.environ['PATH'],
                         HARNESS_GUI_BROWSER_LOG=str(self.root/'browser.jsonl'),
                         HARNESS_TEST_OAUTH_PENDING=str(self.pending))
         self.env.pop('WAYLAND_DISPLAY', None)
         self.env.pop('XAUTHORITY', None)
-        return super().cli(*arguments)
+        if self.browser: self.env.pop('DISPLAY',None)
+        try: return super().cli(*arguments)
+        finally: self.env['DISPLAY'] = self.display
 
     def remote(self, *arguments, data=None):
         return subprocess.check_output(['kitty','@','--to',self.control,*arguments],input=data,env=self.env,stderr=subprocess.PIPE)
@@ -143,6 +289,7 @@ class GuiEditor(RealEditor):
         return target.read_bytes()
 
     def finish(self):
+        if self.browser: self.browser.close()
         if self.video:
             self.video.send_signal(signal.SIGINT)
             self.video.wait(timeout=15)
@@ -153,6 +300,7 @@ class GuiEditor(RealEditor):
 
     def abort(self):
         if self.finished: return
+        if self.browser: self.browser.close()
         if getattr(self,'process',None) and self.alive():
             self.keys('\x1c\x0e:noautocmd qa!\r')
             try: self.process.wait(timeout=5)
@@ -221,10 +369,10 @@ def account_case(display):
     editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='t','Enter returns to private login input')
     window = next(window for window in editor.windows() if window['name']=='harness://setup')
     editor.mark('The Copy and Open buttons use the same complete link.')
-    editor.mouse(0,window['col']+3,window['row']+1)
+    editor.mouse(0,window['col']+22,window['row']+1)
     assert editor.observe('vim.fn.mode(1)')=='t', 'Mouse Copy must leave private input ready'
     assert editor.clipboard().decode()==copied, 'Mouse Copy must replace the selected help text with the exact URL'
-    editor.mouse(0,window['col']+18,window['row']+1)
+    editor.mouse(0,window['col']+3,window['row']+1)
     editor.wait(lambda:len(editor.browser_urls())==3,'mouse Open invokes the desktop handler')
     assert editor.browser_urls()[-1]==copied
     assert editor.observe('vim.fn.mode(1)')=='t', 'Mouse Open must leave private input ready'
@@ -247,9 +395,17 @@ def account_case(display):
     editor.mark('Return to the full terminal, then click Link while browser sign-in completes.')
     editor.resize(120,40)
     window = next(window for window in editor.windows() if window['name']=='harness://setup')
-    editor.mouse(0,window['col']+31,window['row']+1)
+    editor.mouse(0,window['col']+33,window['row']+1)
     editor.wait(lambda:editor.observe('vim.api.nvim_buf_get_name(0)')=='harness://login-link','mouse Link shows the complete URL while browser callback waits')
     assert editor.observe('vim.fn.mode(1)')=='n', 'Mouse Link must permit native selection'
+    assert len(editor.browser_urls())==3, 'Opening Full link must not also open the browser'
+    editor.mouse(0,window['col']+10,window['row']+3)
+    editor.wait(lambda:len(editor.browser_urls())==4,'an ordinary click on the wrapped link opens the browser')
+    assert editor.browser_urls()[-1]==copied
+    editor.mouse(0,window['col']+3,window['row']+1)
+    editor.wait(lambda:len(editor.browser_urls())==5,'Open browser also works from Full link')
+    assert editor.browser_urls()[-1]==copied and editor.observe('vim.fn.mode(1)')=='n'
+    editor.screenshot('full-link-browser-actions')
     complete_account(editor,copied)
     editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','return to the unchanged draft')
     editor.mark('Sign-in completes. Continue the exact unsent draft immediately.')
@@ -340,6 +496,79 @@ def fallback_case(display, default=False):
     (editor.root/'observed.json').write_text(json.dumps({'default_editor_clipboard_configuration':default,'clipboard_provider_available':available,'terminal_clipboard_enabled':default,'callback_preserved_unsaved_file_focus':default,'full_link_native_yank_and_paste':True,'url_bytes':len(editor.browser_urls()[0].encode())},indent=2)+'\n')
     editor.finish()
 
+def browser_case(display):
+    editor = GuiEditor('login-browser-delayed-return',display,clipboard=None,browser=True)
+    browser = editor.browser
+    editor.keys('iUnsent browser task.')
+    login(editor,'openai','Sign in with ChatGPT')
+    editor.wait(lambda:b'Complete login in your browser' in editor.output,'manual callback prompt')
+    assert not browser.attempts, 'A server without a desktop must wait for the client Open browser action'
+    editor.mark('Press Enter with no text. The browser sign-in must stay open.')
+    editor.keys('\r')
+    editor.keys('   \r')
+    assert any(window['name']=='harness://setup' for window in editor.windows()), 'Blank callback input must keep browser sign-in open'
+    window = next(window for window in editor.windows() if window['name']=='harness://setup')
+    editor.mark('Click Open browser. Firefox opens a local test account page.')
+    editor.mouse(0,window['col']+3,window['row']+1)
+    editor.wait(lambda:browser.find('Harness test account 1'),'Firefox shows the test authorization page',timeout=20)
+    first = browser.find('Harness test account 1')
+    browser.screenshot('browser-test-account')
+    assert len(browser.attempts)==1
+    assert not next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['authenticated']
+    assert any(window['name']=='harness://setup' for window in editor.windows()), 'Empty input and a browser delay must not close the login listener'
+    editor.mark('Cancel this sign-in in Neovim. The unsent task stays ready.')
+    browser.focus(json.loads(editor.remote('ls'))[0]['platform_window_id'])
+    editor.keys('\x1b')
+    editor.wait(lambda:not any(window['name']=='harness://setup' for window in editor.windows()),'cancel the first browser attempt')
+    editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','cancel returns to input')
+    editor.keys(' Retry.')
+    assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==['Unsent browser task. Retry.']
+    login(editor,'openai','Sign in with ChatGPT')
+    editor.wait(lambda:any('Complete login in your browser' in ''.join(window['lines']) for window in editor.windows() if window['name']=='harness://setup'),'retry callback prompt')
+    editor.keys('\r   \r')
+    window = next(window for window in editor.windows() if window['name']=='harness://setup')
+    editor.mouse(0,window['col']+3,window['row']+1)
+    editor.wait(lambda:browser.find('Harness test account 2'),'Firefox shows the new account attempt',timeout=20)
+    second = browser.find('Harness test account 2')
+    assert browser.attempts[0]['callback']!=browser.attempts[1]['callback'], 'Retry must have a new OAuth state'
+    editor.mark('The cancelled browser page cannot finish the new sign-in.')
+    browser.approve(first)
+    editor.wait(lambda:'Authentication failed' in browser.title(first),'Firefox displays rejection of the cancelled state')
+    assert not next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['authenticated']
+    assert any(window['name']=='harness://setup' for window in editor.windows())
+    browser.screenshot('browser-cancelled-state')
+    editor.mark('Leave the current account page open for 15 seconds, as during a normal sign-in.')
+    browser.focus(second)
+    editor.pump(15)
+    editor.mark('Continue in the current Firefox page. The browser returns to the live local listener.')
+    browser.approve(second)
+    editor.wait(lambda:'Authentication successful' in browser.title(second),'Firefox displays the actual Pi callback success page',timeout=15)
+    editor.wait(lambda:not any(window['name']=='harness://setup' for window in editor.windows()),'browser callback completes private login')
+    assert next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['authenticated']
+    browser.screenshot('browser-callback-success')
+    editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','browser completion returns to the unchanged prompt')
+    browser.focus(json.loads(editor.remote('ls'))[0]['platform_window_id'])
+    editor.keys(' Done.')
+    assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==['Unsent browser task. Retry. Done.']
+    assert not editor.snapshot()['entries']
+    requests = [json.loads(line) for line in (editor.root/'oauth-requests.jsonl').read_text().splitlines()]
+    assert sum(item.get('grant')=='authorization_code' for item in requests)==1, 'Only the current browser attempt can exchange its code'
+    delay = browser.attempts[1]['approved_at']-browser.attempts[1]['opened_at']
+    assert delay>=15, 'The successful browser callback must include a human-length sign-in delay'
+    editor.mark('Return to Neovim and continue the complete unsent task.')
+    editor.screenshot('browser-return-draft')
+    (editor.root/'observed.json').write_text(json.dumps({
+        'browser':'actual Firefox with a fresh profile per attempt','external_browser_requests':'blocked by a local proxy',
+        'browser_profile_paths':['firefox-profile-1','firefox-profile-2'],'user_browser_profile_changed':False,
+        'test_browser_proxy':{'type':'manual','http':'127.0.0.1','https':'127.0.0.1','port':browser.server.server_port,
+                              'bypass':['localhost','127.0.0.1'],'dns_over_https':False},
+        'url_source':'native Open browser button; no clipboard or RPC URL extraction',
+        'callback_source':'Firefox form submission followed by HTTP redirect to the real Pi listener',
+        'blank_and_whitespace_input_preserved_listener':True,'browser_wait_seconds':round(delay,2),
+        'cancelled_state_rejected_by_real_callback':True,'current_state_authenticated':True,
+        'token_exchanges':1,'exact_draft':'Unsent browser task. Retry. Done.','steps':editor.steps},indent=2)+'\n')
+    editor.finish()
+
 
 def main():
     with desktop() as display:
@@ -348,13 +577,14 @@ def main():
             device_case(display)
             fallback_case(display)
             fallback_case(display,default=True)
+            browser_case(display)
         finally:
             for editor in GuiEditor.instances: editor.abort()
-    report = {**DESKTOP,'mode':'Actual Kitty/Xvfb desktop, Neovim, Rust and Pi; native clipboard paste and controlled desktop opener',
+    report = {**DESKTOP,'mode':'Actual Kitty/Xvfb desktop, Neovim, Rust, Pi and Firefox; native clipboard paste and browser callbacks',
               'kitty_version':subprocess.check_output(['kitty','--version'],text=True).strip(),
               'xvfb_executable':os.environ.get('HARNESS_TEST_XVFB') or shutil.which('Xvfb'),
               'xvfb_sha256':hashlib.sha256(Path(os.environ.get('HARNESS_TEST_XVFB') or shutil.which('Xvfb')).read_bytes()).hexdigest(),
-              'credentials':'synthetic only','url_source':'normal copy action and actual system paste; no RPC URL extraction',
+              'credentials':'synthetic only','url_source':'native Open browser action or copy and actual system paste; no RPC URL extraction',
               'cases':RESULTS}
     for case in report['cases']:
         directory = Path(case['terminal']).parent

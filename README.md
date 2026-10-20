@@ -38,8 +38,13 @@ You can also use `:Harness actions`.
 For the first AI chat, select **Connect an account**. Select your provider, then
 the account or API key method. For a ChatGPT account, select **OpenAI**, then
 **Sign in with ChatGPT**. The login opens in a terminal that accepts input at
-once. Press **Ctrl-X**, or click **Copy**, to copy the complete browser link.
-Press **Ctrl-O**, or click **Open**, to use the desktop browser. The browser
+once. Click **Open browser** at the top of the login window. Complete sign-in
+in the browser and keep the Neovim login window open until it finishes.
+You do not need to copy the link or press Enter. Empty or space-only input
+keeps waiting for the browser.
+
+Press **Ctrl-O** to open the browser from the keyboard. **Copy link** or
+**Ctrl-X** copies the complete browser link when you need it. The browser
 link stays complete when it wraps or the window size changes. For device login,
 **Ctrl-Y** copies the separate device code. Follow the provider's instructions.
 Escape or Ctrl-C cancels and returns to the retained draft.
@@ -49,11 +54,15 @@ terminal clipboard writer. No clipboard configuration is required in a terminal
 that permits these writes. The notice says **Copy requested** because a terminal
 can refuse the request.
 
-**Ctrl-L**, or **Link**, always shows the complete URL in a normal text buffer
+**Ctrl-L**, or **Full link**, shows the complete URL in a normal text buffer
 and puts it in the Vim register. Use `y$` to copy the complete logical line.
 Enter returns to login input. Login accepts a pasted
 callback or code when the provider requests one. The `\login` command remains
 available.
+
+If a previous browser attempt says it cannot connect to `127.0.0.1:1455`,
+start a new login and click **Open browser** again. An old browser tab cannot
+complete a login whose window was cancelled or closed.
 
 After login, choose a model for the new chat. Use **F1 → Choose a model**, or
 type `\model`, to see
@@ -180,7 +189,18 @@ creates a child agent. It then opens a file with NERDTree `s` and returns to the
 child's own input and draft. The [report](tests/evidence/chat-workflow.json)
 records each action and the video hash. Responses use the Pi faux provider.
 
-[Watch the login controls](tests/evidence/login-controls.mp4).
+[Watch browser sign-in](tests/evidence/browser-login.mp4).
+This recording uses actual Firefox, Neovim, Rust, and Pi. It shows the
+**Open browser** button, empty input, cancellation, a fresh attempt, and a
+15-second wait in the browser. The browser then returns to Pi's local callback
+page, and typing continues in the retained draft. Captions explain each action.
+Playback is half speed. The first frame stays for three seconds; the last
+frame stays for four seconds so the result can be read.
+The [report](tests/evidence/browser-login.json) records the actions and hashes.
+The account page and token replies are test responses. This test does not
+validate a real subscription.
+
+[Watch the earlier clipboard controls](tests/evidence/login-controls.mp4).
 The recording shows the complete link copied into the actual system clipboard,
 native selection, mouse controls, a narrow terminal, and return to the retained
 draft. Playback is one-third speed. The last frame stays for four seconds so the
@@ -595,21 +615,23 @@ test uses temporary workspaces, state directories, and sockets. No test needs
 paid provider access. The faux provider controls responses and actual coding
 tools execute local test commands.
 
-The desktop checks require [Kitty 0.49.2](https://github.com/kovidgoyal/kitty/releases/tag/v0.49.2)
-and Xvfb. CI installs the published Kitty archive and checks its SHA-256 hash.
-Set `HARNESS_TEST_XVFB` if Xvfb is outside `PATH`. These are test tools, not
-application dependencies. The desktop check fails if they are absent.
-Set `HARNESS_GUI_VIDEO=1` to record the desktop checks; recording also needs FFmpeg.
+The desktop checks require [Kitty 0.49.2](https://github.com/kovidgoyal/kitty/releases/tag/v0.49.2),
+[Firefox 157.0.1](https://archive.mozilla.org/pub/firefox/releases/157.0.1/),
+Xvfb, FFmpeg, and the X11 test extension library (`libXtst`).
+CI checks the published Kitty and Firefox archive hashes before extraction.
+Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
+`PATH`. These are test tools, not application dependencies. The desktop check
+fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
 
 The complete release gate passed on **2026-10-20** with the final source files. It passed
 formatting, Clippy with warnings denied, 56 Rust tests, the release build, five
-adapter syntax checks, and 130 Node tests. The Node tests include 68 adapter tests,
+adapter syntax checks, and 132 Node tests. The Node tests include 69 adapter tests,
 34 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
-and ten actual server recovery tests. Independent
+ten actual server recovery tests, and one process exit test. Independent
 Node test files run concurrently with separate temporary directories and sockets.
 
 Neovim passed four headless suites, **73 actual terminal cases with the Rust
-server and Pi**, four desktop login cases, and 43 terminal cases with controlled
+server and Pi**, five desktop login cases, and 43 terminal cases with controlled
 protocol fixtures. The independent terminal groups run concurrently. The actual
 tests cover each normal exit command, exact answers, write
 failures, hidden modified buffers, multiple sessions, another client, completion
@@ -667,9 +689,25 @@ also copy the device code with default Neovim settings, without changing
 `g:clipboard` or showing a false clipboard error. They check keyboard and mouse
 controls, native text selection, narrow windows, a terminal that denies clipboard
 writes, and browser completion while an unsaved file has focus.
-The browser-opening test checks the full URL passed to the desktop handler.
-Its local callback uses only the URL obtained from the clipboard. These tests
-use synthetic account replies; they do not prove that a real subscription is valid.
+The clipboard case checks the complete URL passed to the desktop handler.
+Its local callback uses only the URL obtained from the clipboard.
+The Firefox case clicks **Open browser** without copying the link. It submits
+the local test account form through native browser input. Firefox follows an
+HTTP redirect to the actual Pi listener at `127.0.0.1:1455`. The successful
+attempt waits at least 15 seconds in Firefox before approval. Empty and
+space-only Enter keep the listener open. A cancelled attempt cannot complete a
+later login; only the current attempt exchanges a code. The exact unsent draft
+remains available for typing. Each Firefox attempt uses a temporary profile
+and a local proxy that rejects external requests. The user's browser profile
+is unchanged. These tests use synthetic account replies; they do not prove that
+a real subscription is valid.
+
+A separate callback probe reproduced the reported connection refusal when
+empty input closed the previous login. This is a reproduced cause, not a record
+of the user's keystrokes. The fixed adapter keeps waiting on empty input and
+still accepts a pasted callback or Escape to cancel. The
+[browser report](tests/evidence/browser-login.json) includes the before and
+after results.
 
 The chat action tests keep the task while selecting settings. They check exact
 typing after menu and terminal cancellation, delayed settings without focus

@@ -10,46 +10,55 @@
       "chord": "1.3.0"
     }
   },
-  "mode": "Actual Kitty/Xvfb desktop, Neovim, Rust and Pi; native clipboard paste and controlled desktop opener",
+  "mode": "Actual Kitty/Xvfb desktop, Neovim, Rust, Pi and Firefox; native clipboard paste and browser callbacks",
   "command": "python3 tests/nvim/login_gui.py",
   "groups": [
     "all"
   ],
-  "passed": 4,
+  "passed": 5,
   "cases": [
     {
       "case": "device-code-native-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/device-code-native-clipboard.ansi.gz",
-      "terminal_bytes": 189127,
-      "terminal_sha256": "92c73736527507aa5ecb236863b7940716c3c6ab7b6c69ad729dc5e9bbadf7b9"
+      "terminal_bytes": 187327,
+      "terminal_sha256": "a6b3bd94ec48d6905708c387834752b35a6f7a296278d9bbeeab55615806e5f0"
+    },
+    {
+      "case": "login-browser-delayed-return",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/login-browser-delayed-return.ansi.gz",
+      "terminal_bytes": 110831,
+      "terminal_sha256": "514726a3917c7f050950a7f5e242f20f29c15af3ed7192d7591baaf44f9fde82"
     },
     {
       "case": "login-copy-default-editor",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-copy-default-editor.ansi.gz",
-      "terminal_bytes": 149058,
-      "terminal_sha256": "34656a2c2999dc555fc92a56f93ddd96d5875e84f50e7f031057d666aa087ae8"
+      "terminal_bytes": 150819,
+      "terminal_sha256": "728ae1d537cf0b437a450ad9e519eb056b5ac3d5a84dffcf146d9479aa28b73b"
     },
     {
       "case": "login-copy-without-system-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-copy-without-system-clipboard.ansi.gz",
-      "terminal_bytes": 205143,
-      "terminal_sha256": "1e432ea40155547c3aa65d7dd7f0c4dff4fffe085ddc5e3c0cc3b6f67c8be1e1"
+      "terminal_bytes": 206006,
+      "terminal_sha256": "fcafb6740e50652b98df1272a5e558920d6318b43a06438248ed398f819013e9"
     },
     {
       "case": "login-url-native-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-url-native-clipboard.ansi.gz",
-      "terminal_bytes": 353206,
-      "terminal_sha256": "183b17b0c8222d162173aa337ea66bd401500e6ca2ed777cc6b9d2c52773dd36"
+      "terminal_bytes": 351623,
+      "terminal_sha256": "6ee7e6e9b807fda0c1a4fc90823b73917a3c3d07bcd002cf06bc3d06fc15ac8a"
     }
   ],
   "xvfb_vendor_release": 12101024,
+  "firefox_version": "Mozilla Firefox 157.0.1",
+  "firefox_executable": "/tmp/harness-firefox-157.0.1/firefox/firefox",
   "kitty_version": "kitty 0.49.2 created by Kovid Goyal",
   "xvfb_executable": "/tmp/harness-xvfb/usr/bin/Xvfb",
   "xvfb_sha256": "567a9b39284e303522fdc178059fe60d0e9917b811bd5066fb63260fd198a97c",
   "credentials": "synthetic only",
-  "url_source": "normal copy action and actual system paste; no RPC URL extraction"
+  "url_source": "native Open browser action or copy and actual system paste; no RPC URL extraction"
 }

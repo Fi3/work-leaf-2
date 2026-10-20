@@ -190,10 +190,16 @@ export async function terminalLogin(models, params, controller, deviceId) {
           }
         }
         const secret = prompt.type === 'secret' || prompt.type === 'manual_code';
-        const value = await question(`${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ''}: `, secret, signal);
-        if (prompt.type === 'secret' && value === '') { cancel(); controller.signal.throwIfAborted(); }
-        if (prompt.type === 'secret' && (!value.trim() || /[\u0000-\u001f\u007f-\u009f]/.test(value))) throw invalid('Credentials must contain text without control characters');
-        return value;
+        while (true) {
+          const value = await question(`${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ''}: `, secret, signal);
+          if (prompt.type === 'manual_code' && !value.trim()) {
+            write('Wait for your browser, or paste the complete code or redirect URL. Escape cancels.\r\n');
+            continue;
+          }
+          if (prompt.type === 'secret' && value === '') { cancel(); controller.signal.throwIfAborted(); }
+          if (prompt.type === 'secret' && (!value.trim() || /[\u0000-\u001f\u007f-\u009f]/.test(value))) throw invalid('Credentials must contain text without control characters');
+          return value;
+        }
       },
       notify: event => {
         if (event.type === 'auth_url') {
