@@ -9,6 +9,22 @@ function M.new(transport, actions)
       if vim.api.nvim_win_get_buf(win) == self.buffer then return win end
     end
   end
+  local function width()
+    return math.min(32, math.max(20, math.floor(vim.o.columns / 3)))
+  end
+  local resizing = false
+  vim.api.nvim_create_autocmd({ 'WinClosed', 'WinResized', 'VimResized' }, { callback = function()
+    if resizing then return end
+    resizing = true
+    vim.schedule(function()
+      resizing = false
+      local win = window()
+      if not win or vim.api.nvim_win_get_width(win) == width() then return end
+      -- Closing an adjacent fixed window can give all of its space to this tree.
+      vim.api.nvim_win_set_width(win, width())
+      if vim.o.equalalways and vim.o.eadirection ~= 'ver' then vim.cmd('horizontal wincmd =') end
+    end)
+  end })
 
   local function name(item)
     return type(item.name) == 'string' and item.name or 'New chat'
@@ -167,10 +183,10 @@ function M.new(transport, actions)
         end)
       end)
     end
-    vim.cmd('topleft ' .. math.min(32, math.max(20, math.floor(vim.o.columns / 3))) .. 'vsplit')
+    vim.cmd('topleft ' .. width() .. 'vsplit')
     vim.api.nvim_win_set_buf(0, self.buffer)
     vim.wo.number, vim.wo.relativenumber, vim.wo.wrap, vim.wo.winfixwidth = false, false, false, true
-    vim.wo.statusline = 'Enter open · n new · h/l fold · s stop · q hide'
+    vim.wo.statusline = 'Enter open · n new · s stop'
     render(); self.refresh()
   end
 

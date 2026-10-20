@@ -1485,8 +1485,7 @@
   },
   "imports": [
     "@earendil-works/chord/context",
-    "@earendil-works/pi-ai/models",
-    "@earendil-works/pi-ai/providers/anthropic",
+    "@earendil-works/pi-ai/providers/all",
     "@earendil-works/pi-ai/providers/faux",
     "@earendil-works/pi-durable",
     "@earendil-works/pi-durable/env/node",

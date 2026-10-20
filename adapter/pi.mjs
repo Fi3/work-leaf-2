@@ -2,8 +2,7 @@ import { realpath, stat, readFile, lstat, chmod } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { BACKGROUND_CONTEXT as context, withCancel } from '@earendil-works/chord/context';
-import { createModels } from '@earendil-works/pi-ai/models';
-import { anthropicProvider } from '@earendil-works/pi-ai/providers/anthropic';
+import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { fauxProvider, fauxAssistantMessage } from '@earendil-works/pi-ai/providers/faux';
 import { Harness, createRegistry, defineDoc, configure, LiveDoc } from '@earendil-works/pi-durable';
 import { CodingTools } from '@earendil-works/pi-durable/tools';
@@ -11,6 +10,7 @@ import { NodeExecutionEnv } from '@earendil-works/pi-durable/env/node';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { apiRevision, appError, invalid, limits, validate, RpcError } from './protocol.mjs';
 import { chunk, cursor, entryPreview, entryText, fitPage, outcome, parseCursor, snapshot } from './view.mjs';
+import { AuthStore, terminalLogin } from './auth.mjs';
 
 export const SessionDoc = defineDoc({ kind: 'app.session', version: 1, scope: 'conversation', history: 'latest', fork: 'initial', initial: () => ({}) });
 const toolNames = CodingTools.tools.map(tool => tool.name);
@@ -43,8 +43,8 @@ function cancelAfter(milliseconds, cancel) {
   };
   arm(); return () => clearTimeout(timer);
 }
-async function configuredModels() {
-  const models = createModels(); models.setProvider(anthropicProvider());
+async function configuredModels(credentials) {
+  const models = builtinModels({ credentials, modelsStore: credentials.catalogs });
   const tokens = Number(process.env.HARNESS_FAUX_TOKENS_PER_SECOND ?? 100000);
   const faux = fauxProvider({ models: [{ id: 'test' }], tokensPerSecond: tokens, tokenSize: { min: 1, max: 1 } });
   if (process.env.HARNESS_FAUX_RESPONSES) {
@@ -54,7 +54,7 @@ async function configuredModels() {
   } else {
     const respond = () => {
       faux.appendResponses([respond]);
-      return fauxAssistantMessage('Demo mode uses fixed replies. It does not use an AI model or change project files.\n\nYou can test prompt input, saved history, and the agent panels. Use \\model to choose an AI model and \\login to load its key. Run `harness setup` to change the startup defaults.');
+      return fauxAssistantMessage('Demo mode uses fixed replies. It does not use an AI model or change project files.\n\nYou can test prompt input, saved history, and the agent panels. Use \\model to choose an AI model and \\login to connect an account or load a key. Run `harness setup` to change the startup defaults.');
     };
     faux.setResponses([respond]);
   }
@@ -71,23 +71,27 @@ async function checkDatabase(directory) {
 }
 export async function openApplication(config, storage) {
   await checkDatabase(config.state_dir);
-  const app = new Application(config, await configuredModels());
+  const credentials = new AuthStore();
+  const app = new Application(config, await configuredModels(credentials), credentials);
   const registry = createRegistry(); registry.install(CodingTools);
   app.harness = await Harness.open(storage ?? await openNodeSqliteStorage(join(config.state_dir, 'agent.sqlite')), {
     models: app.models, registry, env: target => app.environment(target),
     settings: { compaction: { backgroundTokens: 0 }, progress: { partialIntervalMs: 100, outputIntervalMs: 100 } },
     onReport: () => process.stderr.write('Pi reported an internal failure\n'),
   }, context);
+  credentials.harness = app.harness;
+  await app.models.refresh({ allowNetwork: false });
   await checkDatabase(config.state_dir);
   app.harness.subscribeCommits(publication => app.publish(publication));
   await app.restore();
   return app;
 }
 class Application {
-  constructor(config, models) {
-    this.config = config; this.models = models; this.sessions = new Map(); this.environments = new Map();
+  constructor(config, models, credentials) {
+    this.config = config; this.models = models; this.credentials = credentials; this.sessions = new Map(); this.environments = new Map();
     this.watches = new Map(); this.waits = new Map(); this.stops = new Map(); this.locks = new Map();
     this.pending = new Set(); this.blocked = null; this.closing = false;
+    this.authentication = null;
   }
   environment({ conversationId, cwd }) {
     if (!this.environments.has(conversationId)) {
@@ -109,14 +113,19 @@ class Application {
         if (stored?.session_id) this.sessions.set(stored.session_id, { metadata: metadata(stored), conversation: await this.harness.conversation(record.id, context) });
       }
     } while (next);
+    await this.preflight();
+  }
+  async preflight() {
     const inspection = await this.harness.inspect(context);
+    let blocked = null;
     this.recovering = new Set(inspection.submissions.map(record => record.id));
     for (const record of inspection.submissions) {
       const session = [...this.sessions.values()].find(s => s.conversation.id === record.conversationId);
       try { if (!session) throw notReady(); await this.checkConfiguration(session.metadata); }
-      catch { this.blocked = 'A pending session cannot restore its fixed configuration'; }
+      catch { blocked = 'A pending session cannot restore its fixed configuration'; }
     }
-    if (!this.blocked) this.harness.resume();
+    this.blocked = blocked;
+    if (!blocked && !this.closing) this.harness.resume();
   }
   async checkConfiguration(metadata) {
     if (metadata.schema_version !== 1 || JSON.stringify(metadata.tools) !== JSON.stringify(toolNames)) throw appError('not_ready', 'Stored agent configuration is unavailable');
@@ -131,18 +140,52 @@ class Application {
   async configuration(params) {
     const current = params.session_id ? this.session(params.session_id).metadata : this.config;
     const provider = current.provider ?? null, model = current.model ?? null;
-    const models = this.models.getModels('anthropic').map(({ id, name }) => ({ id, name }));
+    const models = this.models.getModels().map(({ provider, id, name }) => ({ provider, id, name }));
+    const providers = await Promise.all(this.models.getProviders().map(async item => ({
+      id: item.id, name: item.name, authenticated: !!(await this.models.checkAuth(item.id)),
+      methods: [
+        ...(item.auth.oauth ? [{ id: 'oauth', name: item.auth.oauth.loginLabel ?? item.auth.oauth.name }] : []),
+        ...(item.auth.apiKey?.login ? [{ id: 'api_key', name: item.auth.apiKey.name }] : []),
+      ],
+    })));
     const issue = !provider || !model ? 'missing_model' : !this.models.getModel(provider, model) ? 'invalid_model'
-      : !(await this.models.checkAuth(provider)) ? 'missing_key' : null;
+      : !providers.find(item => item.id === provider)?.authenticated ? 'missing_key' : null;
     const messages = {
       missing_model: 'Choose a model with \\model before sending a task.',
       invalid_model: 'The selected provider or model is unavailable. Use \\model to choose a supported model.',
-      missing_key: 'Anthropic credentials are missing from the server environment. Use \\login to set ANTHROPIC_API_KEY.',
+      missing_key: 'This provider is not connected. Use \\login to sign in or enter its credentials.',
     };
     const message = issue ? messages[issue] : provider === 'faux'
       ? 'Demo mode uses fixed replies. It does not use an AI model or change project files.'
-      : 'Anthropic credentials are present. The provider has not checked them.';
-    return { provider, model, ready: issue === null, issue, message, models };
+      : 'Provider credentials are present. The provider has not checked them.';
+    return { provider, model, ready: issue === null, issue, message, models, providers };
+  }
+  async login(params, requestId) {
+    this.assertAdmission();
+    if (this.authentication) throw appError('busy', 'Another login is already open');
+    const controller = new AbortController();
+    this.authentication = { requestId, controller, provider: params.provider };
+    try {
+      return await this.serialized(Symbol('login'), async () => {
+        const cancelled = await terminalLogin(this.models, params, controller, await this.credentials.deviceId());
+        if (!cancelled && !this.closing && this.blocked) await this.preflight();
+        return { provider: params.provider, authenticated: !!(await this.models.checkAuth(params.provider)), cancelled, worker_ready: !this.blocked && !this.closing };
+      });
+    } finally { this.authentication = null; }
+  }
+  async logout(params) {
+    return this.serialized(admission, async () => {
+      this.assertAdmission();
+      if (!this.models.getProvider(params.provider)) throw invalid('Unknown provider');
+      if (this.authentication?.provider === params.provider) throw appError('busy', 'This provider has a login in progress');
+      const pending = (await this.harness.inspect(context)).submissions;
+      for (const record of pending) {
+        const session = [...this.sessions.values()].find(item => item.conversation.id === record.conversationId);
+        if (session?.metadata.provider === params.provider) throw appError('busy', 'This provider has unfinished work');
+      }
+      await this.models.logout(params.provider);
+      return { provider: params.provider, authenticated: !!(await this.models.checkAuth(params.provider)), cancelled: false, worker_ready: !this.blocked && !this.closing };
+    });
   }
   session(id) {
     const session = this.sessions.get(id); if (!session) throw appError('not_found', 'Unknown session'); return session;
@@ -337,15 +380,20 @@ class Application {
     return chunk(text, params.offset, params.limit);
   }
   async release(params) {
-    for (const id of params.request_ids) this.waits.get(id)?.cancel(appError('not_ready', 'Client disconnected'));
+    for (const id of params.request_ids) {
+      this.waits.get(id)?.cancel(appError('not_ready', 'Client disconnected'));
+      if (this.authentication?.requestId === id) this.authentication.controller.abort();
+    }
     await Promise.all(params.watch_ids.map(id => this.unwatch(id))); return {};
   }
   async close(idleOnly = false) {
     this.closing = true;
+    this.authentication?.controller.abort();
     await Promise.allSettled([...this.pending]);
     if (idleOnly && (await this.harness.inspect(context)).submissions.length) { this.closing = false; throw appError('busy', 'Active work prevents shutdown'); }
     await Promise.all([...this.watches.keys()].map(id => this.unwatch(id)));
     for (const cancellation of this.waits.values()) cancellation.cancel(appError('not_ready', 'Worker is closing'));
+    await this.credentials.settle();
     await this.harness.close(context);
     await Promise.all([...this.environments.values()].map(env => env.cleanup(context)));
     return {};
@@ -363,6 +411,8 @@ class Application {
     validate(method, params);
     if (method === 'system.hello') { if (params.api_version !== 1) throw appError('incompatible_version', 'Use API version 1'); return this.hello(); }
     if (method === 'configuration.get') return this.configuration(params);
+    if (method === 'auth.login') return this.login(params, requestId);
+    if (method === 'auth.logout') return this.logout(params);
     if (method === 'session.create') return this.create(params);
     if (method === 'session.list') return this.list(params);
     if (method === 'session.unwatch') return this.unwatch(params.watch_id);

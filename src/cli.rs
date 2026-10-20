@@ -13,7 +13,8 @@ use std::time::Duration;
 
 const HELP: &str = "harness nvim [--config PATH] [--socket PATH]\n\
 harness setup [--config PATH] [--socket PATH]\n\
-harness auth [--config PATH] [--socket PATH]\n\
+harness auth [--provider ID] [--method api_key|oauth] [--config PATH] [--socket PATH]\n\
+harness logout --provider ID [--config PATH] [--socket PATH]\n\
 harness start|serve|upgrade [--config PATH] [--state-dir PATH] [--socket PATH]\n\
 harness status|shutdown|restart-worker|rpc [--socket PATH]\n\
 harness session create --id ID --workspace PATH [--parent ID] [--name NAME] [--socket PATH]\n\
@@ -79,9 +80,9 @@ impl Arguments {
         let command = positional.join(" ");
         let allowed: &[&str] = match command.as_str() {
             "start" | "serve" | "upgrade" => &["--socket", "--config", "--state-dir"],
-            "nvim" | "setup" | "auth" | "status" | "shutdown" | "restart-worker" | "rpc" => {
-                &["--socket"]
-            }
+            "auth" => &["--socket", "--provider", "--method"],
+            "logout" => &["--socket", "--provider"],
+            "nvim" | "setup" | "status" | "shutdown" | "restart-worker" | "rpc" => &["--socket"],
             "session create" => &["--socket", "--id", "--workspace", "--parent", "--name"],
             "session configure" => &[
                 "--socket",
@@ -156,7 +157,7 @@ fn execute(args: Vec<String>) -> Result<i32, RpcError> {
     match args.command.as_str() {
         "nvim" => return crate::editor::open(&config),
         "setup" => return crate::setup::run(&config),
-        "auth" => return crate::setup::auth(&config),
+        "auth" => return crate::setup::auth(&config, args.get("--provider"), args.get("--method")),
         "serve" => {
             server::serve(config)?;
             return Ok(0);
@@ -202,6 +203,10 @@ fn operation(args: &Arguments) -> Result<(&'static str, Value), RpcError> {
     let session = || args.required("--session");
     Ok(match args.command.as_str() {
         "status" => ("system.hello", json!({"api_version":1})),
+        "logout" => (
+            "auth.logout",
+            json!({"provider":args.required("--provider")?}),
+        ),
         "session create" => {
             let mut params = json!({"session_id":args.required("--id")?, "workspace":args.required("--workspace")?});
             let parent = if let Some(parent) = args.get("--parent") {

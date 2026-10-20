@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use std::io::{self, BufRead};
 
 pub const API_VERSION: u64 = 1;
-pub const API_REVISION: u64 = 2;
+pub const API_REVISION: u64 = 3;
 pub const MAX_RECORD: usize = 4 * 1024 * 1024;
 pub const MAX_INPUT: usize = 1024 * 1024;
 pub const MAX_SNAPSHOT: usize = 512 * 1024;
@@ -19,7 +19,8 @@ pub fn check_revision(hello: &Value, allow_legacy: bool) -> Result<(), RpcError>
     if hello["api_revision"].as_u64() == Some(API_REVISION) {
         return Ok(());
     }
-    let legacy = hello.get("api_revision").is_none() || hello["api_revision"].as_u64() == Some(1);
+    let legacy = hello.get("api_revision").is_none()
+        || matches!(hello["api_revision"].as_u64(), Some(1 | 2));
     if legacy && allow_legacy {
         return Ok(());
     }
@@ -151,6 +152,8 @@ pub fn validate(method: &str, params: &Value) -> Result<(), RpcError> {
     let (required, optional): (&[&str], &[&str]) = match method {
         "system.hello" => (&["api_version"], &[]),
         "configuration.get" => (&[], &["session_id"]),
+        "auth.login" => (&["provider", "method", "terminal"], &[]),
+        "auth.logout" => (&["provider"], &[]),
         "session.create" => (&["session_id", "workspace"], &["parent_session_id", "name"]),
         "session.configure" => (
             &["session_id"],
@@ -221,12 +224,19 @@ pub fn validate(method: &str, params: &Value) -> Result<(), RpcError> {
             "Supply settings; provider and model must be supplied together",
         ));
     }
+    if method == "auth.login"
+        && (!matches!(params["method"].as_str(), Some("api_key" | "oauth"))
+            || !string(params, "terminal")?.starts_with("/dev/"))
+    {
+        return Err(RpcError::invalid("Invalid login method or terminal"));
+    }
     for key in [
         "submission_id",
         "entry_id",
         "watch_id",
         "cursor",
         "workspace",
+        "terminal",
     ] {
         if object.contains_key(key) {
             let value = string(params, key)?;

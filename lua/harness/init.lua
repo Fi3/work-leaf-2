@@ -8,7 +8,7 @@ local connection, watch, watch_sequence = 'disconnected', nil, 0
 local attachment = 0
 local pending_attachment
 local message
-local render, send, activate
+local render, send, activate, model
 
 local function report(message, target)
   local id = target or selected
@@ -200,12 +200,60 @@ local function create(directory, name, parent)
   admit_chat(id)
 end
 
-local function authenticate()
-  setup.open(function()
-    if selected and sessions[selected].snapshot then attach(selected, function() notice('Key received. Send your task when ready.'); view.focus() end)
-    else notice('Key received.'); view.focus() end
-    if sidebar then sidebar.refresh() end
-  end, 'auth')
+local function provider_label(item)
+  local methods = {}
+  for _, method in ipairs(item.methods) do methods[#methods + 1] = method.name end
+  return item.name .. (#methods > 0 and ' · ' .. table.concat(methods, ' / ') or '')
+    .. (item.authenticated and ' [connected]' or ' [login needed]')
+end
+
+local function authenticate(argument)
+  local id, origin, buffer = selected, vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+  local function current()
+    return selected == id and vim.api.nvim_get_current_win() == origin and vim.api.nvim_get_current_buf() == buffer
+  end
+  transport.connect(function(_, failure)
+    if failure then report(failure); return end
+    rpc('configuration.get', { session_id = id }, function(value)
+      if not current() then return end
+      local items, chosen, current_index = {}, nil, nil
+      for _, provider in ipairs(value.providers) do
+        if #provider.methods > 0 then
+          items[#items + 1] = provider
+          if provider.id == value.provider then current_index = #items end
+          if provider.id == argument then chosen = provider end
+        end
+      end
+      local function login(provider)
+        if not provider or not current() then return end
+        local function method(method)
+          if not method or not current() then return end
+          setup.open(provider, method, function(focused)
+            rpc('configuration.get', { session_id = id }, function(status)
+              if id and sessions[id] then
+                sessions[id].notice = status.message
+                if selected == id then
+                  render()
+                  if focused and current() then
+                    if type(status.model) ~= 'string' then model('', provider.id) else view.focus() end
+                  end
+                end
+              else vim.notify('Harness: ' .. provider.name .. ' connected. Open a chat and use \\model.') end
+              if sidebar then sidebar.refresh() end
+            end)
+          end)
+        end
+        if #provider.methods == 1 then method(provider.methods[1])
+        else require('harness.select').select(provider.methods, { prompt = 'Connect ' .. provider.name,
+          format_item = function(item) return item.name end }, method) end
+      end
+      if argument and argument ~= '' then
+        if chosen then login(chosen)
+        else notice('Choose a provider with \\login. Do not put a key in the command.'); view.focus() end
+      else require('harness.select').select(items, { prompt = 'Connect an account or API key', selected = current_index,
+        format_item = provider_label }, login) end
+    end)
+  end)
 end
 
 local function choose(always, directory)
@@ -308,12 +356,17 @@ local function settings(values, target)
   values.session_id = id
   rpc('session.configure', values, function()
     session.notice = 'Settings saved.'
+    if values.model then
+      transport.request('configuration.get', { session_id = id }, function(status, err)
+        if not err then session.notice = 'Settings saved. ' .. status.message; if selected == id then render() end end
+      end)
+    end
     if sidebar then sidebar.refresh() end
     if selected == id then attach(id, function() render(); view.focus() end) end
   end)
 end
 
-local function model(argument, provider)
+model = function(argument, provider)
   local id = selected
   local origin, buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
   if argument ~= '' then
@@ -325,11 +378,16 @@ local function model(argument, provider)
   end
   rpc('configuration.get', { session_id = id }, function(value)
     if selected ~= id or vim.api.nvim_get_current_win() ~= origin or vim.api.nvim_get_current_buf() ~= buffer then return end
-    local items = {}
-    if provider ~= 'faux' then
-      for _, item in ipairs(value.models) do items[#items + 1] = { provider = 'anthropic', model = item.id, label = item.name .. ' · Anthropic' } end
+    local items, providers = {}, {}
+    for _, item in ipairs(value.providers) do providers[item.id] = item end
+    for _, item in ipairs(value.models) do
+      if not provider or provider == item.provider then
+        local account = providers[item.provider]
+        items[#items + 1] = { provider = item.provider, model = item.id,
+          label = (account and account.name or item.provider) .. ' / ' .. item.name
+            .. (item.provider == 'faux' and ' · fixed replies, no AI coding' or account and not account.authenticated and ' [login needed]' or '') }
+      end
     end
-    if provider ~= 'anthropic' then items[#items + 1] = { provider = 'faux', model = 'test', label = 'Local demo · fixed replies, no AI coding' } end
     local current
     for index, item in ipairs(items) do
       if item.provider == value.provider and item.model == value.model then current = index; break end
@@ -344,20 +402,25 @@ end
 local function chat_command(name, argument, captured)
   local session = sessions[selected]
   local id = selected
+  local origin, buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
   if view.draft() == captured then view.set_draft(session.pending and session.pending.text or '') end
   session.notice = nil
   if name == 'help' then notice(require('harness.commands').help()); view.focus()
   elseif name == 'model' then model(argument)
   elseif name == 'provider' then
-    if argument == 'anthropic' or argument == 'faux' or argument == 'demo' then model('', argument == 'demo' and 'faux' or argument)
-    elseif argument ~= '' then notice('Providers: anthropic, demo.'); view.focus()
-    else require('harness.select').select({ 'Anthropic', 'Local demo (fixed replies)' }, { prompt = 'Provider' }, function(_, index)
-      if selected ~= id then return end
-      if index then model('', index == 1 and 'anthropic' or 'faux') end
-    end) end
+    rpc('configuration.get', { session_id = id }, function(value)
+      if selected ~= id or vim.api.nvim_get_current_win() ~= origin or vim.api.nvim_get_current_buf() ~= buffer then return end
+      if argument == 'demo' then argument = 'faux' end
+      for _, provider in ipairs(value.providers) do
+        if provider.id == argument then model('', provider.id); return end
+      end
+      if argument ~= '' then notice('Choose a provider with \\provider.'); view.focus(); return end
+      require('harness.select').select(value.providers, { prompt = 'Provider for this chat', format_item = provider_label }, function(item)
+        if item and selected == id then model('', item.id) end
+      end)
+    end)
   elseif name == 'login' or name == 'auth' then
-    if argument ~= '' then notice('Use \\login without a key. Enter the key only in the private terminal.'); view.focus()
-    else authenticate() end
+    authenticate(argument)
   elseif name == 'name' then
     if argument == '' then notice('Use \\name followed by a name.'); view.focus() else settings({ name = argument }) end
   elseif name == 'instructions' then settings({ instructions = argument })
@@ -458,11 +521,12 @@ function M.command(command)
     local action = command.fargs[1]
     local origin = selected
     local origin_tab = vim.api.nvim_get_current_tabpage()
+    local origin_window, origin_buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
     local send_text = action == 'send' and view.draft() or nil
     local send_command = send_text and require('harness.commands').parse(send_text)
     if send_command == 'upgrade' then view.set_draft(''); upgrade(); return end
     if action == 'upgrade' then upgrade(); return end
-    if action == 'setup' or action == 'login' then authenticate(); return end
+    if action == 'setup' or action == 'login' then authenticate(command.fargs[2]); return end
     if action == 'new' then create(workspace(), command.fargs[2]); return end
     if action == 'status' then
       local state = selected and watch and connection == 'connected' and sessions[selected].snapshot.state or 'unknown'
@@ -493,6 +557,8 @@ function M.command(command)
       end
       if origin_tab ~= vim.api.nvim_get_current_tabpage() or selected ~= origin then return end
       local function execute()
+        if send_command and vim.tbl_contains({ 'model', 'provider', 'login', 'auth' }, send_command)
+          and (vim.api.nvim_get_current_win() ~= origin_window or vim.api.nvim_get_current_buf() ~= origin_buffer) then return end
         local success, message = pcall(function()
           if action == 'sessions' then choose(true, directory)
           elseif action == 'attach' then attach(command.fargs[2], nil, true)

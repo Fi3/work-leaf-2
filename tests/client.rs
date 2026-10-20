@@ -99,7 +99,7 @@ fn hello(stream: &mut BufReader<UnixStream>) {
     reply(
         stream,
         &input,
-        json!({"api_version":1,"api_revision":2,"instance_id":"test","state_dir":"/tmp","ready":true}),
+        json!({"api_version":1,"api_revision":3,"instance_id":"test","state_dir":"/tmp","ready":true}),
     );
 }
 
@@ -333,7 +333,13 @@ fn handshake_rejects_wrong_version_state_and_unsafe_socket() {
 
 #[test]
 fn chat_revision_is_checked_before_any_operation() {
-    for revision in [None, Some(json!(1)), Some(json!(3)), Some(Value::Null)] {
+    for revision in [
+        None,
+        Some(json!(1)),
+        Some(json!(2)),
+        Some(json!(4)),
+        Some(Value::Null),
+    ] {
         for command in [
             vec![
                 "session",
@@ -356,7 +362,8 @@ fn chat_revision_is_checked_before_any_operation() {
             vec!["rpc"],
         ] {
             let revision = revision.clone();
-            let legacy = revision.is_none() || revision == Some(json!(1));
+            let legacy =
+                revision.is_none() || revision == Some(json!(1)) || revision == Some(json!(2));
             let fixture = Fixture::new(move |stream| {
                 let input = request(stream);
                 assert_eq!(input["method"], "system.hello");
@@ -1019,7 +1026,7 @@ fn client_configuration_selects_socket_and_checks_state() {
             reply(
                 stream,
                 &input,
-                json!({"api_version":1,"api_revision":2,"state_dir":state}),
+                json!({"api_version":1,"api_revision":3,"state_dir":state}),
             );
             let input = request(stream);
             assert_eq!(input["method"], "session.list");

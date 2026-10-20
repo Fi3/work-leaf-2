@@ -51,7 +51,12 @@ pub struct Application {
 fn mutation(method: &str) -> bool {
     matches!(
         method,
-        "session.create" | "session.configure" | "input.submit" | "run.stop"
+        "session.create"
+            | "session.configure"
+            | "input.submit"
+            | "run.stop"
+            | "auth.login"
+            | "auth.logout"
     )
 }
 
@@ -175,6 +180,17 @@ impl Application {
             return;
         }
         if request.method == "server.shutdown" {
+            if self.pending.values().any(|p| p.method == "auth.login") {
+                self.reply(
+                    client,
+                    request.id,
+                    Err(RpcError::app(
+                        "busy",
+                        "Finish or cancel the open login before shutdown",
+                    )),
+                );
+                return;
+            }
             self.shutdown = Some((client, request.id));
             return;
         }
@@ -376,6 +392,14 @@ impl Application {
                 }
                 self.finished = true;
             }
+        }
+        if matches!(pending.method.as_str(), "auth.login" | "auth.logout")
+            && let Ok(value) = &result
+            && let Some(ready) = value["worker_ready"].as_bool()
+            && let Some(hello) = self.handshake.as_mut()
+        {
+            hello["ready"] = json!(ready);
+            hello["scheduling_enabled"] = json!(ready);
         }
         self.reply(pending.client, pending.id, result);
         Ok(())

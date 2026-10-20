@@ -1,7 +1,7 @@
 local M = {}
 
 function M.capture(buffer, workspace, first, last)
-  if not vim.api.nvim_buf_is_valid(buffer) or vim.bo[buffer].buftype ~= '' then
+  if not vim.api.nvim_buf_is_valid(buffer) or vim.bo[buffer].buftype ~= '' or vim.b[buffer].harness_session_id then
     error('Context requires a file buffer.')
   end
   local name = vim.api.nvim_buf_get_name(buffer)

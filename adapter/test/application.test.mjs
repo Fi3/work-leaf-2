@@ -31,8 +31,7 @@ const isKind = kind => error => error.data?.kind === kind;
 
 test('configuration lists the Pi catalog and explains missing or unsupported choices without requests', async t => {
   const { app, call } = await setup(t);
-  let authReads = 0;
-  app.models = createModels({ authContext: { env: async () => { authReads++; return undefined; }, fileExists: async () => false } });
+  app.models = createModels({ authContext: { env: async () => undefined, fileExists: async () => false } });
   app.models.setProvider(anthropicProvider());
   t.mock.method(globalThis, 'fetch', () => { assert.fail('Configuration must not make a network request'); });
   for (const [provider, model, issue] of [
@@ -45,9 +44,10 @@ test('configuration lists the Pi catalog and explains missing or unsupported cho
     assert.match(result.message, /\\model/);
     assert.equal(result.models.length, 17);
     assert.ok(result.models.some(item => item.id === 'claude-sonnet-4-6' && item.name === 'Claude Sonnet 4.6'));
-    assert.ok(result.models.every(item => typeof item.id === 'string' && typeof item.name === 'string' && Object.keys(item).length === 2));
+    assert.ok(result.models.every(item => typeof item.id === 'string' && typeof item.name === 'string' && item.provider === 'anthropic' && Object.keys(item).length === 3));
+    assert.deepEqual(result.providers.map(item => [item.id, item.authenticated, item.methods.map(method => method.id)]),
+      [['anthropic', false, ['oauth', 'api_key']]]);
   }
-  assert.equal(authReads, 0);
   assert.deepEqual((await call('session.list')).items, []);
 });
 
@@ -60,13 +60,14 @@ test('configuration checks only credential presence and returns no credential ma
   t.mock.method(globalThis, 'fetch', () => { assert.fail('Configuration must not make a network request'); });
   const missing = await call('configuration.get');
   assert.equal(missing.ready, false); assert.equal(missing.issue, 'missing_key');
-  assert.match(missing.message, /server environment/); assert.match(missing.message, /ANTHROPIC_API_KEY/);
+  assert.match(missing.message, /not connected/);
   assert.match(missing.message, /\\login/);
   key = 'deliberately-invalid-secret-for-test';
   const configured = await call('configuration.get');
   assert.equal(configured.ready, true); assert.equal(configured.issue, null);
   assert.match(configured.message, /has not checked/);
-  assert.deepEqual(Object.keys(configured).sort(), ['issue', 'message', 'model', 'models', 'provider', 'ready']);
+  assert.deepEqual(Object.keys(configured).sort(), ['issue', 'message', 'model', 'models', 'provider', 'providers', 'ready']);
+  assert.equal(configured.providers[0].authenticated, true);
   assert.ok(!JSON.stringify(configured).includes(key));
 });
 

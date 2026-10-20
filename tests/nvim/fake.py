@@ -31,10 +31,17 @@ def snapshot(session):
 def configuration(state, session=None):
     selected = session['metadata'] if session else state.get('configuration', {'provider': 'faux', 'model': 'test'})
     provider, model = selected.get('provider'), selected.get('model')
-    issue = 'missing_model' if not provider or not model else 'missing_key' if provider == 'anthropic' and not state.get('authenticated', False) else None
+    providers = json.loads(json.dumps(fixture['configuration']['providers']))
+    for item in providers:
+        item['authenticated'] = item['id'] == 'faux' or state.get('authenticated', {}).get(item['id'], False)
+    authenticated = next((item['authenticated'] for item in providers if item['id'] == provider), False)
+    issue = 'missing_model' if not provider or not model else 'missing_key' if not authenticated else None
     return {'provider': provider, 'model': model, 'ready': issue is None, 'issue': issue,
             'message': 'Choose a model with \\model.' if issue == 'missing_model' else 'Use \\login to enter a key.' if issue else 'Ready.',
-            'models': [{'id': 'hosted', 'name': 'Hosted model'}]}
+            'providers': providers, 'models': [
+                {'provider': 'anthropic', 'id': 'hosted', 'name': 'Hosted model'},
+                {'provider': 'openai-codex', 'id': 'gpt-5.4', 'name': 'GPT-5.4'},
+                {'provider': 'faux', 'id': 'test', 'name': 'Local demo'}]}
 
 def emit(value):
     line = (json.dumps(value, ensure_ascii=False, separators=(',', ':')) + '\n').encode()
@@ -44,7 +51,7 @@ def emit(value):
 
 state = load()
 if sys.argv[-1] == 'upgrade':
-    state['api_revision'] = 2
+    state['api_revision'] = 3
     save(state)
     sys.exit(0)
 if sys.argv[-1] == 'start':
@@ -52,8 +59,9 @@ if sys.argv[-1] == 'start':
     state['starts'] = state.get('starts', 0) + 1
     save(state)
     sys.exit(0)
-if sys.argv[-1] in ('setup', 'auth'):
+if 'auth' in sys.argv[1:] or 'setup' in sys.argv[1:]:
     state['auth_calls'] = state.get('auth_calls', 0) + 1
+    state.setdefault('auth_arguments', []).append(sys.argv[1:])
     save(state)
     print('Test credential: success, failure, or q to cancel:', flush=True)
     choice = input()
@@ -62,7 +70,8 @@ if sys.argv[-1] in ('setup', 'auth'):
         print('Cannot update server credentials.', flush=True)
         sys.exit(2)
     state = load()
-    state['authenticated'] = True
+    provider = sys.argv[sys.argv.index('--provider') + 1]
+    state.setdefault('authenticated', {})[provider] = True
     save(state)
     sys.exit(0)
 
@@ -78,9 +87,12 @@ for line in sys.stdin:
     failure = None
     session = state['sessions'].get(params.get('session_id'))
     if method == 'system.hello':
-        result = {'api_version': 1, 'api_revision': state.get('api_revision', 2)}
+        result = {'api_version': 1, 'api_revision': state.get('api_revision', 3)}
     elif method == 'configuration.get':
+        save(state)
+        time.sleep(state.get('configuration_delay', 0))
         result = configuration(state, session)
+        state['configuration_completed'] = state.get('configuration_completed', 0) + 1
     elif method == 'session.create':
         time.sleep(state.get('create_delay', 0))
         parent = state['sessions'].get(params.get('parent_session_id'))
@@ -92,7 +104,7 @@ for line in sys.stdin:
     elif method == 'session.configure':
         if session.get('active'):
             failure = {'code': -32000, 'message': 'Session has active work', 'data': {'kind': 'busy'}}
-        elif 'model' in params and (params['provider'], params['model']) not in (('faux', 'test'), ('anthropic', 'hosted')):
+        elif 'model' in params and (params['provider'], params['model']) not in (('faux', 'test'), ('anthropic', 'hosted'), ('openai-codex', 'gpt-5.4')):
             failure = {'code': -32602, 'message': 'Choose a model from the available catalog'}
         else:
             session['metadata'].update({key: value for key, value in params.items() if key in ('provider', 'model', 'instructions', 'name')})

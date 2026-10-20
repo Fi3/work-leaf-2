@@ -191,6 +191,24 @@
         "workspace": "/tmp/work",
         "parent_session_id": null
       }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "login",
+      "method": "auth.login",
+      "params": {
+        "provider": "openai-codex",
+        "method": "oauth",
+        "terminal": "/dev/pts/5"
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "logout",
+      "method": "auth.logout",
+      "params": {
+        "provider": "openai-codex"
+      }
     }
   ],
   "invalid": [
@@ -343,6 +361,46 @@
         "params": {
           "session_id": "work",
           "name": "﻿"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-login",
+        "method": "auth.login",
+        "params": {
+          "provider": "openai",
+          "method": "password",
+          "terminal": "/dev/pts/5"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-login",
+        "method": "auth.login",
+        "params": {
+          "provider": "openai",
+          "method": "api_key",
+          "terminal": "/tmp/not-a-terminal"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-login",
+        "method": "auth.login",
+        "params": {
+          "provider": "openai",
+          "method": "api_key",
+          "terminal": "/dev/pts/5",
+          "key": "must-not-enter-public-rpc"
         }
       },
       "code": -32602
@@ -530,17 +588,68 @@
     "message": "Local demo. Replies are fixed; no AI coding tasks run.",
     "models": [
       {
+        "provider": "anthropic",
         "id": "claude-sonnet-4-6",
         "name": "Claude Sonnet 4.6"
+      },
+      {
+        "provider": "openai-codex",
+        "id": "gpt-5.4",
+        "name": "GPT-5.4"
+      },
+      {
+        "provider": "faux",
+        "id": "test",
+        "name": "Local demo"
+      }
+    ],
+    "providers": [
+      {
+        "id": "anthropic",
+        "name": "Anthropic",
+        "authenticated": false,
+        "methods": [
+          {
+            "id": "api_key",
+            "name": "Anthropic API key"
+          },
+          {
+            "id": "oauth",
+            "name": "Claude account"
+          }
+        ]
+      },
+      {
+        "id": "openai-codex",
+        "name": "OpenAI Codex",
+        "authenticated": false,
+        "methods": [
+          {
+            "id": "oauth",
+            "name": "ChatGPT account"
+          }
+        ]
+      },
+      {
+        "id": "faux",
+        "name": "Local demo",
+        "authenticated": true,
+        "methods": []
       }
     ]
   },
   "hello": {
     "api_version": 1,
-    "api_revision": 2,
+    "api_revision": 3,
     "instance_id": "fixture",
     "state_dir": "/tmp/work",
     "ready": true,
     "storage_ready": true
+  },
+  "authentication": {
+    "provider": "openai-codex",
+    "authenticated": true,
+    "cancelled": false,
+    "worker_ready": true
   }
 }

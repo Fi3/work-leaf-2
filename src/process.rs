@@ -2,7 +2,7 @@ use crate::protocol::RpcError;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::os::fd::{AsRawFd, RawFd};
-use std::os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt};
+use std::os::unix::fs::{FileTypeExt, MetadataExt, OpenOptionsExt, PermissionsExt};
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
 use std::path::Path;
@@ -94,33 +94,38 @@ pub(crate) fn owned_read(path: &Path) -> io::Result<File> {
     Ok(file)
 }
 
-pub fn terminal_line(prompt: &str, secret: bool) -> io::Result<Option<String>> {
-    struct Restore(libc::termios);
-    impl Drop for Restore {
-        fn drop(&mut self) {
-            // The saved settings came from this process's live standard-input terminal.
-            unsafe { libc::tcsetattr(0, libc::TCSANOW, &self.0) };
+pub struct TerminalSession {
+    pub path: std::path::PathBuf,
+    settings: libc::termios,
+}
+
+impl TerminalSession {
+    pub fn open() -> io::Result<Self> {
+        let path = std::fs::read_link("/proc/self/fd/0")?;
+        if !path.starts_with("/dev") || !owned(&path)?.file_type().is_char_device() {
+            return Err(io::Error::other("Login requires an owned terminal"));
         }
-    }
-    let restore = if secret {
-        // tcgetattr initializes settings; standard input must be a terminal for setup.
-        let mut settings = unsafe {
+        // Standard input is live; tcgetattr initializes the writable settings value.
+        let settings = unsafe {
             let mut settings = std::mem::zeroed();
             if libc::tcgetattr(0, &mut settings) < 0 {
                 return Err(io::Error::last_os_error());
             }
             settings
         };
-        let saved = Restore(settings);
-        settings.c_lflag &= !(libc::ECHO | libc::ECHONL);
-        // Change only echo flags; canonical editing and terminal signal handling stay active.
-        if unsafe { libc::tcsetattr(0, libc::TCSANOW, &settings) } < 0 {
-            return Err(io::Error::last_os_error());
-        }
-        Some(saved)
-    } else {
-        None
-    };
+        Ok(Self { path, settings })
+    }
+}
+
+impl Drop for TerminalSession {
+    fn drop(&mut self) {
+        // Restore the original terminal even after worker failure or client interruption.
+        // TCSAFLUSH discards incomplete secret input from a cancelled prompt.
+        unsafe { libc::tcsetattr(0, libc::TCSAFLUSH, &self.settings) };
+    }
+}
+
+pub fn terminal_line(prompt: &str) -> io::Result<Option<String>> {
     print!("{prompt}");
     io::stdout().flush()?;
     let mut line = Vec::new();
@@ -159,7 +164,6 @@ pub fn terminal_line(prompt: &str, secret: bool) -> io::Result<Option<String>> {
             return Ok(None);
         }
         if byte == b'\n' {
-            drop(restore);
             return String::from_utf8(line)
                 .map(Some)
                 .map_err(|_| io::Error::other("Input must be UTF-8 text"));

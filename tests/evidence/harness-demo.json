@@ -1,13 +1,12 @@
 {
-  "recorded_at": "2026-10-19T19:13:40.516204+00:00",
-  "mode": "actual X11 screen capture of a dedicated Kitty window on an isolated Xvfb display; actual Neovim, Rust server, and Pi adapter",
-  "model": "Pi faux provider with fixed responses; no provider credentials supplied",
-  "tools": "actual Bash tool creates a stored child agent through the Rust command client; faux responses prescribe the tool call",
-  "input": "keys sent to the terminal with Kitty remote control",
-  "capture": "FFmpeg x11grab restricted to the terminal window",
+  "recorded_at": "2026-10-20T09:36:28.514737+00:00",
+  "mode": "Actual X11 screen capture of an isolated Kitty window; actual Neovim, Rust server, Pi adapter, and installed NERDTree",
+  "model": "Pi faux provider with fixed replies and an actual Bash tool; no paid model request",
+  "authentication": "Actual Pi OpenAI account login and callback; external token replies replaced by the synthetic test fixture; no real account or key",
+  "input": "Normal terminal keys through Kitty remote control; Neovim RPC observes state only; no editor focus repair",
   "video": "harness-demo.mp4",
-  "video_sha256": "f4513ed3b8b029c3e0f5dd3475b0dd5324d3144c92cb01fcbd6b429f209a8859",
-  "duration_seconds": 71.134,
+  "video_sha256": "495acd7c6fc890aac235630cdf0f2e0b1b677daa50485610e76b6daea00c06c0",
+  "duration_seconds": 59.6,
   "frames_per_second": 15,
   "screen_pixels": [
     1280,
@@ -18,131 +17,668 @@
   "steps": [
     {
       "seconds": 0.0,
-      "text": "Run ./harness.sh from your project. This test starts without a configuration file or key."
+      "text": "Start ./harness.sh in your project. This is an isolated test with synthetic account replies."
     },
     {
-      "seconds": 5.1,
-      "text": "Press ;. The left tree lists agents from this directory. Select + New chat."
+      "seconds": 2.2,
+      "text": "Press ;. The left tree lists agents for this directory. Press n to create a chat."
     },
     {
-      "seconds": 8.2,
-      "text": "Press Enter. Chat history fills the normal file area. The small message box is below it."
+      "seconds": 6.6,
+      "text": "Type \\login and press Enter. Search or scroll through all 42 provider choices."
     },
     {
-      "seconds": 11.3,
-      "text": "Type \\model and press Enter. The model list is scrollable and searchable."
+      "seconds": 10.8,
+      "text": "Escape returns to the chat. Type \\login openai to choose OpenAI directly."
     },
     {
-      "seconds": 14.4,
-      "text": "Page Down scrolls the list. The footer shows your position and the total number of choices."
+      "seconds": 13.0,
+      "text": "Select Sign in with ChatGPT. Pi opens the browser login. This test supplies a local callback and synthetic tokens."
     },
     {
-      "seconds": 17.4,
-      "text": "Press G to reach the last choice. Select Local demo with Enter for fixed replies without a key."
+      "seconds": 18.8,
+      "text": "Login opens that provider\u2019s models. For this recording, use the local demo to avoid a paid model request."
     },
     {
-      "seconds": 23.5,
-      "text": "Type \\name Review and press Enter. The name is optional; no name dialog blocks creation."
+      "seconds": 24.2,
+      "text": "Name the chat with \\name Review. Write a task; Shift-Enter adds a line."
     },
     {
-      "seconds": 26.5,
-      "text": "Write a task. Shift-Enter adds a line; Enter sends the complete prompt."
+      "seconds": 27.4,
+      "text": "Enter sends. The actual Rust server and Pi worker run the Bash tool and stream the reply."
     },
     {
-      "seconds": 32.6,
-      "text": "The actual Bash tool creates the child through the command client. The editor stays available."
+      "seconds": 32.3,
+      "text": "Press Escape, then ; twice and r. Tests is nested below its creator."
     },
     {
-      "seconds": 36.3,
-      "text": "Press Escape, then ; twice and r. Tests is nested under the Review agent that created it."
+      "seconds": 34.5,
+      "text": "Select Tests with Enter. Its conversation and draft are separate. Ctrl-^ returns to the previous chat."
     },
     {
-      "seconds": 40.4,
-      "text": "Select Tests with Enter. This child opens with an empty, separate conversation."
+      "seconds": 37.8,
+      "text": "Open NERDTree. Select app.py and press s for the normal vertical file split."
     },
     {
-      "seconds": 43.5,
-      "text": "Press Escape, then Ctrl-^ to return to the previous chat. Native buffers hold each conversation."
+      "seconds": 42.1,
+      "text": "Ctrl-W L selects the chat. Its message box appears only below that chat; the file keeps its full height."
     },
     {
-      "seconds": 46.6,
-      "text": "Use :buffer app.py to return to the file. The message box closes; the file uses the full height."
+      "seconds": 45.3,
+      "text": "NERDTree Enter opens app.py in the current file area. The chat and its message box are hidden."
     },
     {
-      "seconds": 49.7,
-      "text": "Press Ctrl-^ to return to Review. The chat and its message box return in the same editor area."
+      "seconds": 48.6,
+      "text": "Ctrl-^ restores the chat and its message box. Stored history remains available."
     },
     {
-      "seconds": 53.8,
-      "text": "Press p, then Escape. From the input, :vsplit app.py opens a file at normal height."
+      "seconds": 51.0,
+      "text": "NERDTree i opens README.txt in a normal horizontal split."
     },
     {
-      "seconds": 57.8,
-      "text": "Click the conversation. Its input returns below that chat only; the file keeps its full height."
-    },
-    {
-      "seconds": 61.9,
-      "text": "Press p, Escape, then :q. Only the input closes. The chat and file stay open."
-    },
-    {
-      "seconds": 65.0,
-      "text": "The chats stay saved. Press Escape, then :qa to close the idle editor."
-    },
-    {
-      "seconds": 68.0,
-      "text": "For AI coding, use \\model to select Anthropic, then \\login to enter your key."
+      "seconds": 55.3,
+      "text": "Use :q to close the file split. Use :qa to close the idle editor. All chats stay saved."
     }
   ],
   "assertions": [
-    "no configuration file or credentials before startup",
-    "normal editor starts with one window",
-    "semicolon shows only New chat in the empty directory tree",
-    "Enter on New opens chat without setup or name dialogs",
-    "model list opens through a chat command and Page Down scrolls",
-    "G reaches the last choice and Enter selects the local demo",
-    "name is set through a local chat command",
-    "Shift-Enter inserts a line and Enter submits the prompt",
-    "actual Bash tool creates a child with the correct stored parent",
-    "child appears nested under its creator",
-    "child selection opens separate empty history",
-    "chat history occupies the normal file window",
-    "Ctrl-^ switches between chat buffers",
-    "buffer command opens the source file and hides the message box",
-    "Ctrl-^ returns to the prior chat and restores its message box",
-    "no configuration file is written by chat settings",
-    "vsplit from input opens a normal height file",
-    "mouse click on chat restores input only beneath that chat",
-    "q closes only the input and preserves chat and file",
-    "normal idle exit closes Neovim"
+    "one normal editor window before semicolon",
+    "new chat opens immediately with input in Insert mode",
+    "login catalog includes all 42 providers with account or key methods",
+    "OpenAI account login runs in immediate terminal mode and completes a local callback",
+    "login opens provider models; all-provider model picker scrolls",
+    "local demo selection permits a fixed reproducible task without a paid request",
+    "Shift-Enter adds a line and Enter sends the prompt",
+    "actual Bash creates a stored child; the tree nests it under its parent",
+    "child history is separate and Ctrl-^ returns to the previous chat",
+    "NERDTree s opens a normal vertical split with readable file and chat widths",
+    "file focus hides the message box; chat focus restores it only under its own chat",
+    "NERDTree Enter replaces the current chat with a file; Ctrl-^ restores chat",
+    "NERDTree i opens a normal horizontal split",
+    "q closes a file split; qa closes the idle editor",
+    "chat settings do not create a global configuration file"
   ],
-  "cleanup": "all demonstration sessions stopped; private server shut down; terminal closed",
+  "cleanup": "Private server stopped; terminal and Xvfb closed; no test task in user sessions",
   "source_sha256": {
-    "src/application.rs": "91433fc2fca4341e8254a478c815435d3ab3ac1c402c9ad0547344ebf97c787a",
-    "src/cli.rs": "37d91ebbd18d0ea188e6d3abf6a247d33a66c3bd553d5ef4655a03408ea5f99f",
+    "src/application.rs": "a767179cff42e61db0c0129fd3da04341421f72c7511a64f8b10050dc7aa9b99",
+    "src/cli.rs": "2c40c5a580d43904437a6085d742999fd19ef0a9ca299dc4b40bbfbd8735b785",
     "src/client.rs": "79eb0e12d2338c52c8a56970c3fef06496b631d42b9b8168e08cf9c1b94d4103",
     "src/config.rs": "804b9928b001e61aafe718342b0382da26bf890d838249489c0ea5a1d987c4e4",
     "src/editor.rs": "c81ceb4d7dc462b4897d95eabb86c40c7fcec1a899bb2ef6112ec9d0d547d5ad",
     "src/lib.rs": "671a36164ded2fc2c3e027faae1636c879ba7db4c56d16cd8ee4fbf69f25031f",
     "src/main.rs": "316b18972c30f3a6a92d6ae1f309e5019efca6369fed83dd5aa23a5fe18fe856",
-    "src/process.rs": "543915fe0b4bd22bf40a99f3c8f105c8b21108b57a2ef55e1ff231a0ffce71fc",
-    "src/protocol.rs": "f20ddab10cd74d797e3dbcb597d5f91def2ab82a494112130c3f033c905299b6",
-    "src/server.rs": "80beb8f4a9e07cd65dcb0959ebf62b3558dcceea3627ad0954e6684ba96dd7fa",
-    "src/setup.rs": "11495fcfdfed9c74121d8fc9930c31a8bab4091b38c240cfe56577814e543d68",
+    "src/process.rs": "f3f831fff448057a6d0803e492ba5a73ef6bc3ac83e7d60fc311c64a601b4447",
+    "src/protocol.rs": "8c7440e81235e4536dab2cfb1e4701a8c9892e8b8fb7da227b6e6f5ef2141cbd",
+    "src/server.rs": "f54bc5d83df0de34e6442528cb80b1860b167dcc004a85033d6deffcc7cf0f57",
+    "src/setup.rs": "f2a35f5d578bc4170ecf6d3bc271413fa301de17a84fb9c449a22be9fc1b7c18",
     "src/worker.rs": "9a565790fb9aa2fcd0ed1c21d1955b68a2b6e29d23b3a57f5a691a524a8045ab",
-    "adapter/pi.mjs": "6c499e572b7d51358c9fe55de29953dab399b73e22e39b140b2110ad5fe7376c",
-    "adapter/protocol.mjs": "f8b56cc27fde859db5d2361a34777d7cbebc66e061ad86e8992026f29e860478",
+    "adapter/auth.mjs": "5abf85eab88b1b0163e38086a5bb9432873f7d9a13b30a7da3dbc77f1d304136",
+    "adapter/pi.mjs": "bc7d9f2a20ead27a9319a227f5490111895d977832b27ddcb25aa66bfcf9b366",
+    "adapter/protocol.mjs": "6141e4cbd38873b9b2bfb86a65a93d7e0d154f8f6cc6647bb1bbf3f5278970d8",
     "adapter/view.mjs": "133ca08bb4e42a48af493a03afd08782512f82728cff62be28bfdc69a50f6511",
     "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
-    "lua/harness/commands.lua": "ca88183111ee1d05c455c1d68ee1dd94e9218d9c8426e6af952291e0f1dec0da",
-    "lua/harness/context.lua": "938d5161702d32f55c11a53ea3186932ecaa74bdda5a7bde8f15439d0dd5c95b",
+    "lua/harness/commands.lua": "7db758e9918811784a8efbd88e0ba6d046bb5ad7c2599bff4ed03900bbb39967",
+    "lua/harness/context.lua": "1e4493139655687c8ed827223806ad494c83c284b307f9e8c6bb3d178a5dcd5d",
     "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
-    "lua/harness/init.lua": "8ad0fcb60aa5af643c690137f22dff29c2def792a00cf9e0b4e0d60a68fec976",
-    "lua/harness/select.lua": "e0aa058924211fc3ffa95ab5a538130676b968c52852fc8cab2e4b31d1805929",
-    "lua/harness/setup.lua": "fa73f912c70fd696046272838fa379d431ca2cfb4ddb6d38c855e2d9eb201bde",
-    "lua/harness/sidebar.lua": "c2b52c7bec5a74c1c99644ed5f1d7e431d0c5f3ca4d867ef98767eed4f705f91",
-    "lua/harness/transport.lua": "a57027006fc9de53c0b6a40a52fb1ca3033d9cdb2743d5ac64fa1b6340258820",
-    "lua/harness/view.lua": "99c5b213b931996cd8265651126a846baf369770bcd13352df87febefb01239c",
+    "lua/harness/init.lua": "e1b86eff0d6e0496631f25652d9a6ce642f54789f1c8ccc4346fe495cb1102bf",
+    "lua/harness/select.lua": "3a5a6d77786aae27d1a334ee096069e5ff1f6b0fcb059cd8b1676918d5feaee6",
+    "lua/harness/setup.lua": "14bc79db56e4d7876834da26fc70df96b6443a2577cbba409208234704bcce2d",
+    "lua/harness/sidebar.lua": "e17e2e03cb4c72efc34023528c6b82770c8750655ae359c16d515f8f771f2e40",
+    "lua/harness/transport.lua": "90d9e13d5601bb429a9805e5401948bc0eb08ccbd6586bf2de8d2c1cbca0fb67",
+    "lua/harness/view.lua": "9c1b2e4754907edd96bb94b078d50c57a8df844d14fd6310193cb2427ecdf3b1",
     "plugin/harness.lua": "966ecd73ee630914f9cc5c31c5334fac8542adfa875220e84b9aeb2eea07ec7e"
   },
-  "binary_sha256": "af0983792e9a0e9b23bfd9e1e38356c3047d4fcf120165bde4f4ca6fc4abb5b2"
+  "binary_sha256": "c40829cdc36536b710cea294032c68463f516c227f5a8a7768cbd4c0132c8214",
+  "frames": {
+    "01-tree": {
+      "screen_sha256": "6e13624ed547a452320288e97c2308447ecd00361c64e3ae50dff375ccc2c7ca",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": true,
+          "line_count": 1
+        },
+        {
+          "name": "/tmp/harness-human-e81h2jbr/demo-project/app.py",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 34,
+          "current": false,
+          "line_count": 5
+        }
+      ]
+    },
+    "02-chat": {
+      "screen_sha256": "56af06a53864ea914f220523c1cf2af4cfdd2af2f057614e055a97c89694a27b",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 4
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": true,
+          "line_count": 1
+        }
+      ]
+    },
+    "03-providers": {
+      "screen_sha256": "c6f3556ad72d7f73b43e228700b4a4facfa1fe9b282ebae930e8c0d9950de7e3",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 4
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": false,
+          "line_count": 1
+        },
+        {
+          "name": "harness://select",
+          "row": 8,
+          "col": 23,
+          "id": 1004,
+          "width": 80,
+          "height": 18,
+          "current": true,
+          "line_count": 42
+        }
+      ]
+    },
+    "04-methods": {
+      "screen_sha256": "e5eacff797caf20b54478634226a1e87bf3bf16805c3c460b259685838845157",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 4
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": false,
+          "line_count": 1
+        },
+        {
+          "name": "harness://select",
+          "row": 16,
+          "col": 43,
+          "id": 1005,
+          "width": 40,
+          "height": 2,
+          "current": true,
+          "line_count": 2
+        }
+      ]
+    },
+    "05-oauth": {
+      "screen_sha256": "96eacdbbc7eec6d833e59390a5b2dafcb09309c60d3cd4d39c76b4ead1d88861",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 4
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": false,
+          "line_count": 1
+        },
+        {
+          "name": "harness://setup",
+          "row": 6,
+          "col": 26,
+          "id": 1006,
+          "width": 76,
+          "height": 22,
+          "current": true,
+          "line_count": 22
+        }
+      ]
+    },
+    "06-account-models": {
+      "screen_sha256": "4cd2ddd1778943bdb49dac9d4604af6eabb4821c08e47a8757c81473b51b2fc9",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 6
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": false,
+          "line_count": 1
+        },
+        {
+          "name": "harness://select",
+          "row": 8,
+          "col": 43,
+          "id": 1007,
+          "width": 40,
+          "height": 18,
+          "current": true,
+          "line_count": 44
+        }
+      ]
+    },
+    "07-models-scroll": {
+      "screen_sha256": "0fb5dc45c903851f99a4d85982e37c754626dacf05aa7adf069fb28f2e0befc0",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 6
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": false,
+          "line_count": 1
+        },
+        {
+          "name": "harness://select",
+          "row": 8,
+          "col": 26,
+          "id": 1008,
+          "width": 74,
+          "height": 18,
+          "current": true,
+          "line_count": 1615
+        }
+      ]
+    },
+    "08-input": {
+      "screen_sha256": "b2677b6ee6d82ff7df2aebfdcb77dc7f77b7adb413246bb88985107557b83357",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 6
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": true,
+          "line_count": 2
+        }
+      ]
+    },
+    "09-result": {
+      "screen_sha256": "b1bfb81e9d33d9678649d93489b320d3b60fdfa57109e0abdab8196b7042a5c5",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1002,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 18
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": true,
+          "line_count": 1
+        }
+      ]
+    },
+    "10-child": {
+      "screen_sha256": "114bb0af5f2ab8b49bbb85254a52497a5218d2ed361dd418568f4b692354a29c",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1009,
+          "width": 32,
+          "height": 34,
+          "current": true,
+          "line_count": 3
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 18
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": false,
+          "line_count": 1
+        }
+      ]
+    },
+    "11-child-chat": {
+      "screen_sha256": "d55d8a08951a11b086150ed417925b3f026e9825fb071df48979bebabe59f99e",
+      "windows": [
+        {
+          "name": "harness://agents",
+          "row": 0,
+          "col": 0,
+          "id": 1009,
+          "width": 32,
+          "height": 34,
+          "current": false,
+          "line_count": 3
+        },
+        {
+          "name": "harness://chat/tests-child",
+          "row": 0,
+          "col": 33,
+          "id": 1000,
+          "width": 95,
+          "height": 30,
+          "current": false,
+          "line_count": 4
+        },
+        {
+          "name": "harness://prompt/tests-child",
+          "row": 31,
+          "col": 33,
+          "id": 1003,
+          "width": 95,
+          "height": 3,
+          "current": true,
+          "line_count": 1
+        }
+      ]
+    },
+    "12-native-vertical": {
+      "screen_sha256": "81483b91dada3cf448a03faec725a6c041f81ec887a9c1b3bc02c1d4b14297cc",
+      "windows": [
+        {
+          "name": "/tmp/harness-human-e81h2jbr/demo-project/app.py",
+          "row": 0,
+          "col": 0,
+          "id": 1012,
+          "width": 64,
+          "height": 34,
+          "current": true,
+          "line_count": 5
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 65,
+          "id": 1000,
+          "width": 63,
+          "height": 34,
+          "current": false,
+          "line_count": 18
+        }
+      ]
+    },
+    "13-chat-with-file": {
+      "screen_sha256": "bd20e6de60910bdd7077bf2f24e4551f0ec80ebf9ded90ea4fafe9ee54f6f38d",
+      "windows": [
+        {
+          "name": "/tmp/harness-human-e81h2jbr/demo-project/app.py",
+          "row": 0,
+          "col": 0,
+          "id": 1012,
+          "width": 64,
+          "height": 34,
+          "current": false,
+          "line_count": 5
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 65,
+          "id": 1000,
+          "width": 63,
+          "height": 30,
+          "current": true,
+          "line_count": 18
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 65,
+          "id": 1013,
+          "width": 63,
+          "height": 3,
+          "current": false,
+          "line_count": 1
+        }
+      ]
+    },
+    "14-native-enter": {
+      "screen_sha256": "7dc20739b788d3528a721fb2e6184d3407f98bb116968ff4f191265d0dbee296",
+      "windows": [
+        {
+          "name": "/tmp/harness-human-e81h2jbr/demo-project/app.py",
+          "row": 0,
+          "col": 0,
+          "id": 1000,
+          "width": 128,
+          "height": 34,
+          "current": true,
+          "line_count": 5
+        }
+      ]
+    },
+    "15-return-chat": {
+      "screen_sha256": "0c3edd402b91a378af80a62042dc4edb9b094f00c5007668640d49614e5771cb",
+      "windows": [
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 0,
+          "col": 0,
+          "id": 1000,
+          "width": 128,
+          "height": 30,
+          "current": true,
+          "line_count": 18
+        },
+        {
+          "name": "harness://prompt/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 31,
+          "col": 0,
+          "id": 1016,
+          "width": 128,
+          "height": 3,
+          "current": false,
+          "line_count": 1
+        }
+      ]
+    },
+    "16-native-horizontal": {
+      "screen_sha256": "56a932f4a78a09feeac357fb03c619fda402a0e25feb6426a763f2280a2b3cff",
+      "windows": [
+        {
+          "name": "/tmp/harness-human-e81h2jbr/demo-project/README.txt",
+          "row": 0,
+          "col": 0,
+          "id": 1018,
+          "width": 128,
+          "height": 16,
+          "current": true,
+          "line_count": 2
+        },
+        {
+          "name": "harness://chat/chat_a9e9aa9bbb4877c7c356f42ce5289858",
+          "row": 17,
+          "col": 0,
+          "id": 1000,
+          "width": 128,
+          "height": 17,
+          "current": false,
+          "line_count": 18
+        }
+      ]
+    }
+  },
+  "binary_path": "target/debug/harness"
 }

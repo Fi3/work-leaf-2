@@ -231,7 +231,7 @@ fn an_explicit_upgrade_replaces_an_idle_legacy_server_after_release() {
     );
     old.join().unwrap();
     let hello: Value = serde_json::from_slice(&upgraded.stdout).unwrap();
-    assert_eq!(hello["api_revision"], 2);
+    assert_eq!(hello["api_revision"], 3);
     assert_eq!(hello["state_dir"], json!(server.root.join("state")));
     assert_ne!(hello["instance_id"], "legacy");
     server.pid = Some(process::peer_pid(&UnixStream::connect(&server.socket).unwrap()).unwrap());
@@ -274,7 +274,7 @@ fn upgrade_checks_legacy_state_before_shutdown() {
 #[test]
 fn upgrade_never_shuts_down_an_unknown_or_newer_interface() {
     for after_probe in [false, true] {
-        for revision in [json!(3), json!("2"), Value::Null] {
+        for revision in [json!(4), json!("3"), Value::Null] {
             let server = Server::new();
             let state = server.root.join("state");
             process::private_dir(&state).unwrap();
@@ -339,7 +339,7 @@ fn an_old_worker_interface_never_becomes_ready_or_accepts_mutations() {
     let hello = client
         .request("system.hello", json!({"api_version":1}))
         .unwrap();
-    assert_eq!(hello["api_revision"], 2);
+    assert_eq!(hello["api_revision"], 3);
     assert_eq!(hello["storage_ready"], false);
     assert_eq!(hello["ready"], false);
     let error = client
@@ -352,20 +352,99 @@ fn an_old_worker_interface_never_becomes_ready_or_accepts_mutations() {
 }
 
 #[test]
-fn applying_a_key_rejects_an_existing_server_without_replacing_it() {
+fn public_rpc_rejects_credentials_without_changing_the_server() {
     let mut server = Server::new();
     server.serve("");
     let config = harness::config::Config::load(Some(&server.config), None, None).unwrap();
     let original = harness::server::start(&config).unwrap();
     let workers = server.workers();
     let key = "replacement-test-key-must-not-be-returned";
-    let error = harness::server::start_with_key(&config, Some(key)).unwrap_err();
-    assert_eq!(error.kind(), Some("conflict"));
-    assert!(error.message.contains("key was not applied"));
+    let error = server
+        .client()
+        .unwrap()
+        .request(
+            "auth.login",
+            json!({
+                "provider":"openai", "method":"api_key", "terminal":"/dev/pts/1", "key":key
+            }),
+        )
+        .unwrap_err();
+    assert_eq!(error.code, -32602);
     assert!(!error.message.contains(key));
     assert_eq!(harness::server::start(&config).unwrap(), original);
     assert_eq!(server.workers(), workers);
     assert!(server.child.as_mut().unwrap().try_wait().unwrap().is_none());
+}
+
+#[test]
+fn open_login_rejects_shutdown_without_blocking_work_and_disconnect_cancels_login() {
+    let mut server = Server::new();
+    server.serve("");
+    let mut login = raw(&server);
+    request(
+        &mut login,
+        "login",
+        "auth.login",
+        json!({"provider":"openai","method":"api_key","terminal":"/dev/pts/1"}),
+    );
+    request(
+        &mut login,
+        "status",
+        "system.hello",
+        json!({"api_version":1}),
+    );
+    assert_eq!(read(&mut login)["id"], "status");
+    let mut shutdown = raw(&server);
+    request(&mut shutdown, "shutdown", "server.shutdown", json!({}));
+    let rejected = read(&mut shutdown);
+    assert_eq!(rejected["id"], "shutdown");
+    assert_eq!(rejected["error"]["data"]["kind"], "busy");
+    request(
+        &mut shutdown,
+        "later",
+        "auth.logout",
+        json!({"provider":"openai"}),
+    );
+    let admitted = read(&mut shutdown);
+    assert_eq!(admitted["id"], "later");
+    assert!(admitted.get("result").is_some());
+    drop(login);
+    until(|| {
+        fs::read_to_string(server.root.join("state/released"))
+            .unwrap_or_default()
+            .contains("request_ids")
+    });
+    until(|| {
+        request(&mut shutdown, "shutdown", "server.shutdown", json!({}));
+        let completed = read(&mut shutdown);
+        assert_eq!(completed["id"], "shutdown");
+        if completed.get("result").is_some() {
+            true
+        } else {
+            assert_eq!(completed["error"]["data"]["kind"], "busy");
+            false
+        }
+    });
+}
+
+#[test]
+fn authentication_updates_worker_readiness_without_changing_instance() {
+    let mut server = Server::new();
+    server.serve("paused");
+    let mut client = server.client().unwrap();
+    let before = client
+        .request("system.hello", json!({"api_version":1}))
+        .unwrap();
+    assert_eq!(before["ready"], false);
+    client
+        .request("auth.logout", json!({"provider":"openai"}))
+        .unwrap();
+    let after = client
+        .request("system.hello", json!({"api_version":1}))
+        .unwrap();
+    assert_eq!(after["ready"], true);
+    assert_eq!(before["instance_id"], after["instance_id"]);
+    assert_eq!(server.workers().len(), 1);
 }
 
 #[test]

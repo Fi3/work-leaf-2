@@ -4,7 +4,7 @@ local commands = {
   { 'help', 'Show chat commands' },
   { 'model', 'Choose a model, or use provider/model' },
   { 'provider', 'Choose a provider' },
-  { 'login', 'Enter an Anthropic key in a private terminal' },
+  { 'login', 'Connect an account or enter an API key' },
   { 'instructions', 'Set instructions for this chat' },
   { 'name', 'Name this chat' },
   { 'new', 'Create a new chat; an optional name can follow' },

@@ -185,6 +185,22 @@ impl Terminal {
         self.master.write_all(text.as_bytes()).unwrap();
     }
 
+    fn choose(&mut self, label: &str, id: &str) {
+        self.until(&format!("{label} number (q cancels): "));
+        let number = self
+            .output
+            .lines()
+            .rev()
+            .find_map(|line| {
+                let (number, text) = line.trim().split_once(". ")?;
+                (text.ends_with(&format!("({id})")))
+                    .then(|| number.parse::<usize>().ok())
+                    .flatten()
+            })
+            .expect("Requested choice must appear in the visible catalog");
+        self.send(&format!("{number}\n"));
+    }
+
     fn finish(&mut self, expected: i32) {
         let deadline = Instant::now() + Duration::from_secs(15);
         loop {
@@ -233,7 +249,7 @@ fn terminal_flags(file: &File) -> libc::tcflag_t {
 fn first_setup_is_explicit_cancellable_and_usable_without_credentials() {
     let fixture = Fixture::new();
     let mut cancelled = Terminal::spawn(fixture.command(&["setup"]));
-    cancelled.until("Provider [1/2/q]: ");
+    cancelled.until("Provider number (q cancels): ");
     cancelled.send("q\n");
     cancelled.finish(130);
     assert!(!fixture.path.exists());
@@ -243,10 +259,12 @@ fn first_setup_is_explicit_cancellable_and_usable_without_credentials() {
         .unwrap()["instance_id"]
         .clone();
     let mut setup = Terminal::spawn(fixture.command(&["setup"]));
-    setup.until("Provider [1/2/q]: ");
-    setup.send("invalid\n2\n");
+    setup.until("Provider number (q cancels): ");
+    setup.send("invalid\n");
+    setup.until("Enter a number from the list, or q.");
+    setup.choose("Provider", "faux");
+    setup.choose("Model", "test");
     setup.finish(0);
-    assert!(setup.output.contains("Enter 1, 2, or q."));
     assert_eq!(
         fs::metadata(&fixture.path).unwrap().permissions().mode() & 0o777,
         0o600
@@ -388,116 +406,114 @@ fn unsafe_or_invalid_configuration_is_never_replaced() {
 #[test]
 fn secret_input_stays_hidden_and_sigint_restores_echo() {
     let fixture = Fixture::new();
-    let mut setup = Terminal::spawn(fixture.command(&["setup"]));
-    setup.until("Provider [1/2/q]: ");
-    setup.send("1\n");
-    setup.until("Model number (q cancels): ");
-    setup.send("1\n");
-    setup.until("API key (hidden; Enter cancels): ");
+    let mut setup =
+        Terminal::spawn(fixture.command(&["auth", "--provider", "openai", "--method", "api_key"]));
+    setup.until("Enter OpenAI API key");
     assert_eq!(terminal_flags(&setup.slave) & libc::ECHO, 0);
     setup.send(KEY);
-    // The setup process owns this terminal; interrupting it must restore the previous echo flags.
+    // Interrupt only this live fixture client; the worker must cancel its terminal read.
     unsafe { libc::kill(setup.child.id() as i32, libc::SIGINT) };
     setup.finish(130);
     assert!(!fixture.path.exists());
+    let mut retry =
+        Terminal::spawn(fixture.command(&["auth", "--provider", "openai", "--method", "api_key"]));
+    retry.until("Enter OpenAI API key");
+    retry.send("\u{3}");
+    retry.finish(130);
 }
 
 #[test]
-fn a_key_is_given_only_to_the_server_environment_and_can_be_reused() {
-    for inherited in [false, true] {
-        let fixture = Fixture::new();
-        let mut command = fixture.command(&["setup"]);
-        command
-            .env("ANTHROPIC_AUTH_TOKEN", "unused-auth-token")
-            .env("ANTHROPIC_OAUTH_TOKEN", "unused-oauth-token");
-        if inherited {
-            command.env("ANTHROPIC_API_KEY", KEY);
-        }
-        let mut setup = Terminal::spawn(command);
-        setup.until("Provider [1/2/q]: ");
-        setup.send("1\n");
-        setup.until("Model number (q cancels): ");
-        setup.send("1\n");
-        if inherited {
-            setup.until("Use ANTHROPIC_API_KEY from this terminal? [Y/n/q]: ");
-            setup.send("\n");
-        } else {
-            setup.until("API key (hidden; Enter cancels): ");
-            assert_eq!(terminal_flags(&setup.slave) & libc::ECHO, 0);
-            setup.send(&format!("{KEY}\n"));
-        }
-        setup.finish(0);
-        assert!(!fs::read_to_string(&fixture.path).unwrap().contains(KEY));
-        let pid = fixture.peer().unwrap();
-        let environment = fs::read(format!("/proc/{pid}/environ")).unwrap();
+fn saved_keys_remain_private_and_are_reused_after_restart() {
+    let fixture = Fixture::new();
+    let mut setup = Terminal::spawn(fixture.command(&["setup"]));
+    setup.choose("Provider", "anthropic");
+    setup.choose("Model", "claude-sonnet-4-6");
+    setup.choose("Login method", "api_key");
+    setup.until("Enter Anthropic API key");
+    assert_eq!(terminal_flags(&setup.slave) & libc::ECHO, 0);
+    setup.send(&format!("{KEY}\n"));
+    setup.finish(0);
+    assert!(!fs::read_to_string(&fixture.path).unwrap().contains(KEY));
+    let mut client = fixture.client();
+    let status = client.request("configuration.get", json!({})).unwrap();
+    assert_eq!(status["ready"], true);
+    assert!(!status.to_string().contains(KEY));
+    let metadata = client
+        .request(
+            "session.create",
+            json!({"session_id":"hosted","workspace":fixture.root}),
+        )
+        .unwrap();
+    assert!(!metadata.to_string().contains(KEY));
+    let pid = fixture.peer().unwrap();
+    for name in ["environ", "cmdline"] {
         assert!(
-            environment
-                .split(|byte| *byte == 0)
-                .any(|entry| entry == format!("ANTHROPIC_API_KEY={KEY}").as_bytes())
-        );
-        assert!(
-            !environment
-                .split(|byte| *byte == 0)
-                .any(|entry| entry.starts_with(b"ANTHROPIC_AUTH_TOKEN=")
-                    || entry.starts_with(b"ANTHROPIC_OAUTH_TOKEN="))
-        );
-        assert!(
-            !fs::read(format!("/proc/{pid}/cmdline"))
+            !fs::read(format!("/proc/{pid}/{name}"))
                 .unwrap()
                 .windows(KEY.len())
-                .any(|bytes| bytes == KEY.as_bytes())
+                .any(|value| value == KEY.as_bytes())
         );
-        let mut client = fixture.client();
-        let status = client.request("configuration.get", json!({})).unwrap();
-        assert_eq!(status["ready"], true);
-        assert!(!status.to_string().contains(KEY));
-        let metadata = client
-            .request(
-                "session.create",
-                json!({"session_id":"hosted","workspace":fixture.root}),
-            )
-            .unwrap();
-        assert!(!metadata.to_string().contains(KEY));
-        for file in fs::read_dir(fixture.state.join("logs")).unwrap() {
-            assert!(
-                !fs::read_to_string(file.unwrap().path())
-                    .unwrap()
-                    .contains(KEY)
-            );
-        }
-        let mut again = Terminal::spawn(fixture.command(&["setup"]));
-        again.until("Provider [1/2/q]: ");
-        again.send("1\n");
-        again.until("Model number (q cancels): ");
-        again.send("1\n");
-        again.until("Keep the current server key? [Y/n/q]: ");
-        again.send("\n");
-        again.finish(0);
-        assert_eq!(fixture.peer(), Some(pid));
     }
+    for file in fs::read_dir(fixture.state.join("logs")).unwrap() {
+        assert!(
+            !fs::read_to_string(file.unwrap().path())
+                .unwrap()
+                .contains(KEY)
+        );
+    }
+    client.request("server.shutdown", json!({})).unwrap();
+    drop(client);
+    assert!(
+        fixture
+            .command(&["start"])
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    let mut client = fixture.client();
+    assert_eq!(
+        client.request("configuration.get", json!({})).unwrap()["ready"],
+        true
+    );
+    assert!(
+        client
+            .request("transcript.list", json!({"session_id":"hosted"}))
+            .unwrap()["items"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    let restarted = fixture.peer();
+    let mut again = Terminal::spawn(fixture.command(&["setup"]));
+    again.choose("Provider", "anthropic");
+    again.choose("Model", "claude-sonnet-4-6");
+    again.finish(0);
+    assert_eq!(fixture.peer(), restarted);
 }
 
 #[test]
 fn whitespace_keys_fail_before_settings_or_server_change() {
     let fixture = Fixture::new();
-    let mut command = fixture.command(&["setup"]);
-    command.env("ANTHROPIC_API_KEY", "   ");
-    let mut setup = Terminal::spawn(command);
-    setup.until("Provider [1/2/q]: ");
-    setup.send("1\n");
-    setup.until("Model number (q cancels): ");
-    setup.send("1\n");
-    setup.until("API key (hidden; Enter cancels): ");
-    assert!(
-        !setup
-            .output
-            .contains("Use ANTHROPIC_API_KEY from this terminal?")
-    );
+    let mut setup =
+        Terminal::spawn(fixture.command(&["auth", "--provider", "openai", "--method", "api_key"]));
+    setup.until("Enter OpenAI API key");
     let pid = fixture.peer();
     setup.send("   \n");
     setup.finish(2);
     assert!(!fixture.path.exists());
     assert_eq!(fixture.peer(), pid);
+    let status = fixture
+        .client()
+        .request("configuration.get", json!({}))
+        .unwrap();
+    let provider = status["providers"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["id"] == "openai")
+        .unwrap();
+    assert_eq!(provider["authenticated"], false);
 }
 
 #[test]
@@ -513,17 +529,14 @@ fn failed_staging_write_keeps_configuration_and_server() {
         });
     }
     let mut setup = Terminal::spawn(command);
-    setup.until("Provider [1/2/q]: ");
-    setup.send("1\n");
+    setup.choose("Provider", "anthropic");
     setup.until("Model number (q cancels): ");
-    setup.send("1\n");
-    setup.until("API key (hidden; Enter cancels): ");
     let pid = fixture.peer();
     let limit = libc::rlimit {
         rlim_cur: 1,
         rlim_max: 1,
     };
-    // Change only this test's setup child after its independent server has started.
+    // Change only this fixture's setup child after its independent server has started.
     unsafe {
         assert_eq!(
             libc::prlimit(
@@ -535,8 +548,9 @@ fn failed_staging_write_keeps_configuration_and_server() {
             0
         );
     }
-    setup.send(&format!("{KEY}\n"));
+    setup.choose("Model", "claude-sonnet-4-6");
     setup.finish(3);
+    assert!(!setup.output.contains("Enter Anthropic API key"));
     assert_eq!(fs::read(&fixture.path).unwrap(), original);
     assert_eq!(fixture.peer(), pid);
     assert!(
@@ -551,7 +565,7 @@ fn failed_staging_write_keeps_configuration_and_server() {
 }
 
 #[test]
-fn active_work_rejects_setup_auth_and_upgrade_without_changing_file_or_instance() {
+fn login_keeps_active_work_and_setup_or_upgrade_cannot_stop_it() {
     let fixture = Fixture::new();
     let original =
         fixture.write(&json!({"provider":"faux", "model":"test", "instructions":"Preserve me"}));
@@ -575,31 +589,24 @@ fn active_work_rejects_setup_auth_and_upgrade_without_changing_file_or_instance(
             json!({"session_id":"running","request_id":"task","text":"Continue","context":[]}),
         )
         .unwrap();
-    for command in ["setup", "auth"] {
-        let mut setup = Terminal::spawn(fixture.command(&[command]));
-        if command == "setup" {
-            setup.until("Provider [1/2/q]: ");
-            setup.send("1\n");
-            setup.until("Model number (q cancels): ");
-            setup.send("1\n");
-        }
-        setup.until("API key (hidden; Enter cancels): ");
-        setup.send(&format!("{KEY}\n"));
-        setup.finish(6);
-        assert!(
-            setup
-                .output
-                .contains("Settings were not changed and work was preserved")
-        );
-        assert_eq!(fs::read(&fixture.path).unwrap(), original);
-        assert_eq!(fixture.peer(), Some(pid));
-        assert_eq!(
-            client
-                .request("session.get", json!({"session_id":"running"}))
-                .unwrap()["snapshot"]["active_submission_id"],
-            receipt["submission_id"]
-        );
-    }
+    let mut auth =
+        Terminal::spawn(fixture.command(&["auth", "--provider", "openai", "--method", "api_key"]));
+    auth.until("Enter OpenAI API key");
+    auth.send(&format!("{KEY}\n"));
+    auth.finish(0);
+    let mut setup = Terminal::spawn(fixture.command(&["setup"]));
+    setup.choose("Provider", "openai");
+    setup.choose("Model", "gpt-5.4");
+    setup.finish(6);
+    assert!(setup.output.contains("Active work prevents shutdown"));
+    assert_eq!(fs::read(&fixture.path).unwrap(), original);
+    assert_eq!(fixture.peer(), Some(pid));
+    assert_eq!(
+        client
+            .request("session.get", json!({"session_id":"running"}))
+            .unwrap()["snapshot"]["active_submission_id"],
+        receipt["submission_id"]
+    );
     let upgrade = fixture.command(&["upgrade"]).output().unwrap();
     assert_eq!(upgrade.status.code(), Some(6));
     assert!(
@@ -624,30 +631,30 @@ fn active_work_rejects_setup_auth_and_upgrade_without_changing_file_or_instance(
 }
 
 #[test]
-fn auth_has_no_model_prompt_and_cancellation_keeps_the_server() {
+fn direct_login_has_no_model_prompt_and_cancellation_keeps_the_server() {
     let fixture = Fixture::new();
-    for answer in ["", "q", "\u{1b}", "interrupt"] {
-        let mut auth = Terminal::spawn(fixture.command(&["auth"]));
-        auth.until("API key (hidden; Enter cancels): ");
+    for answer in ["\n", "\u{1b}", "\u{3}"] {
+        let mut auth = Terminal::spawn(fixture.command(&[
+            "auth",
+            "--provider",
+            "openai",
+            "--method",
+            "api_key",
+        ]));
+        auth.until("Enter OpenAI API key");
         assert_eq!(terminal_flags(&auth.slave) & libc::ECHO, 0);
         let pid = fixture.peer();
-        if answer == "interrupt" {
-            auth.send(KEY);
-            // Interrupt only this fixture's live credential command.
-            unsafe { libc::kill(auth.child.id() as i32, libc::SIGINT) };
-        } else {
-            auth.send(&format!("{answer}\n"));
-        }
+        auth.send(answer);
         auth.finish(130);
         assert_eq!(fixture.peer(), pid);
         assert!(!fixture.path.exists());
-        assert!(!auth.output.contains("Provider ["));
+        assert!(!auth.output.contains("Provider number"));
         assert!(!auth.output.contains("Model number"));
     }
 }
 
 #[test]
-fn auth_only_replaces_the_server_key_and_never_writes_configuration() {
+fn login_merges_providers_without_restart_or_configuration_write() {
     for existing_config in [false, true] {
         let fixture = Fixture::new();
         let original = existing_config.then(|| {
@@ -655,52 +662,37 @@ fn auth_only_replaces_the_server_key_and_never_writes_configuration() {
                 &json!({"provider":"faux","model":"test","instructions":"Keep defaults unchanged"}),
             )
         });
-        let mut command = fixture.command(&["auth"]);
-        command
-            .env("ANTHROPIC_AUTH_TOKEN", "unused-auth-token")
-            .env("ANTHROPIC_OAUTH_TOKEN", "unused-oauth-token");
-        if existing_config {
-            command.env("ANTHROPIC_API_KEY", KEY);
-        }
-        let mut auth = Terminal::spawn(command);
-        if existing_config {
-            auth.until("Use ANTHROPIC_API_KEY from this terminal? [Y/n/q]: ");
-        } else {
-            auth.until("API key (hidden; Enter cancels): ");
+        let mut old_pid = None;
+        for (provider, label) in [("anthropic", "Anthropic"), ("openai", "OpenAI")] {
+            let mut auth = Terminal::spawn(fixture.command(&[
+                "auth",
+                "--provider",
+                provider,
+                "--method",
+                "api_key",
+            ]));
+            auth.until(&format!("Enter {label} API key"));
             assert_eq!(terminal_flags(&auth.slave) & libc::ECHO, 0);
+            let pid = fixture.peer();
+            if let Some(previous) = old_pid {
+                assert_eq!(pid, previous);
+            }
+            old_pid = Some(pid);
+            auth.send(&format!("{KEY}\n"));
+            auth.finish(0);
+            assert_eq!(fixture.peer(), pid);
+            assert_eq!(fs::read(&fixture.path).ok(), original);
+            for name in ["environ", "cmdline"] {
+                assert!(
+                    !fs::read(format!("/proc/{}/{name}", pid.unwrap()))
+                        .unwrap()
+                        .windows(KEY.len())
+                        .any(|bytes| bytes == KEY.as_bytes())
+                );
+            }
         }
-        let old_pid = fixture.peer();
-        auth.send(&if existing_config {
-            "\n".into()
-        } else {
-            format!("{KEY}\n")
-        });
-        auth.finish(0);
-        let pid = fixture.peer().unwrap();
-        assert_ne!(Some(pid), old_pid);
-        assert_eq!(fs::read(&fixture.path).ok(), original);
-        let environment = fs::read(format!("/proc/{pid}/environ")).unwrap();
-        assert!(
-            environment
-                .split(|byte| *byte == 0)
-                .any(|entry| entry == format!("ANTHROPIC_API_KEY={KEY}").as_bytes())
-        );
-        assert!(
-            !environment
-                .split(|byte| *byte == 0)
-                .any(|entry| entry.starts_with(b"ANTHROPIC_AUTH_TOKEN=")
-                    || entry.starts_with(b"ANTHROPIC_OAUTH_TOKEN="))
-        );
-        assert!(
-            !fs::read(format!("/proc/{pid}/cmdline"))
-                .unwrap()
-                .windows(KEY.len())
-                .any(|bytes| bytes == KEY.as_bytes())
-        );
-        let status = fixture
-            .client()
-            .request("configuration.get", json!({}))
-            .unwrap();
+        let mut client = fixture.client();
+        let status = client.request("configuration.get", json!({})).unwrap();
         assert_eq!(
             status["provider"],
             if existing_config {
@@ -710,7 +702,17 @@ fn auth_only_replaces_the_server_key_and_never_writes_configuration() {
             }
         );
         assert!(!status.to_string().contains(KEY));
-        assert!(auth.output.contains("The provider has not checked it"));
+        for provider in ["anthropic", "openai"] {
+            assert_eq!(
+                status["providers"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|item| item["id"] == provider)
+                    .unwrap()["authenticated"],
+                true
+            );
+        }
         for file in fs::read_dir(fixture.state.join("logs")).unwrap() {
             assert!(
                 !fs::read_to_string(file.unwrap().path())
@@ -718,6 +720,20 @@ fn auth_only_replaces_the_server_key_and_never_writes_configuration() {
                     .contains(KEY)
             );
         }
+        let result = client
+            .request("auth.logout", json!({"provider":"openai"}))
+            .unwrap();
+        assert_eq!(result["authenticated"], false);
+        let status = client.request("configuration.get", json!({})).unwrap();
+        assert_eq!(
+            status["providers"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|item| item["id"] == "anthropic")
+                .unwrap()["authenticated"],
+            true
+        );
     }
 }
 

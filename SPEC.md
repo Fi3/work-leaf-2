@@ -55,7 +55,7 @@ The following work is outside version one:
 - Subagents, conversation forks, steering, and queued follow-up inputs.
 - A web interface, HTTP service, TCP listener, TLS, or remote deployment automation.
 - Remote file synchronization and continuous synchronization of unsaved editor buffers.
-- OAuth login screens, subscription login, image input, image generation, and code mode.
+- Image input, image generation, and code mode.
 - A permission dialog system, sandbox, multi-user service, and scheduled task engine.
 - A second storage system, custom model loop, custom tool framework, or event replay journal.
 
@@ -287,9 +287,26 @@ Use the keys `provider`, `model`, `instructions`, `node_path`, `worker_path`,
 The installed worker path defaults to the adapter supplied with the executable.
 Configuration may not point to an automatically downloaded worker.
 
-Use API keys through the provider's documented environment variables.
+Support every provider and login method supplied by the pinned Pi AI version.
+This includes API keys, account login through OAuth, device codes, and ambient
+credentials where Pi supports them. Reuse Pi's login and token refresh functions.
+Do not implement provider authentication flows separately.
+Use API keys through the provider's documented environment variables or private login.
 Do not copy provider credential values into session metadata, client messages, command arguments, or diagnostics.
-Provider credentials belong to the server environment.
+Provider credentials belong to the server environment or a private, worker-owned
+Pi session document in the existing database. This document must never appear in
+public snapshots, transcript entries, or session metadata. Save successful login
+results atomically. Cancellation and failure must preserve existing credentials.
+Serialize login, logout, and token refresh for each provider. Keep a stable
+installation identifier where Pi requires one. No new credential database is permitted.
+Interactive login uses a validated terminal owned by the same operating system user.
+The public protocol carries provider and method identifiers and the terminal path;
+it never carries credential values. Client disconnection cancels login, closes
+provider callback listeners, and restores terminal settings. One login may be
+active per worker. Shutdown must return busy while a login is open, without
+blocking other work. Login must not stop active agent work or make a generation
+request to test credentials. Successful login may resume previously admitted
+work after the complete recovery preflight passes.
 User text and tool output may contain sensitive values supplied by the user or workspace.
 Version one does not promise automatic redaction of arbitrary transcript content.
 Diagnostic logs must omit prompt bodies, tool output, and environment dumps.
@@ -297,11 +314,12 @@ Bound logs to two files of at most 10 MiB each.
 There must be no default model that causes an unexpected paid request.
 An absent or invalid model configuration must produce a clear error before input admission.
 
-D0 must select one hosted provider adapter for the initial release.
-Use the smallest necessary Pi provider import for that adapter.
-The choice must be recorded here with its credential variable and model configuration example.
+Use Pi's built-in provider catalog. List providers and their supported login
+methods independently of the model catalog. A provider can support login while
+having no chat models. Never invent an available model or silently choose a paid one.
+Record the supported providers, login methods, and loaded dependency measurements
+in README.md. Changes to the locked catalog require a new audit.
 Use Pi's faux provider for deterministic tests. Real provider credentials must not be required for CI.
-Additional provider factories can be added later without changing the public API.
 
 Each session maps to one ownerless Pi conversation.
 Persist application metadata through a small `app.session` Pi document.
@@ -369,6 +387,9 @@ Example acceptance response:
 | Operation | Required input | Result and rule |
 | --- | --- | --- |
 | `system.hello` | `api_version` | Version, instance, readiness, limits. |
+| `configuration.get` | Optional `session_id` | Selected provider/model, readiness, all provider login methods and chat models. No credential values. |
+| `auth.login` | `provider`, `method`, `terminal` | Run the selected Pi login through the private terminal. Return authentication, cancellation, and worker readiness status. |
+| `auth.logout` | `provider` | Remove that provider's saved credential. Reject while it has unfinished work. Ambient credentials remain controlled by their environment. |
 | `session.create` | `session_id`, `workspace` | Stored metadata. The same identifier and workspace return the existing session. A different workspace returns a conflict. |
 | `session.list` | Optional `cursor`, `limit` | Metadata page and next cursor. Default limit 50, maximum 100. |
 | `session.get` | `session_id` | Metadata and current public snapshot. |
@@ -633,6 +654,15 @@ Use native buffers and windows. Do not require NUI, Plenary, or a plugin manager
 Provide one read-only transcript buffer and one editable prompt buffer.
 Use ordinary text and Neovim highlight groups. Do not build a Markdown renderer.
 Keep the editor responsive during startup, model calls, tool output, and stop operations.
+Preserve native Vim file and window behavior, including file-explorer Enter,
+horizontal split, and vertical split. Chat history uses the normal content area.
+The message box belongs only to its displayed chat. Opening a file must never
+put it inside the message box. Preserve file settings, unsaved files, drafts,
+and the user's current window when an asynchronous response arrives.
+The model and provider lists must be scrollable and searchable. Login must expose
+every supported Pi method and accept typed input immediately. Cancellation returns
+to the originating chat without sending a task or changing its model. Show a
+short, visible next action when a chat has no model or credentials.
 The exit confirmation may be modal. Its network waits must still process progress and cancellation.
 
 The transcript must show user inputs, assistant text, tool names and results,
@@ -837,6 +867,11 @@ Crash tests must inject failure before and after durable admission, abort, and f
 Test server failure separately from worker failure.
 Use temporary workspaces and state directories. Never use the user's real sessions.
 An optional real-provider smoke test must be explicit and separate from required CI.
+Test every supported login method with synthetic credentials and local provider
+responses. Cover browser callbacks, device codes, cancellation, denied login,
+token refresh, credential persistence, and the exclusion of secrets from public
+output. Test the actual Neovim login and file-explorer flow with normal keys and
+mouse input. Do not use hidden editor commands to repair focus during these tests.
 
 All Rust deliverables must pass:
 

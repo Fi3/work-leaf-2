@@ -7,6 +7,8 @@ import signal
 import socket
 import subprocess
 import time
+import urllib.parse
+import urllib.request
 from pathlib import Path
 from interactive import Editor, EVIDENCE, REPO, RESULTS, ARGS
 
@@ -43,7 +45,7 @@ class Rpc:
         self.socket.close()
 
 class RealEditor(Editor):
-    def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None, first_run=False):
+    def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None, first_run=False, oauth_mock=False):
         self.name = name
         self.root = EVIDENCE / name
         self.root.mkdir()
@@ -60,6 +62,11 @@ class RealEditor(Editor):
         response_file = self.root / 'responses.json'
         response_file.write_text(json.dumps(responses or [message or MESSAGE] * 12))
         self.env = dict(os.environ, TERM='xterm-256color', HARNESS_REPO=str(REPO), HARNESS_EXECUTABLE=str(BINARY), HARNESS_WORKSPACE=str(self.root), HARNESS_CONFIG=str(self.config), HARNESS_SOCKET=str(self.socket_path), HARNESS_FAUX_RESPONSES=str(response_file), HARNESS_FAUX_TOKENS_PER_SECOND=str(rate))
+        if oauth_mock:
+            self.env = {name:value for name,value in self.env.items() if name.startswith('HARNESS_') or name in ('PATH','TERM','LANG','LC_ALL','CARGO_HOME','RUSTUP_HOME')}
+            self.env['HOME'] = str(self.root / 'home')
+            self.env.update(NODE_OPTIONS='--import=' + str(REPO / 'tests/fixtures/oauth.mjs'),
+                            HARNESS_TEST_OAUTH_RECORD=str(self.root / 'oauth-requests.jsonl'))
         if first_run:
             self.env.pop('ANTHROPIC_API_KEY', None)
             self.env.update(HOME=str(self.root / 'home'), XDG_RUNTIME_DIR=str(self.root / 'runtime'),
@@ -360,13 +367,13 @@ def model_picker_case():
     editor.chat('\\model')
     editor.wait(lambda: any(w['name']=='harness://select' for w in editor.windows()), 'model list opens')
     picker = next(w for w in editor.windows() if w['name']=='harness://select')
-    assert len(picker['lines']) == len(catalog)+1 and len(picker['lines']) > picker['height']
+    assert len(picker['lines']) == len(catalog) and len(picker['lines']) > picker['height']
     assert not any('[current]' in line for line in picker['lines']), 'Unconfigured chat cannot mark a paid model as selected'
     editor.keys('\x1b[6~')
     assert next(w for w in editor.windows() if w['name']=='harness://select')['cursor'] > 1
     editor.keys('G')
     picker = next(w for w in editor.windows() if w['name']=='harness://select')
-    assert picker['cursor'] == len(catalog)+1 and picker['top'] > 1
+    assert picker['cursor'] == len(catalog) and picker['top'] > 1
     editor.keys('\r')
     editor.wait(lambda: editor.snapshot()['session']['provider']=='faux', 'last catalog choice selects local demo')
     editor.chat('\\model')
@@ -383,7 +390,8 @@ def model_picker_case():
     editor.pump(.6)
     click=f'\x1b[<0;{x};{y}M\x1b[<0;{x};{y}m'
     editor.keys(click+click)
-    editor.wait(lambda: editor.snapshot()['session']['model']==catalog[target_line-1]['id'], 'double click applies the visible model')
+    selected = catalog[target_line-1]
+    editor.wait(lambda: editor.snapshot()['session']['model']==selected['id'] and editor.snapshot()['session']['provider']==selected['provider'], 'double click applies the visible provider and model')
     editor.chat('\\model demo')
     editor.wait(lambda: editor.snapshot()['session']['provider']=='faux', 'restore local demo without a model request')
     editor.chat('\\model')
@@ -401,6 +409,134 @@ def model_picker_case():
     editor.wait(lambda: not any(w['name']=='harness://select' for w in editor.windows()), 'outside click cancels picker')
     assert editor.observe('vim.api.nvim_get_current_win()') == transcript['id'], 'Cancellation must retain clicked window focus'
     assert editor.snapshot()['session']['provider']=='faux' and not editor.snapshot()['entries']
+    editor.finish()
+
+
+def login_case():
+    editor = RealEditor('provider-login-native-terminal', active=False, oauth_mock=True)
+    editor.observe('true')
+    editor.chat('\\model openai/gpt-4o')
+    editor.wait(lambda: editor.snapshot()['session']['provider']=='openai', 'select OpenAI without a key')
+    instance = editor.rpc.request('system.hello', {'api_version': 1})['instance_id']
+    config = editor.config.read_bytes()
+    def status():
+        return editor.rpc.request('configuration.get', {'session_id': editor.session_id})
+    def picker(label):
+        editor.wait(lambda: any(w['name']=='harness://select' for w in editor.windows()), 'login choice ' + label)
+        lines = next(w for w in editor.windows() if w['name']=='harness://select')['lines']
+        row = next(index for index,line in enumerate(lines,1) if label in line)
+        editor.keys(str(row) + 'G\r')
+    def terminal_text():
+        return '\n'.join(line for w in editor.windows() if w['name']=='harness://setup' for line in w['lines'])
+    def terminal_closed():
+        return not any(w['name']=='harness://setup' for w in editor.windows())
+    def connected(provider):
+        return next(item for item in status()['providers'] if item['id']==provider)['authenticated']
+    def draft():
+        return editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')
+
+    editor.chat('\\login')
+    picker('OpenAI ·')
+    picker('OpenAI API key')
+    editor.wait(lambda: 'Enter OpenAI API key' in terminal_text(), 'private OpenAI prompt')
+    assert editor.observe('vim.fn.mode(1)') == 't', 'Typed login must immediately accept terminal keys'
+    editor.observe('(function() vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false,{"Retain this task"}); return true end)()')
+    secret = 'native-login-secret-DO-NOT-PRINT'
+    editor.keys(secret)
+    assert secret not in terminal_text()
+    editor.keys('\x03')
+    editor.wait(terminal_closed, 'Ctrl-C cancels native login')
+    assert not connected('openai') and draft()==['Retain this task']
+    assert editor.snapshot()['session']['model']=='gpt-4o' and not editor.snapshot()['entries']
+
+    editor.command('Harness login openai')
+    picker('OpenAI API key')
+    editor.wait(lambda: 'Enter OpenAI API key' in terminal_text(), 'retry OpenAI key entry')
+    assert editor.observe('vim.fn.mode(1)') == 't'
+    editor.keys(secret + '\r')
+    editor.wait(terminal_closed, 'key entry completes without mode changes')
+    editor.wait(lambda: connected('openai'), 'OpenAI credential is ready')
+    assert draft()==['Retain this task']
+    assert editor.rpc.request('system.hello', {'api_version': 1})['instance_id']==instance, 'Login must not replace the server'
+    assert editor.config.read_bytes()==config
+    assert not editor.snapshot()['entries']
+
+    def browser_login():
+        editor.command('Harness login openrouter')
+        picker('Sign in with OpenRouter')
+        editor.wait(lambda: 'code_challenge_method=S256' in terminal_text().replace('\n',''), 'actual Pi browser login URL')
+        assert editor.observe('vim.fn.mode(1)') == 't'
+        joined = terminal_text().replace('\n','')
+        start = joined.index('https://openrouter.ai/auth?')
+        end = joined.index('code_challenge_method=S256', start) + len('code_challenge_method=S256')
+        authorize = urllib.parse.urlsplit(joined[start:end])
+        redirect = urllib.parse.parse_qs(authorize.query)['callback_url'][0]
+        callback = urllib.parse.urlsplit(redirect)
+        assert callback.hostname in ('127.0.0.1','localhost') and callback.scheme=='http'
+        return redirect
+    browser_login()
+    editor.keys('\x1b')
+    editor.wait(terminal_closed, 'Escape cancels browser login')
+    assert not connected('openrouter') and connected('openai')
+    assert draft()==['Retain this task']
+    redirect=browser_login()
+    with urllib.request.urlopen(redirect + '?code=test-code', timeout=5) as response:
+        assert response.status==200
+    editor.wait(terminal_closed, 'browser callback completes while manual prompt waits, without Enter')
+    assert connected('openrouter') and connected('openai'), 'A second provider preserves the first credential'
+    assert draft()==['Retain this task'] and not editor.snapshot()['entries']
+    assert editor.snapshot()['session']['provider']=='openai', 'Login does not change the selected model'
+    assert editor.config.read_bytes()==config
+    assert secret.encode() not in editor.output and b'oauth-test-secret-DO-NOT-PRINT' not in editor.output
+    assert secret not in json.dumps(status()) and 'oauth-test-secret-DO-NOT-PRINT' not in json.dumps(status())
+    for path in (editor.root/'state/logs').glob('*'):
+        data=path.read_bytes()
+        assert secret.encode() not in data and b'oauth-test-secret-DO-NOT-PRINT' not in data
+    requests=[json.loads(line) for line in (editor.root/'oauth-requests.jsonl').read_text().splitlines()]
+    assert [(item['host'],item['path']) for item in requests]==[('openrouter.ai','/api/v1/auth/keys')]
+    editor.rpc.request('server.shutdown')
+    editor.rpc.close()
+    editor.wait(lambda: not editor.socket_path.exists(), 'idle server releases socket after saved login')
+    editor.cli('start')
+    editor.rpc=Rpc(editor.socket_path)
+    editor.wait(lambda: editor.rpc.request('system.hello', {'api_version': 1})['storage_ready'], 'reopen stored provider credentials')
+    assert connected('openai') and connected('openrouter')
+    assert not editor.snapshot()['entries']
+    editor.finish()
+
+
+def chat_write_case():
+    editor = RealEditor('chat-native-write-commands', active=False)
+    editor.observe('true')
+    def chat_window():
+        editor.observe('(function() for _,w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(w))=="harness://chat/work" then vim.api.nvim_set_current_win(w); return true end end return false end)()')
+    editor.source()
+    editor.keys('ggccSaved by wall\x1b')
+    editor.command('Harness attach work')
+    editor.wait(lambda: any(w['name']=='harness://chat/work' for w in editor.windows()), 'chat restores before write commands')
+    chat_window()
+    editor.command('wall')
+    assert (editor.root/'one').read_text()=='Saved by wall\n', ':wall must save the modified source beside a clean chat'
+    assert editor.observe('(function() local b=vim.fn.bufnr("harness://chat/work"); return vim.bo[b].readonly and not vim.bo[b].modifiable and not vim.bo[b].modified end)()')
+    exported=editor.root/'exported-chat'
+    editor.command('write! ' + str(exported))
+    editor.wait(lambda: b'Chat history is stored by Harness' in editor.output, 'forced chat write reports its storage boundary')
+    assert not exported.exists(), ':write! must not export a chat to a file'
+    editor.keys('\r')
+    chat_window()
+    editor.command('wq')
+    editor.stays()
+    editor.keys('\r')
+    assert not (editor.root/'harness:').exists()
+    assert editor.observe('vim.api.nvim_buf_get_name(0)')=='harness://chat/work'
+    editor.source()
+    editor.keys('ggccSaved by wqa\x1b')
+    editor.command('Harness attach work')
+    editor.wait(lambda: any(w['name']=='harness://chat/work' for w in editor.windows()), 'chat restores before save-and-exit')
+    chat_window()
+    editor.command('wqa')
+    editor.exits()
+    assert (editor.root/'one').read_text()=='Saved by wqa\n', ':wqa must preserve native writes with a clean chat'
     editor.finish()
 
 
@@ -482,11 +618,71 @@ def prompt_window_case():
     editor.finish()
 
 
+def explorer_cases(plugin):
+    plugin = Path(plugin).resolve()
+    assert (plugin / 'plugin/NERD_tree.vim').is_file(), plugin
+    for width in (40, 70):
+        for key, label in (('\r', 'enter'), ('s', 'vertical'), ('i', 'horizontal')):
+            editor = RealEditor(f'nerdtree-{width}-{label}', rate=1)
+            try:
+                target = editor.snapshot()['active_submission_id']
+                editor.command('set mouse=a equalalways eadirection=both')
+                editor.command('execute "set runtimepath^=" . fnameescape(' + json.dumps(str(plugin)) + ')')
+                editor.command('runtime plugin/NERD_tree.vim')
+                editor.command(f'let g:NERDTreeWinSize={width} | let g:NERDTreeQuitOnOpen=1 | let g:NERDTreeMinimalUI=1')
+                editor.command('Harness')
+                editor.keys('iRetained explorer draft\x1b')
+                editor.command('Harness sidebar')
+                editor.keys('\x17l')
+                content = next(win for win in editor.windows() if win['current'])
+                assert content['name'] == 'harness://chat/work'
+                editor.command('NERDTree')
+                editor.keys('/two\r')
+                editor.keys(key)
+                editor.wait(lambda: any(win['name'] == str(editor.root / 'two') for win in editor.windows())
+                            and not any('NERD_tree_' in win['name'] for win in editor.windows()), 'native explorer opens the selected file and closes')
+                editor.wait(lambda: all(win['width'] <= 32 for win in editor.windows() if win['name'] == 'harness://agents'),
+                            'agent tree retains its bounded width')
+                windows = editor.windows()
+                file = next(win for win in windows if win['name'] == str(editor.root / 'two'))
+                chats = [win for win in windows if win['name'] == 'harness://chat/work']
+                assert file['current']
+                assert not any(win['name'].startswith('harness://prompt/') for win in windows), 'A file must not retain a chat message box'
+                if label == 'enter':
+                    assert not chats, 'Enter replaces the chat in its content window'
+                    assert file['id'] == content['id']
+                    editor.command('buffer harness://chat/work')
+                else:
+                    assert len(chats) == 1
+                    chat = chats[0]
+                    if label == 'vertical':
+                        assert file['col'] != chat['col'] and file['row'] == chat['row']
+                        assert min(file['width'], chat['width']) >= 40, windows
+                        assert abs(file['width'] - chat['width']) <= 1, windows
+                    else:
+                        assert file['col'] == chat['col'] and file['row'] != chat['row']
+                        assert file['width'] == chat['width'], windows
+                    editor.mouse(0, chat['col'] + 2, chat['row'] + 1)
+                editor.wait(lambda: any(win['name'] == 'harness://prompt/work' for win in editor.windows()), 'selecting the chat restores its own input')
+                windows = editor.windows()
+                chat = next(win for win in windows if win['name'] == 'harness://chat/work')
+                prompt = next(win for win in windows if win['name'] == 'harness://prompt/work')
+                assert prompt['lines'] == ['Retained explorer draft']
+                assert prompt['col'] == chat['col'] and prompt['width'] == chat['width']
+                assert prompt['row'] == chat['row'] + chat['height'] + 1
+                assert editor.snapshot()['active_submission_id'] == target, 'Explorer actions must not stop work'
+            finally:
+                editor.finish()
+
 def integration_cases():
     launcher_cases()
     buffer_switch_case()
     model_picker_case()
+    login_case()
+    chat_write_case()
     prompt_window_case()
+    if os.environ.get('HARNESS_TEST_NERDTREE'):
+        explorer_cases(os.environ['HARNESS_TEST_NERDTREE'])
     editor = RealEditor('first-run-setup', active=False, startup=True, launcher='plain', first_run=True, rate=400)
     assert not editor.config.exists()
     assert editor.snapshot()['session']['provider'] is None
@@ -798,7 +994,7 @@ def legacy_case(prior):
     assert start.returncode == 0, start.stderr
     original = Rpc(socket_path)
     original_hello = original.request('system.hello', {'api_version': 1})
-    assert original_hello.get('api_revision', 0) < 2, original_hello
+    assert original_hello.get('api_revision', 0) < 3, original_hello
     original.request('session.create', {'session_id': 'stored', 'workspace': str(root)})
     original.request('input.submit', {'session_id': 'stored', 'request_id': 'history', 'text': 'Preserve the prior history.', 'context': []})
     history_outcome = original.request('submission.wait', {'session_id': 'stored', 'request_id': 'history', 'timeout_ms': 10000})
@@ -826,7 +1022,7 @@ def legacy_case(prior):
         original.close()
         current = Rpc(socket_path)
         hello = current.request('system.hello', {'api_version': 1})
-        assert hello['api_revision'] == 2 and hello['instance_id'] != original_hello['instance_id']
+        assert hello['api_revision'] == 3 and hello['instance_id'] != original_hello['instance_id']
         assert hello['state_dir'] == original_hello['state_dir']
         editor.wait(lambda: len(current.request('session.list')['items']) == 2, 'retained new chat is admitted after upgrade')
         created = next(item['session_id'] for item in current.request('session.list')['items'] if item['session_id'] != 'stored')

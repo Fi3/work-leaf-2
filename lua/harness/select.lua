@@ -50,7 +50,8 @@ function M.select(items, options, callback)
   local function footer()
     if closed or not vim.api.nvim_win_is_valid(window) then return end
     local width = vim.api.nvim_win_get_width(window)
-    local keys = width >= 55 and '  ↑↓ move  / search  Enter select  Esc cancel' or '  Enter select  Esc cancel'
+    local keys = width >= 55 and '  ↑↓ move  / search  Enter select  Esc cancel'
+      or width >= 32 and ' ↑↓ /search Enter Esc' or '  Enter select  Esc cancel'
     vim.api.nvim_win_set_config(window, { footer = ' ' .. vim.api.nvim_win_get_cursor(window)[1] .. '/' .. #items .. keys .. ' ', footer_pos = 'left' })
   end
   vim.keymap.set('n', '<CR>', function() finish(vim.api.nvim_win_get_cursor(window)[1]) end, { buffer = buffer, silent = true })

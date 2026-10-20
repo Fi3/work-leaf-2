@@ -236,11 +236,7 @@ fn run(listener: UnixListener, config: Config, lock: std::fs::File) -> Result<()
     Ok(())
 }
 
-fn existing(
-    config: &Config,
-    expected_pid: Option<u32>,
-    current: bool,
-) -> Result<Option<Value>, RpcError> {
+fn existing(config: &Config, current: bool) -> Result<Option<Value>, RpcError> {
     process::check_endpoint(&config.socket_path)?;
     let mut stream = match UnixStream::connect(&config.socket_path) {
         Ok(stream) => stream,
@@ -254,14 +250,6 @@ fn existing(
         }
         Err(e) => return Err(e.into()),
     };
-    if let Some(expected) = expected_pid
-        && process::peer_pid(&stream)? != expected
-    {
-        return Err(RpcError::app(
-            "conflict",
-            "Another server started during setup. The entered key was not applied. Run auth or setup again",
-        ));
-    }
     stream.set_read_timeout(Some(Duration::from_millis(500)))?;
     stream.set_write_timeout(Some(Duration::from_millis(500)))?;
     stream.write_all(&protocol::encode(
@@ -318,7 +306,7 @@ pub(crate) fn released(config: &Config) -> Result<std::fs::File, RpcError> {
 }
 
 pub fn upgrade(config: &Config) -> Result<Value, RpcError> {
-    if existing(config, None, false)?.is_some() {
+    if existing(config, false)?.is_some() {
         let mut client =
             crate::client::Client::connect_for_upgrade(&config.socket_path, &config.state_dir)?;
         client.request("server.shutdown", json!({}))?;
@@ -329,12 +317,8 @@ pub fn upgrade(config: &Config) -> Result<Value, RpcError> {
 }
 
 pub fn start(config: &Config) -> Result<Value, RpcError> {
-    start_with_key(config, None)
-}
-
-pub fn start_with_key(config: &Config, key: Option<&str>) -> Result<Value, RpcError> {
     let deadline = Instant::now() + Duration::from_secs(10);
-    if let Some(hello) = existing(config, key.map(|_| 0), true)?
+    if let Some(hello) = existing(config, true)?
         && hello["storage_ready"] == true
     {
         return Ok(hello);
@@ -349,12 +333,6 @@ pub fn start_with_key(config: &Config, key: Option<&str>) -> Result<Value, RpcEr
     }
     let log = process::private_file(&log_path)?;
     let mut command = Command::new(std::env::current_exe()?);
-    if let Some(key) = key {
-        command
-            .env_remove("ANTHROPIC_AUTH_TOKEN")
-            .env_remove("ANTHROPIC_OAUTH_TOKEN")
-            .env("ANTHROPIC_API_KEY", key);
-    }
     command
         .arg("serve")
         .arg("--state-dir")
@@ -371,11 +349,7 @@ pub fn start_with_key(config: &Config, key: Option<&str>) -> Result<Value, RpcEr
     process::detach(&mut command);
     let mut child: Option<std::process::Child> = None;
     loop {
-        let connected = existing(
-            config,
-            key.map(|_| child.as_ref().map_or(0, |child| child.id())),
-            true,
-        )?;
+        let connected = existing(config, true)?;
         if let Some(hello) = &connected
             && hello["storage_ready"] == true
         {

@@ -34,6 +34,12 @@ end
 open(nil)
 assert(vim.api.nvim_win_get_cursor(window)[1] == 1, 'An unset model starts at the first choice')
 assert(not table.concat(vim.api.nvim_buf_get_lines(buffer, 0, -1, false), '\n'):find('[current]', 1, true), 'An unset model is not shown as configured')
+local footer = vim.api.nvim_win_get_config(window).footer
+local footer_text = table.concat(vim.tbl_map(function(chunk) return chunk[1] end, footer))
+for _, label in ipairs({ '↑↓', '/search', 'Enter', 'Esc' }) do
+  assert(footer_text:find(label, 1, true), 'A narrow picker must show movement, search, selection, and cancellation')
+end
+assert(vim.fn.strdisplaywidth(footer_text) <= vim.api.nvim_win_get_width(window), 'The narrow picker controls must fit')
 keys('jkj<Esc>')
 closed()
 assert(result.item == nil, 'Native motion alone does not choose a model')

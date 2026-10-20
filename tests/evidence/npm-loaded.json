@@ -1,5 +1,681 @@
 [
   {
+    "path": "@earendil-works/chord/dist/context/index.js",
+    "bytes": 3276
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/all.js",
+    "bytes": 5609
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/models.generated.js",
+    "bytes": 11275
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/amazon-bedrock.models.js",
+    "bytes": 655
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/amazon-bedrock.json",
+    "bytes": 103173
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/model-catalog.js",
+    "bytes": 632
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/ant-ling.models.js",
+    "bytes": 607
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/ant-ling.json",
+    "bytes": 1692
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/anthropic.models.js",
+    "bytes": 615
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/anthropic.json",
+    "bytes": 11820
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/azure.models.js",
+    "bytes": 583
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/azure.json",
+    "bytes": 20346
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/baseten.models.js",
+    "bytes": 599
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/baseten.json",
+    "bytes": 17973
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/cerebras.models.js",
+    "bytes": 607
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/cerebras.json",
+    "bytes": 1112
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/cloudflare-ai-gateway.models.js",
+    "bytes": 711
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/cloudflare-ai-gateway.json",
+    "bytes": 38393
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/cloudflare-workers-ai.models.js",
+    "bytes": 711
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/cloudflare-workers-ai.json",
+    "bytes": 13511
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/deepseek.models.js",
+    "bytes": 607
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/deepseek.json",
+    "bytes": 1387
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/fireworks.models.js",
+    "bytes": 615
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/fireworks.json",
+    "bytes": 16227
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/github-copilot.models.js",
+    "bytes": 655
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/github-copilot.json",
+    "bytes": 29075
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/google.models.js",
+    "bytes": 591
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/google.json",
+    "bytes": 14532
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/google-vertex.models.js",
+    "bytes": 647
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/google-vertex.json",
+    "bytes": 7794
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/groq.models.js",
+    "bytes": 575
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/groq.json",
+    "bytes": 3354
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/huggingface.models.js",
+    "bytes": 631
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/huggingface.json",
+    "bytes": 37386
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/kimi-coding.models.js",
+    "bytes": 631
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/kimi-coding.json",
+    "bytes": 3239
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/meta.models.js",
+    "bytes": 575
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/meta.json",
+    "bytes": 3358
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/minimax.models.js",
+    "bytes": 599
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/minimax.json",
+    "bytes": 1207
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/minimax-cn.models.js",
+    "bytes": 623
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/minimax-cn.json",
+    "bytes": 1222
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/mistral.models.js",
+    "bytes": 599
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/mistral.json",
+    "bytes": 16484
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/moonshotai.models.js",
+    "bytes": 623
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/moonshotai.json",
+    "bytes": 2870
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/moonshotai-cn.models.js",
+    "bytes": 647
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/moonshotai-cn.json",
+    "bytes": 2882
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/nvidia.models.js",
+    "bytes": 591
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/nvidia.json",
+    "bytes": 13078
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/openai.models.js",
+    "bytes": 591
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/openai.json",
+    "bytes": 29415
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/openai-codex.models.js",
+    "bytes": 639
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/openai-codex.json",
+    "bytes": 6476
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/opencode.models.js",
+    "bytes": 607
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/opencode.json",
+    "bytes": 51667
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/opencode-go.models.js",
+    "bytes": 631
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/opencode-go.json",
+    "bytes": 17403
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/openrouter.models.js",
+    "bytes": 623
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/openrouter.json",
+    "bytes": 282246
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/qwen-token-plan.models.js",
+    "bytes": 663
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/qwen-token-plan.json",
+    "bytes": 12230
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/qwen-token-plan-cn.models.js",
+    "bytes": 687
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/qwen-token-plan-cn.json",
+    "bytes": 12210
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/qwen-token-plan-individual.models.js",
+    "bytes": 751
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/qwen-token-plan-individual.json",
+    "bytes": 5782
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/radius.models.js",
+    "bytes": 591
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/radius.json",
+    "bytes": 20309
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/together.models.js",
+    "bytes": 607
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/together.json",
+    "bytes": 10944
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/typesafe.models.js",
+    "bytes": 607
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/typesafe.json",
+    "bytes": 291
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/vercel-ai-gateway.models.js",
+    "bytes": 679
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/vercel-ai-gateway.json",
+    "bytes": 154350
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xai.models.js",
+    "bytes": 567
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/xai.json",
+    "bytes": 2609
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xiaomi.models.js",
+    "bytes": 591
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/xiaomi.json",
+    "bytes": 4002
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xiaomi-token-plan-ams.models.js",
+    "bytes": 711
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/xiaomi-token-plan-ams.json",
+    "bytes": 2728
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xiaomi-token-plan-cn.models.js",
+    "bytes": 703
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/xiaomi-token-plan-cn.json",
+    "bytes": 2720
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xiaomi-token-plan-sgp.models.js",
+    "bytes": 711
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/xiaomi-token-plan-sgp.json",
+    "bytes": 2728
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/zai.models.js",
+    "bytes": 567
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/zai.json",
+    "bytes": 4221
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/zai-coding-cn.models.js",
+    "bytes": 647
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/zai-coding-cn.json",
+    "bytes": 2672
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/models.js",
+    "bytes": 31970
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/lazy.js",
+    "bytes": 2663
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/event-stream.js",
+    "bytes": 4027
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/context.js",
+    "bytes": 1666
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/credential-store.js",
+    "bytes": 2045
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/abort.js",
+    "bytes": 1551
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/resolve.js",
+    "bytes": 6696
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/models-error.js",
+    "bytes": 677
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/diagnostics.js",
+    "bytes": 964
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/models-store.js",
+    "bytes": 587
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/model-operations.js",
+    "bytes": 2053
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/transcript.js",
+    "bytes": 8745
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/text.js",
+    "bytes": 1421
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/amazon-bedrock.js",
+    "bytes": 3894
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/bedrock-converse-stream.lazy.js",
+    "bytes": 1521
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/ant-ling.js",
+    "bytes": 605
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/openai-completions.lazy.js",
+    "bytes": 180
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/helpers.js",
+    "bytes": 2110
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/anthropic.js",
+    "bytes": 3548
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/anthropic-messages.lazy.js",
+    "bytes": 180
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/auth/oauth/load.js",
+    "bytes": 2902
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/env-api-keys.js",
+    "bytes": 7813
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/utils/provider-env.js",
+    "bytes": 1696
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/azure.js",
+    "bytes": 2120
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/azure-openai-config.js",
+    "bytes": 3090
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/azure-openai-responses.lazy.js",
+    "bytes": 191
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/baseten.js",
+    "bytes": 601
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/cerebras.js",
+    "bytes": 605
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/cloudflare-ai-gateway.js",
+    "bytes": 1363
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/openai-responses.lazy.js",
+    "bytes": 174
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/cloudflare-auth.js",
+    "bytes": 3655
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/cloudflare-stream.js",
+    "bytes": 1315
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/cloudflare-workers-ai.js",
+    "bytes": 1109
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/cloudflare-workers-ai-system-one.lazy.js",
+    "bytes": 265
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/data/.manifest.json",
+    "bytes": 3762
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/deepseek.js",
+    "bytes": 603
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/fireworks.js",
+    "bytes": 801
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/github-copilot.js",
+    "bytes": 1667
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/google.js",
+    "bytes": 613
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/google-generative-ai.lazy.js",
+    "bytes": 185
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/google-vertex.js",
+    "bytes": 4282
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/google-vertex.lazy.js",
+    "bytes": 165
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/groq.js",
+    "bytes": 573
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/huggingface.js",
+    "bytes": 627
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/kimi-coding.js",
+    "bytes": 950
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/meta.js",
+    "bytes": 873
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/minimax.js",
+    "bytes": 602
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/minimax-cn.js",
+    "bytes": 630
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/mistral.js",
+    "bytes": 601
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/mistral-conversations.lazy.js",
+    "bytes": 189
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/moonshotai.js",
+    "bytes": 623
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/moonshotai-cn.js",
+    "bytes": 643
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/nvidia.js",
+    "bytes": 596
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/openai.js",
+    "bytes": 1446
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/openai-decisions.lazy.js",
+    "bytes": 220
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/openai-codex.js",
+    "bytes": 838
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/openai-codex-responses.lazy.js",
+    "bytes": 191
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/opencode.js",
+    "bytes": 1488
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/typesafe-system-one.lazy.js",
+    "bytes": 228
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/opencode-headers.js",
+    "bytes": 939
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/opencode-go.js",
+    "bytes": 1194
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/openrouter.js",
+    "bytes": 4292
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/openrouter-images.lazy.js",
+    "bytes": 235
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/openrouter-api.js",
+    "bytes": 1830
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/qwen-token-plan.js",
+    "bytes": 710
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/qwen-token-plan-cn.js",
+    "bytes": 732
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/qwen-token-plan-individual.js",
+    "bytes": 797
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/radius.js",
+    "bytes": 3418
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/api/pi-messages.lazy.js",
+    "bytes": 159
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/radius-config.js",
+    "bytes": 2541
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/together.js",
+    "bytes": 605
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/typesafe.js",
+    "bytes": 658
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/vercel-ai-gateway.js",
+    "bytes": 1010
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xai.js",
+    "bytes": 872
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xiaomi.js",
+    "bytes": 590
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xiaomi-token-plan-ams.js",
+    "bytes": 733
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xiaomi-token-plan-cn.js",
+    "bytes": 723
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/xiaomi-token-plan-sgp.js",
+    "bytes": 733
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/zai.js",
+    "bytes": 571
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/zai-coding-cn.js",
+    "bytes": 667
+  },
+  {
+    "path": "@earendil-works/pi-ai/dist/providers/faux.js",
+    "bytes": 20668
+  },
+  {
     "path": "@earendil-works/pi-durable/dist/index.js",
     "bytes": 1291
   },
@@ -2748,10 +3424,6 @@
     "bytes": 9655
   },
   {
-    "path": "@earendil-works/chord/dist/context/index.js",
-    "bytes": 3276
-  },
-  {
     "path": "@earendil-works/chord/dist/websocket.js",
     "bytes": 911
   },
@@ -2800,10 +3472,6 @@
     "bytes": 3752
   },
   {
-    "path": "@earendil-works/pi-ai/dist/utils/text.js",
-    "bytes": 1421
-  },
-  {
     "path": "@earendil-works/pi-ai/dist/utils/retry.js",
     "bytes": 8825
   },
@@ -2826,10 +3494,6 @@
   {
     "path": "@earendil-works/pi-ai/dist/utils/overflow.js",
     "bytes": 10422
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/utils/transcript.js",
-    "bytes": 8745
   },
   {
     "path": "@earendil-works/pi-durable/dist/harness/inbox.js",
@@ -2932,42 +3596,6 @@
     "bytes": 1424
   },
   {
-    "path": "@earendil-works/pi-durable/dist/env/node.js",
-    "bytes": 44256
-  },
-  {
-    "path": "@earendil-works/pi-durable/dist/env/decode.js",
-    "bytes": 1495
-  },
-  {
-    "path": "@earendil-works/pi-durable/dist/env/index.js",
-    "bytes": 1393
-  },
-  {
-    "path": "@earendil-works/pi-durable/dist/env/line-scan.js",
-    "bytes": 5583
-  },
-  {
-    "path": "@earendil-works/pi-durable/dist/env/node-watch.js",
-    "bytes": 19725
-  },
-  {
-    "path": "@earendil-works/pi-durable/dist/storage/sqlite/node.js",
-    "bytes": 6151
-  },
-  {
-    "path": "@earendil-works/pi-durable/dist/storage/sqlite/schema.js",
-    "bytes": 2436
-  },
-  {
-    "path": "@earendil-works/pi-durable/dist/storage/sqlite/storage.js",
-    "bytes": 33759
-  },
-  {
-    "path": "@earendil-works/pi-durable/dist/storage/sqlite/migrations.js",
-    "bytes": 6508
-  },
-  {
     "path": "@earendil-works/pi-durable/dist/tools/index.js",
     "bytes": 1080
   },
@@ -3068,6 +3696,18 @@
     "bytes": 2369
   },
   {
+    "path": "@earendil-works/pi-durable/dist/env/index.js",
+    "bytes": 1393
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/env/decode.js",
+    "bytes": 1495
+  },
+  {
+    "path": "@earendil-works/pi-durable/dist/env/line-scan.js",
+    "bytes": 5583
+  },
+  {
     "path": "@earendil-works/pi-durable/dist/tools/path-utils.js",
     "bytes": 1052
   },
@@ -3088,83 +3728,27 @@
     "bytes": 1507
   },
   {
-    "path": "@earendil-works/pi-ai/dist/providers/anthropic.js",
-    "bytes": 3548
+    "path": "@earendil-works/pi-durable/dist/env/node.js",
+    "bytes": 44256
   },
   {
-    "path": "@earendil-works/pi-ai/dist/api/anthropic-messages.lazy.js",
-    "bytes": 180
+    "path": "@earendil-works/pi-durable/dist/env/node-watch.js",
+    "bytes": 19725
   },
   {
-    "path": "@earendil-works/pi-ai/dist/api/lazy.js",
-    "bytes": 2663
+    "path": "@earendil-works/pi-durable/dist/storage/sqlite/node.js",
+    "bytes": 6151
   },
   {
-    "path": "@earendil-works/pi-ai/dist/utils/event-stream.js",
-    "bytes": 4027
+    "path": "@earendil-works/pi-durable/dist/storage/sqlite/schema.js",
+    "bytes": 2436
   },
   {
-    "path": "@earendil-works/pi-ai/dist/auth/helpers.js",
-    "bytes": 2110
+    "path": "@earendil-works/pi-durable/dist/storage/sqlite/storage.js",
+    "bytes": 33759
   },
   {
-    "path": "@earendil-works/pi-ai/dist/auth/oauth/load.js",
-    "bytes": 2902
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/env-api-keys.js",
-    "bytes": 7813
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/utils/provider-env.js",
-    "bytes": 1696
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/models.js",
-    "bytes": 31970
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/auth/context.js",
-    "bytes": 1666
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/auth/credential-store.js",
-    "bytes": 2045
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/utils/abort.js",
-    "bytes": 1551
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/auth/resolve.js",
-    "bytes": 6696
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/utils/models-error.js",
-    "bytes": 677
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/utils/diagnostics.js",
-    "bytes": 964
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/models-store.js",
-    "bytes": 587
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/utils/model-operations.js",
-    "bytes": 2053
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/providers/anthropic.models.js",
-    "bytes": 615
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/providers/data/anthropic.json",
-    "bytes": 11820
-  },
-  {
-    "path": "@earendil-works/pi-ai/dist/model-catalog.js",
-    "bytes": 632
+    "path": "@earendil-works/pi-durable/dist/storage/sqlite/migrations.js",
+    "bytes": 6508
   }
 ]

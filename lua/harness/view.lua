@@ -26,7 +26,7 @@ function M.new(options, actions)
     local buf = vim.api.nvim_create_buf(not editable, true)
     vim.api.nvim_buf_set_name(buf, 'harness://' .. kind .. '/' .. id)
     vim.b[buf].harness_session_id = id
-    vim.bo[buf].buftype, vim.bo[buf].bufhidden = 'nofile', 'hide'
+    vim.bo[buf].buftype, vim.bo[buf].bufhidden = editable and 'nofile' or '', 'hide'
     vim.bo[buf].swapfile, vim.bo[buf].modifiable = false, editable
     vim.bo[buf].filetype = 'harness'
     if editable then
@@ -61,6 +61,10 @@ function M.new(options, actions)
       vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, { buffer = buf, callback = hint })
       hint()
     else
+      vim.bo[buf].readonly = true
+      vim.api.nvim_create_autocmd({ 'BufWriteCmd', 'FileWriteCmd', 'FileAppendCmd' }, { buffer = buf, callback = function()
+        error('Chat history is stored by Harness. Use :q to close this window.')
+      end })
       vim.keymap.set('n', 'h', '<Cmd>Harness history<CR>', { buffer = buf, silent = true, desc = 'Load older messages' })
       vim.keymap.set('n', 'p', function() self.focus() end, { buffer = buf, silent = true, desc = 'Write a task' })
     end
@@ -141,6 +145,11 @@ function M.new(options, actions)
     local tab, chat = vim.api.nvim_get_current_tabpage(), vim.api.nvim_win_get_buf(main)
     local pair = chats[self.session(chat)]
     if not pair or chat ~= pair.transcript then return end
+    if vim.api.nvim_win_get_width(main) < 40 then
+      for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win)) == 'harness://agents' then vim.api.nvim_win_close(win, false) end
+      end
+    end
     local host = hosts[tab] or {}
     hosts[tab] = host
     if host.main ~= main or host.chat ~= chat then host.closed = false end
@@ -221,7 +230,7 @@ function M.new(options, actions)
       end
       main = main or vim.api.nvim_get_current_win()
       local buf = vim.api.nvim_win_get_buf(main)
-      if vim.bo[buf].buftype == '' then files[main] = buf end
+      if vim.bo[buf].buftype == '' and not self.session(buf) then files[main] = buf end
       vim.api.nvim_set_current_win(main)
       if buf ~= self.transcript then vim.cmd('hide buffer ' .. self.transcript) end
       if host then host.closed = false end
@@ -251,7 +260,7 @@ function M.new(options, actions)
   vim.api.nvim_create_autocmd('BufLeave', { callback = function()
     if changing then return end
     local win, buf = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
-    if vim.bo[buf].buftype == '' then files[win] = buf end
+    if vim.bo[buf].buftype == '' and not self.session(buf) then files[win] = buf end
   end })
   vim.api.nvim_create_autocmd('WinNewPre', { callback = function()
     if changing then return end
@@ -331,6 +340,8 @@ function M.new(options, actions)
       lines[#lines + 1] = 'State: ' .. (connection == 'connected' and snapshot.state or 'unknown')
       if type(snapshot.session.provider) == 'string' and type(snapshot.session.model) == 'string' then
         lines[#lines + 1] = snapshot.session.provider == 'faux' and 'Local demo' or snapshot.session.provider .. ' / ' .. snapshot.session.model
+      elseif #snapshot.entries == 0 then
+        lines[#lines + 1] = 'Choose a model: \\model · Connect an account: \\login'
       end
       if snapshot.error ~= vim.NIL then text(snapshot.error.message) end
       local seen = {}
@@ -373,9 +384,10 @@ function M.new(options, actions)
         view = vim.api.nvim_win_call(win, vim.fn.winsaveview),
       }
     end
-    vim.bo[self.transcript].modifiable = true
+    vim.bo[self.transcript].readonly, vim.bo[self.transcript].modifiable = false, true
     vim.api.nvim_buf_set_lines(self.transcript, 0, -1, false, lines)
     vim.bo[self.transcript].modifiable, vim.bo[self.transcript].modified = false, false
+    vim.bo[self.transcript].readonly = true
     vim.api.nvim_buf_clear_namespace(self.transcript, namespace, 0, -1)
     local groups = { connection == 'connected' and 'DiagnosticOk' or 'DiagnosticWarn', 'Title', 'Comment' }
     for row = 1, math.min(#lines, snapshot and 3 or 1) do
