@@ -70,4 +70,6 @@ export function installOAuthMock({ record, failure, pending = 0 } = {}) {
   return { calls, control, restore() { globalThis.fetch = original; } };
 }
 
-if (process.env.HARNESS_TEST_OAUTH_RECORD) installOAuthMock({ record: process.env.HARNESS_TEST_OAUTH_RECORD });
+if (process.env.HARNESS_TEST_OAUTH_RECORD) installOAuthMock({
+  record: process.env.HARNESS_TEST_OAUTH_RECORD, pending: Number(process.env.HARNESS_TEST_OAUTH_PENDING ?? 0),
+});

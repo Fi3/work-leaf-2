@@ -1,0 +1,149 @@
+{
+  "xvfb_vendor_release": 12101024,
+  "mode": "Actual Kitty/Xvfb desktop, Neovim, Rust and Pi; native clipboard paste and controlled desktop opener",
+  "kitty_version": "kitty 0.49.2 created by Kovid Goyal",
+  "xvfb_executable": "/tmp/harness-xvfb/usr/bin/Xvfb",
+  "xvfb_sha256": "567a9b39284e303522fdc178059fe60d0e9917b811bd5066fb63260fd198a97c",
+  "credentials": "synthetic only",
+  "url_source": "normal copy action and actual system paste; no RPC URL extraction",
+  "cases": [
+    {
+      "case": "login-url-native-clipboard",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/login-url-native-clipboard.ansi.gz",
+      "sha256": "183b17b0c8222d162173aa337ea66bd401500e6ca2ed777cc6b9d2c52773dd36",
+      "checks": {
+        "copied_url_bytes": 562,
+        "copied_url_sha256": "a10da01f7654d4f0531e13681ec72db7cfe961974d6a2321bce43aee51d264c7",
+        "copied_equals_full_browser_url": true,
+        "native_clipboard_provider": "Neovim OSC52",
+        "native_paste_receiver": "separate Kitty terminal",
+        "open_action_uses_same_url": true,
+        "callback_source": "native clipboard paste",
+        "steps": [
+          {
+            "time": 1.04,
+            "text": "Copy the complete browser link with Ctrl-X; paste it in a separate terminal."
+          },
+          {
+            "time": 1.82,
+            "text": "Ctrl-L shows the full link. Native selection copies the complete logical line."
+          },
+          {
+            "time": 3.41,
+            "text": "The Copy and Open buttons use the same complete link."
+          },
+          {
+            "time": 4.81,
+            "text": "The login window fits a narrow terminal. Copy still returns the full link."
+          },
+          {
+            "time": 5.76,
+            "text": "Return to the full terminal, then click Link while browser sign-in completes."
+          },
+          {
+            "time": 6.51,
+            "text": "Sign-in completes. Continue the exact unsent draft immediately."
+          }
+        ]
+      },
+      "screenshots": {
+        "login-screens/login-url-native-clipboard/complete-link-controls.png": "975b6f88b2797627c25e374c32662f3dcce454d1cf3d8271ba0309b93b9eb8a8",
+        "login-screens/login-url-native-clipboard/narrow-link-controls.png": "fc3684efad60f665c40ad166ff621dc7801dcde93658a3614b05cd8a9976e635"
+      },
+      "source_video_sha256": "ad6656427df751feb485bd41b8e87868a8018ec7ed765a70311945cd9235b07f"
+    },
+    {
+      "case": "device-code-native-clipboard",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/device-code-native-clipboard.ansi.gz",
+      "sha256": "92c73736527507aa5ecb236863b7940716c3c6ab7b6c69ad729dc5e9bbadf7b9",
+      "checks": {
+        "device_url_copied_exactly": true,
+        "device_code_pasted": "TEST-CODE",
+        "api_key_not_copied": true,
+        "both_cancellations_retained_exact_draft": true
+      },
+      "screenshots": {
+        "login-screens/device-code-native-clipboard/device-code-copy.png": "426b0d75c3aad2941506957042c831e744bd452c717e2e905a961c473ae71b88"
+      },
+      "source_video_sha256": "a216c1b8e8333544e1b816750644f10921c5da5ede4255343fef5633839a8e04"
+    },
+    {
+      "case": "login-copy-without-system-clipboard",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/login-copy-without-system-clipboard.ansi.gz",
+      "sha256": "1e432ea40155547c3aa65d7dd7f0c4dff4fffe085ddc5e3c0cc3b6f67c8be1e1",
+      "checks": {
+        "default_editor_clipboard_configuration": false,
+        "clipboard_provider_available": false,
+        "terminal_clipboard_enabled": false,
+        "callback_preserved_unsaved_file_focus": false,
+        "full_link_native_yank_and_paste": true,
+        "url_bytes": 562
+      },
+      "screenshots": {
+        "login-screens/login-copy-without-system-clipboard/full-link-native-paste.png": "76ce347d4e88e6237a96692aba58e3f776aff55f9958d2c3a09ad0a63f6824dc",
+        "login-screens/login-copy-without-system-clipboard/full-link-native-selection.png": "fdaab344e107ba22774adb6e3b27ce13b4dc835f1a33648f0a91d6234a1919c6"
+      },
+      "source_video_sha256": "6a476942ee257516591ece0a4eedc89485aebc35c203b90958c34972c15c2a2a"
+    },
+    {
+      "case": "login-copy-default-editor",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/login-copy-default-editor.ansi.gz",
+      "sha256": "34656a2c2999dc555fc92a56f93ddd96d5875e84f50e7f031057d666aa087ae8",
+      "checks": {
+        "default_editor_clipboard_configuration": true,
+        "clipboard_provider_available": false,
+        "terminal_clipboard_enabled": true,
+        "callback_preserved_unsaved_file_focus": true,
+        "full_link_native_yank_and_paste": true,
+        "url_bytes": 562
+      },
+      "screenshots": {
+        "login-screens/login-copy-default-editor/full-link-native-paste.png": "6c9479af69d10ff896b65e56e9b0ae70c4c054285c02593c8a2fd60bc693aeff",
+        "login-screens/login-copy-default-editor/full-link-native-selection.png": "b46b513845e6eb7b2338e3da6190dec8401f3a89edf4b2b63f5ffa1dac8cb08f"
+      },
+      "source_video_sha256": "0c7aa25fb971fcd795963e5e44cff9199ca946a680854332970139e073816746"
+    }
+  ],
+  "passed": true,
+  "video": "login-controls.mp4",
+  "video_sha256": "5c4c88cb52fd7385b65493ca0a14199c0700b64e63f99a2433fce38f36a2b71d",
+  "duration_seconds": 23.8,
+  "source_duration_seconds": 6.6,
+  "final_frame_hold_seconds": 4,
+  "steps": [
+    {
+      "seconds": 0,
+      "text": "Actual Neovim and Pi. Account replies are synthetic. Playback is one-third speed."
+    },
+    {
+      "seconds": 3.12,
+      "text": "Copy the complete browser link with Ctrl-X; paste it in a separate terminal."
+    },
+    {
+      "seconds": 5.46,
+      "text": "Ctrl-L shows the full link. Native selection copies the complete logical line."
+    },
+    {
+      "seconds": 10.23,
+      "text": "The Copy and Open buttons use the same complete link."
+    },
+    {
+      "seconds": 14.43,
+      "text": "The login window fits a narrow terminal. Copy still returns the full link."
+    },
+    {
+      "seconds": 17.28,
+      "text": "Return to the full terminal, then click Link while browser sign-in completes."
+    },
+    {
+      "seconds": 19.53,
+      "text": "Sign-in completes. Continue the exact unsent draft immediately."
+    }
+  ],
+  "source_video_case": "login-url-native-clipboard",
+  "editing": "Continuous desktop recording at one-third speed, with explanatory captions above the screen. Hold the last actual frame for four seconds so the result can be read. No actions or screen regions removed."
+}

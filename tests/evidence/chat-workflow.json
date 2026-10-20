@@ -1,0 +1,101 @@
+{
+  "passed": true,
+  "mode": "Actual Kitty, Neovim, Rust server and Pi; all actions use terminal keys",
+  "responses": "Synthetic faux replies; actual Bash child creation",
+  "steps": [
+    {
+      "seconds": 0.0,
+      "text": "Start Harness from the project. Neovim keeps the normal file window."
+    },
+    {
+      "seconds": 2.1,
+      "text": "Press ; for agents. Press n for a new saved chat. No setup form blocks it."
+    },
+    {
+      "seconds": 6.4,
+      "text": "F1 opens chat actions while the complete task stays in the message box."
+    },
+    {
+      "seconds": 11.8,
+      "text": "Escape cancels model selection. Typing continues without losing a character."
+    },
+    {
+      "seconds": 13.2,
+      "text": "Choose the local demo for this reproducible test. No paid model request runs."
+    },
+    {
+      "seconds": 16.7,
+      "text": "Ctrl-^ switches to the source. The chat input closes. Edit without saving."
+    },
+    {
+      "seconds": 20.5,
+      "text": "Return to the chat. F1 attaches the unsaved source and keeps the task."
+    },
+    {
+      "seconds": 23.6,
+      "text": "Enter sends. The actual Pi Bash tool creates a child agent. The answer streams into the chat."
+    },
+    {
+      "seconds": 28.2,
+      "text": "Select the nested Tests agent in the tree. It has a separate conversation and draft."
+    },
+    {
+      "seconds": 30.6,
+      "text": "NERDTree s opens a file beside the chat with normal Vim split behavior."
+    },
+    {
+      "seconds": 34.7,
+      "text": "Return to the chat. Its small input stays under that chat, with its draft intact."
+    },
+    {
+      "seconds": 37.7,
+      "text": "Save the source and close Neovim. Stored chats remain available."
+    }
+  ],
+  "final_layout": [
+    {
+      "lines": [
+        "This is an isolated test project.",
+        "Native Vim file and split commands must keep their normal behavior."
+      ],
+      "id": 1011,
+      "width": 64,
+      "height": 34,
+      "col": 0,
+      "current": false,
+      "name": "/tmp/harness-human-11_suxkk/demo-project/README.txt",
+      "row": 0
+    },
+    {
+      "lines": [
+        "Connection: connected",
+        "Session: Tests",
+        "State: idle",
+        "Local demo"
+      ],
+      "id": 1000,
+      "width": 63,
+      "height": 30,
+      "col": 65,
+      "current": false,
+      "name": "harness://chat/tests-child",
+      "row": 0
+    },
+    {
+      "lines": [
+        "Child draft."
+      ],
+      "id": 1012,
+      "width": 63,
+      "height": 3,
+      "col": 65,
+      "current": true,
+      "name": "harness://prompt/tests-child",
+      "row": 31
+    }
+  ],
+  "video": "chat-workflow.mp4",
+  "video_sha256": "75213d28f8ad124905c29b785454b2c603f1a77fa18948f6239be2a8affc9b4d",
+  "duration_seconds": 39.6,
+  "captions": "Explanatory captions added above the unmodified screen recording."
+}

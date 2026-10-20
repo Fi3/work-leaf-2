@@ -5,6 +5,7 @@ import json
 import os
 import signal
 import socket
+import struct
 import subprocess
 import time
 import urllib.parse
@@ -595,6 +596,99 @@ def provider_generation_case():
     editor.finish()
 
 
+def chat_actions_case():
+    editor = RealEditor('chat-actions-retain-draft',active=False)
+    editor.observe('true')
+    expected = 'Unsent task'
+    editor.keys('i'+expected)
+    def choose(label):
+        editor.wait(lambda:any(window['name']=='harness://select' and any(label in line for line in window['lines'])
+                               for window in editor.windows()),'choice '+label)
+        lines = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
+        row = next(index for index,line in enumerate(lines,1) if label in line)
+        editor.keys(str(row)+'G\r')
+    def cancelled(suffix):
+        nonlocal expected
+        editor.keys('\x1b')
+        editor.wait(lambda:not any(window['name']=='harness://select' for window in editor.windows()),'choice cancelled')
+        assert editor.observe('vim.fn.mode(1)')=='i', 'Cancellation must return directly to prompt input'
+        editor.keys(suffix)
+        expected += suffix
+        assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==[expected]
+        assert not editor.snapshot()['entries']
+    editor.keys('\x1bOP')
+    editor.wait(lambda:any(window['name']=='harness://select' for window in editor.windows()),'F1 opens chat actions')
+    cancelled(' after actions')
+    editor.keys('\x1bOP')
+    choose('Choose a model')
+    editor.wait(lambda:any(window['name']=='harness://select' and len(window['lines'])>20 for window in editor.windows()),'full model choice')
+    cancelled(' after model')
+    editor.keys('\x1bOP')
+    choose('Connect an account')
+    editor.wait(lambda:any(window['name']=='harness://select' and len(window['lines'])>20 for window in editor.windows()),'provider choice')
+    cancelled(' after provider')
+    editor.keys('\x1bOP')
+    choose('Connect an account')
+    choose('OpenAI ·')
+    editor.wait(lambda:any(window['name']=='harness://select' and len(window['lines'])==2 for window in editor.windows()),'login method choice')
+    cancelled(' after method')
+    editor.keys('\x1bOP')
+    choose('Attach source buffer')
+    editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','attachment returns to the unchanged draft')
+    assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==[expected]
+    assert 'Context snapshot: one (buffer)' in '\n'.join(line for window in editor.windows() if window['name']=='harness://chat/work' for line in window['lines'])
+    editor.keys('\r')
+    editor.wait(lambda:editor.snapshot()['active_submission_id'] is not None,'send the preserved draft once')
+    assert len([entry for entry in editor.snapshot()['entries'] if entry['kind']=='user'])==1
+    editor.keys('Next draft')
+    editor.keys('\x1bOP')
+    choose('Stop current task')
+    editor.wait(lambda:editor.snapshot()['active_submission_id'] is None,'stop through chat actions')
+    assert editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')==['Next draft']
+    assert editor.snapshot()['session']['provider']=='faux'
+    editor.finish()
+
+
+def login_cancel_case():
+    editor = RealEditor('login-cancel-modes-and-resize',active=False,oauth_mock=True)
+    editor.observe('true')
+    editor.keys('iUnsent')
+    expected = 'Unsent'
+    instance = editor.rpc.request('system.hello',{'api_version':1})['instance_id']
+    server_pid = struct.unpack('3i',editor.rpc.socket.getsockopt(socket.SOL_SOCKET,socket.SO_PEERCRED,12))[0]
+    children = Path(f'/proc/{server_pid}/task/{server_pid}/children')
+    workers = children.read_text()
+    assert workers.strip(), 'The real server has a Pi worker'
+    def setup_window():
+        return next((window for window in editor.windows() if window['name']=='harness://setup'),None)
+    for mode in ('terminal','normal','visual','forced-close','retry'):
+        editor.command('Harness login openai')
+        editor.wait(lambda:any(window['name']=='harness://select' for window in editor.windows()),'login methods')
+        lines = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
+        row = next(index for index,line in enumerate(lines,1) if 'Sign in with ChatGPT' in line)
+        editor.keys(str(row)+'G\r')
+        editor.wait(lambda:setup_window() and 'code_challenge_method=S256' in ''.join(setup_window()['lines']),'waiting browser login')
+        if mode in ('normal','visual','forced-close'): editor.keys('\x1c\x0e')
+        if mode=='visual': editor.keys('v')
+        if mode=='normal':
+            editor.resize(50,16)
+            editor.wait(lambda:setup_window()['col']+setup_window()['width']<=50
+                        and setup_window()['row']+setup_window()['height']<16,'login remains inside the resized editor')
+            editor.resize(120,40)
+        editor.keys(':bd!\r' if mode=='forced-close' else '\x03' if mode=='visual' else '\x1b')
+        editor.wait(lambda:setup_window() is None,'cancel login from '+mode+' mode')
+        assert editor.observe('vim.fn.mode(1)')=='i', ('Login cancellation must restore prompt input', mode, editor.observe('vim.fn.mode(1)'), editor.windows())
+        editor.keys(' after '+mode)
+        expected += ' after '+mode
+        assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==[expected]
+        assert editor.rpc.request('system.hello',{'api_version':1})['instance_id']==instance
+        assert children.read_text()==workers, 'Closing a login terminal must not crash or replace the Pi worker'
+        assert not editor.snapshot()['entries']
+        provider = next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')
+        assert not provider['authenticated']
+    editor.finish()
+
+
 def chat_write_case():
     editor = RealEditor('chat-native-write-commands', active=False)
     editor.observe('true')
@@ -770,6 +864,8 @@ def integration_cases():
     model_picker_case()
     login_case()
     provider_generation_case()
+    chat_actions_case()
+    login_cancel_case()
     chat_write_case()
     prompt_window_case()
     if os.environ.get('HARNESS_TEST_NERDTREE'):
@@ -1031,10 +1127,12 @@ def integration_cases():
     editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 2, 'Bash creates an actual child agent', timeout=15)
     child = editor.snapshot('tool-child')['session']
     assert child['parent_session_id'] == editor.session_id and child['workspace'] == str(editor.root), child
-    editor.tree_row('+ New chat')
-    editor.keys('r')
-    editor.wait(lambda: 'Tool child [idle]' in editor.panel_text('agents'), 'tool child appears in directory tree')
-    lines = editor.panel_text('agents').splitlines()
+    editor.observe('true')
+    editor.wait(lambda: editor.snapshot()['active_submission_id'] is None, 'parent finishes after creating the child', timeout=15)
+    def tree_lines():
+        return next(window['lines'] for window in editor.windows() if window['name']=='harness://agents')
+    editor.wait(lambda: any('Tool child [idle]' in line for line in tree_lines()), 'tool child appears without refreshing or entering the open tree')
+    lines = tree_lines()
     parent = next(i for i,line in enumerate(lines) if 'New chat [' in line)
     nested = next(i for i,line in enumerate(lines) if 'Tool child [' in line)
     assert nested > parent and lines[nested].startswith('    '), lines

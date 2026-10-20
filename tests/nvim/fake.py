@@ -102,6 +102,8 @@ for line in sys.stdin:
         session = state['sessions'].setdefault(params['session_id'], {'metadata': metadata})
         result = session['metadata']
     elif method == 'session.configure':
+        save(state)
+        time.sleep(state.get('configure_delay', 0))
         if session.get('active'):
             failure = {'code': -32000, 'message': 'Session has active work', 'data': {'kind': 'busy'}}
         elif 'model' in params and (params['provider'], params['model']) not in (('faux', 'test'), ('anthropic', 'hosted'), ('openai-codex', 'gpt-5.4')):

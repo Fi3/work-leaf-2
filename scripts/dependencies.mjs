@@ -107,7 +107,8 @@ function imports() {
   for (const folder of ['lua', 'plugin']) {
     for (const path of packageFiles(join(root, folder)).filter(path => path.endsWith('.lua'))) {
       for (const match of readFileSync(path, 'utf8').matchAll(/\brequire\s*\(?\s*['"]([^'"]+)['"]/g)) {
-        assert.ok(match[1] === 'harness' || match[1].startsWith('harness.'), `External Lua dependency: ${match[1]}`);
+        assert.ok(match[1] === 'harness' || match[1].startsWith('harness.') || match[1] === 'vim.ui.clipboard.osc52',
+          `External Lua dependency: ${match[1]}`);
       }
     }
   }

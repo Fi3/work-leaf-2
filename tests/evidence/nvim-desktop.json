@@ -1,0 +1,55 @@
+{
+  "runtimes": {
+    "neovim": "NVIM v0.12.6",
+    "node": "v26.10.0",
+    "rust": "rustc 1.94.1 (e408947bf 2026-03-25)",
+    "python": "Python 3.14.7",
+    "pi": {
+      "pi-durable": "1.3.0",
+      "pi-ai": "1.3.0",
+      "chord": "1.3.0"
+    }
+  },
+  "mode": "Actual Kitty/Xvfb desktop, Neovim, Rust and Pi; native clipboard paste and controlled desktop opener",
+  "command": "python3 tests/nvim/login_gui.py",
+  "groups": [
+    "all"
+  ],
+  "passed": 4,
+  "cases": [
+    {
+      "case": "device-code-native-clipboard",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/device-code-native-clipboard.ansi.gz",
+      "terminal_bytes": 189127,
+      "terminal_sha256": "92c73736527507aa5ecb236863b7940716c3c6ab7b6c69ad729dc5e9bbadf7b9"
+    },
+    {
+      "case": "login-copy-default-editor",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/login-copy-default-editor.ansi.gz",
+      "terminal_bytes": 149058,
+      "terminal_sha256": "34656a2c2999dc555fc92a56f93ddd96d5875e84f50e7f031057d666aa087ae8"
+    },
+    {
+      "case": "login-copy-without-system-clipboard",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/login-copy-without-system-clipboard.ansi.gz",
+      "terminal_bytes": 205143,
+      "terminal_sha256": "1e432ea40155547c3aa65d7dd7f0c4dff4fffe085ddc5e3c0cc3b6f67c8be1e1"
+    },
+    {
+      "case": "login-url-native-clipboard",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/login-url-native-clipboard.ansi.gz",
+      "terminal_bytes": 353206,
+      "terminal_sha256": "183b17b0c8222d162173aa337ea66bd401500e6ca2ed777cc6b9d2c52773dd36"
+    }
+  ],
+  "xvfb_vendor_release": 12101024,
+  "kitty_version": "kitty 0.49.2 created by Kovid Goyal",
+  "xvfb_executable": "/tmp/harness-xvfb/usr/bin/Xvfb",
+  "xvfb_sha256": "567a9b39284e303522fdc178059fe60d0e9917b811bd5066fb63260fd198a97c",
+  "credentials": "synthetic only",
+  "url_source": "normal copy action and actual system paste; no RPC URL extraction"
+}

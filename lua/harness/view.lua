@@ -29,6 +29,8 @@ function M.new(options, actions)
     vim.bo[buf].buftype, vim.bo[buf].bufhidden = editable and 'nofile' or '', 'hide'
     vim.bo[buf].swapfile, vim.bo[buf].modifiable = false, editable
     vim.bo[buf].filetype = 'harness'
+    vim.keymap.set(editable and { 'n', 'i' } or 'n', '<F1>', '<Cmd>Harness actions<CR>',
+      { buffer = buf, silent = true, desc = 'Chat actions' })
     if editable then
       local function send() vim.cmd('Harness send') end
       local function keys(value) vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(value, true, false, true), 'n', false) end
@@ -75,8 +77,8 @@ function M.new(options, actions)
     vim.wo[win].wrap, vim.wo[win].linebreak = true, true
     vim.wo[win].number, vim.wo[win].relativenumber, vim.wo[win].signcolumn = false, false, 'no'
     vim.wo[win].winfixheight, vim.wo[win].winfixwidth = editable, false
-    vim.wo[win].winbar = editable and '%#FloatTitle# Message%*  %#Comment#Enter send · Shift-Enter newline · \\ commands%*'
-      or '%#Title# Conversation%*'
+    vim.wo[win].winbar = editable and '%#FloatTitle# Message%*  %#Comment#F1 actions · Enter send · Shift-Enter newline · \\ commands%*'
+      or '%#Title# Conversation%*  %#Comment#F1 actions%*'
     if editable then
       vim.wo[win].winhighlight = 'Normal:NormalFloat'
       vim.wo[win].statusline = '%#FloatBorder#' .. string.rep('─', vim.api.nvim_win_get_width(win))

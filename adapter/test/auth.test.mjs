@@ -370,6 +370,118 @@ test('non-terminal paths and unsupported methods fail without storing credential
   assert.deepEqual(await app.credentials.list(), []);
 });
 
+test('login link controls preserve private input and copy the complete current URL and device code', async t => {
+  const tty = await pty(t), url = 'https://example.invalid/login?state=' + 'aB09%2F'.repeat(200);
+  const nextUrl = 'https://example.invalid/device?code=TEST-123', code = 'TEST-123', answers = [];
+  const previous = {};
+  for (const key of ['DISPLAY', 'WAYLAND_DISPLAY', 'BROWSER']) { previous[key] = process.env[key]; delete process.env[key]; }
+  t.after(() => { for (const [key, value] of Object.entries(previous)) if (value !== undefined) process.env[key] = value; });
+  const model = {
+    refresh: async () => ({ errors: new Map() }),
+    getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
+    async login(_provider, _method, ui) {
+      ui.notify({ type: 'auth_url', url });
+      answers.push(await ui.prompt({ type: 'manual_code', message: 'Private callback' }));
+      ui.notify({ type: 'device_code', verificationUri: nextUrl, userCode: code });
+      answers.push(await ui.prompt({ type: 'secret', message: 'Private device value' }));
+      ui.notify({ type: 'auth_url', url });
+      answers.push(await ui.prompt({ type: 'text', message: 'Visible input' }));
+    },
+  };
+  const result = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id');
+  await tty.wait('Private callback'); tty.write(secret.slice(0, 8) + '\x18');
+  await tty.wait('Clipboard copy requested'); tty.write(secret.slice(8) + '\r');
+  await tty.wait('Private device value'); tty.write('removed-private-text\x15' + secret.slice(0, 8) + '\x19\x18' + secret.slice(8) + '\r');
+  await tty.wait('Visible input'); tty.write('visible\x19\x18 value\r');
+  assert.equal(await result, false);
+  await tty.wait('Login saved');
+  assert.deepEqual(answers, [secret, secret, 'visible value']);
+  const copied = Array.from(tty.text.matchAll(/\x1b\]52;c;([A-Za-z0-9+/=]+)\x1b\\/g), match => Buffer.from(match[1], 'base64').toString());
+  assert.deepEqual(copied, [url, code, nextUrl, url]);
+  const links = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-login;([^\x1b]+)\x1b\\/g), match => match[1]);
+  assert.deepEqual(links, [url, nextUrl, url]);
+  const codes = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-code-([A-Za-z0-9+/=]+);([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
+    match => ({ code: Buffer.from(match[1], 'base64').toString(), url: match[2], visible: match[3] }));
+  assert.deepEqual(codes, [{ code, url: nextUrl, visible: code }], 'The displayed device code links to the same verified URL and carries only its exact copy value');
+  assert.ok(tty.text.includes(url + '\x1b]8;;\x1b\\'), 'The complete URL remains visible inside the native link');
+  assert.ok(!tty.text.includes(secret) && !tty.text.includes(Buffer.from(secret).toString('base64')) && !tty.text.includes('removed-private-text'));
+  assert.ok(tty.text.includes('Ctrl-X: copy link. Ctrl-O: open browser.') && tty.text.includes('Ctrl-Y: copy device code.'));
+  const next = await pty(t);
+  model.login = async (_provider, _method, ui) => {
+    assert.equal(await ui.prompt({ type: 'secret', message: 'New login value' }), secret);
+  };
+  const fresh = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: next.path }, new AbortController(), 'id');
+  await next.wait('New login value'); next.write('\x18' + secret + '\r');
+  assert.equal(await fresh, false);
+  await next.wait('No browser link is available');
+  assert.ok(!next.text.includes('\x1b]52;') && !next.text.includes(url) && !next.text.includes(code));
+});
+
+test('invalid provider links and device codes cannot emit terminal commands or open a browser', async t => {
+  const tty = await pty(t), previous = process.env.DISPLAY;
+  delete process.env.DISPLAY;
+  t.after(() => { if (previous !== undefined) process.env.DISPLAY = previous; });
+  const model = {
+    refresh: async () => assert.fail('Invalid login must not refresh'),
+    getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
+  };
+  const events = [
+    ...['javascript:alert(1)', 'file:///tmp/key', 'https://name:password@example.invalid', 'https://example.invalid/\x1b]52;c;bad\x07',
+      'https://example.invalid/\nnext', 'https://example.invalid/\u0085', 'https://example.invalid/' + 'a'.repeat(8192)]
+      .map(url => ({ type: 'auth_url', url })),
+    { type: 'device_code', verificationUri: 'https://example.invalid', userCode: '\x1b]52;c;bad\x07' },
+    { type: 'device_code', verificationUri: 'https://example.invalid', userCode: 'a'.repeat(1025) },
+  ];
+  for (const event of events) {
+    model.login = async (_provider, _method, ui) => ui.notify(event);
+    await assert.rejects(terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id'), { code: -32602 });
+  }
+  await until(() => (tty.text.match(/Secret input is hidden/g) ?? []).length === events.length, 'Each rejected attempt must finish terminal output');
+  assert.ok(!tty.text.includes('\x1b]8;') && !tty.text.includes('\x1b]52;') && !tty.text.includes('password'));
+});
+
+test('closing the terminal during a private prompt cancels cleanly and permits another login', { timeout: 10000 }, async t => {
+  // A separate Node process makes an uncaught readline EOF error an observable process failure.
+  const child = spawn(process.execPath, ['--input-type=module', '-e', `
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { terminalLogin } from ${JSON.stringify(new URL('../auth.mjs', import.meta.url).href)};
+async function terminal() {
+  const process = spawn('python3', ['-u', '-c', 'import os, pty, sys\\nm,s=pty.openpty()\\nprint(os.ttyname(s),flush=True)\\nfor line in sys.stdin: os.write(m,bytes.fromhex(line.strip()))'], { stdio: ['pipe', 'pipe', 'inherit'] });
+  const [path] = await once(process.stdout, 'data');
+  return { process, path: path.toString().trim() };
+}
+const first = await terminal();
+let started;
+const ready = new Promise(resolve => { started = resolve; });
+const model = {
+  refresh: async () => ({ errors: new Map() }),
+  getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
+  async login(_provider, _method, ui) { started(); assert.equal(await ui.prompt({ type: 'manual_code', message: 'Private callback' }), 'test-code'); },
+};
+const pending = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: first.path }, new AbortController(), 'id');
+await ready; first.process.stdin.end(); await once(first.process, 'exit');
+assert.equal(await pending, true);
+await new Promise(resolve => setTimeout(resolve, 50));
+const second = await terminal();
+try {
+  const retry = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: second.path }, new AbortController(), 'id');
+  second.process.stdin.write(Buffer.from('test-code\\r').toString('hex') + '\\n');
+  assert.equal(await retry, false);
+} finally { second.process.stdin.end(); await once(second.process, 'exit'); }
+console.log('closed terminal cancelled; same process completed the next login');
+`], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let stdout = '', stderr = '';
+  child.stdout.on('data', value => { stdout += value; }); child.stderr.on('data', value => { stderr += value; });
+  t.after(() => { if (child.exitCode === null) child.kill(); });
+  const [code, signal] = await new Promise((resolve, reject) => {
+    child.once('exit', (...value) => resolve(value)); child.once('error', reject);
+  });
+  assert.equal(code, 0, stderr); assert.equal(signal, null);
+  assert.match(stdout, /closed terminal cancelled; same process completed the next login/);
+});
+
 test('desktop login opens the normal browser, retains copyable links, and reports catalog failure after saving', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'harness-browser-')), log = join(directory, 'opened.jsonl');
   await writeFile(log, '');
@@ -377,7 +489,8 @@ test('desktop login opens the normal browser, retains copyable links, and report
 import { appendFileSync } from 'node:fs';
 appendFileSync(process.env.HARNESS_TEST_BROWSER_LOG, JSON.stringify(process.argv.slice(2)) + '\\n');
 `, { mode: 0o700 });
-  const previous = { PATH: process.env.PATH, DISPLAY: process.env.DISPLAY, HARNESS_TEST_BROWSER_LOG: process.env.HARNESS_TEST_BROWSER_LOG };
+  const previous = { PATH: process.env.PATH, DISPLAY: process.env.DISPLAY, WAYLAND_DISPLAY: process.env.WAYLAND_DISPLAY,
+    BROWSER: process.env.BROWSER, HARNESS_TEST_BROWSER_LOG: process.env.HARNESS_TEST_BROWSER_LOG };
   Object.assign(process.env, { PATH: directory, DISPLAY: ':test', HARNESS_TEST_BROWSER_LOG: log });
   t.after(async () => {
     for (const [key, value] of Object.entries(previous)) if (value === undefined) delete process.env[key]; else process.env[key] = value;
@@ -406,9 +519,30 @@ appendFileSync(process.env.HARNESS_TEST_BROWSER_LOG, JSON.stringify(process.argv
     if (opened.length === 2) break; await delay(10);
   }
   assert.deepEqual(opened.sort(), [[browserUrl], [deviceUrl]].sort());
+  const retry = await pty(t);
+  for (const key of ['DISPLAY', 'WAYLAND_DISPLAY', 'BROWSER']) delete process.env[key];
+  model.login = async (_provider, _method, ui) => {
+    ui.notify({ type: 'auth_url', url: browserUrl });
+    assert.equal(await ui.prompt({ type: 'manual_code', message: 'Retry private callback' }), secret);
+  };
+  const retried = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: retry.path }, new AbortController(), 'id');
+  await retry.wait('Retry private callback');
+  assert.equal((await readFile(log, 'utf8')).trim().split('\n').length, 2, 'No automatic opener runs without desktop settings');
+  retry.write(secret.slice(0, 8) + '\x0f' + secret.slice(8) + '\r');
+  assert.equal(await retried, false);
+  for (let i = 0; i < 300; i++) {
+    opened = (await readFile(log, 'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse);
+    if (opened.length === 3) break; await delay(10);
+  }
+  assert.deepEqual(opened.at(-1), [browserUrl], 'Ctrl-O retries the exact link without changing private input');
+  assert.ok(!retry.text.includes(secret));
   const missing = await pty(t);
   process.env.PATH = directory + '/missing';
-  assert.equal(await terminalLogin(model, { provider: 'test', method: 'oauth', terminal: missing.path }, new AbortController(), 'id'), false);
+  const unavailable = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: missing.path }, new AbortController(), 'id');
+  await missing.wait('Retry private callback'); missing.write(secret.slice(0, 8) + '\x0f');
+  await missing.wait('Cannot open a browser here. Press Ctrl-X to copy the link.');
+  missing.write(secret.slice(8) + '\r');
+  assert.equal(await unavailable, false);
   await missing.wait('model list could not update');
   assert.ok(missing.text.includes(browserUrl), 'Missing browser opener keeps the visible link');
 });

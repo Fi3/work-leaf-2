@@ -77,10 +77,18 @@ function terminal(path) {
   }
 }
 
-function openBrowser(url) {
-  if (!process.env.DISPLAY && !process.env.WAYLAND_DISPLAY) return;
+function loginUrl(value) {
+  if (typeof value !== 'string' || Buffer.byteLength(value) > 8192 || /[\u0000-\u0020\u007f-\u009f]/.test(value)) throw invalid('Login link is not a valid web address');
+  let url; try { url = new URL(value); } catch { throw invalid('Login link is not a valid web address'); }
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw invalid('Login link is not a valid web address');
+  return value;
+}
+function openBrowser(url, report, explicit = false) {
+  if (!explicit && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY && !process.env.BROWSER) return;
   const browser = spawn('xdg-open', [url], { stdio: 'ignore', detached: true });
-  browser.on('error', () => {}); // The visible link remains usable when no desktop opener is available.
+  const failed = () => report('Cannot open a browser here. Press Ctrl-X to copy the link.');
+  browser.on('error', failed);
+  browser.on('exit', code => { if (code !== 0) failed(); });
   browser.unref();
 }
 
@@ -89,28 +97,63 @@ export async function terminalLogin(models, params, controller, deviceId) {
   const method = params.method === 'oauth' ? provider?.auth.oauth : provider?.auth.apiKey;
   if (!method?.login) throw invalid('This provider does not support the selected login method');
   const { input, output } = terminal(params.terminal);
-  let hidden = true;
+  let hidden = true, link, deviceCode, activeReader;
   const display = new Writable({ write(value, encoding, done) {
     if (!hidden && output.writableLength <= 65536) output.write(value, encoding);
     done();
   } });
   display.columns = output.columns;
   const cancel = () => controller.abort(new Error('Login cancelled'));
+  const setRawMode = input.setRawMode.bind(input);
+  input.setRawMode = value => {
+    try { return setRawMode(value); }
+    catch (error) {
+      if (error.code !== 'EIO') throw error;
+      // Node readline also changes raw mode on EOF, after a closed PTY rejects the ioctl.
+      cancel(); return input;
+    }
+  };
   emitKeypressEvents(input);
   input.on('keypress', (_, key) => {
     if (key?.name === 'escape' || (key?.ctrl && ['c', 'z'].includes(key.name))) cancel();
+    else if (key?.ctrl && key.name === 'x') {
+      if (link) copy(link); else status('No browser link is available for this step.');
+    } else if (key?.ctrl && key.name === 'o') {
+      if (link) openBrowser(link, status, true); else status('No browser link is available for this step.');
+    } else if (key?.ctrl && key.name === 'y' && deviceCode) {
+      key.name = undefined; // Do not also paste readline's removed text into a hidden prompt.
+      copy(deviceCode);
+    }
   });
   input.on('error', cancel); output.on('error', cancel);
   input.on('end', cancel);
   input.setRawMode(true); input.resume();
   const write = value => {
+    if (output.destroyed || output.writableEnded) return;
     if (output.writableLength > 65536) { cancel(); return; }
     output.write(value);
+  };
+  const status = text => {
+    write(`\r\n${text}\r\n`);
+    if (activeReader) {
+      if (hidden) write(activeReader.getPrompt());
+      else activeReader.prompt(true);
+    }
+  };
+  const copy = value => {
+    write(`\x1b]52;c;${Buffer.from(value).toString('base64')}\x1b\\`);
+    status('Clipboard copy requested. If paste fails, select the link or code above.');
+  };
+  const showLink = value => {
+    link = loginUrl(value);
+    write(`\r\nOpen this link in your browser:\r\n\x1b]8;id=harness-login;${link}\x1b\\${link}\x1b]8;;\x1b\\\r\nCtrl-X: copy link. Ctrl-O: open browser.\r\n`);
+    openBrowser(link, status);
   };
   const question = async (message, secret, signal) => {
     controller.signal.throwIfAborted();
     // Fresh native editing state prevents secret text from crossing prompts through history or Ctrl-Y.
     const reader = createInterface({ input, output: display, terminal: true, historySize: 0 });
+    activeReader = reader;
     reader.on('SIGINT', cancel); reader.on('SIGTSTP', cancel); reader.on('close', cancel);
     const limit = () => { if (Buffer.byteLength(reader.line) > 65536) cancel(); };
     input.on('data', limit);
@@ -124,6 +167,7 @@ export async function terminalLogin(models, params, controller, deviceId) {
     }
     finally {
       hidden = true;
+      activeReader = null;
       reader.removeListener('close', cancel); reader.close(); input.removeListener('data', limit);
       if (!input.destroyed) { input.setRawMode(true); input.resume(); }
       if (secret) write('\r\n');
@@ -153,14 +197,17 @@ export async function terminalLogin(models, params, controller, deviceId) {
       },
       notify: event => {
         if (event.type === 'auth_url') {
-          write(`\r\nOpen this link in your browser:\r\n${event.url}\r\n${event.instructions ?? ''}\r\n`);
-          openBrowser(event.url);
+          deviceCode = undefined;
+          showLink(event.url);
+          write(`${event.instructions ?? ''}\r\n`);
         } else if (event.type === 'device_code') {
-          write(`\r\nOpen ${event.verificationUri}\r\nEnter code: ${event.userCode}\r\n`);
-          openBrowser(event.verificationUri);
+          if (typeof event.userCode !== 'string' || !event.userCode || Buffer.byteLength(event.userCode) > 1024 || /[\u0000-\u001f\u007f-\u009f]/.test(event.userCode)) throw invalid('Device login code is invalid');
+          deviceCode = event.userCode;
+          showLink(event.verificationUri);
+          write(`Enter code: \x1b]8;id=harness-code-${Buffer.from(deviceCode).toString('base64')};${link}\x1b\\${deviceCode}\x1b]8;;\x1b\\\r\nCtrl-Y: copy device code.\r\n`);
         } else {
           write(`\r\n${event.message}\r\n`);
-          for (const link of event.links ?? []) write(`${link.label ?? 'More information'}: ${link.url}\r\n`);
+          for (const link of event.links ?? []) write(`${link.label ?? 'More information'}: ${loginUrl(link.url)}\r\n`);
         }
       },
     }, { getDeviceId: () => deviceId, agentName: 'harness' });

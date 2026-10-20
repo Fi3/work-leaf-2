@@ -44,6 +44,19 @@ assert(vim.api.nvim_buf_get_name(chat) == 'harness://chat/work', 'Chat buffers h
 assert(view.session(chat) == 'work' and view.session(prompt) == 'work' and not view.session(source), 'Buffer identity distinguishes files from chats')
 assert(vim.wo[win(prompt)].winbar:find('Enter send', 1, true), 'The send key must be visible beside the prompt')
 assert(vim.wo[win(prompt)].winbar:find('Shift-Enter newline', 1, true), 'The preferred newline key must be visible')
+local commands = {}
+vim.api.nvim_create_user_command('Harness', function(command) commands[#commands + 1] = command.args end, { nargs = '*' })
+view.set_draft('Keep this draft while choosing an action.')
+for _, buffer in ipairs({ chat, prompt }) do
+  local window = win(buffer)
+  assert(vim.wo[window].winbar:find('F1 actions', 1, true), 'Each chat window shows the action key')
+  vim.api.nvim_set_current_win(window)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<F1>', true, false, true), 'xt', false)
+end
+assert(vim.deep_equal(commands, { 'actions', 'actions' }) and view.draft() == 'Keep this draft while choosing an action.',
+  'F1 opens actions from either chat window without replacing the draft')
+vim.api.nvim_del_user_command('Harness')
+view.set_draft('')
 assert(vim.api.nvim_win_get_height(win(prompt)) == 3, 'New chat has a small three-line input')
 assert(vim.wo[win(prompt)].winhighlight == 'Normal:NormalFloat', 'Input has a distinct native background')
 assert(view.draft() == '', 'The input hint must not become submitted text')
@@ -221,7 +234,8 @@ local items = {
   { session_id = 'cycle-a', name = 'Cycle A', parent_session_id = 'cycle-b', workspace = directory },
   { session_id = 'cycle-b', name = 'Cycle B', parent_session_id = 'cycle-a', workspace = directory },
 }
-local lookup, calls, selected, created = {}, {}, nil, nil
+local lookup, calls, snapshots, selected, created = {}, {}, {}, nil, nil
+local defer_list, pending_list
 local requested_directory = directory
 for _, item in ipairs(items) do lookup[item.session_id] = item end
 local transport = { connected = true, connect = function(callback) callback(true) end }
@@ -229,9 +243,10 @@ function transport.request(method, params, callback)
   calls[#calls + 1] = { method = method, params = params }
   if method == 'session.list' then
     assert(params.workspace == requested_directory, 'Listing is restricted to the current workspace')
-    callback({ items = items, next_cursor = vim.NIL })
+    if defer_list then pending_list = callback else callback({ items = items, next_cursor = vim.NIL }) end
   elseif method == 'session.get' then
-    callback({ session = lookup[params.session_id], snapshot = { session = lookup[params.session_id], state = 'running', active_submission_id = 'run-' .. params.session_id } })
+    callback({ session = lookup[params.session_id], snapshot = snapshots[params.session_id]
+      or { session = lookup[params.session_id], state = 'running', active_submission_id = 'run-' .. params.session_id } })
   elseif method == 'run.stop' then callback({})
   else error('Unexpected sidebar operation: ' .. method) end
 end
@@ -248,7 +263,13 @@ local function row(value)
   end
   error('Missing row: ' .. value)
 end
+local function list_count()
+  local count = 0
+  for _, call in ipairs(calls) do if call.method == 'session.list' then count = count + 1 end end
+  return count
+end
 sidebar.toggle(directory)
+assert(list_count() == 1, 'Opening the tree requests the session list once')
 assert(text(sidebar.buffer):find('+ New chat', 1, true), 'The list has a direct New action')
 assert(not text(sidebar.buffer):find('Other project', 1, true), 'Other workspace agents are absent')
 assert(not text(sidebar.buffer):find('Press', 1, true) and not text(sidebar.buffer):find('setup', 1, true), 'The list contains no opening or setup instructions')
@@ -273,9 +294,48 @@ row('+ New chat'); key('<CR>')
 assert(created == directory, 'New opens directly in the current directory')
 created = nil; key('n'); assert(created == directory, 'n has the same direct action')
 assert(text(sidebar.buffer):find('Cycle A', 1, true) and text(sidebar.buffer):find('Cycle B', 1, true), 'Malformed legacy cycles remain visible without recursion failure')
+row('Parent (root-B)')
+local tree_window, before_refresh = win(sidebar.buffer), list_count()
+local function selected_tree_line()
+  local index = vim.api.nvim_win_get_cursor(tree_window)[1]
+  return vim.api.nvim_buf_get_lines(sidebar.buffer, index - 1, index, false)[1]
+end
+vim.api.nvim_set_current_win(second_main)
+local new_child = { session_id = 'new-child', name = 'A new child', parent_session_id = 'root-A', workspace = directory }
+items[#items + 1], lookup[new_child.session_id] = new_child, new_child
+snapshots['root-A'] = { session = lookup['root-A'], state = 'idle', active_submission_id = vim.NIL }
+defer_list = true
+sidebar.update(snapshots['root-A'])
+assert(list_count() == before_refresh + 1 and text(sidebar.buffer):find('Loading', 1, true),
+  'A visible task completion refreshes the child list without a manual key')
+assert(selected_tree_line():find('Parent (root-B)', 1, true), 'The highlighted agent survives the temporary Loading row')
+defer_list = false
+pending_list({ items = items, next_cursor = vim.NIL })
+assert(text(sidebar.buffer):find('A new child', 1, true) and selected_tree_line():find('Parent (root-B)', 1, true),
+  'A new child appears without changing the highlighted agent')
+assert(vim.api.nvim_get_current_win() == second_main, 'A background tree refresh does not take file focus')
+sidebar.update(snapshots['root-A'])
+snapshots['root-A'] = { session = lookup['root-A'], state = 'running', active_submission_id = 'next-run' }
+sidebar.update(snapshots['root-A']); sidebar.update(snapshots['root-A'])
+sidebar.update({ session = lookup.foreign, state = 'running', active_submission_id = 'foreign-run' })
+sidebar.update({ session = lookup.foreign, state = 'idle', active_submission_id = vim.NIL })
+assert(list_count() == before_refresh + 1, 'Repeated states, streamed progress and other workspaces do not reload the list')
+local external = { session_id = 'external', name = 'External chat', workspace = directory }
+items[#items + 1], lookup.external = external, external
+vim.api.nvim_set_current_win(tree_window)
+assert(list_count() == before_refresh + 2 and text(sidebar.buffer):find('External chat', 1, true),
+  'Native entry into the tree discovers an agent made by another client')
+assert(selected_tree_line():find('Parent (root-B)', 1, true), 'Entering the tree keeps the selected agent')
+row('+ New chat'); sidebar.refresh()
+assert(selected_tree_line() == '+ New chat', 'Refresh keeps the New action selected')
 sidebar.hide()
+before_refresh = list_count()
+snapshots['root-A'] = { session = lookup['root-A'], state = 'idle', active_submission_id = vim.NIL }
+sidebar.update(snapshots['root-A'])
+assert(list_count() == before_refresh, 'A hidden tree does not request a list when a task finishes')
 vim.api.nvim_set_current_tabpage(first_tab)
 sidebar.toggle(directory)
+assert(list_count() == before_refresh + 1, 'Reopening the tree requests one fresh list')
 local first_sidebar = win(sidebar.buffer)
 vim.api.nvim_set_current_tabpage(second_tab)
 sidebar.toggle(directory)

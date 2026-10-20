@@ -1,11 +1,11 @@
-⠙⠹npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
-⠹⠸⠼⠴⠦⠧⠇⠏
+⠙⠹⠸npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+⠸⠼⠴⠦⠧⠇⠏⠋
 added 91 packages, and audited 92 packages in 1s
-⠏
-⠏5 packages are looking for funding
-⠏  run `npm fund` for details
-⠏
+⠋
+⠋5 packages are looking for funding
+⠋  run `npm fund` for details
+⠋
 found 0 vulnerabilities
-⠏
+⠋
 
-Neovim attached-terminal startup checks passed.
+Neovim attached-terminal startup checks passed. Native :q Enter exited.

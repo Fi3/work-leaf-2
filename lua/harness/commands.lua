@@ -1,5 +1,6 @@
 local M = {}
 local commands = {
+  { 'actions', 'Open chat actions without changing the draft (F1)' },
   { 'upgrade', 'Upgrade an idle server and keep its stored chats' },
   { 'help', 'Show chat commands' },
   { 'model', 'Choose a model, or use provider/model' },

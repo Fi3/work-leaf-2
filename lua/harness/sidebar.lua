@@ -37,6 +37,7 @@ function M.new(transport, actions)
       vim.wo[win].winbar = '%#Title# ' .. vim.fn.fnamemodify(self.directory, ':t'):gsub('%%', '%%%%') .. ' · Agents%*'
     end
     local cursor = win and vim.api.nvim_win_get_cursor(win)[1] or 1
+    local current = rows[cursor]
     local lines, items, lookup, names, suffixes, children, seen = { '+ New chat' }, {}, {}, {}, {}, {}, {}
     rows = { { new = true, workspace = self.directory } }
     if failure then lines[#lines + 1] = failure
@@ -85,7 +86,14 @@ function M.new(transport, actions)
     vim.bo[self.buffer].modifiable = true
     vim.api.nvim_buf_set_lines(self.buffer, 0, -1, false, lines)
     vim.bo[self.buffer].modifiable = false
-    if win then vim.api.nvim_win_set_cursor(win, { math.min(cursor, #lines), 0 }) end
+    if win then
+      if current and current.session_id then
+        for index, item in pairs(rows) do
+          if item.session_id == current.session_id then cursor = index; break end
+        end
+      end
+      vim.api.nvim_win_set_cursor(win, { math.min(cursor, #lines), 0 })
+    end
   end
 
   function self.refresh(directory)
@@ -139,7 +147,14 @@ function M.new(transport, actions)
   function self.message(message) failure = message; render() end
 
   function self.update(snapshot)
-    if snapshot then selected = snapshot.session.session_id; self.snapshots[selected] = snapshot end
+    if snapshot then
+      selected = snapshot.session.session_id
+      local previous = self.snapshots[selected]
+      self.snapshots[selected] = snapshot
+      if window() and snapshot.session.workspace == self.directory and previous
+        and previous.active_submission_id and previous.active_submission_id ~= vim.NIL
+        and snapshot.active_submission_id == vim.NIL then self.refresh() end
+    end
     render()
   end
 
@@ -157,6 +172,7 @@ function M.new(transport, actions)
       vim.api.nvim_buf_set_name(self.buffer, 'harness://agents')
       vim.bo[self.buffer].buftype, vim.bo[self.buffer].bufhidden = 'nofile', 'hide'
       vim.bo[self.buffer].swapfile, vim.bo[self.buffer].filetype = false, 'harness'
+      vim.api.nvim_create_autocmd('BufEnter', { buffer = self.buffer, callback = function() self.refresh() end })
       local function row() return rows[vim.api.nvim_win_get_cursor(0)[1]] end
       local function map(key, action) vim.keymap.set('n', key, action, { buffer = self.buffer, silent = true }) end
       map('q', self.hide)
@@ -187,7 +203,7 @@ function M.new(transport, actions)
     vim.api.nvim_win_set_buf(0, self.buffer)
     vim.wo.number, vim.wo.relativenumber, vim.wo.wrap, vim.wo.winfixwidth = false, false, false, true
     vim.wo.statusline = 'Enter open · n new · s stop'
-    render(); self.refresh()
+    render()
   end
 
   return self

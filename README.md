@@ -30,14 +30,33 @@ No name or setup dialog blocks it. The small message box is at the bottom of the
 tab. Type a task and press **Enter** to send it. **Shift-Enter** adds a line.
 Use **Ctrl-J** if your terminal does not send Shift-Enter. Ctrl-S also sends.
 
-For the first AI chat, type `\login` and press Enter. Select your provider, then
+Press **F1** in the chat or message box to open **Chat actions**. Use this menu
+to connect an account, choose a model, attach source text, stop work, or create
+a chat. The menu keeps the complete draft. Escape returns to the previous input.
+You can also use `:Harness actions`.
+
+For the first AI chat, select **Connect an account**. Select your provider, then
 the account or API key method. For a ChatGPT account, select **OpenAI**, then
 **Sign in with ChatGPT**. The login opens in a terminal that accepts input at
-once. Browser login opens your normal browser when a desktop is available. The
-link also remains in the terminal. Follow the provider's instructions.
-Escape or Ctrl-C cancels without changing the saved account.
+once. Press **Ctrl-X**, or click **Copy**, to copy the complete browser link.
+Press **Ctrl-O**, or click **Open**, to use the desktop browser. The browser
+link stays complete when it wraps or the window size changes. For device login,
+**Ctrl-Y** copies the separate device code. Follow the provider's instructions.
+Escape or Ctrl-C cancels and returns to the retained draft.
 
-After login, choose a model for the new chat. You can also type `\model` to see
+Copy uses your configured Neovim clipboard. Without one, it uses Neovim's bundled
+terminal clipboard writer. No clipboard configuration is required in a terminal
+that permits these writes. The notice says **Copy requested** because a terminal
+can refuse the request.
+
+**Ctrl-L**, or **Link**, always shows the complete URL in a normal text buffer
+and puts it in the Vim register. Use `y$` to copy the complete logical line.
+Enter returns to login input. Login accepts a pasted
+callback or code when the provider requests one. The `\login` command remains
+available.
+
+After login, choose a model for the new chat. Use **F1 → Choose a model**, or
+type `\model`, to see
 all models from the providers supplied by the pinned Pi release. Each row names
 its provider and shows if login is needed. Use arrow keys, Page Up, Page Down, or the mouse wheel.
 Use `/` to search, `G` to reach the last choice, and Enter or a double-click to
@@ -90,6 +109,7 @@ stop its children.
 | `r` in the tree | Refresh the stored agent list. |
 | `q` in the tree | Hide the tree. |
 | `Enter` or `Ctrl-S` in the message box | Send the prompt. |
+| `F1` in the chat or message box | Open chat actions and keep the draft. |
 | `Shift-Enter` or `Ctrl-J` in insert mode | Add a line. |
 | `Tab` after `\` | Complete a chat command. |
 | `p` in the conversation | Move to the message box. |
@@ -100,6 +120,7 @@ command prefix. Commands are local controls; they are not submitted as tasks.
 
 | Command | Action |
 | --- | --- |
+| `\actions` | Open the same menu as F1. |
 | `\model` | Choose a model. `\model provider/model` selects it directly. |
 | `\model demo` | Use fixed local replies without a key. |
 | `\provider` | Choose a provider, then a model. |
@@ -145,13 +166,31 @@ the space needed by file and chat windows.
 The interface uses the saved [Pi TUI guidance](dev-docs/interfaces/pi-tui/overview.md)
 and [Neovim layout guidance](dev-docs/neovim-ui/layout.md): native input, visible
 controls, retained drafts, and layouts that fit the terminal. Login uses a
-native terminal. The Pi adapter reads it directly. Keys and tokens do not pass
-through Lua or public protocol records.
+native terminal. The Pi adapter reads it directly. API keys and stored account
+tokens do not pass through Lua state or public protocol records. Lua handles the displayed login
+link and device code for the explicit clipboard actions.
 
 ## Watch the demonstration
 
-[Open the screen recording](tests/evidence/harness-demo.mp4). Text below the
-recording explains each action. It shows the actual Neovim window, Rust server,
+[Watch the current chat workflow](tests/evidence/chat-workflow.mp4).
+Captions above the screen explain each action. The recording shows the source
+launcher, a new chat, F1 actions, model search, cancellation with the full draft
+retained, unsaved source attachment, streamed output, and a real Bash tool that
+creates a child agent. It then opens a file with NERDTree `s` and returns to the
+child's own input and draft. The [report](tests/evidence/chat-workflow.json)
+records each action and the video hash. Responses use the Pi faux provider.
+
+[Watch the login controls](tests/evidence/login-controls.mp4).
+The recording shows the complete link copied into the actual system clipboard,
+native selection, mouse controls, a narrow terminal, and return to the retained
+draft. Playback is one-third speed. The last frame stays for four seconds so the
+result can be read. Captions explain the actions.
+The [report](tests/evidence/login-controls.json)
+records the exact copied URL length and hash. Provider replies and browser
+completion are controlled test responses; this is not a real account sign-in.
+
+The [earlier full walkthrough](tests/evidence/harness-demo.mp4) has captions below
+the recording. It shows the actual Neovim window, Rust server,
 and Pi adapter. The recording starts without a configuration file or key and
 uses the Pi faux provider for repeatable replies and tool calls. It makes no
 paid model request. It also shows OpenAI account login with synthetic provider
@@ -360,6 +399,7 @@ Loading the plugin starts no process and makes no provider request.
 | `:Harness` | Open the chat in the file area; start or reconnect. |
 | `:Harness sidebar` | Show or hide the agent tree. |
 | `:Harness new` | Open a new chat in the source window's directory. |
+| `:Harness actions` | Open chat actions without changing the draft. |
 | `:Harness login` or `:Harness setup` | Choose a provider and login method. An optional provider ID skips the first menu. |
 | `:Harness upgrade` | Replace an idle older server and reconnect. |
 | `:Harness sessions` | Select a stored session. |
@@ -555,16 +595,23 @@ test uses temporary workspaces, state directories, and sockets. No test needs
 paid provider access. The faux provider controls responses and actual coding
 tools execute local test commands.
 
+The desktop checks require [Kitty 0.49.2](https://github.com/kovidgoyal/kitty/releases/tag/v0.49.2)
+and Xvfb. CI installs the published Kitty archive and checks its SHA-256 hash.
+Set `HARNESS_TEST_XVFB` if Xvfb is outside `PATH`. These are test tools, not
+application dependencies. The desktop check fails if they are absent.
+Set `HARNESS_GUI_VIDEO=1` to record the desktop checks; recording also needs FFmpeg.
+
 The complete release gate passed on **2026-10-20** with the final source files. It passed
 formatting, Clippy with warnings denied, 56 Rust tests, the release build, five
-adapter syntax checks, and 127 Node tests. The Node tests include 65 adapter tests,
+adapter syntax checks, and 130 Node tests. The Node tests include 68 adapter tests,
 34 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
 and ten actual server recovery tests. Independent
 Node test files run concurrently with separate temporary directories and sockets.
 
-Neovim passed three headless suites, **71 actual terminal cases with the Rust
-server and Pi**, and 43 terminal cases with controlled protocol
-fixtures. The actual tests cover each normal exit command, exact answers, write
+Neovim passed four headless suites, **73 actual terminal cases with the Rust
+server and Pi**, four desktop login cases, and 43 terminal cases with controlled
+protocol fixtures. The independent terminal groups run concurrently. The actual
+tests cover each normal exit command, exact answers, write
 failures, hidden modified buffers, multiple sessions, another client, completion
 and new work during the prompt, connection failure, and Escape during a pending
 stop. They also cover streamed text, tool output, editor response, unsaved context,
@@ -614,6 +661,22 @@ cancellation, token refresh, multiple accounts, and exclusion of secrets from
 public records. Actual Neovim login tests type `\login`, select the provider and
 method, then type into the terminal immediately. They check cancellation, retry,
 browser callback completion without Enter, retained drafts, and unchanged chats.
+The desktop tests use actual Kitty, Neovim, Rust, and Pi. A separate terminal
+pastes from the system clipboard and checks the complete URL bytes. The tests
+also copy the device code with default Neovim settings, without changing
+`g:clipboard` or showing a false clipboard error. They check keyboard and mouse
+controls, native text selection, narrow windows, a terminal that denies clipboard
+writes, and browser completion while an unsaved file has focus.
+The browser-opening test checks the full URL passed to the desktop handler.
+Its local callback uses only the URL obtained from the clipboard. These tests
+use synthetic account replies; they do not prove that a real subscription is valid.
+
+The chat action tests keep the task while selecting settings. They check exact
+typing after menu and terminal cancellation, delayed settings without focus
+changes, and forced terminal closure without a Pi worker restart. The open agent
+tree discovers a tool-created child when the parent finishes. Refresh keeps the
+highlighted agent, and normal tree entry refreshes agents created by another client.
+
 The OpenAI tests exercise the actual SDK and Pi through controlled HTTP responses
 and streamed events. They check API keys, ChatGPT account tokens, Unicode,
 Bash execution, the next request with its tool result, retries, cancellation,
@@ -648,7 +711,7 @@ identity and storage ownership release during upgrade.
 The [installed-runtime check](tests/evidence/live-runtime.json) verifies the local
 release binary, worker, and editor files. The idle server was restarted with its
 original environment. Its state directory, saved chats, metadata, and recent
-entry identifiers were preserved. Empty failed answers now display safe errors.
+entries were preserved.
 The server and Pi worker report ready. This check creates no chat and makes no
 model request. Reopen Neovim to load the updated editor files.
 
@@ -668,6 +731,7 @@ All 70 saved reference hashes still match the catalog.
 See the [release report](tests/evidence/release.json),
 [complete check output](tests/evidence/release.log),
 [actual terminal results](tests/evidence/nvim-real.json),
+[desktop login results](tests/evidence/nvim-desktop.json),
 [fixture terminal results](tests/evidence/nvim-fixture.json),
 [clean-install report](tests/evidence/clean-install.json), and
 [first-use source report](tests/evidence/source-launch.json) with its
@@ -684,6 +748,7 @@ node --test adapter/test/*.test.mjs
 nvim --headless -u NONE -l tests/nvim/run.lua
 nvim --headless -u NONE -l tests/nvim/view.lua
 nvim --headless -u NONE -l tests/nvim/select.lua
+nvim --headless -u NONE -l tests/nvim/setup.lua
 sh scripts/check-dependencies.sh
 ```
 
@@ -694,6 +759,7 @@ packages:
 python3 tests/nvim/interactive.py
 python3 tests/nvim/real.py --group exit
 python3 tests/nvim/real.py --group integration
+python3 tests/nvim/login_gui.py
 ```
 
 The release gate also includes each adapter's `node --check`, the real-server
