@@ -141,15 +141,19 @@ class Application {
     const current = params.session_id ? this.session(params.session_id).metadata : this.config;
     const provider = current.provider ?? null, model = current.model ?? null;
     const models = this.models.getModels().map(({ provider, id, name }) => ({ provider, id, name }));
-    const providers = await Promise.all(this.models.getProviders().map(async item => ({
-      id: item.id, name: item.name, authenticated: !!(await this.models.checkAuth(item.id)),
-      methods: [
-        ...(item.auth.oauth ? [{ id: 'oauth', name: item.auth.oauth.loginLabel ?? item.auth.oauth.name }] : []),
-        ...(item.auth.apiKey?.login ? [{ id: 'api_key', name: item.auth.apiKey.name }] : []),
-      ],
-    })));
+    const providers = await Promise.all(this.models.getProviders().map(async item => {
+      const auth = await this.models.checkAuth(item.id);
+      return {
+        id: item.id, name: item.name, authenticated: !!auth, credential_type: auth?.type ?? null,
+        methods: [
+          ...(item.auth.oauth ? [{ id: 'oauth', name: item.auth.oauth.loginLabel ?? item.auth.oauth.name }] : []),
+          ...(item.auth.apiKey?.login ? [{ id: 'api_key', name: item.auth.apiKey.name }] : []),
+        ],
+      };
+    }));
+    const selected = providers.find(item => item.id === provider);
     const issue = !provider || !model ? 'missing_model' : !this.models.getModel(provider, model) ? 'invalid_model'
-      : !providers.find(item => item.id === provider)?.authenticated ? 'missing_key' : null;
+      : !selected?.authenticated ? 'missing_key' : null;
     const messages = {
       missing_model: 'Choose a model with \\model before sending a task.',
       invalid_model: 'The selected provider or model is unavailable. Use \\model to choose a supported model.',
@@ -157,7 +161,9 @@ class Application {
     };
     const message = issue ? messages[issue] : provider === 'faux'
       ? 'Demo mode uses fixed replies. It does not use an AI model or change project files.'
-      : 'Provider credentials are present. The provider has not checked them.';
+      : selected.credential_type === 'oauth'
+        ? 'Account login is stored. The provider has not checked access or usage limits.'
+        : 'API key is available. The provider has not checked this key or its usage limits.';
     return { provider, model, ready: issue === null, issue, message, models, providers };
   }
   async login(params, requestId) {

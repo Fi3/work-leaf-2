@@ -83,8 +83,7 @@ function loginUrl(value) {
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw invalid('Login link is not a valid web address');
   return value;
 }
-function openBrowser(url, report, explicit = false) {
-  if (!explicit && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY && !process.env.BROWSER) return;
+function openBrowser(url, report) {
   const browser = spawn('xdg-open', [url], { stdio: 'ignore', detached: true });
   const failed = () => report('Cannot open a browser here. Press Ctrl-X to copy the link.');
   browser.on('error', failed);
@@ -119,7 +118,7 @@ export async function terminalLogin(models, params, controller, deviceId) {
     else if (key?.ctrl && key.name === 'x') {
       if (link) copy(link); else status('No browser link is available for this step.');
     } else if (key?.ctrl && key.name === 'o') {
-      if (link) openBrowser(link, status, true); else status('No browser link is available for this step.');
+      if (link) openBrowser(link, status); else status('No browser link is available for this step.');
     } else if (key?.ctrl && key.name === 'y' && deviceCode) {
       key.name = undefined; // Do not also paste readline's removed text into a hidden prompt.
       copy(deviceCode);
@@ -147,7 +146,6 @@ export async function terminalLogin(models, params, controller, deviceId) {
   const showLink = value => {
     link = loginUrl(value);
     write(`\r\nOpen this link in your browser:\r\n\x1b]8;id=harness-login;${link}\x1b\\${link}\x1b]8;;\x1b\\\r\nCtrl-X: copy link. Ctrl-O: open browser.\r\n`);
-    openBrowser(link, status);
   };
   const question = async (message, secret, signal) => {
     controller.signal.throwIfAborted();
@@ -173,7 +171,7 @@ export async function terminalLogin(models, params, controller, deviceId) {
       if (secret) write('\r\n');
     }
   };
-  write(`\r\n${provider.name}: ${method.loginLabel ?? method.name}\r\nEscape or Ctrl-C cancels. Secret input is hidden.\r\n`);
+  write(`\r\n${provider.name}: ${method.loginLabel ?? method.name}\r\nCtrl-C cancels. Secret input is hidden.\r\n`);
   try {
     await models.login(provider.id, params.method, {
       signal: controller.signal,
@@ -186,14 +184,14 @@ export async function terminalLogin(models, params, controller, deviceId) {
             const value = (await question(`Choice [1-${prompt.options.length}, Enter=1]: `, false, signal)).trim();
             const index = value === '' ? 0 : Number(value) - 1;
             if (Number.isInteger(index) && prompt.options[index]) return prompt.options[index].id;
-            write('Enter a listed number, or press Escape to cancel.\r\n');
+            write('Enter a listed number, or press Ctrl-C to cancel.\r\n');
           }
         }
         const secret = prompt.type === 'secret' || prompt.type === 'manual_code';
         while (true) {
           const value = await question(`${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ''}: `, secret, signal);
           if (prompt.type === 'manual_code' && !value.trim()) {
-            write('Wait for your browser, or paste the complete code or redirect URL. Escape cancels.\r\n');
+            write('Wait for your browser, or paste the complete code or redirect URL. Ctrl-C cancels.\r\n');
             continue;
           }
           if (prompt.type === 'secret' && value === '') { cancel(); controller.signal.throwIfAborted(); }

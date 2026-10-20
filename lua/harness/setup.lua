@@ -81,7 +81,7 @@ function M.new(transport, report)
       local width = vim.api.nvim_win_get_width(window)
       local labels = width >= 54 and { '[ Open browser ]', 'Copy link', 'Full link', 'Cancel' }
         or width >= 30 and { '[Open]', 'Copy', 'Link', 'Cancel' }
-        or width >= 26 and { 'Open', 'Copy', 'Link', 'Cancel' } or { 'Open', 'Copy', 'Link', 'Esc' }
+        or width >= 26 and { 'Open', 'Copy', 'Link', 'Cancel' } or { 'Open', 'Copy', 'Link', '^C' }
       if ended then labels = { 'Close' } elseif not link then labels = { 'Cancel' } end
       local parts = {}
       for index, label in ipairs(labels) do
@@ -101,6 +101,38 @@ function M.new(transport, report)
       toolbar()
       enter()
     end
+    local function click_link()
+      local mouse = vim.fn.getmousepos()
+      if link and not closed and not ended and mouse.winid == window and mouse.winrow > 2 and mouse.line > 0 then
+        local start = math.max(0, mouse.line - #link)
+        local lines = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(window), start, mouse.line + #link, false)
+        local first, last, before = nil, nil, 0
+        for index, line in ipairs(lines) do
+          if line:match('^https?://') and link:sub(1, #line) == line then
+            local length = #line
+            for next_line = index + 1, #lines do
+              local part = lines[next_line]
+              if length == #link or part == '' or part:find('%s') or part:match('^https?://') then break end
+              if link:sub(length + 1, length + #part) ~= part then length = 0; break end
+              length = length + #part
+            end
+            if length > 0 then first, last = before + 1, before + length end
+          end
+          before = before + #line
+        end
+        local row = mouse.line - start
+        local offset = lines[row] and #table.concat(lines, '', 1, row - 1) + mouse.column
+        if first and offset and mouse.column <= #lines[row] and offset >= first and offset <= last then
+          vim.schedule(function()
+            if not closed and vim.api.nvim_get_current_win() == window then
+              actions[2]()
+              if active == actions then actions.resume() end
+            end
+          end)
+        end
+      end
+      return '<LeftRelease>'
+    end
     local function show_link(message, value)
       value = value or link
       if not value or closed then return end
@@ -117,25 +149,17 @@ function M.new(transport, report)
         vim.api.nvim_buf_set_name(link_buffer, 'harness://login-link')
         vim.bo[link_buffer].bufhidden = 'hide'
         for _, key in ipairs({ '<CR>', 'i' }) do vim.keymap.set('n', key, input, { buffer = link_buffer, silent = true }) end
-        for _, key in ipairs({ '<Esc>', '<C-c>' }) do vim.keymap.set({ 'n', 'v' }, key, cancel, { buffer = link_buffer, silent = true }) end
+        vim.keymap.set('n', '<Esc>', input, { buffer = link_buffer, silent = true })
+        vim.keymap.set({ 'n', 'v' }, '<C-c>', cancel, { buffer = link_buffer, silent = true })
         vim.keymap.set({ 'n', 'v' }, '<C-x>', function() actions[1]() end, { buffer = link_buffer, silent = true })
         vim.keymap.set({ 'n', 'v' }, '<C-o>', function() actions[2]() end, { buffer = link_buffer, silent = true })
         vim.keymap.set({ 'n', 'v' }, '<C-l>', function() actions[4]() end, { buffer = link_buffer, silent = true })
         vim.keymap.set({ 'n', 'v' }, '<C-y>', function() actions[5]() end, { buffer = link_buffer, silent = true })
-        vim.keymap.set('n', '<LeftRelease>', function()
-          local mouse = vim.fn.getmousepos()
-          if mouse.winid == window and mouse.winrow > 2 and mouse.line == 1
-            and vim.api.nvim_buf_get_lines(link_buffer, 0, 1, false)[1] == link then
-            vim.schedule(function()
-              if not closed and vim.api.nvim_get_current_win() == window then actions[2]() end
-            end)
-          end
-          return '<LeftRelease>'
-        end, { buffer = link_buffer, expr = true })
+        vim.keymap.set('n', '<LeftRelease>', click_link, { buffer = link_buffer, expr = true })
       end
       vim.bo[link_buffer].modifiable = true
       vim.api.nvim_buf_set_lines(link_buffer, 0, -1, false, { value, '', message,
-        (value == link and 'Link' or 'Device code') .. ' copied to the Vim register.', 'yy: copy line · Enter/i: input · Esc: cancel' })
+        (value == link and 'Link' or 'Device code') .. ' copied to the Vim register.', 'yy: copy line · Enter/Esc: input · Ctrl-C: cancel' })
       vim.bo[link_buffer].modifiable = false
       vim.cmd('stopinsert')
       vim.api.nvim_win_set_buf(window, link_buffer)
@@ -153,20 +177,22 @@ function M.new(transport, report)
       else show_link('System clipboard unavailable.', value) end
     end
     local function open()
-      if not link then return end
+      if not link or ended then return end
       local ok, process = pcall(vim.ui.open, link)
       if not ok or not process then show_link('Browser could not open. Copy this complete link.') end
     end
     actions[1], actions[2], actions[3], actions[4], actions[5] =
       function() copy(link) end, open, cancel, function() show_link('Complete login link.') end, function() copy(code) end
     for _, mode in ipairs({ 't', 'n', 'v' }) do
-      for _, key in ipairs({ '<Esc>', '<C-c>' }) do vim.keymap.set(mode, key, cancel, { buffer = buffer, silent = true }) end
+      vim.keymap.set(mode, '<C-c>', cancel, { buffer = buffer, silent = true })
       vim.keymap.set(mode, '<C-x>', actions[1], { buffer = buffer, silent = true, desc = 'Copy login link' })
       vim.keymap.set(mode, '<C-o>', open, { buffer = buffer, silent = true, desc = 'Open login link' })
       vim.keymap.set(mode, '<C-l>', actions[4], { buffer = buffer, silent = true, desc = 'Select complete login link' })
       vim.keymap.set(mode, '<C-y>', actions[5], { buffer = buffer, silent = true, desc = 'Copy device code' })
     end
-    for _, key in ipairs({ '<Esc>', '<C-c>', '<C-l>' }) do
+    vim.keymap.set('n', '<LeftRelease>', click_link, { buffer = buffer, expr = true })
+    vim.keymap.set('t', '<Esc>', '<C-\\><C-n>', { buffer = buffer, silent = true })
+    for _, key in ipairs({ '<C-c>', '<C-l>' }) do
       vim.keymap.set('t', key, '<C-\\><C-n>' .. key, { buffer = buffer, remap = true, silent = true })
     end
     vim.api.nvim_create_autocmd('TermRequest', { group = group, buffer = buffer, callback = function(event)

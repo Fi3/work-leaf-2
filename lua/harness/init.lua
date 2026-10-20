@@ -203,8 +203,10 @@ end
 local function provider_label(item)
   local methods = {}
   for _, method in ipairs(item.methods) do methods[#methods + 1] = method.name end
+  local status = item.authenticated and (item.credential_type == 'oauth' and 'account login'
+    or item.credential_type == 'api_key' and 'API key' or 'connected') or 'login needed'
   return item.name .. (#methods > 0 and ' · ' .. table.concat(methods, ' / ') or '')
-    .. (item.authenticated and ' [connected]' or ' [login needed]')
+    .. ' [' .. status .. ']'
 end
 
 local function at_origin(id, window, buffer)

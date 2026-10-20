@@ -21,36 +21,36 @@
       "case": "device-code-native-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/device-code-native-clipboard.ansi.gz",
-      "terminal_bytes": 187327,
-      "terminal_sha256": "a6b3bd94ec48d6905708c387834752b35a6f7a296278d9bbeeab55615806e5f0"
+      "terminal_bytes": 187163,
+      "terminal_sha256": "ff44579186d1b8bc22e8c4d2661924db0a36e183fa39b2d9f6343ed58ebc13c0"
     },
     {
       "case": "login-browser-delayed-return",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-browser-delayed-return.ansi.gz",
-      "terminal_bytes": 110831,
-      "terminal_sha256": "514726a3917c7f050950a7f5e242f20f29c15af3ed7192d7591baaf44f9fde82"
+      "terminal_bytes": 110143,
+      "terminal_sha256": "fa270a827cac6247a7e31ced0906f805885bc96a5cecc0d0c15e4f6e8ffd6af3"
     },
     {
       "case": "login-copy-default-editor",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-copy-default-editor.ansi.gz",
-      "terminal_bytes": 150819,
-      "terminal_sha256": "728ae1d537cf0b437a450ad9e519eb056b5ac3d5a84dffcf146d9479aa28b73b"
+      "terminal_bytes": 144335,
+      "terminal_sha256": "aed0271cbd642b241bbf9817aebf580b4ac9dc05bc3b21d14ae84a8c2a502f09"
     },
     {
       "case": "login-copy-without-system-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-copy-without-system-clipboard.ansi.gz",
-      "terminal_bytes": 206006,
-      "terminal_sha256": "fcafb6740e50652b98df1272a5e558920d6318b43a06438248ed398f819013e9"
+      "terminal_bytes": 205986,
+      "terminal_sha256": "4a62d699646a0a11378b701de4318f13f02cfdf3734ee3bb28e306b03ab7a804"
     },
     {
       "case": "login-url-native-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-url-native-clipboard.ansi.gz",
-      "terminal_bytes": 351623,
-      "terminal_sha256": "6ee7e6e9b807fda0c1a4fc90823b73917a3c3d07bcd002cf06bc3d06fc15ac8a"
+      "terminal_bytes": 352390,
+      "terminal_sha256": "5fc1d9367c7a08b0ca6676c5231f8a2770b12c0e3f3a4c1633b3483b03969ae4"
     }
   ],
   "xvfb_vendor_release": 12101024,

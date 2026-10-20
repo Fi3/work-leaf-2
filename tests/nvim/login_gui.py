@@ -188,14 +188,14 @@ def desktop():
 class GuiEditor(RealEditor):
     instances = []
 
-    def __init__(self, name, display, pending=0, clipboard=True, browser=False):
+    def __init__(self, name, display, pending=0, clipboard=True, browser=False, generation=None):
         self.display, self.pending = display, pending
         self.use_browser, self.browser = browser, None
         self.clipboard_enabled, self.finished = clipboard, False
         self.video = None
         self.steps = []
         self.instances.append(self)
-        super().__init__(name, active=False, oauth_mock=True)
+        super().__init__(name, active=False, oauth_mock=True, generation=generation)
         self.observe('true')
 
     def cli(self, *arguments):
@@ -342,12 +342,34 @@ def complete_account(editor, copied):
     with urllib.request.urlopen(callback,timeout=5) as response: assert response.status==200
     editor.wait(lambda:not any(window['name'] in ('harness://setup','harness://login-link') for window in editor.windows()),'callback from the pasted URL completes login')
 
+def open_link(editor):
+    editor.wait(lambda:any('code_challenge_method=S256' in ''.join(window['lines'])
+                           or 'Enter code:' in ''.join(window['lines'])
+                           for window in editor.windows() if window['name']=='harness://setup'),'login link is visible')
+    assert not editor.browser_urls(), 'The server must not open an extra browser tab automatically'
+    editor.keys('\x0f')
+    editor.wait(lambda:editor.browser_urls(),'explicit browser action opens the complete link')
+
+
+def click_terminal_link(editor, wrapped=False):
+    window = next(window for window in editor.windows() if window['name']=='harness://setup')
+    row = next(index for index,line in enumerate(window['lines'],1) if line.startswith('https://auth.openai.com/'))
+    if wrapped: row += 1
+    position = editor.observe('vim.fn.screenpos('+str(window['id'])+','+str(row)+',8)')
+    assert position['row']>0 and position['col']>0, 'The clicked link segment must be visible'
+    editor.mouse(0,position['col'],position['row'])
+
 
 def account_case(display):
     editor = GuiEditor('login-url-native-clipboard',display)
     editor.keys('iUnsent task remains here.')
     login(editor,'openai','Sign in with ChatGPT')
-    editor.wait(lambda:editor.browser_urls(),'initial complete browser URL')
+    editor.wait(lambda:any('code_challenge_method=S256' in ''.join(window['lines'])
+                           for window in editor.windows() if window['name']=='harness://setup'),'printed login link')
+    assert not editor.browser_urls(), 'Showing a link must not open another browser tab'
+    assert editor.observe('vim.fn.mode(1)')=='t'
+    click_terminal_link(editor)
+    editor.wait(lambda:editor.browser_urls(),'ordinary terminal URL click opens the browser without leaving input first')
     expected = editor.browser_urls()[0]
     assert len(expected)>200
     editor.mark('Copy the complete browser link with Ctrl-X; paste it in a separate terminal.')
@@ -392,18 +414,23 @@ def account_case(display):
     editor.keys('\x18')
     assert editor.clipboard().decode()==copied, 'Resizing must not change the copied URL'
     editor.screenshot('narrow-link-controls')
+    editor.keys('\x1b')
+    editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='nt','Escape permits native terminal navigation')
+    click_terminal_link(editor)
+    editor.wait(lambda:len(editor.browser_urls())==4,'a normal click on the visible resized terminal link opens the complete URL')
+    assert editor.browser_urls()[-1]==copied
     editor.mark('Return to the full terminal, then click Link while browser sign-in completes.')
     editor.resize(120,40)
     window = next(window for window in editor.windows() if window['name']=='harness://setup')
     editor.mouse(0,window['col']+33,window['row']+1)
     editor.wait(lambda:editor.observe('vim.api.nvim_buf_get_name(0)')=='harness://login-link','mouse Link shows the complete URL while browser callback waits')
     assert editor.observe('vim.fn.mode(1)')=='n', 'Mouse Link must permit native selection'
-    assert len(editor.browser_urls())==3, 'Opening Full link must not also open the browser'
+    assert len(editor.browser_urls())==4, 'Opening Full link must not also open the browser'
     editor.mouse(0,window['col']+10,window['row']+3)
-    editor.wait(lambda:len(editor.browser_urls())==4,'an ordinary click on the wrapped link opens the browser')
+    editor.wait(lambda:len(editor.browser_urls())==5,'an ordinary click on the wrapped link opens the browser')
     assert editor.browser_urls()[-1]==copied
     editor.mouse(0,window['col']+3,window['row']+1)
-    editor.wait(lambda:len(editor.browser_urls())==5,'Open browser also works from Full link')
+    editor.wait(lambda:len(editor.browser_urls())==6,'Open browser also works from Full link')
     assert editor.browser_urls()[-1]==copied and editor.observe('vim.fn.mode(1)')=='n'
     editor.screenshot('full-link-browser-actions')
     complete_account(editor,copied)
@@ -422,7 +449,7 @@ def device_case(display):
     login(editor,'github-copilot','GitHub Copilot')
     editor.wait(lambda:b'GitHub Enterprise URL/domain' in editor.output,'optional enterprise-domain prompt')
     editor.keys('\r')
-    editor.wait(lambda:editor.browser_urls(),'device sign-in URL')
+    open_link(editor)
     editor.keys('\x18')
     assert editor.clipboard().decode()==editor.browser_urls()[0]
     editor.keys('\x19')
@@ -430,7 +457,7 @@ def device_case(display):
     assert b'E319' not in editor.output, 'Default device copy must not show a missing clipboard provider error'
     assert editor.observe('vim.g.clipboard == nil'), 'Device copy must not replace the user clipboard configuration'
     editor.screenshot('device-code-copy')
-    editor.keys('\x1b')
+    editor.keys('\x03')
     editor.wait(lambda:not any(window['name']=='harness://setup' for window in editor.windows()),'cancel device login')
     assert editor.observe('vim.fn.mode(1)')=='i'
     editor.keys('Unsent after device cancel.')
@@ -456,7 +483,7 @@ def fallback_case(display, default=False):
     editor = GuiEditor('login-copy-default-editor' if default else 'login-copy-without-system-clipboard',display,clipboard=None if default else False)
     editor.keys('iUnsent default task.')
     login(editor,'openai','Sign in with ChatGPT')
-    editor.wait(lambda:editor.browser_urls(),'browser URL without clipboard provider')
+    open_link(editor)
     available = editor.observe('vim.fn.has("clipboard")')==1
     before = editor.clipboard() if not default else None
     editor.keys('\x18')
@@ -483,7 +510,7 @@ def fallback_case(display, default=False):
         assert editor.observe('vim.bo.modified') and editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==['one unsaved']
         assert (editor.root/'one').read_text()=='one\n'
     else:
-        editor.keys('\x1b')
+        editor.keys('\x03')
         editor.wait(lambda:not any(window['name']=='harness://setup' for window in editor.windows()),'cancel from restored private input')
         assert editor.observe('vim.fn.mode(1)')=='i'
     assert editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')==['Unsent default task.']
@@ -497,12 +524,14 @@ def fallback_case(display, default=False):
     editor.finish()
 
 def browser_case(display):
-    editor = GuiEditor('login-browser-delayed-return',display,clipboard=None,browser=True)
+    editor = GuiEditor('login-browser-delayed-return',display,clipboard=None,browser=True,generation=[{'kind':'answer'}])
     browser = editor.browser
-    editor.keys('iUnsent browser task.')
+    editor.keys('i\\model openai/gpt-5.6-luna\r')
+    editor.wait(lambda:editor.snapshot()['session']['model']=='gpt-5.6-luna','select the reported model')
+    editor.keys('Unsent browser task.')
     login(editor,'openai','Sign in with ChatGPT')
     editor.wait(lambda:b'Complete login in your browser' in editor.output,'manual callback prompt')
-    assert not browser.attempts, 'A server without a desktop must wait for the client Open browser action'
+    assert not browser.attempts, 'The server must wait for an explicit browser action'
     editor.mark('Press Enter with no text. The browser sign-in must stay open.')
     editor.keys('\r')
     editor.keys('   \r')
@@ -514,11 +543,11 @@ def browser_case(display):
     first = browser.find('Harness test account 1')
     browser.screenshot('browser-test-account')
     assert len(browser.attempts)==1
-    assert not next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['authenticated']
+    assert next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['credential_type']=='api_key'
     assert any(window['name']=='harness://setup' for window in editor.windows()), 'Empty input and a browser delay must not close the login listener'
     editor.mark('Cancel this sign-in in Neovim. The unsent task stays ready.')
     browser.focus(json.loads(editor.remote('ls'))[0]['platform_window_id'])
-    editor.keys('\x1b')
+    editor.keys('\x03')
     editor.wait(lambda:not any(window['name']=='harness://setup' for window in editor.windows()),'cancel the first browser attempt')
     editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','cancel returns to input')
     editor.keys(' Retry.')
@@ -526,15 +555,17 @@ def browser_case(display):
     login(editor,'openai','Sign in with ChatGPT')
     editor.wait(lambda:any('Complete login in your browser' in ''.join(window['lines']) for window in editor.windows() if window['name']=='harness://setup'),'retry callback prompt')
     editor.keys('\r   \r')
-    window = next(window for window in editor.windows() if window['name']=='harness://setup')
-    editor.mouse(0,window['col']+3,window['row']+1)
+    editor.mark('Press Escape as in Vim, then click the printed login link.')
+    editor.keys('\x1b')
+    editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='nt','Escape leaves login input without closing the listener')
+    click_terminal_link(editor,wrapped=True)
     editor.wait(lambda:browser.find('Harness test account 2'),'Firefox shows the new account attempt',timeout=20)
     second = browser.find('Harness test account 2')
     assert browser.attempts[0]['callback']!=browser.attempts[1]['callback'], 'Retry must have a new OAuth state'
     editor.mark('The cancelled browser page cannot finish the new sign-in.')
     browser.approve(first)
     editor.wait(lambda:'Authentication failed' in browser.title(first),'Firefox displays rejection of the cancelled state')
-    assert not next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['authenticated']
+    assert next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['credential_type']=='api_key'
     assert any(window['name']=='harness://setup' for window in editor.windows())
     browser.screenshot('browser-cancelled-state')
     editor.mark('Leave the current account page open for 15 seconds, as during a normal sign-in.')
@@ -544,7 +575,7 @@ def browser_case(display):
     browser.approve(second)
     editor.wait(lambda:'Authentication successful' in browser.title(second),'Firefox displays the actual Pi callback success page',timeout=15)
     editor.wait(lambda:not any(window['name']=='harness://setup' for window in editor.windows()),'browser callback completes private login')
-    assert next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['authenticated']
+    assert next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['credential_type']=='oauth'
     browser.screenshot('browser-callback-success')
     editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','browser completion returns to the unchanged prompt')
     browser.focus(json.loads(editor.remote('ls'))[0]['platform_window_id'])
@@ -557,16 +588,27 @@ def browser_case(display):
     assert delay>=15, 'The successful browser callback must include a human-length sign-in delay'
     editor.mark('Return to Neovim and continue the complete unsent task.')
     editor.screenshot('browser-return-draft')
+    editor.mark('Send the retained task. The saved account replaces the environment API key.')
+    editor.keys('\r')
+    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.'
+                and editor.snapshot()['state']=='idle','a task succeeds with the saved account and the selected model')
+    generations = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
+    assert len(generations)==1 and generations[0]['credential_kind']=='oauth'
+    assert generations[0]['model']=='gpt-5.6-luna'
+    editor.keys('Next task remains ready.')
+    assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==['Next task remains ready.']
+    editor.screenshot('browser-account-reply')
     (editor.root/'observed.json').write_text(json.dumps({
         'browser':'actual Firefox with a fresh profile per attempt','external_browser_requests':'blocked by a local proxy',
         'browser_profile_paths':['firefox-profile-1','firefox-profile-2'],'user_browser_profile_changed':False,
         'test_browser_proxy':{'type':'manual','http':'127.0.0.1','https':'127.0.0.1','port':browser.server.server_port,
                               'bypass':['localhost','127.0.0.1'],'dns_over_https':False},
-        'url_source':'native Open browser button; no clipboard or RPC URL extraction',
+        'url_source':'native Open browser button and normal click on the printed terminal URL; no clipboard or RPC URL extraction',
         'callback_source':'Firefox form submission followed by HTTP redirect to the real Pi listener',
-        'blank_and_whitespace_input_preserved_listener':True,'browser_wait_seconds':round(delay,2),
+        'blank_and_whitespace_input_preserved_listener':True,'escape_preserved_listener':True,'browser_wait_seconds':round(delay,2),
         'cancelled_state_rejected_by_real_callback':True,'current_state_authenticated':True,
-        'token_exchanges':1,'exact_draft':'Unsent browser task. Retry. Done.','steps':editor.steps},indent=2)+'\n')
+        'token_exchanges':1,'account_replaced_environment_key':True,'generation_model':'gpt-5.6-luna',
+        'generation_credentials':'synthetic OAuth','exact_draft':'Next task remains ready.','steps':editor.steps},indent=2)+'\n')
     editor.finish()
 
 

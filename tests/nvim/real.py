@@ -484,7 +484,10 @@ def login_case():
         return redirect
     browser_login()
     editor.keys('\x1b')
-    editor.wait(terminal_closed, 'Escape cancels browser login')
+    editor.wait(lambda: editor.observe('vim.fn.mode(1)')=='nt', 'Escape leaves terminal input without cancelling login')
+    assert not terminal_closed()
+    editor.keys('\x03')
+    editor.wait(terminal_closed, 'Ctrl-C cancels browser login')
     assert not connected('openrouter') and connected('openai')
     assert draft()==['Retain this task']
     redirect=browser_login()
@@ -675,7 +678,11 @@ def login_cancel_case():
             editor.wait(lambda:setup_window()['col']+setup_window()['width']<=50
                         and setup_window()['row']+setup_window()['height']<16,'login remains inside the resized editor')
             editor.resize(120,40)
-        editor.keys(':bd!\r' if mode=='forced-close' else '\x03' if mode=='visual' else '\x1b')
+        if mode in ('terminal','retry'):
+            editor.keys('\x1b')
+            editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='nt','Escape leaves private input without cancelling login')
+            assert setup_window() is not None
+        editor.keys(':bd!\r' if mode=='forced-close' else '\x03')
         editor.wait(lambda:setup_window() is None,'cancel login from '+mode+' mode')
         assert editor.observe('vim.fn.mode(1)')=='i', ('Login cancellation must restore prompt input', mode, editor.observe('vim.fn.mode(1)'), editor.windows())
         editor.keys(' after '+mode)

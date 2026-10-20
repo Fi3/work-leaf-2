@@ -279,6 +279,8 @@ test('terminal cancellation, invalid secret, disconnect, and close preserve the 
   for (const [name, keys] of [['Escape', '\x1b'], ['Ctrl-C', '\x03'], ['Ctrl-Z', '\x1a'], ['empty', '\r'], ['whitespace', '   \r'], ['control', 'invalid\u0085key\r'], ['disconnect', null]]) {
     const tty = await pty(t), result = login(app, tty);
     await tty.wait('Enter OpenAI API key');
+    assert.match(tty.text, /Ctrl-C cancels\. Secret input is hidden\./);
+    assert.ok(!tty.text.includes('Escape'));
     if (keys === null) await call('worker.release', { request_ids: ['login'], watch_ids: [] }); else tty.write(keys);
     if (['whitespace', 'control'].includes(name)) await assert.rejects(result, { code: -32602 });
     else assert.equal((await result).cancelled, true, name);
@@ -362,7 +364,7 @@ test('empty manual callback input keeps waiting, accepts private input, and pres
       assert.equal(received, false);
       assert.equal(controller.signal.aborted, false);
     }
-    assert.match(tty.text, /Wait for your browser, or paste the complete code or redirect URL\. Escape cancels\./);
+    assert.match(tty.text, /Wait for your browser, or paste the complete code or redirect URL\. Ctrl-C cancels\./);
     if (finish === 'callback') callback.abort();
     else tty.write(finish === 'cancel' ? '\x1b' : secret + '\r');
     assert.equal(await pending, finish === 'cancel');
@@ -516,7 +518,7 @@ console.log('closed terminal cancelled; same process completed the next login');
   assert.match(stdout, /closed terminal cancelled; same process completed the next login/);
 });
 
-test('desktop login opens the normal browser, retains copyable links, and reports catalog failure after saving', async t => {
+test('login opens a browser only on request, retains links, and reports catalog failure after saving', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'harness-browser-')), log = join(directory, 'opened.jsonl');
   await writeFile(log, '');
   await writeFile(join(directory, 'xdg-open'), `#!${process.execPath}
@@ -538,12 +540,25 @@ appendFileSync(process.env.HARNESS_TEST_BROWSER_LOG, JSON.stringify(process.argv
     getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
     async login(_provider, _method, ui) {
       ui.notify({ type: 'auth_url', url: browserUrl });
+      assert.equal(await ui.prompt({ type: 'manual_code', message: 'Browser callback' }), secret);
       ui.notify({ type: 'device_code', verificationUri: deviceUrl, userCode: 'TEST-CODE' });
+      assert.equal(await ui.prompt({ type: 'manual_code', message: 'Device callback' }), secret);
       saved = true;
     },
     async refresh() { assert.ok(saved); return { errors: new Map([['test', Error(oauthSecret)]]) }; },
   };
-  assert.equal(await terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id'), false);
+  const pending = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id');
+  await tty.wait('Browser callback');
+  await delay(100);
+  assert.equal(await readFile(log, 'utf8'), '', 'A displayed login link must not open a browser automatically');
+  tty.write(secret.slice(0, 8) + '\x0f' + secret.slice(8) + '\r');
+  await tty.wait('Device callback');
+  for (let i = 0; i < 300 && !(await readFile(log, 'utf8')).trim(); i++) await delay(10);
+  await delay(100);
+  assert.deepEqual((await readFile(log, 'utf8')).trim().split('\n').filter(Boolean).map(JSON.parse), [[browserUrl]],
+    'A device login link also waits for an explicit open request');
+  tty.write('\x0f' + secret + '\r');
+  assert.equal(await pending, false);
   await tty.wait('model list could not update');
   assert.ok(tty.text.includes(browserUrl) && tty.text.includes(deviceUrl) && tty.text.includes('TEST-CODE'));
   assert.ok(!tty.text.includes(oauthSecret));

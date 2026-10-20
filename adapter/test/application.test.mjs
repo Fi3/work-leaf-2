@@ -8,6 +8,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { createModels } from '@earendil-works/pi-ai/models';
 import { anthropicProvider } from '@earendil-works/pi-ai/providers/anthropic';
+import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai/providers/faux';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { openApplication, SessionDoc } from '../pi.mjs';
@@ -45,8 +46,8 @@ test('configuration lists the Pi catalog and explains missing or unsupported cho
     assert.equal(result.models.length, 17);
     assert.ok(result.models.some(item => item.id === 'claude-sonnet-4-6' && item.name === 'Claude Sonnet 4.6'));
     assert.ok(result.models.every(item => typeof item.id === 'string' && typeof item.name === 'string' && item.provider === 'anthropic' && Object.keys(item).length === 3));
-    assert.deepEqual(result.providers.map(item => [item.id, item.authenticated, item.methods.map(method => method.id)]),
-      [['anthropic', false, ['oauth', 'api_key']]]);
+    assert.deepEqual(result.providers.map(item => [item.id, item.authenticated, item.credential_type, item.methods.map(method => method.id)]),
+      [['anthropic', false, null, ['oauth', 'api_key']]]);
   }
   assert.deepEqual((await call('session.list')).items, []);
 });
@@ -66,9 +67,44 @@ test('configuration checks only credential presence and returns no credential ma
   const configured = await call('configuration.get');
   assert.equal(configured.ready, true); assert.equal(configured.issue, null);
   assert.match(configured.message, /has not checked/);
+  assert.match(configured.message, /API key/);
   assert.deepEqual(Object.keys(configured).sort(), ['issue', 'message', 'model', 'models', 'provider', 'providers', 'ready']);
   assert.equal(configured.providers[0].authenticated, true);
+  assert.equal(configured.providers[0].credential_type, 'api_key');
   assert.ok(!JSON.stringify(configured).includes(key));
+});
+
+test('configuration distinguishes an environment API key from a saved account before and after reopen', async t => {
+  const { app, config, call } = await setup(t);
+  const key = 'synthetic-environment-key', access = 'synthetic-account-access', refresh = 'synthetic-account-refresh';
+  const configure = target => {
+    target.models = createModels({ credentials: target.credentials, authContext: {
+      env: async name => name === 'OPENAI_API_KEY' ? key : undefined, fileExists: async () => false,
+    } });
+    target.models.setProvider(openaiProvider());
+  };
+  configure(app);
+  Object.assign(config, { provider: 'openai', model: 'gpt-6-sol' });
+  t.mock.method(globalThis, 'fetch', () => { assert.fail('Credential status must not make a provider request'); });
+  const check = (value, type, label) => {
+    assert.equal(value.ready, true);
+    assert.deepEqual(value.providers.map(({ id, authenticated, credential_type }) => ({ id, authenticated, credential_type })),
+      [{ id: 'openai', authenticated: true, credential_type: type }]);
+    assert.match(value.message, label);
+    assert.match(value.message, /has not checked/);
+    for (const secret of [key, access, refresh]) assert.ok(!JSON.stringify(value).includes(secret));
+  };
+  check(await call('configuration.get'), 'api_key', /API key/);
+  await app.credentials.modify('openai', async () => ({ type: 'oauth', access, refresh, expires: Date.now() + 3600000 }));
+  check(await call('configuration.get'), 'oauth', /Account login/);
+  await app.close();
+  const reopened = await openApplication(config);
+  try {
+    configure(reopened);
+    check(await reopened.dispatch('configuration.get', {}), 'oauth', /Account login/);
+    await reopened.dispatch('auth.logout', { provider: 'openai' });
+    check(await reopened.dispatch('configuration.get', {}), 'api_key', /API key/);
+  } finally { await reopened.close(); }
 });
 
 test('configuration reads preserve an active run and the fixed configuration of its session', async t => {

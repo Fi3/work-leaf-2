@@ -10,7 +10,7 @@ vim.fn.writefile(vim.split([[
 import base64, os, sys, tty
 tty.setraw(0)
 def link(identity, value):
-    os.write(1, ('\x1b]8;id='+identity+';'+value+'\x1b\\Login link\x1b]8;;\x1b\\\r\n').encode())
+    os.write(1, ('\x1b]8;id='+identity+';'+value+'\x1b\\'+value+'\x1b]8;;\x1b\\\r\n').encode())
 link('harness-login', sys.argv[1])
 link('another-program', 'https://wrong.example.test')
 link('harness-login', 'javascript:wrong')
@@ -71,6 +71,38 @@ assert(copied == url and vim.api.nvim_get_current_buf() == buffer, 'Copy uses th
 keys('<C-o>')
 assert(opened == url, 'Open passes the complete URL to the client browser handler')
 assert(calls == 0 and vim.fn.jobwait({ channel }, 0)[1] == -1, 'Opening the browser keeps the same login process active')
+local getmousepos = vim.fn.getmousepos
+local function click(row, column)
+  opened = nil
+  vim.fn.getmousepos = function() return { winid = window, winrow = row + 2, line = row, column = column } end
+  keys('<LeftRelease>')
+  vim.fn.getmousepos = getmousepos
+end
+vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer,
+  data = { sequence = '\027]8;id=harness-login;' .. url:sub(1, 100) .. 'changed' .. url:sub(108) } })
+click(1, 2)
+assert(opened == nil, 'An earlier URL with a matching first row but a different later state cannot open the new login')
+vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. url } })
+for _, width in ipairs({ 76, 38 }) do
+  vim.api.nvim_win_set_width(window, width)
+  wait(function()
+    return #vim.api.nvim_buf_get_lines(buffer, 0, 1, false)[1] <= width
+  end, 'The actual terminal completes its width change')
+  local lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
+  local last
+  for row, line in ipairs(lines) do if line == 'https://wrong.example.test' then last = row - 1; break end end
+  assert(last and (width == 76 and last > 2 or width == 38 and last == 1),
+    'The child prints a wrapped URL; narrowing this terminal discards its continuation rows')
+  for row = 1, last do
+    click(row, math.min(2, #lines[row]))
+    assert(opened == url, 'Every wrapped part opens the exact retained login URL')
+  end
+  click(last + 1, 2)
+  assert(opened == nil, 'A different printed URL cannot open the retained login link')
+  click(last, #lines[last] + 1)
+  assert(opened == nil, 'Clicking after the URL text does not open it')
+end
+vim.api.nvim_win_set_width(window, 76)
 copy_failed, copied = true, nil
 keys('<C-x>')
 assert(copied == nil and vim.inspect(vim.api.nvim_win_get_config(window).footer):find('Copy requested', 1, true),
@@ -100,13 +132,17 @@ for _, size in ipairs({ { 50, 16 }, { 30, 12 }, { 120, 40 } }) do
   assert(config.col + config.width + 2 <= size[1] and config.row + config.height + 2 <= size[2], 'Login fits the resized terminal')
   local bar = vim.api.nvim_eval_statusline(vim.wo[window].winbar, { winid = window, use_winbar = true, maxwidth = 1000 }).str
   assert(vim.fn.strdisplaywidth(bar) <= config.width and bar:find('Copy') and bar:find('Open')
-    and (bar:find('Cancel') or bar:find('Esc')),
+    and (bar:find('Cancel') or bar:find('^C', 1, true)),
     'Copy, browser and cancellation controls remain visible on a narrow screen')
   assert(vim.inspect(config.footer):find('Keep', 1, true), 'The waiting instruction remains visible after resizing')
 end
 keys('v<Esc>')
+assert(calls == 0 and vim.fn.jobwait({ channel }, 0)[1] == -1, 'Visual Escape keeps the login process active')
+keys('<Esc>')
+assert(calls == 0 and vim.fn.jobwait({ channel }, 0)[1] == -1, 'Normal Escape keeps the login process active')
+keys('v<C-c>')
 closed()
-assert(result.focused and not result.succeeded and vim.api.nvim_get_current_win() == previous, 'Visual-mode Escape cancels back to the caller')
+assert(result.focused and not result.succeeded and vim.api.nvim_get_current_win() == previous, 'Visual-mode Ctrl-C cancels back to the caller')
 open()
 vim.g.loaded_clipboard_provider = 0
 local list_uis, ui_send, clipboard_request = vim.api.nvim_list_uis, vim.api.nvim_ui_send
@@ -165,6 +201,9 @@ assert(opened == url, 'The fallback keeps the same browser action')
 keys('<CR>')
 assert(vim.api.nvim_get_current_buf() == buffer and vim.fn.jobwait({ channel }, 0)[1] == -1, 'Enter returns to the same live private terminal')
 keys('<C-x><Esc>')
+assert(vim.api.nvim_get_current_buf() == buffer and calls == 0 and vim.fn.jobwait({ channel }, 0)[1] == -1,
+  'Escape from the full link returns to private input without cancelling login')
+keys('<C-x><C-c>')
 closed()
 assert(not vim.api.nvim_buf_is_valid(fallback) and not result.succeeded, 'Cancelling the link view also removes its terminal')
 open()
@@ -172,7 +211,7 @@ vim.ui.open = function() return nil, 'No browser handler' end
 keys('<C-o>')
 assert(vim.api.nvim_buf_get_name(0) == 'harness://login-link' and vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == url,
   'An unavailable browser leaves a complete selectable link')
-keys('<Esc>')
+keys('<C-c>')
 closed()
 open()
 keys('<C-l>')
@@ -180,6 +219,12 @@ vim.fn.chansend(channel, 'f')
 wait(function() return vim.wo[window].winbar:find('Close', 1, true) end, 'Failed login remains visible for acknowledgment')
 assert(vim.api.nvim_get_current_buf() == buffer, 'A failure in the full-link view shows the terminal error before acknowledgment')
 assert(calls == 0, 'A failed login is not silently dismissed')
+vim.ui.open = function(value) opened = value; return {} end
+opened = nil
+keys('<C-o>')
+assert(opened == nil, 'A failed login cannot reopen its expired browser link')
+click(1, 2)
+assert(opened == nil and calls == 0, 'Clicking an expired link keeps the failure visible for acknowledgment')
 keys('<CR>')
 closed()
 assert(result.focused and not result.succeeded and #messages == 1, 'Acknowledging failure reports unsuccessful completion once')

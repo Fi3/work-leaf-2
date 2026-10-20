@@ -38,7 +38,7 @@ You can also use `:Harness actions`.
 For the first AI chat, select **Connect an account**. Select your provider, then
 the account or API key method. For a ChatGPT account, select **OpenAI**, then
 **Sign in with ChatGPT**. The login opens in a terminal that accepts input at
-once. Click **Open browser** at the top of the login window. Complete sign-in
+once. Click the displayed link or **Open browser** at the top of the login window. Complete sign-in
 in the browser and keep the Neovim login window open until it finishes.
 You do not need to copy the link or press Enter. Empty or space-only input
 keeps waiting for the browser.
@@ -47,7 +47,10 @@ Press **Ctrl-O** to open the browser from the keyboard. **Copy link** or
 **Ctrl-X** copies the complete browser link when you need it. The browser
 link stays complete when it wraps or the window size changes. For device login,
 **Ctrl-Y** copies the separate device code. Follow the provider's instructions.
-Escape or Ctrl-C cancels and returns to the retained draft.
+Escape leaves terminal input mode and keeps sign-in open. Press `i` to enter
+input mode again. **Cancel** or **Ctrl-C** cancels and returns to the retained
+draft. The browser opens only when you request it; the server does not open
+an extra browser tab.
 
 Copy uses your configured Neovim clipboard. Without one, it uses Neovim's bundled
 terminal clipboard writer. No clipboard configuration is required in a terminal
@@ -56,7 +59,7 @@ can refuse the request.
 
 **Ctrl-L**, or **Full link**, shows the complete URL in a normal text buffer
 and puts it in the Vim register. Use `y$` to copy the complete logical line.
-Enter returns to login input. Login accepts a pasted
+Enter or Escape returns to login input. Login accepts a pasted
 callback or code when the provider requests one. The `\login` command remains
 available.
 
@@ -84,6 +87,13 @@ remain available after a restart. Login does not replace the worker or stop
 existing work. API key entry makes no model request; it cannot prove that the
 provider accepts the key. Provider environment variables also remain available.
 Saved login credentials take precedence over the provider's environment variable.
+The provider list shows **API key** or **account login** to identify the method
+currently in use. `\status` also identifies the method. A cancelled or failed
+account login keeps the previous credentials, including an environment API key.
+Credential presence does not prove that the account has access or available usage.
+Pi's OpenAI account method uses the subscription token flow documented in
+[OpenAI's sign-in guide](https://developers.openai.com/siwc/token-sharing-open-source/sign-in).
+The browser must return to the active loopback listener before that login can finish.
 If a run fails, the chat shows the cause and a recovery action after your message.
 For a quota or credit error, check the provider's billing or use `\login` to
 connect another account. For an OpenAI account login, use `\login openai` and
@@ -191,9 +201,11 @@ records each action and the video hash. Responses use the Pi faux provider.
 
 [Watch browser sign-in](tests/evidence/browser-login.mp4).
 This recording uses actual Firefox, Neovim, Rust, and Pi. It shows the
-**Open browser** button, empty input, cancellation, a fresh attempt, and a
-15-second wait in the browser. The browser then returns to Pi's local callback
-page, and typing continues in the retained draft. Captions explain each action.
+**Open browser** button, empty input, explicit cancellation, and a fresh attempt.
+It then uses Escape and a normal click on the printed terminal link. After a
+15-second browser wait, Firefox returns to Pi's local callback page. A task with
+`openai/gpt-5.6-luna` uses the saved account instead of the environment API key.
+The reply uses controlled test data. Captions explain each action.
 Playback is half speed. The first frame stays for three seconds; the last
 frame stays for four seconds so the result can be read.
 The [report](tests/evidence/browser-login.json) records the actions and hashes.
@@ -625,7 +637,7 @@ fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks
 
 The complete release gate passed on **2026-10-20** with the final source files. It passed
 formatting, Clippy with warnings denied, 56 Rust tests, the release build, five
-adapter syntax checks, and 132 Node tests. The Node tests include 69 adapter tests,
+adapter syntax checks, and 133 Node tests. The Node tests include 70 adapter tests,
 34 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
 ten actual server recovery tests, and one process exit test. Independent
 Node test files run concurrently with separate temporary directories and sockets.
@@ -695,17 +707,32 @@ The Firefox case clicks **Open browser** without copying the link. It submits
 the local test account form through native browser input. Firefox follows an
 HTTP redirect to the actual Pi listener at `127.0.0.1:1455`. The successful
 attempt waits at least 15 seconds in Firefox before approval. Empty and
-space-only Enter keep the listener open. A cancelled attempt cannot complete a
-later login; only the current attempt exchanges a code. The exact unsent draft
+space-only Enter keep the listener open. A successful callback from a cancelled
+attempt cannot complete a later login; only the current attempt exchanges a code. The exact unsent draft
 remains available for typing. Each Firefox attempt uses a temporary profile
 and a local proxy that rejects external requests. The user's browser profile
 is unchanged. These tests use synthetic account replies; they do not prove that
 a real subscription is valid.
 
+The login regression checks also click the printed terminal URL directly, in
+input mode and after Escape. They click a wrapped segment and the visible URL
+fragment that remains after a narrow resize.
+Escape keeps the callback listener open; Ctrl-C and the Cancel button close it.
+The browser case starts with a synthetic environment API key. After the Firefox
+callback, the provider status changes from `api_key` to `oauth`. The next
+`gpt-5.6-luna` request uses the saved account token through the actual OpenAI SDK.
+No real credential is used by this test.
+
+The pinned Pi login has a separate known limit: an error callback from an older
+browser attempt can end a newer attempt. Close old sign-in tabs before starting
+again. The browser test rejects a cancelled attempt's successful callback; it
+does not establish correct handling of every old error callback. Harness uses
+Pi's login code without a modified fork.
+
 A separate callback probe reproduced the reported connection refusal when
 empty input closed the previous login. This is a reproduced cause, not a record
 of the user's keystrokes. The fixed adapter keeps waiting on empty input and
-still accepts a pasted callback or Escape to cancel. The
+still accepts a pasted callback or Ctrl-C to cancel. The
 [browser report](tests/evidence/browser-login.json) includes the before and
 after results.
 
@@ -737,7 +764,7 @@ settings through process kills, metadata watch updates, inherited settings,
 directory-scoped cursors, response capacity, and nested child recovery. A child
 continues when its parent is stopped. These regression tests make no paid model request.
 
-An additional [prior-server test](tests/evidence/legacy-upgrade.json) reproduces
+An earlier [prior-server test](tests/evidence/legacy-upgrade.json) reproduces
 `Unknown parameter field` when Enter uses the previous chat client with an old
 server.
 The fixed client detects the mismatch before admission. The actual terminal test

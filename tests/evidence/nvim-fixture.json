@@ -99,14 +99,14 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/q-yes-escape.ansi.gz",
       "terminal_bytes": 25997,
-      "terminal_sha256": "e2838a574a3be1212df95bea9fdced77aae530a1706903dc4912d8f0b3d07242"
+      "terminal_sha256": "1dc0fb787fe87bf700e7c1588fd88837d31f2335d59fb2f02f74c0e44c138652"
     },
     {
       "case": "qa-empty",
       "passed": true,
       "terminal": "nvim-terminal/fixture/qa-empty.ansi.gz",
       "terminal_bytes": 27807,
-      "terminal_sha256": "4ad030bb36a31241699c47eca010124120c39fd479521b3e6f3f144548d91728"
+      "terminal_sha256": "11604f4349fef487d7ae69451db74ef476475008dcfbc3af3f8967480d50c3a2"
     },
     {
       "case": "qa-escape",
@@ -190,7 +190,7 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/wq-empty.ansi.gz",
       "terminal_bytes": 26286,
-      "terminal_sha256": "360987998be373f9ef039a0fb65caf4c5f5f1f5a131c45b7f4f43ebdbe2e479c"
+      "terminal_sha256": "c750809597bf05a1d73e4f52ec578673bd67e3ca843275f151a5439a70e256c4"
     },
     {
       "case": "wq-escape",
@@ -239,7 +239,7 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/wq-yes.ansi.gz",
       "terminal_bytes": 24775,
-      "terminal_sha256": "098fe2f58863e8850e5a752d9bbf924b29c4a1528f109126d2be64b9a4c8f1eb"
+      "terminal_sha256": "abb58c2dbcd037488aa456b2282c5860f7636409ae77bdbdc5ff593f28362639"
     },
     {
       "case": "wq-yes-escape",
@@ -309,14 +309,14 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/wqa-yes.ansi.gz",
       "terminal_bytes": 21082,
-      "terminal_sha256": "f7fcb39172508fd5d1ce1a8ccf4bc4b59fdeae81bd14877a26a33c4eb2bcbdbe"
+      "terminal_sha256": "ade89561a396c879ebf96e7d2e1fed9fc169a6ddc7b796aeebbfe6356a1081aa"
     },
     {
       "case": "wqa-yes-escape",
       "passed": true,
       "terminal": "nvim-terminal/fixture/wqa-yes-escape.ansi.gz",
       "terminal_bytes": 27836,
-      "terminal_sha256": "3040ed95d5157ba60aa68b32b25fc3ccafbddf32f5c611da1a76f7e05c5767b0"
+      "terminal_sha256": "2b91aff10bea6285c1b276ea6dc6b4525cf81ae5d0de6ddb9d0761a61780385f"
     }
   ]
 }

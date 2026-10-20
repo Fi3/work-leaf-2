@@ -34,6 +34,7 @@ def configuration(state, session=None):
     providers = json.loads(json.dumps(fixture['configuration']['providers']))
     for item in providers:
         item['authenticated'] = item['id'] == 'faux' or state.get('authenticated', {}).get(item['id'], False)
+        item['credential_type'] = state.get('credential_types', {}).get(item['id'])
     authenticated = next((item['authenticated'] for item in providers if item['id'] == provider), False)
     issue = 'missing_model' if not provider or not model else 'missing_key' if not authenticated else None
     return {'provider': provider, 'model': model, 'ready': issue is None, 'issue': issue,
@@ -72,6 +73,7 @@ if 'auth' in sys.argv[1:] or 'setup' in sys.argv[1:]:
     state = load()
     provider = sys.argv[sys.argv.index('--provider') + 1]
     state.setdefault('authenticated', {})[provider] = True
+    state.setdefault('credential_types', {})[provider] = sys.argv[sys.argv.index('--method') + 1]
     save(state)
     sys.exit(0)
 

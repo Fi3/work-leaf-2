@@ -84,7 +84,7 @@ fn login(client: &mut Client, provider: &Value, method: Option<&str>) -> Result<
         method["name"].as_str().unwrap_or_default()
     );
     println!(
-        "Credentials are saved privately for this server. No model request is made.\nPress Ctrl-C or Escape to cancel."
+        "Credentials are saved privately for this server. No model request is made.\nPress Ctrl-C to cancel."
     );
     io::stdout().flush()?;
     let guard = process::TerminalSession::open()?;

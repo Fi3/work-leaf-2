@@ -608,6 +608,7 @@
         "id": "anthropic",
         "name": "Anthropic",
         "authenticated": false,
+        "credential_type": null,
         "methods": [
           {
             "id": "api_key",
@@ -623,6 +624,7 @@
         "id": "openai-codex",
         "name": "OpenAI Codex",
         "authenticated": false,
+        "credential_type": null,
         "methods": [
           {
             "id": "oauth",
@@ -634,6 +636,7 @@
         "id": "faux",
         "name": "Local demo",
         "authenticated": true,
+        "credential_type": "api_key",
         "methods": []
       }
     ]
