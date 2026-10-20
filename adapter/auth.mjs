@@ -83,6 +83,23 @@ function loginUrl(value) {
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw invalid('Login link is not a valid web address');
   return value;
 }
+function callbackTarget(value) {
+  const parameters = new URL(value).searchParams;
+  const targets = [...parameters.getAll('redirect_uri'), ...parameters.getAll('callback_url')];
+  if (!targets.length) return 'none';
+  let callback;
+  try {
+    if (targets.length !== 1 || /[\u0000-\u0020\u007f-\u009f]/.test(targets[0])) throw Error();
+    callback = new URL(targets[0]);
+  } catch { throw invalid('Login callback is not a valid web address'); }
+  const host = callback.hostname === '127.0.0.1' ? 'ipv4'
+    : callback.hostname === '[::1]' ? 'ipv6' : callback.hostname === 'localhost' ? 'localhost' : undefined;
+  if (callback.protocol !== 'http:' || !host) return 'none';
+  if (callback.username || callback.password) throw invalid('Login callback is not a valid web address');
+  const port = Number(callback.port || 80);
+  if (port < 1 || port > 65535) throw invalid('Login callback port is invalid');
+  return `${host},${port}`;
+}
 function openBrowser(url, report) {
   const browser = spawn('xdg-open', [url], { stdio: 'ignore', detached: true });
   const failed = () => report('Cannot open a browser here. Press Ctrl-X to copy the link.');
@@ -95,6 +112,7 @@ export async function terminalLogin(models, params, controller, deviceId) {
   const provider = models.getProvider(params.provider);
   const method = params.method === 'oauth' ? provider?.auth.oauth : provider?.auth.apiKey;
   if (!method?.login) throw invalid('This provider does not support the selected login method');
+  const browserLogin = provider.id === 'openai' && params.method === 'oauth';
   const { input, output } = terminal(params.terminal);
   let hidden = true, link, deviceCode, activeReader;
   const display = new Writable({ write(value, encoding, done) {
@@ -146,9 +164,10 @@ export async function terminalLogin(models, params, controller, deviceId) {
     write(`\x1b]52;c;${Buffer.from(value).toString('base64')}\x1b\\`);
     status('Clipboard copy requested. Ctrl-L shows the complete link.');
   };
-  const showLink = value => {
+  const showLink = (value, callback = false) => {
     link = loginUrl(value);
-    write(`\r\nContinue in your browser:\r\n\x1b]8;id=harness-login;${link}\x1b\\[ Open browser ]\x1b]8;;\x1b\\\r\nCtrl-O: open browser. Ctrl-X: copy link. Ctrl-L: show link.\r\n`);
+    const target = callback ? callbackTarget(link) : 'none';
+    write(`\r\nContinue in your browser:\r\n\x1b]8;id=harness-login:callback=${target};${link}\x1b\\[ Open browser ]\x1b]8;;\x1b\\\r\nCtrl-O: open browser. Ctrl-X: copy link. Ctrl-L: show link.\r\n`);
   };
   const question = async (message, secret, signal) => {
     controller.signal.throwIfAborted();
@@ -191,10 +210,14 @@ export async function terminalLogin(models, params, controller, deviceId) {
           }
         }
         const secret = prompt.type === 'secret' || prompt.type === 'manual_code';
+        const automatic = browserLogin && prompt.type === 'manual_code';
+        const label = automatic ? 'Waiting for browser sign-in. No input is needed here. '
+          : `${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ''}: `;
         while (true) {
-          const value = await question(`${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ''}: `, secret, signal);
+          const value = await question(label, secret, signal);
           if (prompt.type === 'manual_code' && !value.trim()) {
-            write('Wait for your browser, or paste the complete code or redirect URL. Ctrl-C cancels.\r\n');
+            write(automatic ? 'The browser sign-in is still open. Ctrl-C cancels.\r\n'
+              : 'Wait for your browser, or paste the complete code or redirect URL. Ctrl-C cancels.\r\n');
             continue;
           }
           if (prompt.type === 'secret' && value === '') { cancel(); controller.signal.throwIfAborted(); }
@@ -205,8 +228,8 @@ export async function terminalLogin(models, params, controller, deviceId) {
       notify: event => {
         if (event.type === 'auth_url') {
           deviceCode = undefined;
-          showLink(event.url);
-          write(`${event.instructions ?? ''}\r\n`);
+          showLink(event.url, true);
+          write(`${browserLogin ? 'Finish sign-in in your browser. This window updates automatically.' : event.instructions ?? ''}\r\n`);
         } else if (event.type === 'device_code') {
           if (typeof event.userCode !== 'string' || !event.userCode || Buffer.byteLength(event.userCode) > 1024 || /[\u0000-\u001f\u007f-\u009f]/.test(event.userCode)) throw invalid('Device login code is invalid');
           deviceCode = event.userCode;

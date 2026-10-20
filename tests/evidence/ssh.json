@@ -1,0 +1,147 @@
+{
+  "components": [
+    {
+      "overlong_temporary_control_path": true,
+      "ssh_started": false
+    },
+    {
+      "callback": "127.0.0.1",
+      "port": 1455,
+      "full_url": true,
+      "eof_released": true
+    },
+    {
+      "callback": "localhost",
+      "port": 35411,
+      "full_url": true,
+      "eof_released": true
+    },
+    {
+      "callback": "::1",
+      "port": 46619,
+      "full_url": true,
+      "eof_released": true
+    },
+    {
+      "conflict": "127.0.0.1",
+      "foreign_listener_preserved": true
+    },
+    {
+      "conflict": "::1",
+      "foreign_listener_preserved": true
+    },
+    {
+      "normal_exit_with_active_login": true,
+      "callback_released": true
+    },
+    {
+      "denied": "tcp",
+      "browser_opened": false
+    },
+    {
+      "denied": "unix",
+      "browser_opened": false
+    },
+    {
+      "connection_loss": true,
+      "callback_released": true,
+      "exit_failed": true
+    },
+    {
+      "launcher_sigkill": true,
+      "ssh_children_stopped": true,
+      "callback_released": true,
+      "stale_private_local_directory_possible": true
+    }
+  ],
+  "gui": [
+    {
+      "case": "actual-ssh-nvim-pi-firefox",
+      "separate_loopbacks": true,
+      "full_url": true,
+      "automatic_local_browser": true,
+      "pasted_callback": false,
+      "native_mouse_retry": true,
+      "cancel_released_callback_and_kept_draft": true,
+      "callback_released": true,
+      "generation_credentials": "synthetic OAuth",
+      "generation_model": "gpt-5.6-luna",
+      "exact_answer": "OpenAI streamed \u03bb \u4e16\u754c and completed the task.",
+      "network_namespaces": {
+        "server": "net:[4026534782]",
+        "worker": "net:[4026534782]",
+        "neovim": "net:[4026534782]",
+        "browser": "net:[4026533932]",
+        "local_terminal": "net:[4026533932]"
+      },
+      "steps": [
+        {
+          "time": 0.66,
+          "text": "Start ChatGPT sign-in in remote Neovim. The local Firefox window opens automatically."
+        },
+        {
+          "time": 2.54,
+          "text": "Cancel sign-in in Neovim. The callback closes and the unsent draft remains."
+        },
+        {
+          "time": 4.38,
+          "text": "Click Open browser in Neovim. The same full link opens locally and keeps its callback."
+        },
+        {
+          "time": 5.68,
+          "text": "Continue in Firefox. The local callback travels through SSH to Pi. No URL is copied or pasted."
+        },
+        {
+          "time": 5.87,
+          "text": "Return to the same chat and send the retained prompt with Enter."
+        }
+      ]
+    },
+    {
+      "case": "plain-ssh",
+      "local_launcher_remedy": true,
+      "remote_browser_opened": false
+    }
+  ],
+  "terminal_recordings": {
+    "ssh-terminal/deny-socket/terminal.ansi.gz": {
+      "bytes": 141,
+      "sha256": "76b3489bdc455057b2f52dda7d7854b92021db1aaa46a03b7b0d080e1b239bb4"
+    },
+    "ssh-terminal/deny-tcp/terminal.ansi.gz": {
+      "bytes": 511,
+      "sha256": "54be595b64cd6836ead805ca39895020e42a6ec35cbb7037a58f8c74efe61977"
+    },
+    "ssh-terminal/disconnect/terminal.ansi.gz": {
+      "bytes": 407,
+      "sha256": "887f1893a7e7318f2209e443366a77c3fabcdbc75d9ffbfbac659817925b8b05"
+    },
+    "ssh-terminal/gui/terminal.ansi.gz": {
+      "bytes": 55018,
+      "sha256": "f36d23417929e2ee73f4ec038c1c8597704ffd7f40257902543bc7f0492b5dbe"
+    },
+    "ssh-terminal/killed/terminal.ansi.gz": {
+      "bytes": 407,
+      "sha256": "3bcc8dfa1d39800c2130f780efce8cefd6a9929b75737552e0623a3dd41971b3"
+    },
+    "ssh-terminal/long-path/terminal.ansi.gz": {
+      "bytes": 46,
+      "sha256": "ab017db8e5ddf6e9b999bb9f2f09a9b560f5749af7ec969235eac8a4098e070a"
+    },
+    "ssh-terminal/plain/terminal.ansi.gz": {
+      "bytes": 35107,
+      "sha256": "2bb50c839f5242284ddde6de80c885d31649018eeb9d84e4364d103a3353258c"
+    },
+    "ssh-terminal/transport a'b/terminal.ansi.gz": {
+      "bytes": 2362,
+      "sha256": "128adf434f5ee3b62257ac4b3264a5e356fa6a2782f1df76e9438161e24dbd91"
+    }
+  },
+  "screenshots": {
+    "ssh-screens/local-browser.png": "f640a7772ef1e35630b63194e62ff09dd35c7d223ae444ddf6cf10f88bc18c14",
+    "ssh-screens/remote-chat-complete.png": "26b991efe6235ec81d1a84d920c8aa59bbe12e2f28cb09d75d15caa90c8653a6",
+    "ssh-screens/remote-login.png": "50c5ed19c27c7fbc2ad83fdc387a067da91fd0ad87d7d6799c0321df22d571ce"
+  },
+  "command": "python3 tests/ssh.py",
+  "scope": "Actual OpenSSH, separate local and remote network namespaces, Neovim, Rust, Pi and local Firefox; synthetic account and model replies only."
+}

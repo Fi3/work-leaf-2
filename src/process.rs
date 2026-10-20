@@ -285,6 +285,28 @@ pub fn detach(command: &mut Command) {
     }
 }
 
+pub(crate) fn parent_lifetime(command: &mut Command) {
+    let parent = std::process::id() as libc::pid_t;
+    // Only async-signal-safe calls run after fork. Reset SIGTERM before arming
+    // the parent-death signal, and check for a parent exit before it was armed.
+    unsafe {
+        command.pre_exec(move || {
+            let mut action: libc::sigaction = std::mem::zeroed();
+            action.sa_sigaction = libc::SIG_DFL;
+            libc::sigemptyset(&mut action.sa_mask);
+            if libc::sigaction(libc::SIGTERM, &action, std::ptr::null_mut()) < 0
+                || libc::prctl(libc::PR_SET_PDEATHSIG, libc::SIGTERM, 0, 0, 0) < 0
+            {
+                return Err(io::Error::last_os_error());
+            }
+            if libc::getppid() != parent {
+                return Err(io::Error::from_raw_os_error(libc::ECANCELED));
+            }
+            Ok(())
+        });
+    }
+}
+
 pub fn nonblocking(fd: RawFd) -> io::Result<()> {
     // fd belongs to a live pipe or socket for the duration of these fcntl calls.
     unsafe {

@@ -8,7 +8,10 @@ references. They are not implementation instructions.
 
 ## Start
 
-From this directory, run:
+For an SSH workspace, start with [Use through SSH](#use-through-ssh).
+Run that launcher on the computer that runs your browser.
+
+For a workspace on this computer, run from this directory:
 
 ```sh
 ./harness.sh
@@ -71,6 +74,8 @@ complete address. The normal terminal display uses the same short control.
 If a previous browser attempt says it cannot connect to `127.0.0.1:1455`,
 close that sign-in tab and start a new login. Use the page that opens automatically.
 An old browser tab cannot complete a login whose window was cancelled or closed.
+For SSH, use the local launcher below so that the browser can reach the remote
+callback listener.
 
 After login, choose a model for the new chat. Use **F1 → Choose a model**, or
 type `\model`, to see
@@ -204,6 +209,17 @@ creates a child agent. It then opens a file with NERDTree `s` and returns to the
 child's own input and draft. The [report](tests/evidence/chat-workflow.json)
 records each action and the video hash. Responses use the Pi faux provider.
 
+[Watch browser sign-in through SSH](tests/evidence/ssh-login.mp4).
+The recording shows remote Neovim and local Firefox on separate test networks.
+Firefox opens automatically. A normal click on **Open browser** reopens the
+complete page. Browser approval returns through SSH and finishes the login
+without pasted input. Enter sends the retained task, which receives a controlled
+SDK reply. Captions explain each action.
+The [SSH report](tests/evidence/ssh.json) records the checks. The account page,
+tokens, and model reply use synthetic test data; no real subscription is tested.
+Playback is one-third speed. The [recording report](tests/evidence/ssh-login.json)
+records the action times and video hash.
+
 [Watch browser sign-in](tests/evidence/browser-login.mp4).
 This recording uses actual Firefox, Neovim, Rust, and Pi. It shows the
 automatic browser launch, empty input, explicit cancellation, and a fresh attempt.
@@ -282,6 +298,65 @@ keeps stored chats and unsent editor drafts. It replaces the server only when al
 work is finished. It waits for the old worker to release storage before startup.
 An active task, a different state directory, or a newer unknown interface blocks
 the upgrade. Saved accounts remain available after replacement.
+
+## Use through SSH
+
+The server, Pi, and Neovim stay on the remote Linux machine. The SSH launcher runs
+on your local Linux computer. It opens your local browser and forwards the
+provider's callback to the remote login. You do not copy the return address.
+
+Install Harness on the remote machine with the command above. On your **local
+computer**, copy the verified Rust executable once. Replace `YOUR_SSH_HOST` with
+the host name or alias that you use with `ssh`:
+
+```sh
+mkdir -p "$HOME/.local/bin"
+scp YOUR_SSH_HOST:/home/user/.local/bin/harness "$HOME/.local/bin/harness"
+chmod +x "$HOME/.local/bin/harness"
+```
+
+This binary must match your local Linux architecture and system libraries. If
+they differ, build the client from the same source revision with
+`cargo build --locked --release` on the local computer. The SSH command requires
+OpenSSH, `xdg-open`, and a default browser. It does not require local Pi, Node, or
+Neovim. It does not change your SSH or browser configuration.
+
+From the local terminal, run:
+
+```sh
+"$HOME/.local/bin/harness" ssh --host YOUR_SSH_HOST \
+  --workspace /home/user/src/work-leaf-2 \
+  --remote-command /home/user/.local/bin/harness
+```
+
+Use the remote project path for `--workspace`. Omit `--remote-command` if the
+remote shell can find `harness`. The source launcher also accepts these arguments:
+`./harness.sh ssh --host YOUR_SSH_HOST --workspace /remote/project`.
+It builds only the local Rust client for this mode.
+
+Open **F1 → Connect an account**, or run `:Harness login openai`. Select
+**Sign in with ChatGPT**. The page opens in your local browser. Complete sign-in
+there. Neovim reports the result automatically. Keep its login window open until
+it finishes. **Open browser** and **Ctrl-O** reopen the full link locally.
+Device-code and explicit copied-code methods keep the instructions from Pi.
+
+The launcher uses normal OpenSSH host checks, authentication, and terminal input.
+Configure nonstandard ports, jump hosts, or keys with your normal SSH host alias.
+The SSH server must permit Unix socket forwarding and TCP forwarding to loopback.
+A private connection carries the browser link. It is not written to chat history.
+The callback forward starts before the browser opens and closes when login ends.
+The launcher supports fixed and allocated callback ports, IPv4, and IPv6.
+A busy local callback port or refused forward gives an error without stopping
+another process. Close the conflicting login, then use **Open browser** to retry.
+Cancel with **Ctrl-C** to return to the retained draft.
+Closing the SSH editor removes its private connections and directories. A lost
+connection also releases the callback. An uncatchable kill (`SIGKILL`) of the
+local launcher stops its SSH children and listeners, but can leave an inactive
+private directory under `TMPDIR`. It does not keep a callback port open.
+
+A normal SSH shell without this launcher shows a message to use `harness ssh`.
+It does not open a browser on the remote desktop. Exit that editor and start
+the command on your local computer. Do not reuse the previous sign-in tab.
 
 ## Use from a script
 
@@ -640,9 +715,16 @@ Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
 `PATH`. These are test tools, not application dependencies. The desktop check
 fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
 
+The SSH check also requires OpenSSH client and server programs, `iproute2`,
+`unshare`, `nsenter`, `newuidmap`, and `newgidmap`. The test user needs subordinate
+user and group ID ranges and permission to create user, mount, and network
+namespaces. The test creates private SSH keys, terminals, account files, networks,
+and browser profiles. It does not change host accounts or SSH configuration.
+These isolation tools are test requirements, not application dependencies.
+
 The complete release gate passed on **2026-10-20** with the final source files. It passed
-formatting, Clippy with warnings denied, 56 Rust tests, the release build, five
-adapter syntax checks, and 133 Node tests. The Node tests include 70 adapter tests,
+formatting, Clippy with warnings denied, 59 Rust tests, the release build, five
+adapter syntax checks, and 135 Node tests. The Node tests include 72 adapter tests,
 34 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
 ten actual server recovery tests, and one process exit test. Independent
 Node test files run concurrently with separate temporary directories and sockets.
@@ -733,6 +815,19 @@ callback, the provider status changes from `api_key` to `oauth`. The next
 `gpt-5.6-luna` request uses the saved account token through the actual OpenAI SDK.
 No real credential is used by this test.
 
+The SSH checks use actual OpenSSH with separate local and remote loopback
+networks. They verify fixed and allocated callback ports, IPv4 and IPv6,
+device links, unchanged complete URLs, retries, occupied ports, denied forwards,
+connection loss, and launcher death. Foreign listeners remain available.
+Workspace and executable paths with spaces and apostrophes also work.
+An attached Neovim session uses the actual Rust server and Pi. The local desktop
+opens actual Firefox through `xdg-open`; the remote desktop opener is never used.
+A native mouse click reopens the complete page. Firefox returns through the
+forward to Pi without any copied callback. The exact retained prompt then gets
+the expected SDK reply using the saved account token. A plain SSH session shows
+the local launcher command and keeps the draft after cancellation.
+No local Node or Neovim command is needed by the launcher.
+
 An additional [Alacritty and tmux check](tests/evidence/native-login.json) uses
 the actual Rust server, Pi, and Neovim with controlled device-login responses.
 Automatic opening and a normal desktop click both pass the complete 1,640-byte
@@ -818,6 +913,7 @@ See the [release report](tests/evidence/release.json),
 [complete check output](tests/evidence/release.log),
 [actual terminal results](tests/evidence/nvim-real.json),
 [desktop login results](tests/evidence/nvim-desktop.json),
+[SSH results](tests/evidence/ssh.json),
 [fixture terminal results](tests/evidence/nvim-fixture.json),
 [clean-install report](tests/evidence/clean-install.json), and
 [first-use source report](tests/evidence/source-launch.json) with its
@@ -846,6 +942,7 @@ python3 tests/nvim/interactive.py
 python3 tests/nvim/real.py --group exit
 python3 tests/nvim/real.py --group integration
 python3 tests/nvim/login_gui.py
+python3 tests/ssh.py
 ```
 
 The release gate also includes each adapter's `node --check`, the real-server

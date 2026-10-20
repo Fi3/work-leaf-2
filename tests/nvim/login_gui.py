@@ -21,9 +21,8 @@ DESKTOP = {}
 
 class Browser:
     """Run a real browser against a local test authorization page."""
-    def __init__(self, root, display, env):
+    def __init__(self, root, display):
         self.root, self.display, self.attempts = root, display, []
-        self.env = dict(env)
         self.closed = False
         self.executable = os.environ.get('HARNESS_TEST_FIREFOX') or shutil.which('firefox')
         assert self.executable, 'Browser login tests require Firefox; HARNESS_TEST_FIREFOX can select it'
@@ -35,9 +34,10 @@ class Browser:
             def do_CONNECT(self): self.send_error(403)
             def do_POST(self):
                 if self.path != '/open': self.send_error(403); return
-                url = self.rfile.read(min(int(self.headers.get('Content-Length',0)),8193)).decode()
-                owner.open(url)
-                self.send_response(204); self.end_headers()
+                request = json.loads(self.rfile.read(min(int(self.headers.get('Content-Length',0)),16384)))
+                body = json.dumps(owner.open(request)).encode()
+                self.send_response(200); self.send_header('Content-Type','application/json')
+                self.end_headers(); self.wfile.write(body)
             def do_GET(self):
                 if self.path.startswith('/authorize/'):
                     number = int(self.path.rsplit('/',1)[1])
@@ -80,11 +80,18 @@ class Browser:
         self.connection = self.x11.XOpenDisplay(display.encode())
         assert self.connection, 'Cannot connect to the isolated browser display'
 
-    def open(self, url):
+    def open(self, request):
+        url, pid = request['url'], request['pid']
         parsed = urllib.parse.urlsplit(url)
         assert parsed.scheme=='https' and parsed.hostname=='auth.openai.com' and len(url)<8192
         query = urllib.parse.parse_qs(parsed.query)
         assert query['redirect_uri']==['http://127.0.0.1:1455/auth/callback']
+        assert isinstance(pid,int) and pid>1
+        process = Path('/proc')/str(pid)
+        assert str(self.root/'bin/harness-test-browser').encode() in (process/'cmdline').read_bytes().split(b'\0')
+        fields = (process/'stat').read_text().rsplit(')',1)[1].split()
+        parent = (Path('/proc')/fields[1]/'cmdline').read_bytes().split(b'\0')
+        assert b'/usr/bin/xdg-open' in parent, 'The registered handler must be selected by the actual system xdg-open'
         callback = query['redirect_uri'][0]+'?'+urllib.parse.urlencode({'code':'test-code','state':query['state'][0],'client_id':'test-issued-client'})
         number = len(self.attempts)+1
         profile = self.root/('firefox-profile-'+str(number)); profile.mkdir()
@@ -96,12 +103,9 @@ class Browser:
                  'browser.startup.firstrunSkipsHomepage':True,'termsofuse.bypassNotification':True,
                  'datareporting.policy.dataSubmissionEnabled':False}
         (profile/'user.js').write_text(''.join('user_pref('+json.dumps(key)+','+json.dumps(value)+');\n' for key,value in prefs.items()))
-        log = (profile/'browser.log').open('wb')
-        env = dict(self.env,DISPLAY=self.display,MOZ_ENABLE_WAYLAND='0',GDK_BACKEND='x11')
-        env.pop('WAYLAND_DISPLAY',None); env.pop('XAUTHORITY',None)
-        process = subprocess.Popen([self.executable,'--no-remote','--new-instance','--profile',str(profile),self.address+'/authorize/'+str(number)],
-                                   env=env,stdout=log,stderr=log)
-        self.attempts.append({'callback':callback,'opened_at':time.monotonic(),'process':process,'log':log})
+        self.attempts.append({'callback':callback,'opened_at':time.monotonic(),'pid':pid,
+                              'starttime':fields[19],'environment':request['environment'],'url':url})
+        return [self.executable,'--no-remote','--new-instance','--profile',str(profile),self.address+'/authorize/'+str(number)]
 
     def title(self, window):
         atom = self.x11.XInternAtom(self.connection,b'_NET_WM_NAME',0)
@@ -148,13 +152,20 @@ class Browser:
     def close(self):
         if self.closed: return
         self.closed = True
-        for attempt in self.attempts:
-            process = attempt['process']
-            if process.poll() is None:
-                process.terminate()
-                try: process.wait(timeout=10)
-                except subprocess.TimeoutExpired: process.kill(); process.wait(timeout=5)
-            attempt['log'].close()
+        def alive(attempt):
+            try:
+                fields = Path('/proc',str(attempt['pid']),'stat').read_text().rsplit(')',1)[1].split()
+                return fields[0]!='Z' and fields[19]==attempt['starttime']
+            except ProcessLookupError: return False
+            except FileNotFoundError: return False
+        for name, timeout in ((signal.SIGTERM,10),(signal.SIGKILL,5)):
+            for attempt in self.attempts:
+                if alive(attempt):
+                    try: os.kill(attempt['pid'],name)
+                    except ProcessLookupError: pass
+            deadline = time.monotonic()+timeout
+            while any(alive(attempt) for attempt in self.attempts) and time.monotonic()<deadline: time.sleep(.05)
+        assert not any(alive(attempt) for attempt in self.attempts), 'The test must stop its own Firefox processes'
         self.server.shutdown(); self.server.server_close(); self.thread.join(timeout=5)
         self.x11.XCloseDisplay(self.connection)
 
@@ -199,19 +210,39 @@ class GuiEditor(RealEditor):
         super().__init__(name, active=False, oauth_mock=True, generation=generation)
         self.observe('true')
 
-    def cli(self, *arguments):
+    def prepare_browser(self):
         directory = self.root/'bin'
         directory.mkdir(exist_ok=True)
         opener = directory/'xdg-open'
-        if self.use_browser and self.browser is None: self.browser = Browser(self.root,self.display,self.env)
-        opener.write_text('#!/usr/bin/env python3\nimport json,os,sys,urllib.request\nwith open(os.environ["HARNESS_GUI_BROWSER_LOG"],"a") as output: output.write(json.dumps(sys.argv[1:])+"\\n")\n'
-                          + (f'urllib.request.urlopen({self.browser.address+"/open"!r},data=sys.argv[1].encode(),timeout=10).close()\n' if self.browser else ''))
-        opener.chmod(0o700)
+        if self.use_browser and self.browser is None: self.browser = Browser(self.root,self.display)
+        capture = '#!/usr/bin/env python3\nimport json,os,sys,urllib.request\nwith open(os.environ["HARNESS_GUI_BROWSER_LOG"],"a") as output: output.write(json.dumps(sys.argv[1:])+"\\n")\n'
+        if self.browser:
+            opener.unlink(missing_ok=True)
+            handler = directory/'harness-test-browser'
+            handler.write_text(capture+
+                'request={"url":sys.argv[1],"pid":os.getpid(),"environment":{name:os.environ.get(name) for name in ("DISPLAY","WAYLAND_DISPLAY","XAUTHORITY","XDG_CONFIG_HOME","XDG_DATA_HOME","NVIM")}}\n'+
+                f'with urllib.request.urlopen({self.browser.address+"/open"!r},data=json.dumps(request).encode(),timeout=10) as response: arguments=json.load(response)\n'+
+                'os.execv(arguments[0],arguments)\n')
+            handler.chmod(0o700)
+            config, data = self.root/'desktop-config', self.root/'desktop-data'
+            applications = data/'applications'
+            config.mkdir(exist_ok=True); applications.mkdir(parents=True,exist_ok=True)
+            (applications/'harness-test-browser.desktop').write_text('[Desktop Entry]\nType=Application\nName=Harness test browser\nExec='+str(handler)+' %u\nMimeType=x-scheme-handler/http;x-scheme-handler/https;\n')
+            (config/'mimeapps.list').write_text('[Default Applications]\nx-scheme-handler/http=harness-test-browser.desktop\nx-scheme-handler/https=harness-test-browser.desktop\n')
+            self.env.update(XDG_CONFIG_HOME=str(config),XDG_DATA_HOME=str(data),XDG_CURRENT_DESKTOP='X-Generic')
+        else:
+            opener.write_text(capture)
+            opener.chmod(0o700)
         self.env.update(DISPLAY=self.display, PATH=str(directory)+':'+os.environ['PATH'],
                         HARNESS_GUI_BROWSER_LOG=str(self.root/'browser.jsonl'),
                         HARNESS_TEST_OAUTH_PENDING=str(self.pending))
         self.env.pop('WAYLAND_DISPLAY', None)
         self.env.pop('XAUTHORITY', None)
+        if self.browser:
+            assert shutil.which('xdg-open',path=self.env['PATH'])=='/usr/bin/xdg-open', 'Browser tests must use the real desktop launcher'
+
+    def cli(self, *arguments):
+        self.prepare_browser()
         if self.browser: self.env.pop('DISPLAY',None)
         try: return super().cli(*arguments)
         finally: self.env['DISPLAY'] = self.display
@@ -573,7 +604,7 @@ def browser_case(display):
     editor.keys('Unsent browser task.')
     editor.mark('Select Sign in with ChatGPT. Firefox opens automatically with the complete login link.')
     login(editor,'openai','Sign in with ChatGPT')
-    editor.wait(lambda:b'Complete login in your browser' in editor.output,'manual callback prompt')
+    editor.wait(lambda:b'Waiting for browser sign-in. No input is needed here.' in editor.output,'browser callback wait')
     editor.wait(lambda:browser.find('Harness test account 1'),'Firefox opens the test authorization page automatically',timeout=20)
     first = browser.find('Harness test account 1')
     assert len(browser.attempts)==1, 'A new login must open one browser tab'
@@ -594,7 +625,7 @@ def browser_case(display):
     editor.keys(' Retry.')
     assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==['Unsent browser task. Retry.']
     login(editor,'openai','Sign in with ChatGPT')
-    editor.wait(lambda:any('Complete login in your browser' in ''.join(window['lines']) for window in editor.windows() if window['name']=='harness://setup'),'retry callback prompt')
+    editor.wait(lambda:any('Waiting for browser sign-in. No input is needed here.' in ''.join(window['lines']) for window in editor.windows() if window['name']=='harness://setup'),'retry browser callback wait')
     editor.wait(lambda:browser.find('Harness test account 2'),'Firefox opens the new account attempt automatically',timeout=20)
     browser.focus(json.loads(editor.remote('ls'))[0]['platform_window_id'])
     editor.keys('\r   \r')
@@ -606,6 +637,14 @@ def browser_case(display):
     second = browser.find('Harness test account 3')
     assert browser.attempts[0]['callback']!=browser.attempts[2]['callback'], 'Retry must have a new OAuth state'
     assert browser.attempts[1]['callback']==browser.attempts[2]['callback'], 'The visible browser action must use the same full URL as automatic opening'
+    expected_environment = {'DISPLAY':editor.display,'WAYLAND_DISPLAY':None,'XAUTHORITY':None,
+                            'XDG_CONFIG_HOME':str(editor.root/'desktop-config'),'XDG_DATA_HOME':str(editor.root/'desktop-data'),
+                            'NVIM':editor.observe('vim.v.servername')}
+    assert editor.browser_urls()==[attempt['url'] for attempt in browser.attempts], 'The desktop handler must receive each complete URL unchanged'
+    for attempt in browser.attempts:
+        environment = dict(item.split('=',1) for item in Path('/proc',str(attempt['pid']),'environ').read_text().split('\0') if '=' in item)
+        assert attempt['environment']==expected_environment
+        assert {name:environment.get(name) for name in expected_environment}==expected_environment, 'Firefox must inherit the Neovim environment without repair by the test service'
     editor.mark('The cancelled browser page cannot finish the new sign-in.')
     browser.approve(first)
     editor.wait(lambda:'Authentication failed' in browser.title(first),'Firefox displays rejection of the cancelled state')
@@ -644,6 +683,9 @@ def browser_case(display):
     editor.screenshot('browser-account-reply')
     (editor.root/'observed.json').write_text(json.dumps({
         'browser':'actual Firefox with a fresh profile per attempt','external_browser_requests':'blocked by a local proxy',
+        'browser_launcher':'actual /usr/bin/xdg-open with a temporary default desktop handler',
+        'browser_environment':'inherited unchanged from Neovim through the desktop handler',
+        'default_handler_received_complete_url':True,'browser_callback_required_manual_paste':False,
         'browser_profile_paths':['firefox-profile-1','firefox-profile-2','firefox-profile-3'],'user_browser_profile_changed':False,
         'test_browser_proxy':{'type':'manual','http':'127.0.0.1','https':'127.0.0.1','port':browser.server.server_port,
                               'bypass':['localhost','127.0.0.1'],'dns_over_https':False},

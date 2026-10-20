@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-10-20T17:33:40.572Z",
+  "verified_at": "2026-10-20T19:05:35.759Z",
   "platform": "linux",
   "architecture": "x64",
   "node": "v26.10.0",
@@ -7,7 +7,7 @@
   "rust": "rustc 1.94.1 (e408947bf 2026-03-25)",
   "neovim": "NVIM v0.12.6",
   "install": "npm ci --ignore-scripts --omit=dev with npm_config_offline=true in a new temporary prefix",
-  "binary_sha256": "86eb1f49ac704ed22247b1943ed7466da4e25854f7fed65f38cff6e7a9870ae8",
+  "binary_sha256": "960bc9b9ee55130cf8d5ac0870d25070a5e90444465eda0937567c7166f2cf8a",
   "npm_lock_sha256": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041",
   "npm_packages": 91,
   "worker_path": "share/harness/adapter/worker.mjs",

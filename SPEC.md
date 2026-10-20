@@ -2,7 +2,8 @@
 
 This specification defines a small personal coding agent with a Neovim interface.
 It also defines a command client and a public interface for scripts.
-The first version runs on one Linux machine.
+The server runs on one Linux machine. A Linux client may launch its Neovim
+interface through OpenSSH, with browser sign-in on the client's machine.
 Its interfaces permit later remote access without moving agent logic into clients.
 
 The application uses Pi Durable for agent execution and persistent state.
@@ -53,7 +54,9 @@ The following work is outside version one:
 
 - A DSL, workflow language, or dynamic extension loader.
 - Subagents, conversation forks, steering, and queued follow-up inputs.
-- A web interface, HTTP service, TCP listener, TLS, or remote deployment automation.
+- A web interface, application HTTP service, application TCP listener, TLS,
+  or remote deployment automation. Pi's login callbacks and OpenSSH forwards
+  are permitted for browser sign-in.
 - Remote file synchronization and continuous synchronization of unsaved editor buffers.
 - Image input, image generation, and code mode.
 - A permission dialog system, sandbox, multi-user service, and scheduled task engine.
@@ -157,7 +160,42 @@ It must not contain provider code, credentials, agent policy, or a separate netw
 A future remote client can use the same operations through an SSH or HTTP adapter.
 The initial protocol must not assume that a client can read the server filesystem.
 The workspace belongs to the server. Context attachments contain text explicitly.
-Remote transport, authentication, and deployment remain separate future work.
+General remote transports, authentication services, and deployment remain future
+work. The SSH launcher below uses OpenSSH without adding an application transport.
+
+### SSH browser sign-in
+
+Provide `harness ssh --host HOST --workspace REMOTE_PATH` on the Linux machine
+that runs the user's browser. An optional `--remote-command PATH` selects the
+remote Harness executable. The local command requires OpenSSH and the desktop
+browser launcher; it must not require local Pi, Node, or Neovim.
+
+Use OpenSSH for authentication, host checks, the terminal, and port forwarding.
+Do not proxy terminal bytes or implement SSH. Keep the normal remote editor and
+its configuration. Do not change the user's SSH or browser configuration.
+
+The launcher must carry private browser requests from that editor to the local
+machine. Keep each request channel in a private directory. Do not expose URLs
+through public agent RPC, logs, or errors. Validate and bound requests. A failed
+or disconnected bridge must not open a browser on the remote desktop.
+
+Reuse Pi's login and callback servers. Extract `redirect_uri` or `callback_url`
+with JavaScript's built-in URL parser. Forward the selected loopback callback
+before opening the complete authorization URL locally. Support fixed and
+allocated callback ports, localhost and IP loopback addresses, and device-code
+methods without a callback. Reject conflicting listeners without stopping them.
+Release each login's forwards when it ends; release all owned resources when
+the SSH session ends. Never release or stop resources owned by another session.
+
+The normal browser flow must complete without copying the callback address.
+Preserve any explicitly selected manual login method supported by Pi. A plain
+SSH session without the launcher must show how to use the local launcher rather
+than launching a browser on the server.
+
+Verify this path with actual OpenSSH, remote Neovim, Rust, Pi, and a local browser.
+Use separate network namespaces and controlled provider replies. Cover complete
+URLs, callback completion without pasted input, allocated ports, conflicts,
+denied forwarding, cancellation, connection loss, and resource cleanup.
 
 The private server-to-worker protocol must use the same framing and public data types.
 Its version handshake must identify the Node release and pinned Pi artifacts.

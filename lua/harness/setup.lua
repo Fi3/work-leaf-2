@@ -48,8 +48,17 @@ function M.new(transport, report)
     local window = vim.api.nvim_open_win(buffer, true, bounds())
     self.window = window
     local group = vim.api.nvim_create_augroup('HarnessLogin' .. buffer, { clear = true })
-    local job, link, code, link_buffer, ended, closed
-    local browser_attempt = 0
+    local job, link, code, link_buffer, ended, closed, callback_target
+    local browser_job, browser_failure
+    local browser_attempt, link_sequence = 0, 0
+    local function close_browser()
+      local channel = browser_job
+      browser_job, browser_failure = nil, nil
+      if channel then
+        pcall(vim.fn.chanclose, channel, 'stdin')
+        pcall(vim.fn.jobstop, channel)
+      end
+    end
     local actions = { window = window }
     actions.resume = function()
       if not ended and vim.api.nvim_win_get_buf(window) == buffer then enter() end
@@ -58,6 +67,7 @@ function M.new(transport, report)
     local function close(succeeded, focused)
       if closed then return end
       closed = true
+      close_browser()
       if focused == nil then focused = vim.api.nvim_get_current_win() == window end
       local delayed = focused and vim.api.nvim_get_current_win() == window
         and vim.api.nvim_get_current_buf() == buffer and vim.fn.mode() == 't'
@@ -165,10 +175,61 @@ function M.new(transport, report)
       browser_attempt = browser_attempt + 1
       local attempt, url = browser_attempt, link
       toolbar()
-      local function failed()
+      local function failed(message)
         if closed or ended or not vim.api.nvim_win_is_valid(window) or link ~= url or attempt ~= browser_attempt then return end
-        vim.api.nvim_win_set_config(window, { footer = ' Browser failed. Use Copy. ', footer_pos = 'left' })
-        report('Browser did not open. Use Open browser to retry, or Copy link.')
+        vim.api.nvim_win_set_config(window, { footer = message and ' Browser not opened. See message. ' or ' Browser failed. Use Copy. ', footer_pos = 'left' })
+        report(message or 'Browser did not open. Use Open browser to retry, or Copy link.')
+      end
+      if vim.env.HARNESS_BROWSER_SOCKET and vim.env.HARNESS_BROWSER_SOCKET ~= '' then
+        if callback_target == nil then
+          failed('Upgrade the remote Harness server to open browser sign-in through SSH.')
+          return
+        end
+        browser_failure = failed
+        if not browser_job then
+          local pending = ''
+          local function broken()
+            local failure = browser_failure
+            close_browser()
+            if failure then failure('Browser connection failed. Start harness ssh again.') end
+          end
+          local ok, channel = pcall(vim.fn.jobstart, { transport.arguments('browser')[1], 'browser' }, {
+            on_stdout = vim.schedule_wrap(function(channel, data)
+              if channel ~= browser_job then return end
+              pending = pending .. table.concat(data, '\n')
+              while true do
+                local newline = pending:find('\n', 1, true)
+                if not newline then
+                  if #pending > 12288 then broken() end
+                  return
+                end
+                if newline > 12288 then broken(); return end
+                local ok, reply = pcall(vim.json.decode, pending:sub(1, newline - 1))
+                pending = pending:sub(newline + 1)
+                if not ok or type(reply) ~= 'table' or type(reply.id) ~= 'number'
+                  or (reply.error ~= vim.NIL and type(reply.error) ~= 'string') then broken(); return end
+                if reply.id == browser_attempt and reply.error ~= vim.NIL and browser_failure then browser_failure(reply.error) end
+              end
+            end),
+            on_exit = vim.schedule_wrap(function(channel)
+              if channel == browser_job then broken() end
+            end),
+          })
+          if not ok or channel <= 0 then broken(); return end
+          browser_job = channel
+        end
+        local request = vim.json.encode({ id = attempt, url = url, callback = callback_target }) .. '\n'
+        if #request > 12288 then failed('Login link exceeds the browser request limit.'); return end
+        local ok, written = pcall(vim.fn.chansend, browser_job, request)
+        if not ok or written == 0 then
+          close_browser()
+          failed('Browser connection failed. Start harness ssh again.')
+        end
+        return
+      end
+      if (vim.env.SSH_CONNECTION or '') ~= '' or (vim.env.SSH_TTY or '') ~= '' then
+        failed('Start harness ssh on your local computer to open the browser and receive its return automatically.')
+        return
       end
       local ok = pcall(vim.system, { 'xdg-open', url }, { detach = true, stdout = false, stderr = false },
         vim.schedule_wrap(function(result) if result.code ~= 0 or result.signal ~= 0 then failed() end end))
@@ -190,12 +251,26 @@ function M.new(transport, report)
     end
     vim.api.nvim_create_autocmd('TermRequest', { group = group, buffer = buffer, callback = function(event)
       local url = event.data.sequence:match('^\027%]8;id=harness%-login;(.*)$')
+      local target, metadata
+      if not url then
+        metadata, url = event.data.sequence:match('^\027%]8;id=harness%-login:callback=([^;]*);(.*)$')
+        if metadata == 'none' then target = vim.NIL
+        elseif metadata then
+          local host, port = metadata:match('^([a-z0-9]+),(%d+)$')
+          host = ({ ipv4 = '127.0.0.1', ipv6 = '::1', localhost = 'localhost' })[host]
+          port = tonumber(port)
+          if not host or not port or port < 1 or port > 65535 then return end
+          target = { host = host, port = port }
+        end
+      end
       if url and #url <= 8192 and url:match('^https?://%S+$') and not url:find('%c') then
-        local changed = link ~= url
-        link, code = url, nil
+        local changed = link ~= url or not vim.deep_equal(callback_target, target)
+        link, code, callback_target = url, nil, target
+        if changed then link_sequence = link_sequence + 1 end
+        local sequence = link_sequence
         vim.schedule(function()
           toolbar()
-          if changed and not closed and link == url then open() end
+          if changed and not closed and link_sequence == sequence then open() end
         end)
       end
       local encoded, target = event.data.sequence:match('^\027%]8;id=harness%-code%-([A-Za-z0-9+/=]+);(.*)$')
@@ -221,6 +296,7 @@ function M.new(transport, report)
       vim.schedule(function()
         if closed or not vim.api.nvim_win_is_valid(window) or not vim.api.nvim_buf_is_valid(buffer) then return end
         ended = true
+        close_browser()
         if code == 0 then
           transport.connect(function(_, err)
             if err then report(err) end

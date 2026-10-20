@@ -19,7 +19,8 @@ function M.new(options, changed, notification)
     if vim.tbl_count(self.pending) >= 32 then callback(nil, 'Too many pending requests.'); return end
     self.serial = self.serial + 1
     local id = tostring(self.serial)
-    local line = vim.json.encode({ jsonrpc = '2.0', id = id, method = method, params = params or vim.empty_dict() }) .. '\n'
+    if not params or next(params) == nil then params = vim.empty_dict() end
+    local line = vim.json.encode({ jsonrpc = '2.0', id = id, method = method, params = params }) .. '\n'
     if #line > LIMIT then callback(nil, 'Protocol record exceeds 4 MiB.'); return end
     self.pending[id] = callback
     if vim.fn.chansend(self.job, line) == 0 then fail('Client pipe closed.') end

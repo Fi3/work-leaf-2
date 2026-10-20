@@ -36,7 +36,13 @@ jobs:
       - name: Install reviewed packages
         run: npm ci --ignore-scripts
       - name: Install desktop test tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends xvfb ffmpeg libegl1 libgl1 libxkbcommon-x11-0 libgtk-3-0t64 libasound2t64 libxtst6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb ffmpeg libegl1 libgl1 libxkbcommon-x11-0 libgtk-3-0t64 libasound2t64 libxtst6 openssh-client openssh-server iproute2 uidmap
+          sudo install -d -m 755 /run/sshd
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
       - name: Run the complete release gate
         run: sh scripts/check.sh
       - name: Keep test evidence
@@ -47,3 +53,6 @@ jobs:
           path: |
             tests/evidence/
             /tmp/harness-nvim-ui-evidence-*/
+            /tmp/hs-*/observed.json
+            /tmp/hs-*/**/terminal.raw
+            /tmp/hs-*/gui/*.png

@@ -1,4 +1,5 @@
 pub mod application;
+mod browser;
 pub mod cli;
 pub mod client;
 pub mod config;
@@ -7,4 +8,5 @@ pub mod process;
 pub mod protocol;
 pub mod server;
 mod setup;
+mod ssh;
 pub mod worker;

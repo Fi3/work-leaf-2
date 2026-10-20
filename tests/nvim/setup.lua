@@ -1,5 +1,10 @@
 vim.opt.runtimepath:append(vim.fn.getcwd())
 vim.o.columns, vim.o.lines = 120, 40
+local saved_environment = {}
+for _, name in ipairs({ 'HARNESS_BROWSER_SOCKET', 'SSH_CONNECTION', 'SSH_TTY' }) do
+  saved_environment[name] = vim.env[name]
+  vim.env[name] = nil
+end
 local source, previous = vim.api.nvim_get_current_buf(), vim.api.nvim_get_current_win()
 vim.api.nvim_buf_set_lines(source, 0, -1, false, { 'Unsent draft λ 世界' })
 local tick = vim.api.nvim_buf_get_changedtick(source)
@@ -10,9 +15,9 @@ vim.fn.writefile(vim.split([[
 import base64, os, sys, tty
 tty.setraw(0)
 def link(identity, value):
-    label = '[ Open browser ]' if identity == 'harness-login' and value.startswith('https:') else value
+    label = '[ Open browser ]' if identity.startswith('harness-login') and value.startswith('https:') else value
     os.write(1, ('\x1b]8;id='+identity+';'+value+'\x1b\\'+label+'\x1b]8;;\x1b\\\r\n').encode())
-link('harness-login', sys.argv[1])
+link(sys.argv[2] if len(sys.argv) > 2 and sys.argv[2].startswith('harness-login') else 'harness-login', sys.argv[1])
 link('another-program', 'https://wrong.example.test')
 link('harness-login', 'javascript:wrong')
 os.write(1, b'Enter a value.\r\n')
@@ -267,7 +272,164 @@ vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence =
 vim.api.nvim_win_close(window, true)
 closed()
 assert(#opens == before_close and vim.v.errmsg == '', 'Closing before the browser starts prevents a late browser tab')
+local helper = directory .. '/browser-helper'
+vim.fn.writefile(vim.split([[
+#!/usr/bin/env python3
+import json, os, sys, time
+assert sys.argv[1:] == ['browser'], 'Browser helper received unrelated configuration arguments'
+directory = os.path.dirname(__file__)
+with open(directory + '/browser-pids', 'a') as log: log.write(str(os.getpid()) + '\n')
+for line in sys.stdin:
+    request = json.loads(line)
+    with open(directory + '/browser-requests', 'a') as log: log.write(line)
+    mode = open(directory + '/browser-mode').read().strip()
+    if mode == 'oversized':
+        print('x' * 12289, flush=True)
+        continue
+    if mode == 'invalid':
+        print('{"id":1}', flush=True)
+        continue
+    if mode == 'stale':
+        print(json.dumps({'id': request['id'] - 1, 'error': 'Obsolete browser error'}), flush=True)
+    reply = json.dumps({'id': request['id'], 'error': 'Local callback port is in use.' if mode == 'error' else None}) + '\n'
+    sys.stdout.write(reply[:5]); sys.stdout.flush(); time.sleep(0.005)
+    sys.stdout.write(reply[5:]); sys.stdout.flush()
+]], '\n', { plain = true }), helper)
+vim.fn.setfperm(helper, 'rwx------')
+local function requests()
+  local result = {}
+  if vim.fn.filereadable(directory .. '/browser-requests') == 1 then
+    for _, line in ipairs(vim.fn.readfile(directory .. '/browser-requests')) do result[#result + 1] = vim.json.decode(line) end
+  end
+  return result
+end
+local function browser_mode(mode) vim.fn.writefile({ mode }, directory .. '/browser-mode') end
+local function remote_open(metadata)
+  calls, result = 0, nil
+  setup = require('harness.setup').new({
+    arguments = function(command)
+      if command == 'browser' then return { helper, '--config', '/must-not-be-passed', '--socket', '/must-not-be-passed' } end
+      return { 'python3', '-u', directory .. '/terminal.py', url, metadata or 'harness-login' }
+    end,
+    connect = function(callback) callback(true) end,
+  }, function(message) messages[#messages + 1] = message end)
+  setup.open({ id = 'test', name = 'Test provider' }, { id = 'oauth', name = 'Test account' }, function(focused, succeeded)
+    calls = calls + 1
+    result = { focused = focused, succeeded = succeeded }
+  end)
+  window, buffer = setup.window, setup.buffer
+  channel = vim.bo[buffer].channel
+  wait(function() return vim.wo[window].winbar:find('Copy', 1, true) end, 'Remote login retains the complete link and controls')
+end
+local function helper_closed()
+  local pids = vim.fn.readfile(directory .. '/browser-pids')
+  for _, pid in ipairs(pids) do wait(function() return not vim.uv.kill(tonumber(pid), 0) end, 'Closing login releases its browser helper') end
+end
+local local_opens = #opens
+vim.env.HARNESS_BROWSER_SOCKET = directory .. '/private-browser.sock'
+browser_mode('normal')
+remote_open('harness-login:callback=ipv4,1455')
+wait(function() return #requests() == 1 end, 'SSH login sends a private browser request without keyboard input')
+assert(vim.deep_equal(requests()[1], { id = 1, url = url, callback = { host = '127.0.0.1', port = 1455 } }),
+  'The helper receives the complete original URL and the exact fixed callback port')
+local reports = #messages
+for index, metadata in ipairs({ 'localhost,49157', 'ipv6,49158', 'none' }) do
+  local next_url = url .. '&step=' .. index
+  vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer,
+    data = { sequence = '\027]8;id=harness-login:callback=' .. metadata .. ';' .. next_url } })
+  wait(function() return #requests() == index + 1 end, 'Each new authorization link updates the private browser request')
+  local expected = ({ { host = 'localhost', port = 49157 }, { host = '::1', port = 49158 }, vim.NIL })[index]
+  assert(requests()[index + 1].url == next_url and vim.deep_equal(requests()[index + 1].callback, expected),
+    'Allocated, IPv6, and device callbacks retain their distinct destinations')
+end
+assert(#vim.fn.readfile(directory .. '/browser-pids') == 1, 'Retries and new links reuse one helper during a login')
+local count = #requests()
+for _, metadata in ipairs({ 'ipv4,0', 'localhost,65536', 'external,1455', 'ipv4,1e3', 'ipv4,1455:unexpected' }) do
+  vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer,
+    data = { sequence = '\027]8;id=harness-login:callback=' .. metadata .. ';' .. url .. '&bad=' .. metadata } })
+end
+vim.wait(30)
+assert(#requests() == count and #messages == reports, 'Invalid callback destinations cannot reach the helper')
+browser_mode('error')
+keys('<C-o>')
+wait(function() return messages[#messages] == 'Local callback port is in use.' end, 'A safe bridge error gives the actual reason for failure')
+assert(vim.api.nvim_buf_get_changedtick(source) == tick and calls == 0, 'A forwarding conflict preserves the draft and live login')
+assert(not vim.inspect(vim.api.nvim_win_get_config(window).footer):find('Copy', 1, true),
+  'A bridge error does not instruct the user to copy the callback as the normal recovery')
+reports = #messages
+browser_mode('stale')
+keys('<C-o>')
+wait(function() return #requests() == count + 2 end, 'The visible Open action retries through the same helper')
+vim.wait(30)
+assert(#messages == reports, 'An old bridge error cannot replace a later attempt')
+browser_mode('normal')
+count = #requests()
+for _, metadata in ipairs({ 'ipv4,1455', 'localhost,49157', 'ipv4,1455' }) do
+  vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer,
+    data = { sequence = '\027]8;id=harness-login:callback=' .. metadata .. ';' .. url } })
+end
+wait(function() return #requests() > count end, 'The latest queued link opens automatically')
+vim.wait(30)
+assert(#requests() == count + 1 and vim.deep_equal(requests()[count + 1].callback, { host = '127.0.0.1', port = 1455 }),
+  'Several queued updates to one link open only the final callback target once')
+keys('<C-c>')
+closed()
+helper_closed()
+for _, mode in ipairs({ 'oversized', 'invalid' }) do
+  browser_mode(mode)
+  reports = #messages
+  remote_open('harness-login:callback=none')
+  wait(function() return #messages > reports end, 'Malformed browser replies fail without exposing their contents')
+  assert(messages[#messages] == 'Browser connection failed. Start harness ssh again.', 'Broken helper output has a bounded, private diagnostic')
+  helper_closed()
+  browser_mode('normal')
+  count = #requests()
+  keys('<C-o>')
+  wait(function() return #requests() == count + 1 end, 'Retry starts a new helper after a failed connection')
+  vim.fn.chansend(channel, 's')
+  closed()
+  assert(result.succeeded, 'A browser connection failure does not prevent a later successful login')
+  helper_closed()
+end
+local installed_helper = helper
+helper = directory .. '/missing-helper'
+reports = #messages
+remote_open('harness-login:callback=none')
+wait(function() return #messages > reports end, 'A missing helper reports its failure and keeps the login open')
+assert(messages[#messages] == 'Browser connection failed. Start harness ssh again.', 'A missing helper does not expose private request arguments')
+helper = installed_helper
+count = #requests()
+keys('<C-o>')
+wait(function() return #requests() == count + 1 end, 'Retry can start a restored helper without replacing the login')
+keys('<C-c>')
+closed()
+helper_closed()
+reports = #messages
+remote_open()
+wait(function() return #messages > reports end, 'An old server without callback metadata reports its upgrade requirement')
+assert(messages[#messages]:find('Upgrade the remote Harness server', 1, true), 'An old server cannot silently open the wrong browser')
+keys('<C-c>')
+closed()
+vim.env.HARNESS_BROWSER_SOCKET = nil
+for _, name in ipairs({ 'SSH_CONNECTION', 'SSH_TTY' }) do
+  vim.env[name] = 'test'
+  reports = #messages
+  remote_open('harness-login:callback=ipv4,1455')
+  wait(function() return #messages > reports end, 'Plain SSH shows the supported local launcher')
+  assert(messages[#messages] == 'Start harness ssh on your local computer to open the browser and receive its return automatically.',
+    'Plain SSH explains how the browser and callback reach the local computer')
+  keys('<C-c>')
+  closed()
+  vim.env[name] = nil
+end
+assert(#opens == local_opens, 'SSH login never invokes the remote desktop browser')
+vim.env.SSH_CONNECTION, vim.env.SSH_TTY = '', ''
+remote_open('harness-login:callback=ipv4,1455')
+wait(function() return #opens == local_opens + 1 end, 'Empty SSH environment values do not disable the local desktop browser')
+keys('<C-c>')
+closed()
+for _, name in ipairs({ 'HARNESS_BROWSER_SOCKET', 'SSH_CONNECTION', 'SSH_TTY' }) do vim.env[name] = saved_environment[name] end
 vim.system = system
 vim.fn.delete(directory, 'rf')
-print('Neovim login checks passed: exact links, clipboard fallback, native selection, resize, cancellation, failures and focus.')
+print('Neovim login checks passed: exact links, private SSH browser requests, cleanup, failures, clipboard, resize and focus.')
 vim.cmd('noautocmd qa!')

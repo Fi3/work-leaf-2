@@ -74,8 +74,16 @@ vim.cmd.edit(temp .. '/source.txt')
 local source = vim.api.nvim_get_current_buf()
 vim.api.nvim_buf_set_lines(source, 0, 1, false, { 'unsaved λ 世界' })
 local tick = vim.api.nvim_buf_get_changedtick(source)
+vim.cmd('Harness login')
+wait(function() return named('select') end, 'Login before creating a chat lists the account providers')
+check(vim.json.encode(calls('configuration.get')[1].params) == '{}', 'A request without a session sends an empty JSON object')
+check(vim.tbl_isempty(state().sessions) and not named('prompt') and not state().auth_calls,
+  'The first login menu does not create a chat or start authentication')
+vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'xt', false)
+check(vim.api.nvim_get_current_buf() == source and vim.api.nvim_buf_get_changedtick(source) == tick,
+  'Cancelling the first login menu returns to the unchanged file')
 vim.cmd('Harness new')
-check(named('prompt') and vim.api.nvim_get_current_buf() == named('prompt'), 'New chat opens its input before startup completes')
+check(named('prompt') and vim.api.nvim_get_current_buf() == named('prompt'), 'New chat opens its input before session creation completes')
 wait(function() return has('Session: ') end, 'Initial session and panels')
 check(input_count == 0 and not named('setup') and not state().auth_calls, 'An unset model does not ask for a name or open credential setup')
 local initial_id = calls('session.create')[1].params.session_id
@@ -499,6 +507,7 @@ save(defaults)
 local sent_before, created_before = #calls('input.submit'), #calls('session.create')
 vim.env.HARNESS_TEST_START_DELAY = '0.2'
 vim.cmd('Harness new')
+check(named('prompt') and vim.api.nvim_get_current_buf() == named('prompt'), 'New chat opens its input before startup completes')
 chat('First message while starting')
 vim.env.HARNESS_TEST_START_DELAY = nil
 wait(function() return #calls('input.submit') == sent_before + 1 and text(named('prompt')) == '' end, 'First send waits for startup and creation')

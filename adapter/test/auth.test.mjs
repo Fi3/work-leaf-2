@@ -374,6 +374,53 @@ test('empty manual callback input keeps waiting, accepts private input, and pres
   }
 });
 
+test('OpenAI waits for the browser without a paste instruction and retains private manual recovery', async t => {
+  const waiting = 'Waiting for browser sign-in. No input is needed here.';
+  const manual = 'http://127.0.0.1:1455/auth/callback?code=' + secret;
+  const instructions = 'Paste the callback after browser approval.';
+  for (const [provider, finish] of [['openai', 'callback'], ['openai', 'manual'], ['other', 'manual']]) {
+    const tty = await pty(t), controller = new AbortController(), callback = new AbortController();
+    let complete = false;
+    const model = {
+      refresh: async () => ({ errors: new Map() }),
+      getProvider: () => ({ id: provider, name: 'Test account', auth: { oauth: { name: 'Account', login() {} } } }),
+      async login(_provider, _method, ui) {
+        ui.notify({ type: 'auth_url', url: 'https://example.invalid/sign-in', instructions });
+        const answer = ui.prompt({ type: 'manual_code', message: 'Provider callback instruction',
+          placeholder: 'Provider placeholder', signal: callback.signal });
+        if (finish === 'callback') await assert.rejects(answer, { name: 'AbortError' });
+        else assert.equal(await answer, manual);
+        complete = true;
+      },
+    };
+    const pending = terminalLogin(model, { provider, method: 'oauth', terminal: tty.path }, controller, 'id');
+    await tty.wait(provider === 'openai' ? waiting : 'Provider callback instruction (Provider placeholder):');
+    if (provider === 'openai') {
+      assert.ok(tty.text.includes('Finish sign-in in your browser. This window updates automatically.'));
+      assert.doesNotMatch(visibleText(tty.text), /paste|Provider callback instruction|Provider placeholder/i);
+      if (finish === 'manual') {
+        for (const input of ['\r', '   \r']) {
+          const count = tty.text.split(waiting).length;
+          tty.write(input);
+          await until(() => tty.text.split(waiting).length > count, 'Empty input must keep the browser wait active');
+          assert.equal(complete, false);
+          assert.doesNotMatch(visibleText(tty.text), /paste/i);
+        }
+      }
+    } else {
+      assert.ok(tty.text.includes(instructions), 'Other providers keep their login instructions');
+      assert.ok(!tty.text.includes(waiting), 'Other providers keep their own input prompt');
+    }
+    if (finish === 'callback') callback.abort();
+    else tty.write(manual + '\r');
+    assert.equal(await pending, false);
+    await tty.wait('Login saved');
+    assert.equal(complete, true);
+    assert.equal(controller.signal.aborted, false, 'Callback completion does not cancel the login');
+    assert.ok(!tty.text.includes(secret), 'A recovery callback remains private');
+  }
+});
+
 test('characters entered while a provider saves credentials do not become visible', async t => {
   const tty = await pty(t);
   let finish, saved = false;
@@ -441,7 +488,7 @@ test('login link controls preserve private input and copy the complete current U
   assert.deepEqual(answers, [secret, secret, 'visible value']);
   const copied = Array.from(tty.text.matchAll(/\x1b\]52;c;([A-Za-z0-9+/=]+)\x1b\\/g), match => Buffer.from(match[1], 'base64').toString());
   assert.deepEqual(copied, [url, code, nextUrl, url]);
-  const links = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-login;([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
+  const links = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-login:callback=none;([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
     match => ({ url: match[1], label: match[2] }));
   assert.deepEqual(links, [url, nextUrl, url].map(value => ({ url: value, label: '[ Open browser ]' })));
   const codes = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-code-([A-Za-z0-9+/=]+);([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
@@ -460,6 +507,41 @@ test('login link controls preserve private input and copy the complete current U
   assert.ok(!next.text.includes('\x1b]52;') && !next.text.includes(url) && !next.text.includes(code));
 });
 
+test('private login links describe fixed and allocated callback ports without changing the authorization URL', async t => {
+  const cases = [
+    ['redirect_uri', 'http://127.0.0.1:1455/auth/callback', 'ipv4,1455'],
+    ['redirect_uri', 'http://localhost:53692/callback', 'localhost,53692'],
+    ['callback_url', 'http://127.0.0.1:49157/oauth/callback/path', 'ipv4,49157'],
+    ['redirect_uri', 'http://[::1]:49158/callback', 'ipv6,49158'],
+    ['redirect_uri', 'http://localhost/callback', 'localhost,80'],
+    ['redirect_uri', 'https://platform.example.test/copy', 'none'],
+    ['redirect_uri', 'http://127.0.0.1.example.test:1455/callback', 'none'],
+    ['redirect_uri', 'http://constructor:1455/callback', 'none'],
+    ['redirect_uri', 'http://__proto__:1455/callback', 'none'],
+    ['redirect_uri', 'http://192.168.1.1:1455/callback', 'none'],
+    ['redirect_uri', 'https://localhost:1455/callback', 'none'],
+  ];
+  for (const [field, callback, expected] of cases) {
+    const tty = await pty(t);
+    const url = `https://example.invalid/auth?state=a%2fb%2Bc&${field}=${encodeURIComponent(callback)}`;
+    const model = {
+      refresh: async () => ({ errors: new Map() }),
+      getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
+      async login(_provider, _method, ui) {
+        ui.notify({ type: 'auth_url', url });
+        ui.notify({ type: 'device_code', verificationUri: url, userCode: 'TEST-CODE' });
+      },
+    };
+    assert.equal(await terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id'), false);
+    await tty.wait('Login saved');
+    assert.ok(tty.text.includes(`\x1b]8;id=harness-login:callback=${expected};${url}\x1b\\`),
+      `The ${callback} callback identifies its exact destination`);
+    assert.ok(tty.text.includes(`\x1b]8;id=harness-login:callback=none;${url}\x1b\\`),
+      'Device login never creates a callback forward, even when its verification URL contains that query field');
+    assert.ok(!visibleText(tty.text).includes(url));
+  }
+});
+
 test('invalid provider links and device codes cannot emit terminal commands or open a browser', async t => {
   const tty = await pty(t), previous = process.env.DISPLAY;
   delete process.env.DISPLAY;
@@ -472,6 +554,10 @@ test('invalid provider links and device codes cannot emit terminal commands or o
     ...['javascript:alert(1)', 'file:///tmp/key', 'https://name:password@example.invalid', 'https://example.invalid/\x1b]52;c;bad\x07',
       'https://example.invalid/\nnext', 'https://example.invalid/\u0085', 'https://example.invalid/' + 'a'.repeat(8192)]
       .map(url => ({ type: 'auth_url', url })),
+    ...['not a URL', 'http://user:password@localhost:1455/callback', 'http://localhost:0/callback',
+      'http://localhost:65536/callback', 'http://localhost:1455/\ncallback']
+      .map(callback => ({ type: 'auth_url', url: 'https://example.invalid/?redirect_uri=' + encodeURIComponent(callback) })),
+    { type: 'auth_url', url: 'https://example.invalid/?redirect_uri=http%3A%2F%2Flocalhost&callback_url=http%3A%2F%2Flocalhost' },
     { type: 'device_code', verificationUri: 'https://example.invalid', userCode: '\x1b]52;c;bad\x07' },
     { type: 'device_code', verificationUri: 'https://example.invalid', userCode: 'a'.repeat(1025) },
   ];
