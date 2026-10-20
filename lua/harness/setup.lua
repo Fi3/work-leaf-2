@@ -49,6 +49,7 @@ function M.new(transport, report)
     self.window = window
     local group = vim.api.nvim_create_augroup('HarnessLogin' .. buffer, { clear = true })
     local job, link, code, link_buffer, ended, closed
+    local browser_attempt = 0
     local actions = { window = window }
     actions.resume = function()
       if not ended and vim.api.nvim_win_get_buf(window) == buffer then enter() end
@@ -104,25 +105,8 @@ function M.new(transport, report)
     local function click_link()
       local mouse = vim.fn.getmousepos()
       if link and not closed and not ended and mouse.winid == window and mouse.winrow > 2 and mouse.line > 0 then
-        local start = math.max(0, mouse.line - #link)
-        local lines = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(window), start, mouse.line + #link, false)
-        local first, last, before = nil, nil, 0
-        for index, line in ipairs(lines) do
-          if line:match('^https?://') and link:sub(1, #line) == line then
-            local length = #line
-            for next_line = index + 1, #lines do
-              local part = lines[next_line]
-              if length == #link or part == '' or part:find('%s') or part:match('^https?://') then break end
-              if link:sub(length + 1, length + #part) ~= part then length = 0; break end
-              length = length + #part
-            end
-            if length > 0 then first, last = before + 1, before + length end
-          end
-          before = before + #line
-        end
-        local row = mouse.line - start
-        local offset = lines[row] and #table.concat(lines, '', 1, row - 1) + mouse.column
-        if first and offset and mouse.column <= #lines[row] and offset >= first and offset <= last then
+        local line = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(window), mouse.line - 1, mouse.line, false)[1]
+        if (line == '[ Open browser ]' or line == link) and mouse.column >= 1 and mouse.column <= #line then
           vim.schedule(function()
             if not closed and vim.api.nvim_get_current_win() == window then
               actions[2]()
@@ -177,9 +161,18 @@ function M.new(transport, report)
       else show_link('System clipboard unavailable.', value) end
     end
     local function open()
-      if not link or ended then return end
-      local ok, process = pcall(vim.ui.open, link)
-      if not ok or not process then show_link('Browser could not open. Copy this complete link.') end
+      if not link or ended or closed or not vim.api.nvim_win_is_valid(window) then return end
+      browser_attempt = browser_attempt + 1
+      local attempt, url = browser_attempt, link
+      toolbar()
+      local function failed()
+        if closed or ended or not vim.api.nvim_win_is_valid(window) or link ~= url or attempt ~= browser_attempt then return end
+        vim.api.nvim_win_set_config(window, { footer = ' Browser failed. Use Copy. ', footer_pos = 'left' })
+        report('Browser did not open. Use Open browser to retry, or Copy link.')
+      end
+      local ok = pcall(vim.system, { 'xdg-open', url }, { detach = true, stdout = false, stderr = false },
+        vim.schedule_wrap(function(result) if result.code ~= 0 or result.signal ~= 0 then failed() end end))
+      if not ok then failed() end
     end
     actions[1], actions[2], actions[3], actions[4], actions[5] =
       function() copy(link) end, open, cancel, function() show_link('Complete login link.') end, function() copy(code) end
@@ -198,8 +191,12 @@ function M.new(transport, report)
     vim.api.nvim_create_autocmd('TermRequest', { group = group, buffer = buffer, callback = function(event)
       local url = event.data.sequence:match('^\027%]8;id=harness%-login;(.*)$')
       if url and #url <= 8192 and url:match('^https?://%S+$') and not url:find('%c') then
+        local changed = link ~= url
         link, code = url, nil
-        vim.schedule(toolbar)
+        vim.schedule(function()
+          toolbar()
+          if changed and not closed and link == url then open() end
+        end)
       end
       local encoded, target = event.data.sequence:match('^\027%]8;id=harness%-code%-([A-Za-z0-9+/=]+);(.*)$')
       if encoded and #encoded <= 1368 and target == link then

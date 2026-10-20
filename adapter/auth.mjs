@@ -119,6 +119,9 @@ export async function terminalLogin(models, params, controller, deviceId) {
       if (link) copy(link); else status('No browser link is available for this step.');
     } else if (key?.ctrl && key.name === 'o') {
       if (link) openBrowser(link, status); else status('No browser link is available for this step.');
+    } else if (key?.ctrl && key.name === 'l') {
+      key.name = undefined; // Keep readline from clearing the link and the private prompt.
+      status(link ? `Complete login link:\r\n${link}` : 'No browser link is available for this step.');
     } else if (key?.ctrl && key.name === 'y' && deviceCode) {
       key.name = undefined; // Do not also paste readline's removed text into a hidden prompt.
       copy(deviceCode);
@@ -141,11 +144,11 @@ export async function terminalLogin(models, params, controller, deviceId) {
   };
   const copy = value => {
     write(`\x1b]52;c;${Buffer.from(value).toString('base64')}\x1b\\`);
-    status('Clipboard copy requested. If paste fails, select the link or code above.');
+    status('Clipboard copy requested. Ctrl-L shows the complete link.');
   };
   const showLink = value => {
     link = loginUrl(value);
-    write(`\r\nOpen this link in your browser:\r\n\x1b]8;id=harness-login;${link}\x1b\\${link}\x1b]8;;\x1b\\\r\nCtrl-X: copy link. Ctrl-O: open browser.\r\n`);
+    write(`\r\nContinue in your browser:\r\n\x1b]8;id=harness-login;${link}\x1b\\[ Open browser ]\x1b]8;;\x1b\\\r\nCtrl-O: open browser. Ctrl-X: copy link. Ctrl-L: show link.\r\n`);
   };
   const question = async (message, secret, signal) => {
     controller.signal.throwIfAborted();

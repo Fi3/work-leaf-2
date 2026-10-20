@@ -55,7 +55,7 @@ const json = async (args, input, code) => JSON.parse(await cli(args, input, code
 const hash = async path => createHash('sha256').update(await readFile(path)).digest('hex');
 async function alive(pid) {
   try { return !(await readFile(`/proc/${pid}/stat`, 'utf8')).includes(') Z '); }
-  catch (error) { if (error.code === 'ENOENT') return false; throw error; }
+  catch (error) { if (error.code === 'ENOENT' || error.code === 'ESRCH') return false; throw error; }
 }
 
 try {

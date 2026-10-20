@@ -68,6 +68,12 @@ class RealEditor(Editor):
             self.env['HOME'] = str(self.root / 'home')
             self.env.update(NODE_OPTIONS='--import=' + str(REPO / 'tests/fixtures/oauth.mjs'),
                             HARNESS_TEST_OAUTH_RECORD=str(self.root / 'oauth-requests.jsonl'))
+            directory = self.root / 'bin'
+            directory.mkdir()
+            opener = directory / 'xdg-open'
+            opener.write_text('#!/usr/bin/env python3\nimport json,os,sys\nwith open(os.environ["HARNESS_BROWSER_LOG"],"a") as output: output.write(json.dumps(sys.argv[1:])+"\\n")\n')
+            opener.chmod(0o700)
+            self.env.update(PATH=str(directory)+':'+self.env['PATH'], HARNESS_BROWSER_LOG=str(self.root/'browser.jsonl'))
         if generation is not None:
             control = self.root / 'generation.json'
             control.write_text(json.dumps({'responses': generation}))
@@ -159,6 +165,10 @@ class RealEditor(Editor):
     def mouse(self, button, column, row):
         self.keys(f'\x1b[<{button};{column};{row}M')
         if button < 64: self.keys(f'\x1b[<{button};{column};{row}m')
+
+    def browser_urls(self):
+        path = self.root/'browser.jsonl'
+        return [json.loads(line)[0] for line in path.read_text().splitlines()] if path.exists() else []
 
     def create(self, session_id):
         return self.rpc.request('session.create', {'session_id': session_id, 'workspace': str(self.root)})
@@ -470,14 +480,14 @@ def login_case():
     assert not editor.snapshot()['entries']
 
     def browser_login():
+        opened = len(editor.browser_urls())
         editor.command('Harness login openrouter')
         picker('Sign in with OpenRouter')
-        editor.wait(lambda: 'code_challenge_method=S256' in terminal_text().replace('\n',''), 'actual Pi browser login URL')
+        editor.wait(lambda: len(editor.browser_urls())==opened+1, 'actual Pi browser login opens automatically once')
         assert editor.observe('vim.fn.mode(1)') == 't'
-        joined = terminal_text().replace('\n','')
-        start = joined.index('https://openrouter.ai/auth?')
-        end = joined.index('code_challenge_method=S256', start) + len('code_challenge_method=S256')
-        authorize = urllib.parse.urlsplit(joined[start:end])
+        authorize = urllib.parse.urlsplit(editor.browser_urls()[-1])
+        assert authorize.scheme=='https' and authorize.hostname=='openrouter.ai'
+        assert urllib.parse.parse_qs(authorize.query)['code_challenge_method']==['S256']
         redirect = urllib.parse.parse_qs(authorize.query)['callback_url'][0]
         callback = urllib.parse.urlsplit(redirect)
         assert callback.hostname in ('127.0.0.1','localhost') and callback.scheme=='http'
@@ -531,8 +541,6 @@ def provider_generation_case():
         return editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')
     def transcript():
         return '\n'.join(line for window in editor.windows() if window['name']=='harness://chat/work' for line in window['lines'])
-    def terminal_text():
-        return '\n'.join(line for window in editor.windows() if window['name']=='harness://setup' for line in window['lines'])
 
     editor.keys('Run the provider test.\r')
     assert editor.observe('vim.fn.mode(1)') == 'i', 'Enter must leave the prompt ready for the next draft'
@@ -554,12 +562,12 @@ def provider_generation_case():
     choices = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
     row = next(index for index,line in enumerate(choices,1) if 'Sign in with ChatGPT' in line)
     editor.keys(str(row) + 'G\r')
-    editor.wait(lambda: 'code_challenge_method=S256' in terminal_text().replace('\n',''), 'actual Pi ChatGPT account login')
+    editor.wait(lambda: len(editor.browser_urls())==1, 'actual Pi ChatGPT account opens automatically')
     assert editor.observe('vim.fn.mode(1)')=='t', 'Account login must immediately accept terminal input'
-    joined = terminal_text().replace('\n','')
-    start = joined.index('https://auth.openai.com/api/accounts/authorize?')
-    end = joined.index('code_challenge_method=S256',start) + len('code_challenge_method=S256')
-    query = urllib.parse.parse_qs(urllib.parse.urlsplit(joined[start:end]).query)
+    authorize = urllib.parse.urlsplit(editor.browser_urls()[0])
+    assert authorize.scheme=='https' and authorize.hostname=='auth.openai.com'
+    query = urllib.parse.parse_qs(authorize.query)
+    assert query['code_challenge_method']==['S256']
     callback = urllib.parse.urlsplit(query['redirect_uri'][0])
     assert callback.scheme=='http' and callback.hostname in ('localhost','127.0.0.1')
     parameters = urllib.parse.urlencode({'code':'test-code','state':query['state'][0],'client_id':'test-issued-client'})
@@ -665,12 +673,13 @@ def login_cancel_case():
     def setup_window():
         return next((window for window in editor.windows() if window['name']=='harness://setup'),None)
     for mode in ('terminal','normal','visual','forced-close','retry'):
+        opened = len(editor.browser_urls())
         editor.command('Harness login openai')
         editor.wait(lambda:any(window['name']=='harness://select' for window in editor.windows()),'login methods')
         lines = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
         row = next(index for index,line in enumerate(lines,1) if 'Sign in with ChatGPT' in line)
         editor.keys(str(row)+'G\r')
-        editor.wait(lambda:setup_window() and 'code_challenge_method=S256' in ''.join(setup_window()['lines']),'waiting browser login')
+        editor.wait(lambda:setup_window() and len(editor.browser_urls())==opened+1,'waiting browser login with a complete URL')
         if mode in ('normal','visual','forced-close'): editor.keys('\x1c\x0e')
         if mode=='visual': editor.keys('v')
         if mode=='normal':

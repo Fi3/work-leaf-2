@@ -21,36 +21,36 @@
       "case": "device-code-native-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/device-code-native-clipboard.ansi.gz",
-      "terminal_bytes": 187163,
-      "terminal_sha256": "ff44579186d1b8bc22e8c4d2661924db0a36e183fa39b2d9f6343ed58ebc13c0"
+      "terminal_bytes": 187015,
+      "terminal_sha256": "86b24f7d056962e28de0159e8d35a1fab76b874392154d59763d75bc39c2d3a0"
     },
     {
       "case": "login-browser-delayed-return",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-browser-delayed-return.ansi.gz",
-      "terminal_bytes": 110143,
-      "terminal_sha256": "fa270a827cac6247a7e31ced0906f805885bc96a5cecc0d0c15e4f6e8ffd6af3"
+      "terminal_bytes": 82288,
+      "terminal_sha256": "a6832bc76abf336ae309fbb8f65bbc07995d9b63a6113ea73a1f79f47ca1edc0"
     },
     {
       "case": "login-copy-default-editor",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-copy-default-editor.ansi.gz",
-      "terminal_bytes": 144335,
-      "terminal_sha256": "aed0271cbd642b241bbf9817aebf580b4ac9dc05bc3b21d14ae84a8c2a502f09"
+      "terminal_bytes": 108033,
+      "terminal_sha256": "e9e04d5f7c168870f225593df53906e7f10f3c8205096c3bee59cbc46af3907c"
     },
     {
       "case": "login-copy-without-system-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-copy-without-system-clipboard.ansi.gz",
-      "terminal_bytes": 205986,
-      "terminal_sha256": "4a62d699646a0a11378b701de4318f13f02cfdf3734ee3bb28e306b03ab7a804"
+      "terminal_bytes": 151554,
+      "terminal_sha256": "bb886848ab065178e95824509ab539bc0ced36c93bc0a2c21be9fb0a7ae7d18e"
     },
     {
       "case": "login-url-native-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-url-native-clipboard.ansi.gz",
-      "terminal_bytes": 352390,
-      "terminal_sha256": "5fc1d9367c7a08b0ca6676c5231f8a2770b12c0e3f3a4c1633b3483b03969ae4"
+      "terminal_bytes": 311612,
+      "terminal_sha256": "ea324bf81bb4cfd4f65ce48823e328d2bd89af5f343fb7bf31df3b9dc690680c"
     }
   ],
   "xvfb_vendor_release": 12101024,
@@ -60,5 +60,5 @@
   "xvfb_executable": "/tmp/harness-xvfb/usr/bin/Xvfb",
   "xvfb_sha256": "567a9b39284e303522fdc178059fe60d0e9917b811bd5066fb63260fd198a97c",
   "credentials": "synthetic only",
-  "url_source": "native Open browser action or copy and actual system paste; no RPC URL extraction"
+  "url_source": "automatic launch, native desktop mouse, or copy and actual system paste; no RPC URL extraction"
 }

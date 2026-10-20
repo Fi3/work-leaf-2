@@ -38,19 +38,22 @@ You can also use `:Harness actions`.
 For the first AI chat, select **Connect an account**. Select your provider, then
 the account or API key method. For a ChatGPT account, select **OpenAI**, then
 **Sign in with ChatGPT**. The login opens in a terminal that accepts input at
-once. Click the displayed link or **Open browser** at the top of the login window. Complete sign-in
+once. Firefox, or your default browser, opens automatically. Complete sign-in
 in the browser and keep the Neovim login window open until it finishes.
 You do not need to copy the link or press Enter. Empty or space-only input
 keeps waiting for the browser.
 
-Press **Ctrl-O** to open the browser from the keyboard. **Copy link** or
+Click **Open browser** or press **Ctrl-O** to open the current sign-in page again.
+The short control uses the complete address. It does not depend on the terminal
+detecting an address in the visible text. **Copy link** or
 **Ctrl-X** copies the complete browser link when you need it. The browser
 link stays complete when it wraps or the window size changes. For device login,
 **Ctrl-Y** copies the separate device code. Follow the provider's instructions.
 Escape leaves terminal input mode and keeps sign-in open. Press `i` to enter
 input mode again. **Cancel** or **Ctrl-C** cancels and returns to the retained
-draft. The browser opens only when you request it; the server does not open
-an extra browser tab.
+draft. Neovim opens one browser tab for each new login link. The server does not
+open an extra browser tab. A browser launch failure leaves the login open and
+shows the retry and copy actions.
 
 Copy uses your configured Neovim clipboard. Without one, it uses Neovim's bundled
 terminal clipboard writer. No clipboard configuration is required in a terminal
@@ -62,10 +65,12 @@ and puts it in the Vim register. Use `y$` to copy the complete logical line.
 Enter or Escape returns to login input. Login accepts a pasted
 callback or code when the provider requests one. The `\login` command remains
 available.
+In standalone `harness auth`, Ctrl-O opens the browser and Ctrl-L shows the
+complete address. The normal terminal display uses the same short control.
 
 If a previous browser attempt says it cannot connect to `127.0.0.1:1455`,
-start a new login and click **Open browser** again. An old browser tab cannot
-complete a login whose window was cancelled or closed.
+close that sign-in tab and start a new login. Use the page that opens automatically.
+An old browser tab cannot complete a login whose window was cancelled or closed.
 
 After login, choose a model for the new chat. Use **F1 → Choose a model**, or
 type `\model`, to see
@@ -201,8 +206,8 @@ records each action and the video hash. Responses use the Pi faux provider.
 
 [Watch browser sign-in](tests/evidence/browser-login.mp4).
 This recording uses actual Firefox, Neovim, Rust, and Pi. It shows the
-**Open browser** button, empty input, explicit cancellation, and a fresh attempt.
-It then uses Escape and a normal click on the printed terminal link. After a
+automatic browser launch, empty input, explicit cancellation, and a fresh attempt.
+It then uses Escape and a normal click on **Open browser**. After a
 15-second browser wait, Firefox returns to Pi's local callback page. A task with
 `openai/gpt-5.6-luna` uses the saved account instead of the environment API key.
 The reply uses controlled test data. Captions explain each action.
@@ -703,7 +708,8 @@ controls, native text selection, narrow windows, a terminal that denies clipboar
 writes, and browser completion while an unsaved file has focus.
 The clipboard case checks the complete URL passed to the desktop handler.
 Its local callback uses only the URL obtained from the clipboard.
-The Firefox case clicks **Open browser** without copying the link. It submits
+The Firefox case opens automatically and uses an actual desktop mouse click on
+**Open browser**, without copying the link. It submits
 the local test account form through native browser input. Firefox follows an
 HTTP redirect to the actual Pi listener at `127.0.0.1:1455`. The successful
 attempt waits at least 15 seconds in Firefox before approval. Empty and
@@ -714,14 +720,29 @@ and a local proxy that rejects external requests. The user's browser profile
 is unchanged. These tests use synthetic account replies; they do not prove that
 a real subscription is valid.
 
-The login regression checks also click the printed terminal URL directly, in
-input mode and after Escape. They click a wrapped segment and the visible URL
-fragment that remains after a narrow resize.
+The login regression checks use actual X11 mouse events through the terminal.
+They click the short browser control in input mode, after Escape, and after a
+narrow resize. They also test a terminal with hyperlink support disabled.
+The earlier tests injected mouse sequences directly into Neovim and missed the
+terminal's own URL detector. A [separate reproduction](tests/evidence/native-link-before.json)
+produced the exact reported truncated address ending in the window border `│`.
+The normal login display now contains no long address for that detector to truncate.
 Escape keeps the callback listener open; Ctrl-C and the Cancel button close it.
 The browser case starts with a synthetic environment API key. After the Firefox
 callback, the provider status changes from `api_key` to `oauth`. The next
 `gpt-5.6-luna` request uses the saved account token through the actual OpenAI SDK.
 No real credential is used by this test.
+
+An additional [Alacritty and tmux check](tests/evidence/native-login.json) uses
+the actual Rust server, Pi, and Neovim with controlled device-login responses.
+Automatic opening and a normal desktop click both pass the complete 1,640-byte
+address to the browser launcher. Ctrl-Shift-click cannot open a truncated address.
+The [screen image](tests/evidence/native-login.png) shows the short control.
+Run this optional check with Alacritty and tmux installed:
+
+```sh
+python3 tests/nvim/native_login.py
+```
 
 The pinned Pi login has a separate known limit: an error callback from an older
 browser attempt can end a newer attempt. Close old sign-in tabs before starting

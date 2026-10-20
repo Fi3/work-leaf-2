@@ -10,7 +10,8 @@ vim.fn.writefile(vim.split([[
 import base64, os, sys, tty
 tty.setraw(0)
 def link(identity, value):
-    os.write(1, ('\x1b]8;id='+identity+';'+value+'\x1b\\'+value+'\x1b]8;;\x1b\\\r\n').encode())
+    label = '[ Open browser ]' if identity == 'harness-login' and value.startswith('https:') else value
+    os.write(1, ('\x1b]8;id='+identity+';'+value+'\x1b\\'+label+'\x1b]8;;\x1b\\\r\n').encode())
 link('harness-login', sys.argv[1])
 link('another-program', 'https://wrong.example.test')
 link('harness-login', 'javascript:wrong')
@@ -27,10 +28,19 @@ while True:
         sys.exit(2)
 ]], '\n', { plain = true }), directory .. '/terminal.py')
 local copied, opened, calls, result, messages, copy_failed = nil, nil, 0, nil, {}, false
+local opens, browser_exit, browser_missing = {}, nil, false
 vim.g.clipboard = { name = 'test clipboard', copy = { ['+'] = function(lines) if not copy_failed then copied = table.concat(lines, '\n') end end, ['*'] = function() end },
   paste = { ['+'] = function() return { {}, 'v' } end, ['*'] = function() return { {}, 'v' } end } }
-local ui_open = vim.ui.open
-vim.ui.open = function(value) opened = value; return {} end
+local system = vim.system
+vim.system = function(arguments, options, callback)
+  assert(arguments[1] == 'xdg-open' and #arguments == 2, 'The browser receives one complete URL argument')
+  assert(options.detach and options.stdout == false and options.stderr == false, 'The browser cannot write URLs into editor diagnostics')
+  if browser_missing then error('No browser handler') end
+  opened = arguments[2]
+  opens[#opens + 1] = opened
+  browser_exit = callback
+  return {}
+end
 local setup = require('harness.setup').new({
   arguments = function() return { 'python3', '-u', directory .. '/terminal.py', url } end,
   connect = function(callback) callback(true) end,
@@ -44,6 +54,7 @@ end
 local window, buffer, channel
 local function open()
   calls, result = 0, nil
+  local count = #opens
   setup.open({ id = 'test', name = 'Test provider' }, { id = 'oauth', name = 'Test account' }, function(focused, succeeded)
     calls = calls + 1
     result = { focused = focused, succeeded = succeeded }
@@ -51,6 +62,9 @@ local function open()
   window, buffer = setup.window, setup.buffer
   channel = vim.bo[buffer].channel
   wait(function() return vim.wo[window].winbar:find('Copy', 1, true) end, 'A real terminal OSC8 link enables the visible controls')
+  wait(function() return #opens == count + 1 and opened == url end, 'Selecting account login opens the complete URL once without copying or keyboard input')
+  assert(not table.concat(vim.api.nvim_buf_get_lines(buffer, 0, -1, false), '\n'):find(url, 1, true),
+    'The default terminal display does not expose a long address to an outer text detector')
 end
 local function closed()
   wait(function() return calls == 1 end, 'Login completion callback')
@@ -78,29 +92,20 @@ local function click(row, column)
   keys('<LeftRelease>')
   vim.fn.getmousepos = getmousepos
 end
-vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer,
-  data = { sequence = '\027]8;id=harness-login;' .. url:sub(1, 100) .. 'changed' .. url:sub(108) } })
-click(1, 2)
-assert(opened == nil, 'An earlier URL with a matching first row but a different later state cannot open the new login')
+local count = #opens
 vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. url } })
-for _, width in ipairs({ 76, 38 }) do
+vim.wait(20)
+assert(#opens == count, 'A repeated terminal hyperlink does not open another browser tab')
+for _, width in ipairs({ 76, 38, 26 }) do
   vim.api.nvim_win_set_width(window, width)
-  wait(function()
-    return #vim.api.nvim_buf_get_lines(buffer, 0, 1, false)[1] <= width
-  end, 'The actual terminal completes its width change')
-  local lines = vim.api.nvim_buf_get_lines(buffer, 0, -1, false)
-  local last
-  for row, line in ipairs(lines) do if line == 'https://wrong.example.test' then last = row - 1; break end end
-  assert(last and (width == 76 and last > 2 or width == 38 and last == 1),
-    'The child prints a wrapped URL; narrowing this terminal discards its continuation rows')
-  for row = 1, last do
-    click(row, math.min(2, #lines[row]))
-    assert(opened == url, 'Every wrapped part opens the exact retained login URL')
-  end
-  click(last + 1, 2)
+  vim.wait(20)
+  assert(vim.api.nvim_buf_get_lines(buffer, 0, 1, false)[1] == '[ Open browser ]', 'The short browser control fits without wrapping')
+  click(1, 2)
+  assert(opened == url, 'The short control opens the complete retained URL at every width')
+  click(2, 2)
   assert(opened == nil, 'A different printed URL cannot open the retained login link')
-  click(last, #lines[last] + 1)
-  assert(opened == nil, 'Clicking after the URL text does not open it')
+  click(1, #'[ Open browser ]' + 1)
+  assert(opened == nil, 'Clicking after the control does not open it')
 end
 vim.api.nvim_win_set_width(window, 76)
 copy_failed, copied = true, nil
@@ -207,10 +212,26 @@ keys('<C-x><C-c>')
 closed()
 assert(not vim.api.nvim_buf_is_valid(fallback) and not result.succeeded, 'Cancelling the link view also removes its terminal')
 open()
-vim.ui.open = function() return nil, 'No browser handler' end
+browser_missing = true
 keys('<C-o>')
-assert(vim.api.nvim_buf_get_name(0) == 'harness://login-link' and vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == url,
-  'An unavailable browser leaves a complete selectable link')
+assert(vim.api.nvim_get_current_buf() == buffer and vim.inspect(vim.api.nvim_win_get_config(window).footer):find('Browser failed', 1, true),
+  'An unavailable browser keeps the private login and reports the visible recovery action')
+keys('<C-l>')
+assert(vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == url, 'The complete selectable link remains available after browser failure')
+browser_missing = false
+keys('<CR><C-o>')
+local old_exit, reports = browser_exit, #messages
+keys('<C-o>')
+old_exit({ code = 1, signal = 0 })
+vim.wait(20)
+assert(#messages == reports, 'An older browser failure cannot replace the result of a later retry')
+local failed_exit = browser_exit
+vim.api.nvim_set_current_win(previous)
+failed_exit({ code = 0, signal = 15 })
+vim.wait(20)
+assert(vim.api.nvim_get_current_win() == previous and vim.api.nvim_buf_get_changedtick(source) == tick,
+  'An asynchronous browser failure cannot take focus from a file or change its draft')
+vim.api.nvim_set_current_win(window)
 keys('<C-c>')
 closed()
 open()
@@ -219,7 +240,6 @@ vim.fn.chansend(channel, 'f')
 wait(function() return vim.wo[window].winbar:find('Close', 1, true) end, 'Failed login remains visible for acknowledgment')
 assert(vim.api.nvim_get_current_buf() == buffer, 'A failure in the full-link view shows the terminal error before acknowledgment')
 assert(calls == 0, 'A failed login is not silently dismissed')
-vim.ui.open = function(value) opened = value; return {} end
 opened = nil
 keys('<C-o>')
 assert(opened == nil, 'A failed login cannot reopen its expired browser link')
@@ -227,7 +247,7 @@ click(1, 2)
 assert(opened == nil and calls == 0, 'Clicking an expired link keeps the failure visible for acknowledgment')
 keys('<CR>')
 closed()
-assert(result.focused and not result.succeeded and #messages == 1, 'Acknowledging failure reports unsuccessful completion once')
+assert(result.focused and not result.succeeded and #messages == 3, 'Acknowledging failure reports unsuccessful completion once')
 open()
 vim.api.nvim_set_current_win(previous)
 vim.fn.chansend(channel, 's')
@@ -235,12 +255,19 @@ closed()
 assert(result.succeeded and not result.focused and vim.api.nvim_get_current_win() == previous, 'Success after outside navigation keeps file focus')
 open()
 vim.v.errmsg = ''
+browser_exit({ code = 1, signal = 0 })
 vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. url } })
 vim.api.nvim_win_close(window, true)
 closed()
 assert(not result.succeeded, 'Native window closure cancels without leaking a terminal')
-assert(vim.v.errmsg == '', 'Closing during a terminal link update does not access an invalid window')
-vim.ui.open = ui_open
+assert(vim.v.errmsg == '', 'Closing before a queued browser failure does not access an invalid window')
+open()
+local before_close = #opens
+vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. url .. '&retry=1' } })
+vim.api.nvim_win_close(window, true)
+closed()
+assert(#opens == before_close and vim.v.errmsg == '', 'Closing before the browser starts prevents a late browser tab')
+vim.system = system
 vim.fn.delete(directory, 'rf')
 print('Neovim login checks passed: exact links, clipboard fallback, native selection, resize, cancellation, failures and focus.')
 vim.cmd('noautocmd qa!')

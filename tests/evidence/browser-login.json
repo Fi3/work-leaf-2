@@ -2,31 +2,34 @@
   "case": "login-browser-delayed-return",
   "passed": true,
   "terminal": "nvim-terminal/desktop/login-browser-delayed-return.ansi.gz",
-  "sha256": "fa270a827cac6247a7e31ced0906f805885bc96a5cecc0d0c15e4f6e8ffd6af3",
+  "sha256": "a6832bc76abf336ae309fbb8f65bbc07995d9b63a6113ea73a1f79f47ca1edc0",
   "checks": {
     "browser": "actual Firefox with a fresh profile per attempt",
     "external_browser_requests": "blocked by a local proxy",
     "browser_profile_paths": [
       "firefox-profile-1",
-      "firefox-profile-2"
+      "firefox-profile-2",
+      "firefox-profile-3"
     ],
     "user_browser_profile_changed": false,
     "test_browser_proxy": {
       "type": "manual",
       "http": "127.0.0.1",
       "https": "127.0.0.1",
-      "port": 42253,
+      "port": 34217,
       "bypass": [
         "localhost",
         "127.0.0.1"
       ],
       "dns_over_https": false
     },
-    "url_source": "native Open browser button and normal click on the printed terminal URL; no clipboard or RPC URL extraction",
+    "url_source": "automatic browser launch and actual XTest click on the short Open browser action; no clipboard or RPC URL extraction",
     "callback_source": "Firefox form submission followed by HTTP redirect to the real Pi listener",
+    "automatic_browser_open": true,
+    "native_mouse_used_same_complete_url": true,
     "blank_and_whitespace_input_preserved_listener": true,
     "escape_preserved_listener": true,
-    "browser_wait_seconds": 16.2,
+    "browser_wait_seconds": 16.27,
     "cancelled_state_rejected_by_real_callback": true,
     "current_state_authenticated": true,
     "token_exchanges": 1,
@@ -36,55 +39,55 @@
     "exact_draft": "Next task remains ready.",
     "steps": [
       {
-        "time": 1.38,
+        "time": 0.7,
+        "text": "Select Sign in with ChatGPT. Firefox opens automatically with the complete login link."
+      },
+      {
+        "time": 2.35,
         "text": "Press Enter with no text. The browser sign-in must stay open."
       },
       {
-        "time": 1.72,
-        "text": "Click Open browser. Firefox opens a local test account page."
-      },
-      {
-        "time": 3.02,
+        "time": 2.63,
         "text": "Cancel this sign-in in Neovim. The unsent task stays ready."
       },
       {
-        "time": 4.3,
-        "text": "Press Escape as in Vim, then click the printed login link."
+        "time": 4.64,
+        "text": "Press Escape as in Vim, then click Open browser without copying a link."
       },
       {
-        "time": 5.67,
+        "time": 5.99,
         "text": "The cancelled browser page cannot finish the new sign-in."
       },
       {
-        "time": 5.94,
+        "time": 6.27,
         "text": "Leave the current account page open for 15 seconds, as during a normal sign-in."
       },
       {
-        "time": 20.94,
+        "time": 21.27,
         "text": "Continue in the current Firefox page. The browser returns to the live local listener."
       },
       {
-        "time": 21.58,
+        "time": 22.01,
         "text": "Return to Neovim and continue the complete unsent task."
       },
       {
-        "time": 21.64,
+        "time": 22.08,
         "text": "Send the retained task. The saved account replaces the environment API key."
       }
     ]
   },
   "screenshots": {
     "browser-login-screens/browser-account-reply.png": "f3fa3ce1bc0fa2838f6b09a7b13d085b23ea64767af068e0152b5f67340cc12b",
-    "browser-login-screens/browser-callback-success.png": "969aae095901a2b8f4b93934e318599502d290f4063053ddd5d13851928e38c1",
-    "browser-login-screens/browser-cancelled-state.png": "2ee36cfe5fc4ce82446d1f44deac357eb44826ae28512fe7e3dd9d42a5848023",
+    "browser-login-screens/browser-callback-success.png": "1617b0fda4ece8f62cabb07f617f27bbc704cd4ccdff08b023165a951c371a1d",
+    "browser-login-screens/browser-cancelled-state.png": "c2d0bb124dd550425905a93131ccceb6565834ae4e794790b6ab7c5e7f49f928",
     "browser-login-screens/browser-return-draft.png": "7745327871d8e97ec6c4b16a491ecf7335bbd9e6dfb4492793591af8e5d0d920",
-    "browser-login-screens/browser-test-account.png": "a3c80d6b73d703644226a8c4516a084b690a6ec76517f52503240c89a89365df"
+    "browser-login-screens/browser-test-account.png": "f8a3ed4b8732226a8d637812911a6fa8a37f6cae60ea62d6b49d5e1ac60f096d"
   },
-  "source_video_sha256": "e8cda4e3f74b64194048ee82c7b7ebb47a909a6ad03fedfaf9865cca058acd6a",
+  "source_video_sha256": "9fa996627a8afab7a22a50ceac21a12ad81c0edf46e1b394f857ff5f78e1ada5",
   "video": "browser-login.mp4",
-  "video_sha256": "620598f275b14a2847ac6ba6a8563a04d8d30d846152b5dbb2a6a3d5c786489e",
-  "duration_seconds": 52.2,
-  "source_duration_seconds": 22.6,
+  "video_sha256": "6549f9da52a42e9fa3784936ec42ad6f6347447a1087ab4e2c9662720c34608e",
+  "duration_seconds": 53.266667,
+  "source_duration_seconds": 23.134,
   "initial_frame_hold_seconds": 3,
   "playback_speed": 0.5,
   "final_frame_hold_seconds": 4,
@@ -94,27 +97,31 @@
       "text": "Actual Neovim, Firefox, Rust and Pi. Synthetic account and model replies; half-speed playback."
     },
     {
-      "seconds": 5.76,
-      "text": "Empty Enter keeps sign-in open. Click Open browser to start Firefox."
+      "seconds": 4.4,
+      "text": "Select Sign in with ChatGPT. Firefox opens automatically with the complete address."
     },
     {
-      "seconds": 9.04,
+      "seconds": 7.7,
+      "text": "Empty Enter keeps sign-in open. No link copying or pasting is needed."
+    },
+    {
+      "seconds": 8.26,
       "text": "Ctrl-C cancels this sign-in. The draft stays ready; start a fresh login."
     },
     {
-      "seconds": 11.6,
-      "text": "Escape keeps sign-in open. Click the printed terminal link to open Firefox."
+      "seconds": 12.28,
+      "text": "Escape keeps sign-in open. The short Open browser control opens the complete address."
     },
     {
-      "seconds": 14.34,
+      "seconds": 14.98,
       "text": "The old successful callback is rejected. Wait 15 seconds on the current account page."
     },
     {
-      "seconds": 44.88,
+      "seconds": 45.54,
       "text": "Continue in Firefox. Pi accepts the browser callback and saves the account."
     },
     {
-      "seconds": 46.28,
+      "seconds": 47.16,
       "text": "The retained task gets a controlled SDK reply using the account. The next draft stays ready."
     }
   ],
@@ -126,11 +133,11 @@
     "Cargo.lock": "a4c99f2f6de51c390ae2d11db28c27dcf2a57a675c17e8c2fd8e2669e5dc172f",
     "Cargo.toml": "c1eb829ab24118016fc496e703955cd1d4b5ade296bead9f1551af171598757d",
     "SPEC.md": "4d80f80ffafec2e9245fed169f8e37ff3dc7a2434fd19d23f6a9f36b0a73e205",
-    "adapter/auth.mjs": "51f6d0af984c0ee6c9f04cfa5a2436bb9881c5ffbdd22f3557f08999533b539d",
+    "adapter/auth.mjs": "2c9ee9c1ce2bd5f402a220e197c232eff579593128e8d6fd24c32a5f0deadbc3",
     "adapter/pi.mjs": "be3e9f99d343f62de42bdea3e2b971d2fd2ac2bff64ed1d6324213165758e9e3",
     "adapter/protocol.mjs": "6141e4cbd38873b9b2bfb86a65a93d7e0d154f8f6cc6647bb1bbf3f5278970d8",
     "adapter/test/application.test.mjs": "8cf98f491ed177d4b3472d3acd61261a072578ff727b895edbd194fd0afebda9",
-    "adapter/test/auth.test.mjs": "2bd6e438de13088cf91e78c261e7407a5d8de6867286cb44070c0fc2234b7f2f",
+    "adapter/test/auth.test.mjs": "19ef3c30c3bb27bae6a3f33d3b7b4ace0b18d36cdaac177f2f8299708ab938eb",
     "adapter/test/crash.test.mjs": "a32b551a8adcae9a0c6dfc3dfc31988c705098206d82884ea4505916d9c15672",
     "adapter/test/protocol.test.mjs": "6e26bde012212d0e96b33c8cd9d3ab429262ef65d83716061d3d1f0be17c22c1",
     "adapter/test/replay.test.mjs": "a14a269359c5db1a165403f177ebec918b916083ffc77af55f60b299ccbfcf3f",
@@ -144,7 +151,7 @@
     "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
     "lua/harness/init.lua": "2c61bf005119037bb56f693c3ba2e201b52e4f6d0129400047ed50551bdcadaa",
     "lua/harness/select.lua": "3a5a6d77786aae27d1a334ee096069e5ff1f6b0fcb059cd8b1676918d5feaee6",
-    "lua/harness/setup.lua": "97576111bbf5bd0eeff7dbe0b8e89e0b83ed040d5327f9f2934f74f1d6cc6195",
+    "lua/harness/setup.lua": "8f2b3ec3ed0534e5c52e36b05938e14a6b361f3cf9f21ee6103b8db8720ced54",
     "lua/harness/sidebar.lua": "2b7ed858b37aad752fb99a0a866572e73518c073c68602fd726c3d3712336323",
     "lua/harness/transport.lua": "90d9e13d5601bb429a9805e5401948bc0eb08ccbd6586bf2de8d2c1cbca0fb67",
     "lua/harness/view.lua": "527ec752fe31900d7ddd335175960950b046c4c8e951979405343ec55d470316",
@@ -156,7 +163,7 @@
     "scripts/check.sh": "c2c82d604e5e71537e8ddb9ff28a700810bc20880bdafe576cb6446422766447",
     "scripts/dependencies.mjs": "06ffd775e9241bb737f6f056bb6e14eb2692f55a398e14d4fa27a47776484750",
     "scripts/install.sh": "5ef0c4899ee243551b2cd6dff763e69ff67a1f4bb3d8996d0221db17f8ef5337",
-    "scripts/test-install.sh": "656ddd68f605d8e6329c756f9c269ad1a8a6e936ef5826488df79bc640f090ca",
+    "scripts/test-install.sh": "2a2b8985153abbdb1bd3eeddf05123a3165bcea57afd1feca5faba0bab3dad29",
     "src/application.rs": "a767179cff42e61db0c0129fd3da04341421f72c7511a64f8b10050dc7aa9b99",
     "src/cli.rs": "2c40c5a580d43904437a6085d742999fd19ef0a9ca299dc4b40bbfbd8735b785",
     "src/client.rs": "79eb0e12d2338c52c8a56970c3fef06496b631d42b9b8168e08cf9c1b94d4103",
@@ -180,15 +187,16 @@
     "tests/nvim/fake.py": "bef930492651de0c88980d1a8a5def40c5b214d0096ac89c959df66b21920d05",
     "tests/nvim/interactive.py": "a14c2bdd52241153b2051e679d5b0a73c655708e011c4338fd07fa6a6417da4b",
     "tests/nvim/interactive_init.lua": "5ad6e13b5c1abee11e9baeb7da6abb0d769115dabd4229cf2089cc1a22bf6ed8",
-    "tests/nvim/login_gui.py": "37303f28dd953a691ccf342ace4cf4c060bbada4471c9e7f04a9e647bfa586ef",
-    "tests/nvim/real.py": "beebd3789432d3a42323a10858bc9f53a9e8533b3418f9e16b613920c163c214",
+    "tests/nvim/login_gui.py": "c0c33f2db68fe4296c02a8f427ee25f14d9a98538364d79663cd90b95c312275",
+    "tests/nvim/native_login.py": "5904aeb85fb66821455b8ca0fca1cfe430206eedd5228d798d20bb139b7d6237",
+    "tests/nvim/real.py": "eeda89ce723d5e1b4b73a46c5bec61121f703b731c4f04a350e55f5c759c2f8c",
     "tests/nvim/run.lua": "d78bc1d4c496d9a0d29dfda933525d2bb3ea542d3dba3d5ad89ffac0cbc630e9",
     "tests/nvim/select.lua": "bf92e0972435462f034e873d8b30e4292c5cfa9e06818b59da214acc6717ef76",
-    "tests/nvim/setup.lua": "04b6fe8674869e60f8b7dde3a342f86b557499feccb892b5734a93d812d67ecc",
+    "tests/nvim/setup.lua": "9d4574971b78df4f09f0dfb807031c2f8c5b42eb794f1dacd66ae14e52ea8d35",
     "tests/nvim/view.lua": "b3002531195778135846a2b02641e7c6c4410ae1564c7332e80e47fe8b9aae64",
     "tests/protocol.rs": "824e9e23566d6573467210cbbbc835786390dde36321acfda0244719e3c7a9bd",
     "tests/provider-generation.test.mjs": "3ea08509445c1240368e35a7e8aa45978bd7c2f8fdc061149e3aa38d967a2846",
-    "tests/recovery.test.mjs": "39382f5dde28f7a7c0a5b0427da8b637d8b77c5e1539951351c95592532ca318",
+    "tests/recovery.test.mjs": "0f5fa944a2ed40601f0be1f9f0ad15ce0f070d64dc64e365a5c11573c2c40d05",
     "tests/scripts.test.mjs": "ca7524ceadd2bc15c9f8d019e4e75686489fb055be017a08f74cac717c2b998a",
     "tests/server.rs": "4536c6ddec23dc74df1095370fa6e3ca17e79334844f7fd68586ae6888928fbc",
     "tests/setup.rs": "0416e3fb000e4bf22bec1ae3dc26b9b2b806d2955c7d73b356330f4bef206cdf"
@@ -202,7 +210,7 @@
     "xvfb_executable": "/tmp/harness-xvfb/usr/bin/Xvfb",
     "xvfb_sha256": "567a9b39284e303522fdc178059fe60d0e9917b811bd5066fb63260fd198a97c",
     "credentials": "synthetic only",
-    "url_source": "native Open browser action or copy and actual system paste; no RPC URL extraction"
+    "url_source": "automatic launch, native desktop mouse, or copy and actual system paste; no RPC URL extraction"
   },
   "callback_probes": {
     "baseline_revision": "fa3a93f24c2ebe27bed8b9f0dd9a867c455968ff",

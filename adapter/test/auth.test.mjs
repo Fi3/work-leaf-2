@@ -14,6 +14,7 @@ import { installOAuthMock, secret as oauthSecret } from '../../tests/fixtures/oa
 const secret = 'synthetic-key-NOT-FOR-OUTPUT';
 const isKind = kind => error => error.data?.kind === kind;
 const offline = { env: async () => undefined, fileExists: async () => false };
+const visibleText = text => text.replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '');
 async function until(predicate, message) {
   for (let i = 0; i < 300; i++) { if (predicate()) return; await delay(10); }
   assert.fail(message);
@@ -425,7 +426,13 @@ test('login link controls preserve private input and copy the complete current U
     },
   };
   const result = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id');
-  await tty.wait('Private callback'); tty.write(secret.slice(0, 8) + '\x18');
+  await tty.wait('Private callback');
+  assert.ok(!visibleText(tty.text).includes(url), 'The default terminal view must not expose a long URL to screen-based link detection');
+  assert.ok(visibleText(tty.text).includes('[ Open browser ]'), 'The terminal shows a short browser action');
+  tty.write(secret.slice(0, 8) + '\x0c');
+  await tty.wait('Complete login link:');
+  await until(() => visibleText(tty.text).includes(url), 'Ctrl-L must expose the complete URL on request');
+  tty.write('\x18');
   await tty.wait('Clipboard copy requested'); tty.write(secret.slice(8) + '\r');
   await tty.wait('Private device value'); tty.write('removed-private-text\x15' + secret.slice(0, 8) + '\x19\x18' + secret.slice(8) + '\r');
   await tty.wait('Visible input'); tty.write('visible\x19\x18 value\r');
@@ -434,20 +441,20 @@ test('login link controls preserve private input and copy the complete current U
   assert.deepEqual(answers, [secret, secret, 'visible value']);
   const copied = Array.from(tty.text.matchAll(/\x1b\]52;c;([A-Za-z0-9+/=]+)\x1b\\/g), match => Buffer.from(match[1], 'base64').toString());
   assert.deepEqual(copied, [url, code, nextUrl, url]);
-  const links = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-login;([^\x1b]+)\x1b\\/g), match => match[1]);
-  assert.deepEqual(links, [url, nextUrl, url]);
+  const links = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-login;([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
+    match => ({ url: match[1], label: match[2] }));
+  assert.deepEqual(links, [url, nextUrl, url].map(value => ({ url: value, label: '[ Open browser ]' })));
   const codes = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-code-([A-Za-z0-9+/=]+);([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
     match => ({ code: Buffer.from(match[1], 'base64').toString(), url: match[2], visible: match[3] }));
   assert.deepEqual(codes, [{ code, url: nextUrl, visible: code }], 'The displayed device code links to the same verified URL and carries only its exact copy value');
-  assert.ok(tty.text.includes(url + '\x1b]8;;\x1b\\'), 'The complete URL remains visible inside the native link');
   assert.ok(!tty.text.includes(secret) && !tty.text.includes(Buffer.from(secret).toString('base64')) && !tty.text.includes('removed-private-text'));
-  assert.ok(tty.text.includes('Ctrl-X: copy link. Ctrl-O: open browser.') && tty.text.includes('Ctrl-Y: copy device code.'));
+  assert.ok(tty.text.includes('Ctrl-O: open browser. Ctrl-X: copy link. Ctrl-L: show link.') && tty.text.includes('Ctrl-Y: copy device code.'));
   const next = await pty(t);
   model.login = async (_provider, _method, ui) => {
     assert.equal(await ui.prompt({ type: 'secret', message: 'New login value' }), secret);
   };
   const fresh = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: next.path }, new AbortController(), 'id');
-  await next.wait('New login value'); next.write('\x18' + secret + '\r');
+  await next.wait('New login value'); next.write('\x18\x0c' + secret + '\r');
   assert.equal(await fresh, false);
   await next.wait('No browser link is available');
   assert.ok(!next.text.includes('\x1b]52;') && !next.text.includes(url) && !next.text.includes(code));
@@ -534,7 +541,8 @@ appendFileSync(process.env.HARNESS_TEST_BROWSER_LOG, JSON.stringify(process.argv
   });
   // Keep Python available for the PTY helper, while xdg-open resolves only to the controlled helper.
   process.env.PATH = directory + ':' + previous.PATH;
-  const tty = await pty(t), browserUrl = 'https://example.invalid/login?flow=synthetic', deviceUrl = 'https://example.invalid/device';
+  const tty = await pty(t), browserUrl = 'https://example.invalid/login?flow=synthetic&state=' + 'abc%2F09'.repeat(200),
+    deviceUrl = 'https://example.invalid/device';
   let saved = false;
   const model = {
     getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
@@ -551,6 +559,7 @@ appendFileSync(process.env.HARNESS_TEST_BROWSER_LOG, JSON.stringify(process.argv
   await tty.wait('Browser callback');
   await delay(100);
   assert.equal(await readFile(log, 'utf8'), '', 'A displayed login link must not open a browser automatically');
+  assert.ok(!visibleText(tty.text).includes(browserUrl), 'The default screen contains no wrapped browser URL');
   tty.write(secret.slice(0, 8) + '\x0f' + secret.slice(8) + '\r');
   await tty.wait('Device callback');
   for (let i = 0; i < 300 && !(await readFile(log, 'utf8')).trim(); i++) await delay(10);
@@ -593,5 +602,5 @@ appendFileSync(process.env.HARNESS_TEST_BROWSER_LOG, JSON.stringify(process.argv
   missing.write(secret.slice(8) + '\r');
   assert.equal(await unavailable, false);
   await missing.wait('model list could not update');
-  assert.ok(missing.text.includes(browserUrl), 'Missing browser opener keeps the visible link');
+  assert.ok(missing.text.includes(browserUrl), 'Missing browser opener retains the complete link metadata');
 });

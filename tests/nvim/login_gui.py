@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test the actual desktop clipboard and login controls in Kitty and Neovim."""
+"""Test native mouse, clipboard, and login controls in Kitty and Neovim."""
 import contextlib
 import ctypes
 import hashlib
@@ -188,11 +188,12 @@ def desktop():
 class GuiEditor(RealEditor):
     instances = []
 
-    def __init__(self, name, display, pending=0, clipboard=True, browser=False, generation=None):
+    def __init__(self, name, display, pending=0, clipboard=True, browser=False, generation=None, hyperlinks=True):
         self.display, self.pending = display, pending
         self.use_browser, self.browser = browser, None
         self.clipboard_enabled, self.finished = clipboard, False
         self.video = None
+        self.hyperlinks = hyperlinks
         self.steps = []
         self.instances.append(self)
         super().__init__(name, active=False, oauth_mock=True, generation=generation)
@@ -230,6 +231,7 @@ class GuiEditor(RealEditor):
             '-o','linux_display_server=x11','-o','allow_remote_control=yes','-o','shell_integration=disabled',
             '-o','font_size=12','-o','initial_window_width=120c','-o','initial_window_height=40c',
             '-o','remember_window_size=no','-o','confirm_os_window_close=0',
+            *([] if self.hyperlinks else ['-o','allow_hyperlinks=no']),
             *(['-o','clipboard_control=read-clipboard-ask'] if self.clipboard_enabled is False else []),'--listen-on',self.control,*command],
             cwd=self.root,env=env,stdout=self.terminal_log,stderr=self.terminal_log)
         self.wait(lambda:(self.root/'kitty.sock').exists(),'Kitty starts',timeout=15)
@@ -259,15 +261,55 @@ class GuiEditor(RealEditor):
                     '--width',str(columns),'--height',str(lines))
         self.wait(lambda:self.observe('vim.o.columns')==columns and self.observe('vim.o.lines')==lines,'native desktop resize')
 
+    def mouse(self, button, column, row, modifiers=()):
+        """Send real desktop events through Kitty, including its own link handler."""
+        assert button==0, 'Desktop login controls use the left mouse button'
+        x11, xtest = ctypes.CDLL('libX11.so.6'), ctypes.CDLL('libXtst.so.6')
+        pointer, window = ctypes.c_void_p, ctypes.c_ulong
+        x11.XOpenDisplay.restype = pointer
+        x11.XDefaultRootWindow.argtypes = [pointer]
+        x11.XDefaultRootWindow.restype = window
+        x11.XGetGeometry.argtypes = [pointer,window,ctypes.POINTER(window),
+            ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),*[ctypes.POINTER(ctypes.c_uint)]*4]
+        x11.XTranslateCoordinates.argtypes = [pointer,window,window,ctypes.c_int,ctypes.c_int,
+            ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(window)]
+        x11.XSetInputFocus.argtypes = [pointer,window,ctypes.c_int,window]
+        x11.XRaiseWindow.argtypes = [pointer,window]
+        x11.XFlush.argtypes = x11.XCloseDisplay.argtypes = [pointer]
+        x11.XKeysymToKeycode.argtypes = [pointer,window]
+        xtest.XTestFakeKeyEvent.argtypes = [pointer,ctypes.c_uint,ctypes.c_int,window]
+        xtest.XTestFakeMotionEvent.argtypes = [pointer,ctypes.c_int,ctypes.c_int,ctypes.c_int,window]
+        xtest.XTestFakeButtonEvent.argtypes = [pointer,ctypes.c_uint,ctypes.c_int,window]
+        connection = x11.XOpenDisplay(self.display.encode())
+        assert connection, 'Cannot connect the mouse to the test display'
+        try:
+            native = json.loads(self.remote('ls'))[0]['platform_window_id']
+            root, child = window(), window()
+            left, top = ctypes.c_int(), ctypes.c_int()
+            width, height, border, depth = [ctypes.c_uint() for _ in range(4)]
+            assert x11.XGetGeometry(connection,native,ctypes.byref(root),ctypes.byref(left),ctypes.byref(top),
+                ctypes.byref(width),ctypes.byref(height),ctypes.byref(border),ctypes.byref(depth))
+            assert x11.XTranslateCoordinates(connection,native,x11.XDefaultRootWindow(connection),0,0,
+                ctypes.byref(left),ctypes.byref(top),ctypes.byref(child))
+            columns, lines = self.observe('{vim.o.columns,vim.o.lines}')
+            x = left.value + int((column-.5)*width.value/columns)
+            y = top.value + int((row-.5)*height.value/lines)
+            x11.XRaiseWindow(connection,native)
+            x11.XSetInputFocus(connection,native,1,0)
+            for key in modifiers: xtest.XTestFakeKeyEvent(connection,x11.XKeysymToKeycode(connection,key),1,0)
+            xtest.XTestFakeMotionEvent(connection,-1,x,y,0)
+            xtest.XTestFakeButtonEvent(connection,1,1,0)
+            xtest.XTestFakeButtonEvent(connection,1,0,0)
+            for key in reversed(modifiers): xtest.XTestFakeKeyEvent(connection,x11.XKeysymToKeycode(connection,key),0,0)
+            x11.XFlush(connection)
+            self.pump(.3)
+        finally: x11.XCloseDisplay(connection)
+
     def mark(self, text):
         if self.video: self.steps.append({'time':round(time.monotonic()-self.video_started,2),'text':text})
 
     def screenshot(self, name):
         self.remote('screenshot','--match','id:'+str(self.window_id),str(self.root/(name+'.png')))
-
-    def browser_urls(self):
-        path = self.root/'browser.jsonl'
-        return [json.loads(line)[0] for line in path.read_text().splitlines()] if path.exists() else []
 
     def clipboard(self):
         """Paste from Kitty's actual system clipboard into a separate raw terminal."""
@@ -343,42 +385,40 @@ def complete_account(editor, copied):
     editor.wait(lambda:not any(window['name'] in ('harness://setup','harness://login-link') for window in editor.windows()),'callback from the pasted URL completes login')
 
 def open_link(editor):
-    editor.wait(lambda:any('code_challenge_method=S256' in ''.join(window['lines'])
-                           or 'Enter code:' in ''.join(window['lines'])
-                           for window in editor.windows() if window['name']=='harness://setup'),'login link is visible')
-    assert not editor.browser_urls(), 'The server must not open an extra browser tab automatically'
-    editor.keys('\x0f')
-    editor.wait(lambda:editor.browser_urls(),'explicit browser action opens the complete link')
+    editor.wait(lambda:editor.browser_urls(),'the editor opens the browser when the login link is ready')
 
 
-def click_terminal_link(editor, wrapped=False):
+def click_terminal_link(editor, modifiers=()):
     window = next(window for window in editor.windows() if window['name']=='harness://setup')
-    row = next(index for index,line in enumerate(window['lines'],1) if line.startswith('https://auth.openai.com/'))
-    if wrapped: row += 1
+    row = next(index for index,line in enumerate(window['lines'],1) if line=='[ Open browser ]')
     position = editor.observe('vim.fn.screenpos('+str(window['id'])+','+str(row)+',8)')
-    assert position['row']>0 and position['col']>0, 'The clicked link segment must be visible'
-    editor.mouse(0,position['col'],position['row'])
+    assert position['row']>0 and position['col']>0, 'The browser action must be visible'
+    editor.mouse(0,position['col'],position['row'],modifiers)
 
 
 def account_case(display):
-    editor = GuiEditor('login-url-native-clipboard',display)
+    editor = GuiEditor('login-url-native-clipboard',display,hyperlinks=False)
     editor.keys('iUnsent task remains here.')
     login(editor,'openai','Sign in with ChatGPT')
-    editor.wait(lambda:any('code_challenge_method=S256' in ''.join(window['lines'])
-                           for window in editor.windows() if window['name']=='harness://setup'),'printed login link')
-    assert not editor.browser_urls(), 'Showing a link must not open another browser tab'
-    assert editor.observe('vim.fn.mode(1)')=='t'
-    click_terminal_link(editor)
-    editor.wait(lambda:editor.browser_urls(),'ordinary terminal URL click opens the browser without leaving input first')
+    open_link(editor)
     expected = editor.browser_urls()[0]
     assert len(expected)>200
+    assert not any('https://' in line for window in editor.windows() if window['name']=='harness://setup' for line in window['lines']), 'The default login screen must not expose a wrapped URL to terminal link detection'
+    assert editor.observe('vim.fn.mode(1)')=='t'
+    editor.mark('The browser opens automatically. Click the short browser action without copying a link.')
+    click_terminal_link(editor)
+    editor.wait(lambda:len(editor.browser_urls())==2,'ordinary desktop click opens the complete URL without leaving input first')
+    assert editor.browser_urls()[-1]==expected
+    editor.mark('Ctrl-Shift-click cannot open a partial URL when terminal hyperlinks are unavailable.')
+    click_terminal_link(editor,modifiers=(0xffe3,0xffe1))
+    assert editor.browser_urls()==[expected,expected], 'A terminal without OSC8 must not detect a truncated URL or popup border'
     editor.mark('Copy the complete browser link with Ctrl-X; paste it in a separate terminal.')
     editor.keys('\x18')
     copied = editor.clipboard().decode()
     assert copied==expected, 'Copy must preserve the entire URL, without wrapped lines or terminal borders'
     assert editor.observe('vim.fn.mode(1)')=='t'
     editor.keys('\x0f')
-    editor.wait(lambda:len(editor.browser_urls())==2,'visible Open action invokes the desktop handler')
+    editor.wait(lambda:len(editor.browser_urls())==3,'visible Open action invokes the desktop handler')
     assert editor.browser_urls()[-1]==copied
     editor.mark('Ctrl-L shows the full link. Native selection copies the complete logical line.')
     editor.keys('\x0c')
@@ -395,7 +435,7 @@ def account_case(display):
     assert editor.observe('vim.fn.mode(1)')=='t', 'Mouse Copy must leave private input ready'
     assert editor.clipboard().decode()==copied, 'Mouse Copy must replace the selected help text with the exact URL'
     editor.mouse(0,window['col']+3,window['row']+1)
-    editor.wait(lambda:len(editor.browser_urls())==3,'mouse Open invokes the desktop handler')
+    editor.wait(lambda:len(editor.browser_urls())==4,'mouse Open invokes the desktop handler')
     assert editor.browser_urls()[-1]==copied
     assert editor.observe('vim.fn.mode(1)')=='t', 'Mouse Open must leave private input ready'
     editor.keys('\x1c\x0e')
@@ -406,6 +446,8 @@ def account_case(display):
         'copied_url_bytes':len(copied.encode()),'copied_url_sha256':hashlib.sha256(copied.encode()).hexdigest(),
         'copied_equals_full_browser_url':True,'native_clipboard_provider':'Neovim OSC52',
         'native_paste_receiver':'separate Kitty terminal','open_action_uses_same_url':True,
+        'mouse_input':'actual XTest desktop events','terminal_hyperlinks':False,
+        'automatic_browser_open':True,'terminal_modifier_click_cannot_open_truncated_url':True,
         'callback_source':'native clipboard paste'}
     editor.screenshot('complete-link-controls')
     editor.mark('The login window fits a narrow terminal. Copy still returns the full link.')
@@ -417,7 +459,7 @@ def account_case(display):
     editor.keys('\x1b')
     editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='nt','Escape permits native terminal navigation')
     click_terminal_link(editor)
-    editor.wait(lambda:len(editor.browser_urls())==4,'a normal click on the visible resized terminal link opens the complete URL')
+    editor.wait(lambda:len(editor.browser_urls())==5,'a normal click on the resized browser action opens the complete URL')
     assert editor.browser_urls()[-1]==copied
     editor.mark('Return to the full terminal, then click Link while browser sign-in completes.')
     editor.resize(120,40)
@@ -425,12 +467,12 @@ def account_case(display):
     editor.mouse(0,window['col']+33,window['row']+1)
     editor.wait(lambda:editor.observe('vim.api.nvim_buf_get_name(0)')=='harness://login-link','mouse Link shows the complete URL while browser callback waits')
     assert editor.observe('vim.fn.mode(1)')=='n', 'Mouse Link must permit native selection'
-    assert len(editor.browser_urls())==4, 'Opening Full link must not also open the browser'
+    assert len(editor.browser_urls())==5, 'Opening Full link must not also open the browser'
     editor.mouse(0,window['col']+10,window['row']+3)
-    editor.wait(lambda:len(editor.browser_urls())==5,'an ordinary click on the wrapped link opens the browser')
+    editor.wait(lambda:len(editor.browser_urls())==6,'an ordinary click on the wrapped link opens the browser')
     assert editor.browser_urls()[-1]==copied
     editor.mouse(0,window['col']+3,window['row']+1)
-    editor.wait(lambda:len(editor.browser_urls())==6,'Open browser also works from Full link')
+    editor.wait(lambda:len(editor.browser_urls())==7,'Open browser also works from Full link')
     assert editor.browser_urls()[-1]==copied and editor.observe('vim.fn.mode(1)')=='n'
     editor.screenshot('full-link-browser-actions')
     complete_account(editor,copied)
@@ -529,19 +571,18 @@ def browser_case(display):
     editor.keys('i\\model openai/gpt-5.6-luna\r')
     editor.wait(lambda:editor.snapshot()['session']['model']=='gpt-5.6-luna','select the reported model')
     editor.keys('Unsent browser task.')
+    editor.mark('Select Sign in with ChatGPT. Firefox opens automatically with the complete login link.')
     login(editor,'openai','Sign in with ChatGPT')
     editor.wait(lambda:b'Complete login in your browser' in editor.output,'manual callback prompt')
-    assert not browser.attempts, 'The server must wait for an explicit browser action'
+    editor.wait(lambda:browser.find('Harness test account 1'),'Firefox opens the test authorization page automatically',timeout=20)
+    first = browser.find('Harness test account 1')
+    assert len(browser.attempts)==1, 'A new login must open one browser tab'
+    browser.screenshot('browser-test-account')
+    browser.focus(json.loads(editor.remote('ls'))[0]['platform_window_id'])
     editor.mark('Press Enter with no text. The browser sign-in must stay open.')
     editor.keys('\r')
     editor.keys('   \r')
     assert any(window['name']=='harness://setup' for window in editor.windows()), 'Blank callback input must keep browser sign-in open'
-    window = next(window for window in editor.windows() if window['name']=='harness://setup')
-    editor.mark('Click Open browser. Firefox opens a local test account page.')
-    editor.mouse(0,window['col']+3,window['row']+1)
-    editor.wait(lambda:browser.find('Harness test account 1'),'Firefox shows the test authorization page',timeout=20)
-    first = browser.find('Harness test account 1')
-    browser.screenshot('browser-test-account')
     assert len(browser.attempts)==1
     assert next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['credential_type']=='api_key'
     assert any(window['name']=='harness://setup' for window in editor.windows()), 'Empty input and a browser delay must not close the login listener'
@@ -554,14 +595,17 @@ def browser_case(display):
     assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==['Unsent browser task. Retry.']
     login(editor,'openai','Sign in with ChatGPT')
     editor.wait(lambda:any('Complete login in your browser' in ''.join(window['lines']) for window in editor.windows() if window['name']=='harness://setup'),'retry callback prompt')
+    editor.wait(lambda:browser.find('Harness test account 2'),'Firefox opens the new account attempt automatically',timeout=20)
+    browser.focus(json.loads(editor.remote('ls'))[0]['platform_window_id'])
     editor.keys('\r   \r')
-    editor.mark('Press Escape as in Vim, then click the printed login link.')
+    editor.mark('Press Escape as in Vim, then click Open browser without copying a link.')
     editor.keys('\x1b')
     editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='nt','Escape leaves login input without closing the listener')
-    click_terminal_link(editor,wrapped=True)
-    editor.wait(lambda:browser.find('Harness test account 2'),'Firefox shows the new account attempt',timeout=20)
-    second = browser.find('Harness test account 2')
-    assert browser.attempts[0]['callback']!=browser.attempts[1]['callback'], 'Retry must have a new OAuth state'
+    click_terminal_link(editor)
+    editor.wait(lambda:browser.find('Harness test account 3'),'an actual desktop click opens the complete current login URL',timeout=20)
+    second = browser.find('Harness test account 3')
+    assert browser.attempts[0]['callback']!=browser.attempts[2]['callback'], 'Retry must have a new OAuth state'
+    assert browser.attempts[1]['callback']==browser.attempts[2]['callback'], 'The visible browser action must use the same full URL as automatic opening'
     editor.mark('The cancelled browser page cannot finish the new sign-in.')
     browser.approve(first)
     editor.wait(lambda:'Authentication failed' in browser.title(first),'Firefox displays rejection of the cancelled state')
@@ -584,7 +628,7 @@ def browser_case(display):
     assert not editor.snapshot()['entries']
     requests = [json.loads(line) for line in (editor.root/'oauth-requests.jsonl').read_text().splitlines()]
     assert sum(item.get('grant')=='authorization_code' for item in requests)==1, 'Only the current browser attempt can exchange its code'
-    delay = browser.attempts[1]['approved_at']-browser.attempts[1]['opened_at']
+    delay = browser.attempts[2]['approved_at']-browser.attempts[2]['opened_at']
     assert delay>=15, 'The successful browser callback must include a human-length sign-in delay'
     editor.mark('Return to Neovim and continue the complete unsent task.')
     editor.screenshot('browser-return-draft')
@@ -600,11 +644,12 @@ def browser_case(display):
     editor.screenshot('browser-account-reply')
     (editor.root/'observed.json').write_text(json.dumps({
         'browser':'actual Firefox with a fresh profile per attempt','external_browser_requests':'blocked by a local proxy',
-        'browser_profile_paths':['firefox-profile-1','firefox-profile-2'],'user_browser_profile_changed':False,
+        'browser_profile_paths':['firefox-profile-1','firefox-profile-2','firefox-profile-3'],'user_browser_profile_changed':False,
         'test_browser_proxy':{'type':'manual','http':'127.0.0.1','https':'127.0.0.1','port':browser.server.server_port,
                               'bypass':['localhost','127.0.0.1'],'dns_over_https':False},
-        'url_source':'native Open browser button and normal click on the printed terminal URL; no clipboard or RPC URL extraction',
+        'url_source':'automatic browser launch and actual XTest click on the short Open browser action; no clipboard or RPC URL extraction',
         'callback_source':'Firefox form submission followed by HTTP redirect to the real Pi listener',
+        'automatic_browser_open':True,'native_mouse_used_same_complete_url':True,
         'blank_and_whitespace_input_preserved_listener':True,'escape_preserved_listener':True,'browser_wait_seconds':round(delay,2),
         'cancelled_state_rejected_by_real_callback':True,'current_state_authenticated':True,
         'token_exchanges':1,'account_replaced_environment_key':True,'generation_model':'gpt-5.6-luna',
@@ -626,7 +671,7 @@ def main():
               'kitty_version':subprocess.check_output(['kitty','--version'],text=True).strip(),
               'xvfb_executable':os.environ.get('HARNESS_TEST_XVFB') or shutil.which('Xvfb'),
               'xvfb_sha256':hashlib.sha256(Path(os.environ.get('HARNESS_TEST_XVFB') or shutil.which('Xvfb')).read_bytes()).hexdigest(),
-              'credentials':'synthetic only','url_source':'native Open browser action or copy and actual system paste; no RPC URL extraction',
+              'credentials':'synthetic only','url_source':'automatic launch, native desktop mouse, or copy and actual system paste; no RPC URL extraction',
               'cases':RESULTS}
     for case in report['cases']:
         directory = Path(case['terminal']).parent

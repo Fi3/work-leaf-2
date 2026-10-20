@@ -1,0 +1,20 @@
+{
+  "revision": "c0d10b54b65d0cca46d88690be5d2d47d379c61d",
+  "inputs": "Actual XTest left-click, then Ctrl+Shift+left-click; Kitty allow_hyperlinks=no",
+  "credentials": "synthetic only",
+  "ordinary_click_exact_url": true,
+  "native_terminal_click_url": "https://auth.openai.com/api/accounts/authorize?client_id=dynamic_agent_clien\u2502",
+  "truncated_url_contains_popup_border": true,
+  "expected_url_sha256": "a4326254d1d22ed3422f0d2ec2eb6baed7b3b1e0661f522596c27c4fb2af0037",
+  "expected_url_bytes": 562,
+  "source_sha256": {
+    "lua/harness/setup.lua": "97576111bbf5bd0eeff7dbe0b8e89e0b83ed040d5327f9f2934f74f1d6cc6195",
+    "adapter/auth.mjs": "51f6d0af984c0ee6c9f04cfa5a2436bb9881c5ffbdd22f3557f08999533b539d",
+    "tests/nvim/login_gui.py": "37303f28dd953a691ccf342ace4cf4c060bbada4471c9e7f04a9e647bfa586ef"
+  },
+  "source_hash_basis": "Committed source used by the before-fix probe; hashes read from git after the probe.",
+  "screenshot": {
+    "path": "native-link-before.png",
+    "sha256": "0d455dcd8b4a99e2a1316cf719fa3b526ced9ec28418d9d372acb6d6c647dde6"
+  }
+}

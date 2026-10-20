@@ -27,7 +27,7 @@ const activeProcess = async pid => {
     const value = await readFile(`/proc/${pid}/stat`, 'utf8'), fields = value.slice(value.lastIndexOf(')') + 2).split(' ');
     // A zombie leader can still have threads that hold its shared storage descriptor.
     return fields[0] !== 'Z' || fields[17] !== '1';
-  } catch (error) { if (error.code === 'ENOENT') return false; throw error; }
+  } catch (error) { if (error.code === 'ENOENT' || error.code === 'ESRCH') return false; throw error; }
 };
 const signal = (pid, name) => { try { process.kill(pid, name); } catch (error) { if (error.code !== 'ESRCH') throw error; } };
 async function rpc(socketPath) {
