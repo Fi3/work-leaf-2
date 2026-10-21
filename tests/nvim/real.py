@@ -1199,7 +1199,7 @@ def legacy_case(prior):
     assert start.returncode == 0, start.stderr
     original = Rpc(socket_path)
     original_hello = original.request('system.hello', {'api_version': 1})
-    assert original_hello.get('api_revision', 0) < 3, original_hello
+    assert original_hello.get('api_revision', 0) < 4, original_hello
     original.request('session.create', {'session_id': 'stored', 'workspace': str(root)})
     original.request('input.submit', {'session_id': 'stored', 'request_id': 'history', 'text': 'Preserve the prior history.', 'context': []})
     history_outcome = original.request('submission.wait', {'session_id': 'stored', 'request_id': 'history', 'timeout_ms': 10000})
@@ -1227,7 +1227,7 @@ def legacy_case(prior):
         original.close()
         current = Rpc(socket_path)
         hello = current.request('system.hello', {'api_version': 1})
-        assert hello['api_revision'] == 3 and hello['instance_id'] != original_hello['instance_id']
+        assert hello['api_revision'] == 4 and hello['instance_id'] != original_hello['instance_id']
         assert hello['state_dir'] == original_hello['state_dir']
         editor.wait(lambda: len(current.request('session.list')['items']) == 2, 'retained new chat is admitted after upgrade')
         created = next(item['session_id'] for item in current.request('session.list')['items'] if item['session_id'] != 'stored')

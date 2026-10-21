@@ -52,7 +52,7 @@ def emit(value):
 
 state = load()
 if sys.argv[-1] == 'upgrade':
-    state['api_revision'] = 3
+    state['api_revision'] = 4
     save(state)
     sys.exit(0)
 if sys.argv[-1] == 'start':
@@ -89,7 +89,7 @@ for line in sys.stdin:
     failure = None
     session = state['sessions'].get(params.get('session_id'))
     if method == 'system.hello':
-        result = {'api_version': 1, 'api_revision': state.get('api_revision', 3)}
+        result = {'api_version': 1, 'api_revision': state.get('api_revision', 4)}
     elif method == 'configuration.get':
         save(state)
         time.sleep(state.get('configuration_delay', 0))

@@ -209,6 +209,28 @@
       "params": {
         "provider": "openai-codex"
       }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "login-remote-true",
+      "method": "auth.login",
+      "params": {
+        "provider": "openai",
+        "method": "oauth",
+        "terminal": "/dev/pts/5",
+        "remote": true
+      }
+    },
+    {
+      "jsonrpc": "2.0",
+      "id": "login-remote-false",
+      "method": "auth.login",
+      "params": {
+        "provider": "openai",
+        "method": "oauth",
+        "terminal": "/dev/pts/5",
+        "remote": false
+      }
     }
   ],
   "invalid": [
@@ -401,6 +423,76 @@
           "method": "api_key",
           "terminal": "/dev/pts/5",
           "key": "must-not-enter-public-rpc"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-remote",
+        "method": "auth.login",
+        "params": {
+          "provider": "openai",
+          "method": "oauth",
+          "terminal": "/dev/pts/5",
+          "remote": null
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-remote",
+        "method": "auth.login",
+        "params": {
+          "provider": "openai",
+          "method": "oauth",
+          "terminal": "/dev/pts/5",
+          "remote": 1
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-remote",
+        "method": "auth.login",
+        "params": {
+          "provider": "openai",
+          "method": "oauth",
+          "terminal": "/dev/pts/5",
+          "remote": "true"
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-remote",
+        "method": "auth.login",
+        "params": {
+          "provider": "openai",
+          "method": "oauth",
+          "terminal": "/dev/pts/5",
+          "remote": []
+        }
+      },
+      "code": -32602
+    },
+    {
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "invalid-remote",
+        "method": "auth.login",
+        "params": {
+          "provider": "openai",
+          "method": "oauth",
+          "terminal": "/dev/pts/5",
+          "remote": {}
         }
       },
       "code": -32602
@@ -643,7 +735,7 @@
   },
   "hello": {
     "api_version": 1,
-    "api_revision": 3,
+    "api_revision": 4,
     "instance_id": "fixture",
     "state_dir": "/tmp/work",
     "ready": true,

@@ -1,4 +1,4 @@
-export const apiRevision = 3;
+export const apiRevision = 4;
 export const limits = Object.freeze({ record_bytes: 4194304, input_bytes: 1048576, context_items: 16, snapshot_bytes: 524288, recent_items: 50, preview_bytes: 8192, chunk_bytes: 65536, clients: 32, pending_requests: 32, watches: 8, active_sessions: 4, output_bytes: 4194304 });
 export class RpcError extends Error {
   constructor(code, message, kind) { super(message); this.code = code; if (kind) this.data = { kind }; }
@@ -8,7 +8,7 @@ export const appError = (kind, message) => new RpcError(-32000, message, kind);
 export const identifier = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 const fields = {
   'system.hello': [['api_version'], []], 'configuration.get': [[], ['session_id']],
-  'auth.login': [['provider', 'method', 'terminal'], []], 'auth.logout': [['provider'], []],
+  'auth.login': [['provider', 'method', 'terminal'], ['remote']], 'auth.logout': [['provider'], []],
   'session.create': [['session_id', 'workspace'], ['parent_session_id', 'name']],
   'session.configure': [['session_id'], ['provider', 'model', 'instructions', 'name']],
   'session.list': [[], ['cursor', 'limit', 'workspace']], 'session.get': [['session_id'], []], 'session.watch': [['session_id'], []],
@@ -36,6 +36,7 @@ export function validate(method, params) {
   if ('instructions' in params && (typeof params.instructions !== 'string' || Buffer.byteLength(params.instructions) > limits.input_bytes || params.instructions.includes('\0'))) throw invalid('Invalid instructions');
   if (method === 'session.configure' && (Object.keys(params).length === 1 || ('provider' in params) !== ('model' in params))) throw invalid('Supply settings; provider and model must be supplied together');
   if (method === 'auth.login' && (!['api_key', 'oauth'].includes(params.method) || typeof params.terminal !== 'string' || !params.terminal.startsWith('/dev/'))) throw invalid('Invalid login method or terminal');
+  if ('remote' in params && typeof params.remote !== 'boolean') throw invalid('remote must be a boolean');
   for (const key of ['submission_id', 'entry_id', 'watch_id', 'cursor', 'workspace', 'terminal']) {
     const value = params[key];
     if (key in params && (typeof value !== 'string' || !value || Buffer.byteLength(value) > 4096 || value.includes('\0'))) throw invalid(`Invalid ${key}`);

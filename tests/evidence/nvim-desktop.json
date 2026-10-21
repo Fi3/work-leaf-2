@@ -15,42 +15,49 @@
   "groups": [
     "all"
   ],
-  "passed": 5,
+  "passed": 6,
   "cases": [
     {
       "case": "device-code-native-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/device-code-native-clipboard.ansi.gz",
       "terminal_bytes": 187023,
-      "terminal_sha256": "a1b98d68b51d7049fe2c0e924f2c3ced87e9885e9042eaa766456b0facf1be7f"
+      "terminal_sha256": "6bca88b5fe136ae35bbbb950a4a9fcd16d089ef05191dbbfe202a33ce231cf14"
     },
     {
       "case": "login-browser-delayed-return",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-browser-delayed-return.ansi.gz",
-      "terminal_bytes": 77883,
-      "terminal_sha256": "56c883f7b633ba6370e41d35094d3f79a8e59399629d0124518ed98cceb89814"
+      "terminal_bytes": 76286,
+      "terminal_sha256": "68c5a408f91d7385a9f9d8d480b22e7e1352cbd4379f488b7fc967b059332026"
     },
     {
       "case": "login-copy-default-editor",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-copy-default-editor.ansi.gz",
       "terminal_bytes": 107941,
-      "terminal_sha256": "9e8efd1fad1f62164554a3699364af52c28b04bdae88105494404cebc6f59212"
+      "terminal_sha256": "c074df46ac6dcb266cf7f88d9874da1ec6290bf80d41a18fe8a4388351c3bdbd"
     },
     {
       "case": "login-copy-without-system-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-copy-without-system-clipboard.ansi.gz",
       "terminal_bytes": 151454,
-      "terminal_sha256": "6c6924f552aa56f3ee7f752fe5bd5349579ef34cecc592a59b66fb62d229cdaf"
+      "terminal_sha256": "2188505beab2e6d478f7de1ed1cff8f8197e26bad6c52e98f70efb803f83edd2"
+    },
+    {
+      "case": "login-ssh-copy-paste",
+      "passed": true,
+      "terminal": "nvim-terminal/desktop/login-ssh-copy-paste.ansi.gz",
+      "terminal_bytes": 206630,
+      "terminal_sha256": "e097fd4126b5cf384aceeabc26ab2ce0a5dff79e10d2acbcee6268434b4d2160"
     },
     {
       "case": "login-url-native-clipboard",
       "passed": true,
       "terminal": "nvim-terminal/desktop/login-url-native-clipboard.ansi.gz",
       "terminal_bytes": 311429,
-      "terminal_sha256": "726f9c44d161a74cc1aa49fc81c1f33fa9ae2d3fa19731f29494227e0e6c4d28"
+      "terminal_sha256": "6b986f90132d33e9515e3eb679b6b020d24b65d459fe7d6fe6fa92d5441659c9"
     }
   ],
   "xvfb_vendor_release": 12101024,

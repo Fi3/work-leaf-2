@@ -71,7 +71,7 @@
       "passed": true,
       "terminal": "nvim-terminal/fixture/q-modified.ansi.gz",
       "terminal_bytes": 27060,
-      "terminal_sha256": "e5eb64468b89db8eddf3b6a30c8c6f6e8dbb18de9269501aa7e9c92f090940cf"
+      "terminal_sha256": "41059f12a12cd34bed1262dc2fdde521a1e51c0bb8daf3e7f5a0d6052bdd0a4c"
     },
     {
       "case": "q-no",

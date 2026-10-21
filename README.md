@@ -8,10 +8,7 @@ references. They are not implementation instructions.
 
 ## Start
 
-For an SSH workspace, start with [Use through SSH](#use-through-ssh).
-Run that launcher on the computer that runs your browser.
-
-For a workspace on this computer, run from this directory:
+Run from this directory, including in an ordinary SSH session:
 
 ```sh
 ./harness.sh
@@ -23,6 +20,8 @@ Press `;` in normal mode to open the left agent tree. No editor setup is needed.
 From another project directory, run `/path/to/work-leaf-2/harness.sh`.
 The script keeps that project as the working directory.
 After an editor update, close Neovim and run the script again to load the changes.
+**Through SSH, browser login uses copy and paste.** No local Harness install or
+port forwarding is needed. Follow [Use through SSH](#use-through-ssh).
 
 Use Rust **1.94.1**, Node **26.10.0**, npm **12.2.0**, and Neovim **0.12.6**.
 The Rust toolchain file selects the required compiler, formatter, and Clippy.
@@ -41,12 +40,14 @@ You can also use `:Harness actions`.
 For the first AI chat, select **Connect an account**. Select your provider, then
 the account or API key method. For a ChatGPT account, select **OpenAI**, then
 **Sign in with ChatGPT**. The login opens in a terminal that accepts input at
-once. Firefox, or your default browser, opens automatically. Complete sign-in
-in the browser and keep the Neovim login window open until it finishes.
-You do not need to copy the link or press Enter. Empty or space-only input
-keeps waiting for the browser.
+once. **On a local desktop**, Firefox, or your default browser, opens automatically.
+Complete sign-in in the browser and keep the Neovim login window open until it
+finishes. No return address needs to be copied on a local desktop.
+**Through SSH**, use **Copy link** and follow the copy-and-paste steps below.
+Empty or space-only input keeps login open.
 
-Click **Open browser** or press **Ctrl-O** to open the current sign-in page again.
+On a local desktop, click **Open browser** or press **Ctrl-O** to open the
+current sign-in page again.
 The short control uses the complete address. It does not depend on the terminal
 detecting an address in the visible text. **Copy link** or
 **Ctrl-X** copies the complete browser link when you need it. The browser
@@ -54,28 +55,32 @@ link stays complete when it wraps or the window size changes. For device login,
 **Ctrl-Y** copies the separate device code. Follow the provider's instructions.
 Escape leaves terminal input mode and keeps sign-in open. Press `i` to enter
 input mode again. **Cancel** or **Ctrl-C** cancels and returns to the retained
-draft. Neovim opens one browser tab for each new login link. The server does not
-open an extra browser tab. A browser launch failure leaves the login open and
-shows the retry and copy actions.
+draft. On a local desktop, Neovim opens one browser tab for each new login link.
+The server does not open an extra browser tab. A local browser launch failure
+leaves the login open and shows the retry and copy actions. Through SSH,
+Neovim waits for you to copy the link to your local browser.
 
-Copy uses your configured Neovim clipboard. Without one, it uses Neovim's bundled
-terminal clipboard writer. No clipboard configuration is required in a terminal
-that permits these writes. The notice says **Copy requested** because a terminal
-can refuse the request.
+On a local desktop, Copy uses your configured Neovim clipboard. Without one,
+it uses Neovim's bundled terminal clipboard writer. Through SSH, Copy always
+uses that writer to reach your local terminal's clipboard. No clipboard
+configuration is required in a terminal that permits these writes. The notice
+says **Copy requested** because a terminal can refuse the request.
 
 **Ctrl-L**, or **Full link**, shows the complete URL in a normal text buffer
 and puts it in the Vim register. Use `y$` to copy the complete logical line.
 Enter or Escape returns to login input. Login accepts a pasted
 callback or code when the provider requests one. The `\login` command remains
 available.
-In standalone `harness auth`, Ctrl-O opens the browser and Ctrl-L shows the
-complete address. The normal terminal display uses the same short control.
+In standalone `harness auth`, Ctrl-O opens the browser on a local desktop, or
+copies the link through SSH. Ctrl-L shows the complete address. The normal
+terminal display uses the same short control.
 
-If a previous browser attempt says it cannot connect to `127.0.0.1:1455`,
-close that sign-in tab and start a new login. Use the page that opens automatically.
-An old browser tab cannot complete a login whose window was cancelled or closed.
-For SSH, use the local launcher below so that the browser can reach the remote
-callback listener.
+**Through SSH, “Unable to connect” at `127.0.0.1:1455` after browser sign-in is
+expected.** Copy the full address from the browser address bar. Paste it into
+the open Neovim login terminal and press Enter. Do not close that login window.
+For other providers, follow the displayed code or return-address prompt.
+On a local desktop, a cancelled or closed login cannot receive a callback. Close
+that old browser tab and start a new login.
 
 After login, choose a model for the new chat. Use **F1 → Choose a model**, or
 type `\model`, to see
@@ -103,7 +108,8 @@ account login keeps the previous credentials, including an environment API key.
 Credential presence does not prove that the account has access or available usage.
 Pi's OpenAI account method uses the subscription token flow documented in
 [OpenAI's sign-in guide](https://developers.openai.com/siwc/token-sharing-open-source/sign-in).
-The browser must return to the active loopback listener before that login can finish.
+On a local desktop, the browser returns to Pi automatically. Through SSH, paste
+the complete browser return address into the active login window to finish.
 If a run fails, the chat shows the cause and a recovery action after your message.
 For a quota or credit error, check the provider's billing or use `\login` to
 connect another account. For an OpenAI account login, use `\login openai` and
@@ -209,18 +215,17 @@ creates a child agent. It then opens a file with NERDTree `s` and returns to the
 child's own input and draft. The [report](tests/evidence/chat-workflow.json)
 records each action and the video hash. Responses use the Pi faux provider.
 
-[Watch browser sign-in through SSH](tests/evidence/ssh-login.mp4).
-The recording shows remote Neovim and local Firefox on separate test networks.
-Firefox opens automatically. A normal click on **Open browser** reopens the
-complete page. Browser approval returns through SSH and finishes the login
-without pasted input. Enter sends the retained task, which receives a controlled
-SDK reply. Captions explain each action.
-The [SSH report](tests/evidence/ssh.json) records the checks. The account page,
-tokens, and model reply use synthetic test data; no real subscription is tested.
-Playback is one-third speed. The [recording report](tests/evidence/ssh-login.json)
-records the action times and video hash.
+[Watch SSH copy-and-paste login](tests/evidence/ssh-manual-login.mp4).
+The recording shows the SSH instructions, a click on **Copy link**, local
+Firefox sign-in, the expected callback error, and the full return address
+pasted into Neovim. The retained draft then receives a controlled reply.
+Captions explain each action. The [recording report](tests/evidence/ssh-manual-login.json)
+records the checks and video hash. The test sets the editor's SSH environment
+and uses a local proxy to refuse the browser callback. It uses actual Neovim,
+Rust, Pi, and Firefox with synthetic account replies; it does not test an SSH
+connection or a real subscription. Playback is half speed.
 
-[Watch browser sign-in](tests/evidence/browser-login.mp4).
+[Watch local browser sign-in](tests/evidence/browser-login.mp4).
 This recording uses actual Firefox, Neovim, Rust, and Pi. It shows the
 automatic browser launch, empty input, explicit cancellation, and a fresh attempt.
 It then uses Escape and a normal click on **Open browser**. After a
@@ -301,62 +306,43 @@ the upgrade. Saved accounts remain available after replacement.
 
 ## Use through SSH
 
-The server, Pi, and Neovim stay on the remote Linux machine. The SSH launcher runs
-on your local Linux computer. It opens your local browser and forwards the
-provider's callback to the remote login. You do not copy the return address.
+Connect with your normal `ssh` command. Start `./harness.sh` in the remote
+project, or run the installed `harness nvim`. No local Harness program, special
+SSH command, or port forwarding is required. The application detects SSH and
+uses copy and paste for browser login. It does not open a remote browser.
 
-Install Harness on the remote machine with the command above. On your **local
-computer**, copy the verified Rust executable once. Replace `YOUR_SSH_HOST` with
-the host name or alias that you use with `ssh`:
+For ChatGPT login:
 
-```sh
-mkdir -p "$HOME/.local/bin"
-scp YOUR_SSH_HOST:/home/user/.local/bin/harness "$HOME/.local/bin/harness"
-chmod +x "$HOME/.local/bin/harness"
-```
+1. In Neovim, use **F1 → Connect an account**, or `:Harness login openai`.
+   Select **Sign in with ChatGPT**. Keep this login window open.
+2. Click **Copy link**, or press **Ctrl-X**. Paste the complete link into your
+   local browser's address bar and open it. **Ctrl-O** also copies through SSH.
+3. Complete sign-in in the browser. The browser can then show **Unable to
+   connect** at `127.0.0.1:1455`. **This is expected through SSH.** The address
+   refers to your local computer; the login waits on the remote computer.
+4. Copy the **complete address from the browser address bar**, including the
+   query after `?`. Return to the Neovim login window. Paste it and press
+   **Enter**. The pasted value is hidden because it contains login data.
+5. Wait for login to finish. Neovim returns to your chat. Select a model and
+   send your task.
 
-This binary must match your local Linux architecture and system libraries. If
-they differ, build the client from the same source revision with
-`cargo build --locked --release` on the local computer. The SSH command requires
-OpenSSH, `xdg-open`, and a default browser. It does not require local Pi, Node, or
-Neovim. It does not change your SSH or browser configuration.
+Do not copy the browser's error text or reuse an address from an old login.
+Use your terminal's paste command, usually **Ctrl-Shift-V** on Linux.
+If clipboard copying is unavailable, use **Full link** or **Ctrl-L**. This
+shows the complete link as selectable text. Enter or Escape returns to the
+login input. **Ctrl-C** cancels and keeps your draft and saved credentials.
+An empty Enter keeps login open.
 
-From the local terminal, run:
+Other providers can ask for a code instead of a return address. Follow the
+prompt in the login window. For **device-code login**, copy the link to your
+local browser, enter the displayed code, and approve access. **Ctrl-Y** copies
+the device code. No return address needs to be pasted; keep Neovim open until
+it reports the result. Radius uses its Pi device-code method through SSH
+because its browser method does not accept a pasted return address.
+API key entry remains private and does not open a browser.
 
-```sh
-"$HOME/.local/bin/harness" ssh --host YOUR_SSH_HOST \
-  --workspace /home/user/src/work-leaf-2 \
-  --remote-command /home/user/.local/bin/harness
-```
-
-Use the remote project path for `--workspace`. Omit `--remote-command` if the
-remote shell can find `harness`. The source launcher also accepts these arguments:
-`./harness.sh ssh --host YOUR_SSH_HOST --workspace /remote/project`.
-It builds only the local Rust client for this mode.
-
-Open **F1 → Connect an account**, or run `:Harness login openai`. Select
-**Sign in with ChatGPT**. The page opens in your local browser. Complete sign-in
-there. Neovim reports the result automatically. Keep its login window open until
-it finishes. **Open browser** and **Ctrl-O** reopen the full link locally.
-Device-code and explicit copied-code methods keep the instructions from Pi.
-
-The launcher uses normal OpenSSH host checks, authentication, and terminal input.
-Configure nonstandard ports, jump hosts, or keys with your normal SSH host alias.
-The SSH server must permit Unix socket forwarding and TCP forwarding to loopback.
-A private connection carries the browser link. It is not written to chat history.
-The callback forward starts before the browser opens and closes when login ends.
-The launcher supports fixed and allocated callback ports, IPv4, and IPv6.
-A busy local callback port or refused forward gives an error without stopping
-another process. Close the conflicting login, then use **Open browser** to retry.
-Cancel with **Ctrl-C** to return to the retained draft.
-Closing the SSH editor removes its private connections and directories. A lost
-connection also releases the callback. An uncatchable kill (`SIGKILL`) of the
-local launcher stops its SSH children and listeners, but can leave an inactive
-private directory under `TMPDIR`. It does not keep a callback port open.
-
-A normal SSH shell without this launcher shows a message to use `harness ssh`.
-It does not open a browser on the remote desktop. Exit that editor and start
-the command on your local computer. Do not reuse the previous sign-in tab.
+Automatic browser opening and automatic return remain available when Neovim
+and the browser run on the same computer outside SSH.
 
 ## Use from a script
 
@@ -552,7 +538,7 @@ They never imply a stop. Reconnect with `:Harness` to get the actual stored stat
 The socket uses a JSON-RPC 2.0 subset. Each UTF-8 JSON object ends with LF.
 Call `system.hello` with `api_version: 1` before other operations. Request IDs
 are connection-local strings; `request_id` is the durable input identifier.
-The current reply includes `api_revision: 3`. Clients check this revision before
+The current reply includes `api_revision: 4`. Clients check this revision before
 they use chat settings, provider catalogs, or login. The explicit upgrade command
 also accepts known older revisions for identity checks and idle shutdown only.
 Notifications are only for watches. Each `session.state` notification replaces
@@ -567,8 +553,10 @@ and local credential status. The `issue` is `missing_model`, `invalid_model`,
 `missing_key`, or null. It never returns a key or calls the model. This local
 configuration status is separate from the recovery status in `system.hello`.
 
-`auth.login` accepts a provider, method, and private terminal path. The worker
-reads credentials from that terminal; they are not RPC parameters. `auth.logout`
+`auth.login` accepts a provider, method, private terminal path, and optional
+`remote` boolean. The login client sets `remote: true` for an SSH session; its
+default is false. The worker reads credentials from that terminal; they are not
+RPC parameters. `auth.logout`
 accepts a provider ID. Both return status without credential values.
 
 `session.create` accepts optional `name` and `parent_session_id`. It can create a
@@ -715,22 +703,15 @@ Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
 `PATH`. These are test tools, not application dependencies. The desktop check
 fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
 
-The SSH check also requires OpenSSH client and server programs, `iproute2`,
-`unshare`, `nsenter`, `newuidmap`, and `newgidmap`. The test user needs subordinate
-user and group ID ranges and permission to create user, mount, and network
-namespaces. The test creates private SSH keys, terminals, account files, networks,
-and browser profiles. It does not change host accounts or SSH configuration.
-These isolation tools are test requirements, not application dependencies.
-
-The complete release gate passed on **2026-10-20** with the final source files. It passed
-formatting, Clippy with warnings denied, 59 Rust tests, the release build, five
-adapter syntax checks, and 135 Node tests. The Node tests include 72 adapter tests,
-34 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
+The complete release gate passed on **2026-10-21** with the final source files. It passed
+formatting, Clippy with warnings denied, 56 Rust tests, the release build, five
+adapter syntax checks, and 136 Node tests. The Node tests include 72 adapter tests,
+35 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
 ten actual server recovery tests, and one process exit test. Independent
 Node test files run concurrently with separate temporary directories and sockets.
 
 Neovim passed four headless suites, **73 actual terminal cases with the Rust
-server and Pi**, five desktop login cases, and 43 terminal cases with controlled
+server and Pi**, six desktop login cases, and 43 terminal cases with controlled
 protocol fixtures. The independent terminal groups run concurrently. The actual
 tests cover each normal exit command, exact answers, write
 failures, hidden modified buffers, multiple sessions, another client, completion
@@ -815,18 +796,13 @@ callback, the provider status changes from `api_key` to `oauth`. The next
 `gpt-5.6-luna` request uses the saved account token through the actual OpenAI SDK.
 No real credential is used by this test.
 
-The SSH checks use actual OpenSSH with separate local and remote loopback
-networks. They verify fixed and allocated callback ports, IPv4 and IPv6,
-device links, unchanged complete URLs, retries, occupied ports, denied forwards,
-connection loss, and launcher death. Foreign listeners remain available.
-Workspace and executable paths with spaces and apostrophes also work.
-An attached Neovim session uses the actual Rust server and Pi. The local desktop
-opens actual Firefox through `xdg-open`; the remote desktop opener is never used.
-A native mouse click reopens the complete page. Firefox returns through the
-forward to Pi without any copied callback. The exact retained prompt then gets
-the expected SDK reply using the saved account token. A plain SSH session shows
-the local launcher command and keeps the draft after cancellation.
-No local Node or Neovim command is needed by the launcher.
+The manual SSH login check sets the client's SSH environment while the server
+has no SSH environment. It uses actual Kitty, Neovim, Rust, Pi, and Firefox.
+It copies the complete sign-in link, completes the controlled browser form,
+and pastes the complete return address into Neovim. A test proxy refuses the
+local callback to reproduce the browser error. The test checks that the remote
+browser command is not called. This check tests SSH detection and manual login;
+it does not start an SSH server or test network forwarding.
 
 An additional [Alacritty and tmux check](tests/evidence/native-login.json) uses
 the actual Rust server, Pi, and Neovim with controlled device-login responses.
@@ -913,7 +889,7 @@ See the [release report](tests/evidence/release.json),
 [complete check output](tests/evidence/release.log),
 [actual terminal results](tests/evidence/nvim-real.json),
 [desktop login results](tests/evidence/nvim-desktop.json),
-[SSH results](tests/evidence/ssh.json),
+[manual SSH login results](tests/evidence/ssh-manual-login.json),
 [fixture terminal results](tests/evidence/nvim-fixture.json),
 [clean-install report](tests/evidence/clean-install.json), and
 [first-use source report](tests/evidence/source-launch.json) with its
@@ -942,7 +918,6 @@ python3 tests/nvim/interactive.py
 python3 tests/nvim/real.py --group exit
 python3 tests/nvim/real.py --group integration
 python3 tests/nvim/login_gui.py
-python3 tests/ssh.py
 ```
 
 The release gate also includes each adapter's `node --check`, the real-server

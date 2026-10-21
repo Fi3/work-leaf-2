@@ -83,23 +83,6 @@ function loginUrl(value) {
   if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw invalid('Login link is not a valid web address');
   return value;
 }
-function callbackTarget(value) {
-  const parameters = new URL(value).searchParams;
-  const targets = [...parameters.getAll('redirect_uri'), ...parameters.getAll('callback_url')];
-  if (!targets.length) return 'none';
-  let callback;
-  try {
-    if (targets.length !== 1 || /[\u0000-\u0020\u007f-\u009f]/.test(targets[0])) throw Error();
-    callback = new URL(targets[0]);
-  } catch { throw invalid('Login callback is not a valid web address'); }
-  const host = callback.hostname === '127.0.0.1' ? 'ipv4'
-    : callback.hostname === '[::1]' ? 'ipv6' : callback.hostname === 'localhost' ? 'localhost' : undefined;
-  if (callback.protocol !== 'http:' || !host) return 'none';
-  if (callback.username || callback.password) throw invalid('Login callback is not a valid web address');
-  const port = Number(callback.port || 80);
-  if (port < 1 || port > 65535) throw invalid('Login callback port is invalid');
-  return `${host},${port}`;
-}
 function openBrowser(url, report) {
   const browser = spawn('xdg-open', [url], { stdio: 'ignore', detached: true });
   const failed = () => report('Cannot open a browser here. Press Ctrl-X to copy the link.');
@@ -112,7 +95,8 @@ export async function terminalLogin(models, params, controller, deviceId) {
   const provider = models.getProvider(params.provider);
   const method = params.method === 'oauth' ? provider?.auth.oauth : provider?.auth.apiKey;
   if (!method?.login) throw invalid('This provider does not support the selected login method');
-  const browserLogin = provider.id === 'openai' && params.method === 'oauth';
+  const remote = params.remote === true;
+  const browserLogin = !remote && provider.id === 'openai' && params.method === 'oauth';
   const { input, output } = terminal(params.terminal);
   let hidden = true, link, deviceCode, activeReader;
   const display = new Writable({ write(value, encoding, done) {
@@ -136,7 +120,9 @@ export async function terminalLogin(models, params, controller, deviceId) {
     else if (key?.ctrl && key.name === 'x') {
       if (link) copy(link); else status('No browser link is available for this step.');
     } else if (key?.ctrl && key.name === 'o') {
-      if (link) openBrowser(link, status); else status('No browser link is available for this step.');
+      if (link) {
+        if (remote) copy(link); else openBrowser(link, status);
+      } else status('No browser link is available for this step.');
     } else if (key?.ctrl && key.name === 'l') {
       key.name = undefined; // Keep readline from clearing the link and the private prompt.
       status(link ? `Complete login link:\r\n${link}` : 'No browser link is available for this step.');
@@ -164,10 +150,9 @@ export async function terminalLogin(models, params, controller, deviceId) {
     write(`\x1b]52;c;${Buffer.from(value).toString('base64')}\x1b\\`);
     status('Clipboard copy requested. Ctrl-L shows the complete link.');
   };
-  const showLink = (value, callback = false) => {
+  const showLink = value => {
     link = loginUrl(value);
-    const target = callback ? callbackTarget(link) : 'none';
-    write(`\r\nContinue in your browser:\r\n\x1b]8;id=harness-login:callback=${target};${link}\x1b\\[ Open browser ]\x1b]8;;\x1b\\\r\nCtrl-O: open browser. Ctrl-X: copy link. Ctrl-L: show link.\r\n`);
+    write(`\r\n${remote ? 'SSH: copy this link to your local browser.' : 'Continue in your browser:'}\r\n\x1b]8;id=harness-login;${link}\x1b\\[ ${remote ? 'Copy link' : 'Open browser'} ]\x1b]8;;\x1b\\\r\n${remote ? 'Ctrl-X or Ctrl-O: copy link. Ctrl-L: show link.' : 'Ctrl-O: open browser. Ctrl-X: copy link. Ctrl-L: show link.'}\r\n`);
   };
   const question = async (message, secret, signal) => {
     controller.signal.throwIfAborted();
@@ -200,6 +185,10 @@ export async function terminalLogin(models, params, controller, deviceId) {
       prompt: async prompt => {
         const signal = prompt.signal ? AbortSignal.any([controller.signal, prompt.signal]) : controller.signal;
         if (prompt.type === 'select') {
+          if (remote && provider.id === 'radius' && prompt.options.some(item => item.id === 'device-code')) {
+            write('SSH uses device-code sign-in for Radius. Copy the link and code below.\r\n');
+            return 'device-code';
+          }
           write(`\r\n${prompt.message}\r\n`);
           for (const [index, item] of prompt.options.entries()) write(`  ${index + 1}. ${item.label}${item.description ? ` — ${item.description}` : ''}\r\n`);
           while (true) {
@@ -211,13 +200,16 @@ export async function terminalLogin(models, params, controller, deviceId) {
         }
         const secret = prompt.type === 'secret' || prompt.type === 'manual_code';
         const automatic = browserLogin && prompt.type === 'manual_code';
+        const manual = remote && prompt.type === 'manual_code';
+        if (manual) write('If the browser cannot connect to localhost or 127.0.0.1,\r\nthis is expected over SSH. Copy the FULL address from its address bar.\r\nPaste it below and press Enter. If a code is shown, paste that code.\r\n');
         const label = automatic ? 'Waiting for browser sign-in. No input is needed here. '
           : `${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ''}: `;
         while (true) {
           const value = await question(label, secret, signal);
           if (prompt.type === 'manual_code' && !value.trim()) {
             write(automatic ? 'The browser sign-in is still open. Ctrl-C cancels.\r\n'
-              : 'Wait for your browser, or paste the complete code or redirect URL. Ctrl-C cancels.\r\n');
+              : manual ? 'Paste the complete return URL or code. Ctrl-C cancels.\r\n'
+                : 'Wait for your browser, or paste the complete code or redirect URL. Ctrl-C cancels.\r\n');
             continue;
           }
           if (prompt.type === 'secret' && value === '') { cancel(); controller.signal.throwIfAborted(); }
@@ -228,13 +220,15 @@ export async function terminalLogin(models, params, controller, deviceId) {
       notify: event => {
         if (event.type === 'auth_url') {
           deviceCode = undefined;
-          showLink(event.url, true);
-          write(`${browserLogin ? 'Finish sign-in in your browser. This window updates automatically.' : event.instructions ?? ''}\r\n`);
+          showLink(event.url);
+          write(`${remote ? 'Sign in with your local browser. Keep this login window open.'
+            : browserLogin ? 'Finish sign-in in your browser. This window updates automatically.' : event.instructions ?? ''}\r\n`);
         } else if (event.type === 'device_code') {
           if (typeof event.userCode !== 'string' || !event.userCode || Buffer.byteLength(event.userCode) > 1024 || /[\u0000-\u001f\u007f-\u009f]/.test(event.userCode)) throw invalid('Device login code is invalid');
           deviceCode = event.userCode;
           showLink(event.verificationUri);
           write(`Enter code: \x1b]8;id=harness-code-${Buffer.from(deviceCode).toString('base64')};${link}\x1b\\${deviceCode}\x1b]8;;\x1b\\\r\nCtrl-Y: copy device code.\r\n`);
+          if (remote) write('Enter this code in your local browser. This window updates automatically.\r\nDo not paste the browser address here.\r\n');
         } else {
           write(`\r\n${event.message}\r\n`);
           for (const link of event.links ?? []) write(`${link.label ?? 'More information'}: ${loginUrl(link.url)}\r\n`);

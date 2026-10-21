@@ -2,8 +2,8 @@
 
 This specification defines a small personal coding agent with a Neovim interface.
 It also defines a command client and a public interface for scripts.
-The server runs on one Linux machine. A Linux client may launch its Neovim
-interface through OpenSSH, with browser sign-in on the client's machine.
+The server runs on one Linux machine. Neovim may run in an ordinary SSH session.
+SSH browser sign-in uses explicit copy and paste on the user's local computer.
 Its interfaces permit later remote access without moving agent logic into clients.
 
 The application uses Pi Durable for agent execution and persistent state.
@@ -55,8 +55,7 @@ The following work is outside version one:
 - A DSL, workflow language, or dynamic extension loader.
 - Subagents, conversation forks, steering, and queued follow-up inputs.
 - A web interface, application HTTP service, application TCP listener, TLS,
-  or remote deployment automation. Pi's login callbacks and OpenSSH forwards
-  are permitted for browser sign-in.
+  or remote deployment automation. Pi's own login callbacks are permitted.
 - Remote file synchronization and continuous synchronization of unsaved editor buffers.
 - Image input, image generation, and code mode.
 - A permission dialog system, sandbox, multi-user service, and scheduled task engine.
@@ -160,42 +159,33 @@ It must not contain provider code, credentials, agent policy, or a separate netw
 A future remote client can use the same operations through an SSH or HTTP adapter.
 The initial protocol must not assume that a client can read the server filesystem.
 The workspace belongs to the server. Context attachments contain text explicitly.
-General remote transports, authentication services, and deployment remain future
-work. The SSH launcher below uses OpenSSH without adding an application transport.
+General remote transports, authentication services, and deployment remain future work.
 
-### SSH browser sign-in
+### Login in an SSH session
 
-Provide `harness ssh --host HOST --workspace REMOTE_PATH` on the Linux machine
-that runs the user's browser. An optional `--remote-command PATH` selects the
-remote Harness executable. The local command requires OpenSSH and the desktop
-browser launcher; it must not require local Pi, Node, or Neovim.
+Detect an SSH session from nonempty `SSH_CONNECTION` or `SSH_TTY` in the login
+client's environment. Pass this choice with the private-terminal login request;
+the persistent worker's environment does not identify the current client.
+Do not provide an SSH launcher, browser relay, or callback forwarding.
+Do not start a browser on the remote machine.
 
-Use OpenSSH for authentication, host checks, the terminal, and port forwarding.
-Do not proxy terminal bytes or implement SSH. Keep the normal remote editor and
-its configuration. Do not change the user's SSH or browser configuration.
+Show clear copy-and-paste instructions in the login window and README. The user
+copies the complete sign-in link and opens it in the local browser. For a Pi
+method that accepts a return address, the user completes sign-in, copies the
+complete address from the browser address bar, and pastes it into the login
+terminal followed by Enter. Explain that a browser connection error at localhost
+or `127.0.0.1` is expected on this path. It does not by itself mean sign-in failed.
+Keep the login window open until the user pastes the return address or cancels.
+Empty input must not cancel login. Keep full links selectable and copyable.
 
-The launcher must carry private browser requests from that editor to the local
-machine. Keep each request channel in a private directory. Do not expose URLs
-through public agent RPC, logs, or errors. Validate and bound requests. A failed
-or disconnected bridge must not open a browser on the remote desktop.
-
-Reuse Pi's login and callback servers. Extract `redirect_uri` or `callback_url`
-with JavaScript's built-in URL parser. Forward the selected loopback callback
-before opening the complete authorization URL locally. Support fixed and
-allocated callback ports, localhost and IP loopback addresses, and device-code
-methods without a callback. Reject conflicting listeners without stopping them.
-Release each login's forwards when it ends; release all owned resources when
-the SSH session ends. Never release or stop resources owned by another session.
-
-The normal browser flow must complete without copying the callback address.
-Preserve any explicitly selected manual login method supported by Pi. A plain
-SSH session without the launcher must show how to use the local launcher rather
-than launching a browser on the server.
-
-Verify this path with actual OpenSSH, remote Neovim, Rust, Pi, and a local browser.
-Use separate network namespaces and controlled provider replies. Cover complete
-URLs, callback completion without pasted input, allocated ports, conflicts,
-denied forwarding, cancellation, connection loss, and resource cleanup.
+Retain Pi's instructions for providers that return a code instead of an address.
+Device-code login requires the code in the local browser and no return address.
+For a provider whose browser method cannot accept pasted input, select its
+existing Pi device-code method and explain this choice. Local desktop sign-in
+continues to open the browser and receive the callback automatically.
+Test both paths with actual Neovim, Rust, Pi, and a browser using controlled
+provider replies. Verify complete clipboard contents, manual return-address
+entry, cancellation, retained drafts, and the absence of a remote browser launch.
 
 The private server-to-worker protocol must use the same framing and public data types.
 Its version handshake must identify the Node release and pinned Pi artifacts.
@@ -426,7 +416,7 @@ Example acceptance response:
 | --- | --- | --- |
 | `system.hello` | `api_version` | Version, instance, readiness, limits. |
 | `configuration.get` | Optional `session_id` | Selected provider/model, readiness, all provider login methods and chat models. No credential values. |
-| `auth.login` | `provider`, `method`, `terminal` | Run the selected Pi login through the private terminal. Return authentication, cancellation, and worker readiness status. |
+| `auth.login` | `provider`, `method`, `terminal`, optional `remote` boolean (default false) | Run the selected Pi login through the private terminal. Return authentication, cancellation, and worker readiness status. |
 | `auth.logout` | `provider` | Remove that provider's saved credential. Reject while it has unfinished work. Ambient credentials remain controlled by their environment. |
 | `session.create` | `session_id`, `workspace` | Stored metadata. The same identifier and workspace return the existing session. A different workspace returns a conflict. |
 | `session.list` | Optional `cursor`, `limit` | Metadata page and next cursor. Default limit 50, maximum 100. |

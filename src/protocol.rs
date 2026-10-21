@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use std::io::{self, BufRead};
 
 pub const API_VERSION: u64 = 1;
-pub const API_REVISION: u64 = 3;
+pub const API_REVISION: u64 = 4;
 pub const MAX_RECORD: usize = 4 * 1024 * 1024;
 pub const MAX_INPUT: usize = 1024 * 1024;
 pub const MAX_SNAPSHOT: usize = 512 * 1024;
@@ -20,7 +20,7 @@ pub fn check_revision(hello: &Value, allow_legacy: bool) -> Result<(), RpcError>
         return Ok(());
     }
     let legacy = hello.get("api_revision").is_none()
-        || matches!(hello["api_revision"].as_u64(), Some(1 | 2));
+        || matches!(hello["api_revision"].as_u64(), Some(1..=3));
     if legacy && allow_legacy {
         return Ok(());
     }
@@ -152,7 +152,7 @@ pub fn validate(method: &str, params: &Value) -> Result<(), RpcError> {
     let (required, optional): (&[&str], &[&str]) = match method {
         "system.hello" => (&["api_version"], &[]),
         "configuration.get" => (&[], &["session_id"]),
-        "auth.login" => (&["provider", "method", "terminal"], &[]),
+        "auth.login" => (&["provider", "method", "terminal"], &["remote"]),
         "auth.logout" => (&["provider"], &[]),
         "session.create" => (&["session_id", "workspace"], &["parent_session_id", "name"]),
         "session.configure" => (
@@ -229,6 +229,9 @@ pub fn validate(method: &str, params: &Value) -> Result<(), RpcError> {
             || !string(params, "terminal")?.starts_with("/dev/"))
     {
         return Err(RpcError::invalid("Invalid login method or terminal"));
+    }
+    if object.contains_key("remote") && !params["remote"].is_boolean() {
+        return Err(RpcError::invalid("remote must be a boolean"));
     }
     for key in [
         "submission_id",

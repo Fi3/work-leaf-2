@@ -7,6 +7,7 @@ import test from 'node:test';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { openApplication } from '../adapter/pi.mjs';
 import { installOAuthMock, secret } from './fixtures/oauth.mjs';
+import { pty } from './fixtures/terminal.mjs';
 
 const nativeFetch = globalThis.fetch;
 const deviceId = '74c92438-a3ee-45c1-b6db-949badc75d07';
@@ -188,4 +189,54 @@ test('OpenAI occupied callback port reports failure before token exchange', asyn
     await assert.rejects(models.login('openai', 'oauth', interaction('openai'), { getDeviceId: () => deviceId }), /Port 1455 is in use/);
     assert.equal(mock.calls.length, 0);
   } finally { mock.restore(); await new Promise(resolve => server.close(resolve)); }
+});
+
+test('SSH uses Pi manual or device login with actual providers and a worker started without SSH', async t => {
+  const previous = { SSH_CONNECTION: process.env.SSH_CONNECTION, SSH_TTY: process.env.SSH_TTY };
+  delete process.env.SSH_CONNECTION; delete process.env.SSH_TTY;
+  t.after(() => { for (const [key, value] of Object.entries(previous)) if (value !== undefined) process.env[key] = value; });
+  const { app } = await application(t);
+  let sequence = 0;
+  const call = (method, params = {}) => app.dispatch(method, params, `ssh_${++sequence}`, () => {});
+  const mock = installOAuthMock(); t.after(() => mock.restore());
+  for (const [provider, method] of [
+    ['openai', 'browser'], ['openai-codex', 'browser'], ['anthropic', 'browser'],
+    ['anthropic', 'copy_code'], ['openrouter', 'browser'], ['radius', 'device-code'],
+  ]) {
+    const tty = await pty(t);
+    const pending = call('auth.login', { provider, method: 'oauth', terminal: tty.path, remote: true });
+    if (['openai-codex', 'anthropic'].includes(provider)) {
+      await tty.wait('Choice ['); tty.write(method === 'copy_code' ? '2\r' : '1\r');
+    }
+    if (provider === 'radius') {
+      await tty.wait('SSH uses device-code sign-in for Radius');
+      await tty.wait('Do not paste the browser address here.');
+    } else {
+      await tty.wait('Paste it below and press Enter. If a code is shown, paste that code.');
+      const authorization = new URL(tty.text.match(/\x1b\]8;id=harness-login;([^\x1b]+)\x1b\\/)[1]);
+      if (method === 'copy_code') {
+        await tty.wait('Paste the code Anthropic shows');
+        assert.ok(tty.text.includes('code#state'), 'The provider code format stays visible');
+        tty.write(`test-code#${authorization.searchParams.get('state')}\r`);
+      }
+      else {
+        const callback = new URL(authorization.searchParams.get('redirect_uri') ?? authorization.searchParams.get('callback_url'));
+        callback.searchParams.set('code', 'test-code');
+        if (authorization.searchParams.has('state')) callback.searchParams.set('state', authorization.searchParams.get('state'));
+        if (provider === 'openai') callback.searchParams.set('client_id', 'test-issued-client');
+        tty.write(callback.toString() + '\r');
+      }
+    }
+    assert.equal((await pending).authenticated, true, `${provider} completes through its Pi login method`);
+    await tty.wait('Login saved');
+    assert.equal((await app.credentials.read(provider)).type, 'oauth');
+    assert.ok(!tty.text.includes(secret));
+    assert.ok(!JSON.stringify(await call('configuration.get')).includes(secret));
+  }
+  assert.deepEqual((await call('session.list')).items, [], 'Login does not create a chat');
+  const saved = await app.credentials.read('openai'), tty = await pty(t);
+  const cancelled = call('auth.login', { provider: 'openai', method: 'oauth', terminal: tty.path, remote: true });
+  await tty.wait('Paste it below and press Enter. If a code is shown, paste that code.'); tty.write('\x03');
+  assert.equal((await cancelled).cancelled, true);
+  assert.deepEqual(await app.credentials.read('openai'), saved, 'SSH cancellation preserves the saved account');
 });

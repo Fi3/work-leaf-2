@@ -1,8 +1,8 @@
 {
-  "verified_at": "2026-10-20T19:06:05.263273+00:00",
+  "verified_at": "2026-10-21T08:59:22.035059+00:00",
   "installation": "/home/user/.local",
-  "action": "Install verified SSH browser sign-in while the server is idle; retain its environment, saved accounts and chat state",
-  "api_revision": 3,
+  "action": "Install verified manual SSH login while the server is idle; retain its environment, saved accounts and chat state",
+  "api_revision": 4,
   "state_directory": "/home/user/.local/state/harness",
   "server_restarted": true,
   "same_state_directory": true,
@@ -15,11 +15,11 @@
   "saved_chat_metadata_and_recent_entry_ids_unchanged": true,
   "recent_entries_unchanged": true,
   "saved_account_readiness_unchanged": true,
-  "binary_sha256": "960bc9b9ee55130cf8d5ac0870d25070a5e90444465eda0937567c7166f2cf8a",
+  "binary_sha256": "7dfec02d593ba84f289abf797df3fe2da4ea6123e104d21a8658e470b86cac2d",
   "installed_source_sha256": {
-    "adapter/auth.mjs": "2f3f385605df5b226590acf9893919f8e2fc6a7a4489151fbe0efbfe78b63a5f",
+    "adapter/auth.mjs": "1d41fab118611207f13e14bc82ed0c5e2b71db560ffc396eefca0f6ac5232b07",
     "adapter/pi.mjs": "be3e9f99d343f62de42bdea3e2b971d2fd2ac2bff64ed1d6324213165758e9e3",
-    "adapter/protocol.mjs": "6141e4cbd38873b9b2bfb86a65a93d7e0d154f8f6cc6647bb1bbf3f5278970d8",
+    "adapter/protocol.mjs": "973738ce52d618868fed6454cf9a1ff84d08c8f28cb981b052574a829e6731f9",
     "adapter/view.mjs": "d6f2b1d0dc90132d07f84ac9571cce56be9079dba00659cebdabb7fe5b0f2870",
     "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
     "lua/harness/commands.lua": "970d4585a80f244b028d30941013a358a8bad5aa6d2a999aaa5775808efa8b91",
@@ -27,9 +27,9 @@
     "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
     "lua/harness/init.lua": "2c61bf005119037bb56f693c3ba2e201b52e4f6d0129400047ed50551bdcadaa",
     "lua/harness/select.lua": "3a5a6d77786aae27d1a334ee096069e5ff1f6b0fcb059cd8b1676918d5feaee6",
-    "lua/harness/setup.lua": "2bad86135df85df4cc09144bb07e0a130fcdbbb3d4af00118b171e0133d8d53f",
+    "lua/harness/setup.lua": "a742fa406839f55742cfc875d4083a30f4cc4dafadd2030aa72efde8f542015f",
     "lua/harness/sidebar.lua": "2b7ed858b37aad752fb99a0a866572e73518c073c68602fd726c3d3712336323",
-    "lua/harness/transport.lua": "44510f47dc56cb04e8d63351ba856b0534c97dfe633cc762965de14371b100b4",
+    "lua/harness/transport.lua": "6758c3972ea01db236e9e1571a7674ed1a4379acbd47160d38895ed5484f178e",
     "lua/harness/view.lua": "527ec752fe31900d7ddd335175960950b046c4c8e951979405343ec55d470316",
     "plugin/harness.lua": "799661fbdaae6ac856c46c85615b59edb3ebcfaa534f45495f6798cf2be26957"
   }

@@ -21,8 +21,10 @@ DESKTOP = {}
 
 class Browser:
     """Run a real browser against a local test authorization page."""
-    def __init__(self, root, display):
+    def __init__(self, root, display, remote=False):
         self.root, self.display, self.attempts = root, display, []
+        self.remote, self.blocked_callbacks = remote, []
+        self.opener = None
         self.closed = False
         self.executable = os.environ.get('HARNESS_TEST_FIREFOX') or shutil.which('firefox')
         assert self.executable, 'Browser login tests require Firefox; HARNESS_TEST_FIREFOX can select it'
@@ -39,7 +41,10 @@ class Browser:
                 self.send_response(200); self.send_header('Content-Type','application/json')
                 self.end_headers(); self.wfile.write(body)
             def do_GET(self):
-                if self.path.startswith('/authorize/'):
+                if owner.remote and self.path.startswith('http://127.0.0.1:1455/auth/callback?'):
+                    owner.blocked_callbacks.append(self.path)
+                    self.close_connection = True
+                elif self.path.startswith('/authorize/') or self.path.startswith(owner.address+'/authorize/'):
                     number = int(self.path.rsplit('/',1)[1])
                     body = (f'<!doctype html><title>Harness test account {number}</title>'
                             '<style>body{font:24px sans-serif;max-width:800px;margin:80px auto}'
@@ -48,7 +53,7 @@ class Browser:
                             '<p>Keep the login window open in Neovim. Continue when ready.</p>'
                             f'<form action="/approve/{number}"><button autofocus>Continue to Neovim</button></form>').encode()
                     self.send_response(200); self.send_header('Content-Type','text/html'); self.end_headers(); self.wfile.write(body)
-                elif self.path.startswith('/approve/'):
+                elif self.path.startswith('/approve/') or self.path.startswith(owner.address+'/approve/'):
                     number = int(self.path.rsplit('/',1)[1].split('?')[0])
                     attempt = owner.attempts[number-1]
                     attempt['approved_at'] = time.monotonic()
@@ -97,7 +102,8 @@ class Browser:
         profile = self.root/('firefox-profile-'+str(number)); profile.mkdir()
         prefs = {'network.proxy.type':1,'network.proxy.http':'127.0.0.1','network.proxy.http_port':self.server.server_port,
                  'network.proxy.ssl':'127.0.0.1','network.proxy.ssl_port':self.server.server_port,
-                 'network.proxy.no_proxies_on':'localhost,127.0.0.1','network.trr.mode':5,
+                 'network.proxy.no_proxies_on':'' if self.remote else 'localhost,127.0.0.1','network.trr.mode':5,
+                 'network.proxy.allow_hijacking_localhost':self.remote,
                  'network.dns.disablePrefetch':True,'network.prefetch-next':False,
                  'browser.shell.checkDefaultBrowser':False,'browser.aboutwelcome.enabled':False,
                  'browser.startup.firstrunSkipsHomepage':True,'termsofuse.bypassNotification':True,
@@ -139,10 +145,17 @@ class Browser:
         self.x11.XFlush(self.connection)
 
     def approve(self, window):
+        self.key(window,0xff0d)
+
+    def key(self, window, symbol, modifiers=()):
         self.focus(window)
-        code = self.x11.XKeysymToKeycode(self.connection,0xff0d)
+        for modifier in modifiers:
+            self.xtest.XTestFakeKeyEvent(self.connection,self.x11.XKeysymToKeycode(self.connection,modifier),1,0)
+        code = self.x11.XKeysymToKeycode(self.connection,symbol)
         self.xtest.XTestFakeKeyEvent(self.connection,code,1,0)
         self.xtest.XTestFakeKeyEvent(self.connection,code,0,0)
+        for modifier in reversed(modifiers):
+            self.xtest.XTestFakeKeyEvent(self.connection,self.x11.XKeysymToKeycode(self.connection,modifier),0,0)
         self.x11.XFlush(self.connection)
 
     def screenshot(self, name):
@@ -166,6 +179,10 @@ class Browser:
             deadline = time.monotonic()+timeout
             while any(alive(attempt) for attempt in self.attempts) and time.monotonic()<deadline: time.sleep(.05)
         assert not any(alive(attempt) for attempt in self.attempts), 'The test must stop its own Firefox processes'
+        if self.opener:
+            try: self.opener.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.opener.kill(); self.opener.wait(timeout=5)
         self.server.shutdown(); self.server.server_close(); self.thread.join(timeout=5)
         self.x11.XCloseDisplay(self.connection)
 
@@ -199,12 +216,13 @@ def desktop():
 class GuiEditor(RealEditor):
     instances = []
 
-    def __init__(self, name, display, pending=0, clipboard=True, browser=False, generation=None, hyperlinks=True):
+    def __init__(self, name, display, pending=0, clipboard=True, browser=False, generation=None, hyperlinks=True, ssh=False):
         self.display, self.pending = display, pending
         self.use_browser, self.browser = browser, None
         self.clipboard_enabled, self.finished = clipboard, False
         self.video = None
         self.hyperlinks = hyperlinks
+        self.ssh = ssh
         self.steps = []
         self.instances.append(self)
         super().__init__(name, active=False, oauth_mock=True, generation=generation)
@@ -214,7 +232,7 @@ class GuiEditor(RealEditor):
         directory = self.root/'bin'
         directory.mkdir(exist_ok=True)
         opener = directory/'xdg-open'
-        if self.use_browser and self.browser is None: self.browser = Browser(self.root,self.display)
+        if self.use_browser and self.browser is None: self.browser = Browser(self.root,self.display,self.ssh)
         capture = '#!/usr/bin/env python3\nimport json,os,sys,urllib.request\nwith open(os.environ["HARNESS_GUI_BROWSER_LOG"],"a") as output: output.write(json.dumps(sys.argv[1:])+"\\n")\n'
         if self.browser:
             opener.unlink(missing_ok=True)
@@ -251,6 +269,8 @@ class GuiEditor(RealEditor):
         return subprocess.check_output(['kitty','@','--to',self.control,*arguments],input=data,env=self.env,stderr=subprocess.PIPE)
 
     def launch(self, env, command=None):
+        if self.ssh:
+            env = dict(env, SSH_CONNECTION='192.0.2.10 50000 192.0.2.20 22', SSH_TTY='/dev/pts/77')
         self.master = os.open('/dev/null',os.O_RDONLY)
         self.output = bytearray()
         self.control = 'unix:' + str(self.root/'kitty.sock')
@@ -699,6 +719,98 @@ def browser_case(display):
     editor.finish()
 
 
+def ssh_copy_case(display):
+    editor = GuiEditor('login-ssh-copy-paste',display,clipboard=None,browser=True,ssh=True,generation=[{'kind':'answer'}])
+    browser = editor.browser
+    assert not editor.env.get('SSH_CONNECTION') and not editor.env.get('SSH_TTY'), 'Only the editor is an SSH client; the running worker has a local environment'
+    editor.keys('i\\model openai/gpt-5.6-luna\r')
+    editor.wait(lambda:editor.snapshot()['session']['model']=='gpt-5.6-luna','select the model before remote login')
+    editor.keys('Unsent SSH task.')
+    editor.mark('SSH is detected. The instructions explain that browser sign-in requires copy and paste.')
+    login(editor,'openai','Sign in with ChatGPT')
+    def instructions():
+        return '\n'.join(line for window in editor.windows() if window['name']=='harness://setup' for line in window['lines'])
+    editor.wait(lambda:'Paste it below and press Enter.' in instructions(),'SSH copy action and instructions')
+    for text in ('SSH: copy this link to your local browser.', '[ Copy link ]',
+                 'If the browser cannot connect to localhost or 127.0.0.1,',
+                 'this is expected over SSH. Copy the FULL address from its address bar.',
+                 'Paste it below and press Enter. If a code is shown, paste that code.'):
+        assert text in instructions(), 'The remote instructions must explain the complete copy and paste procedure: '+text
+    assert 'No input is needed' not in instructions() and 'Open browser' not in instructions()
+    editor.screenshot('ssh-instructions')
+    editor.keys('\r   \r')
+    assert any(window['name']=='harness://setup' for window in editor.windows()), 'Empty input must keep the remote login ready'
+    assert not editor.browser_urls() and not browser.attempts, 'SSH must never launch a browser on the server'
+    editor.mark('Cancel before signing in. The unsent task stays in the chat.')
+    editor.keys('\x03')
+    editor.wait(lambda:not any(window['name']=='harness://setup' for window in editor.windows()),'cancel manual SSH login')
+    editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','cancellation restores the draft input')
+    editor.keys(' Retry.')
+    assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==['Unsent SSH task. Retry.']
+    login(editor,'openai','Sign in with ChatGPT')
+    editor.wait(lambda:any('[ Copy link ]' in line for window in editor.windows() if window['name']=='harness://setup' for line in window['lines']),'fresh manual SSH login link')
+    window = next(window for window in editor.windows() if window['name']=='harness://setup')
+    row = next(index for index,line in enumerate(window['lines'],1) if line=='[ Copy link ]')
+    position = editor.observe('vim.fn.screenpos('+str(window['id'])+','+str(row)+',8)')
+    assert position['row']>0 and position['col']>0, 'The manual Copy link action must be visible'
+    editor.mark('Click Copy link. The complete address goes to the local terminal clipboard.')
+    editor.mouse(0,position['col'],position['row'])
+    copied = editor.clipboard().decode()
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(copied).query)
+    assert copied.startswith('https://auth.openai.com/') and {'state','code_challenge','redirect_uri'}<=query.keys()
+    assert query['redirect_uri']==['http://127.0.0.1:1455/auth/callback'] and len(copied)>200
+    editor.keys('\x0f')
+    assert editor.clipboard().decode()==copied, 'Ctrl-O on SSH must copy the same full link'
+    assert not editor.browser_urls() and not browser.attempts, 'Neither SSH action may run the remote desktop opener'
+    editor.mark('Open the copied link on the local desktop. Approve the synthetic account in Firefox.')
+    with (editor.root/'local-browser.log').open('wb') as log:
+        browser.opener = subprocess.Popen(['/usr/bin/xdg-open',copied],env=editor.env,stdout=log,stderr=log)
+    editor.wait(lambda:browser.find('Harness test account 1'),'open the copied complete URL in Firefox',timeout=20)
+    page = browser.find('Harness test account 1')
+    assert editor.browser_urls()==[copied] and len(browser.attempts)==1
+    browser.screenshot('ssh-local-browser')
+    browser.approve(page)
+    editor.wait(lambda:browser.blocked_callbacks,'the browser cannot reach the remote loopback callback',timeout=15)
+    editor.wait(lambda:'Problem loading page' in browser.title(page),'Firefox displays the expected callback connection error',timeout=15)
+    assert next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['credential_type']=='api_key'
+    assert any(window['name']=='harness://setup' for window in editor.windows()), 'The browser connection failure must leave manual login ready'
+    browser.screenshot('ssh-expected-callback-error')
+    editor.mark('The callback connection error is expected over SSH. Copy the complete browser address.')
+    browser.key(page,ord('l'),modifiers=(0xffe3,))
+    editor.pump(.2)
+    browser.key(page,ord('c'),modifiers=(0xffe3,))
+    editor.pump(.2)
+    browser.focus(json.loads(editor.remote('ls'))[0]['platform_window_id'])
+    returned = editor.clipboard().decode()
+    assert returned==browser.attempts[0]['callback'], 'Copy from the Firefox address bar must preserve the complete callback'
+    editor.mark('Paste the browser address into Neovim and press Enter. The saved account completes login.')
+    editor.remote('action','--match','id:'+str(editor.window_id),'paste_from_clipboard')
+    editor.keys('\r')
+    editor.wait(lambda:not any(window['name']=='harness://setup' for window in editor.windows()),'manual callback paste completes the real Pi login')
+    assert next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']=='openai')['credential_type']=='oauth'
+    editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','manual login returns to the unchanged prompt')
+    assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==['Unsent SSH task. Retry.']
+    assert not editor.snapshot()['entries']
+    editor.screenshot('ssh-return-draft')
+    editor.mark('Send the retained task. Pi uses the saved account and returns the controlled model response.')
+    editor.keys('\r')
+    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.' and editor.snapshot()['state']=='idle','a task succeeds after manual SSH login')
+    generations = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
+    assert len(generations)==1 and generations[0]['credential_kind']=='oauth' and generations[0]['model']=='gpt-5.6-luna'
+    editor.screenshot('ssh-account-reply')
+    (editor.root/'observed.json').write_text(json.dumps({
+        'ssh_environment':'SSH_CONNECTION and SSH_TTY on the actual editor only; no SSH transport is used',
+        'worker_environment':'no SSH variables; client selects manual login',
+        'browser':'actual Firefox and /usr/bin/xdg-open with synthetic account replies',
+        'callback_boundary':'controlled browser proxy closes loopback requests to represent an unreachable remote callback',
+        'no_automatic_remote_browser':True,'ssh_instructions_visible':True,'native_mouse_copy':True,
+        'full_authorization_url_copied':True,'blank_input_preserved_login':True,'cancellation_preserved_draft':True,
+        'browser_error_expected':True,'callback_source':'Firefox address bar Ctrl-L, Ctrl-C; actual Kitty clipboard paste into Neovim',
+        'callback_paste_authenticated':True,'account_replaced_environment_key':True,'generation_model':'gpt-5.6-luna',
+        'generation_credentials':'synthetic OAuth','steps':editor.steps},indent=2)+'\n')
+    editor.finish()
+
+
 def main():
     with desktop() as display:
         try:
@@ -707,6 +819,7 @@ def main():
             fallback_case(display)
             fallback_case(display,default=True)
             browser_case(display)
+            ssh_copy_case(display)
         finally:
             for editor in GuiEditor.instances: editor.abort()
     report = {**DESKTOP,'mode':'Actual Kitty/Xvfb desktop, Neovim, Rust, Pi and Firefox; native clipboard paste and browser callbacks',

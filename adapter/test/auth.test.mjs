@@ -10,15 +10,12 @@ import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { openApplication } from '../pi.mjs';
 import { terminalLogin } from '../auth.mjs';
 import { installOAuthMock, secret as oauthSecret } from '../../tests/fixtures/oauth.mjs';
+import { pty, until } from '../../tests/fixtures/terminal.mjs';
 
 const secret = 'synthetic-key-NOT-FOR-OUTPUT';
 const isKind = kind => error => error.data?.kind === kind;
 const offline = { env: async () => undefined, fileExists: async () => false };
 const visibleText = text => text.replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '');
-async function until(predicate, message) {
-  for (let i = 0; i < 300; i++) { if (predicate()) return; await delay(10); }
-  assert.fail(message);
-}
 async function setup(t, tokens) {
   const directory = await mkdtemp(join(tmpdir(), 'harness-auth-'));
   const state = join(directory, 'state'), workspace = join(directory, 'work');
@@ -33,37 +30,6 @@ async function setup(t, tokens) {
   let sequence = 0;
   const call = (method, params = {}) => app.dispatch(method, params, `auth_${++sequence}`, () => {});
   return { app, call, config, workspace };
-}
-async function pty(t) {
-  // Python's standard library supplies a real PTY; no terminal emulation package is needed.
-  const child = spawn('python3', ['-u', '-c', `
-import os, pty, select, sys, json, base64
-master, slave = pty.openpty()
-print(json.dumps({"path": os.ttyname(slave)}), flush=True)
-while True:
-    for fd in select.select([master, sys.stdin], [], [])[0]:
-        if fd == master:
-            data = os.read(master, 65536)
-            print(json.dumps({"output": base64.b64encode(data).decode()}), flush=True)
-        else:
-            data = sys.stdin.readline()
-            if not data: sys.exit(0)
-            os.write(master, base64.b64decode(json.loads(data)["input"]))
-`], { stdio: ['pipe', 'pipe', 'pipe'] });
-  const terminal = { text: '', write: value => child.stdin.write(JSON.stringify({ input: Buffer.from(value).toString('base64') }) + '\n') };
-  let partial = '';
-  child.stdout.on('data', bytes => {
-    partial += bytes; let newline;
-    while ((newline = partial.indexOf('\n')) >= 0) {
-      const value = JSON.parse(partial.slice(0, newline)); partial = partial.slice(newline + 1);
-      if (value.path) terminal.path = value.path;
-      if (value.output) terminal.text += Buffer.from(value.output, 'base64').toString();
-    }
-  });
-  t.after(() => new Promise(resolve => { if (child.exitCode !== null) resolve(); else { child.once('exit', resolve); child.stdin.end(); } }));
-  await until(() => terminal.path, 'PTY must open');
-  terminal.wait = text => until(() => terminal.text.includes(text), `Terminal must show ${text}`);
-  return terminal;
 }
 const login = (app, tty, provider = 'openai', requestId = 'login') =>
   app.dispatch('auth.login', { provider, method: 'api_key', terminal: tty.path }, requestId);
@@ -375,6 +341,9 @@ test('empty manual callback input keeps waiting, accepts private input, and pres
 });
 
 test('OpenAI waits for the browser without a paste instruction and retains private manual recovery', async t => {
+  const previous = process.env.SSH_CONNECTION;
+  process.env.SSH_CONNECTION = 'worker-started-from-ssh';
+  t.after(() => { if (previous === undefined) delete process.env.SSH_CONNECTION; else process.env.SSH_CONNECTION = previous; });
   const waiting = 'Waiting for browser sign-in. No input is needed here.';
   const manual = 'http://127.0.0.1:1455/auth/callback?code=' + secret;
   const instructions = 'Paste the callback after browser approval.';
@@ -419,6 +388,50 @@ test('OpenAI waits for the browser without a paste instruction and retains priva
     assert.equal(controller.signal.aborted, false, 'Callback completion does not cancel the login');
     assert.ok(!tty.text.includes(secret), 'A recovery callback remains private');
   }
+});
+
+test('SSH login copies complete links, explains local browser errors, and keeps pasted input private', async t => {
+  const directory = await mkdtemp(join(tmpdir(), 'harness-ssh-copy-')), log = join(directory, 'opened');
+  await writeFile(join(directory, 'xdg-open'), `#!${process.execPath}\nimport { writeFileSync } from 'node:fs';\nwriteFileSync(${JSON.stringify(log)}, 'unexpected opener');\n`, { mode: 0o700 });
+  const previous = { PATH: process.env.PATH, SSH_CONNECTION: process.env.SSH_CONNECTION, SSH_TTY: process.env.SSH_TTY };
+  process.env.PATH = directory + ':' + previous.PATH;
+  delete process.env.SSH_CONNECTION; delete process.env.SSH_TTY;
+  t.after(async () => {
+    for (const [key, value] of Object.entries(previous)) if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    await rm(directory, { recursive: true, force: true });
+  });
+  const url = 'https://example.invalid/login?state=' + 'aB09%2F'.repeat(200);
+  const returned = 'http://127.0.0.1:1455/auth/callback?code=' + secret, code = 'TEST-CODE';
+  const tty = await pty(t), controller = new AbortController();
+  let approve;
+  const model = {
+    refresh: async () => ({ errors: new Map() }),
+    getProvider: () => ({ id: 'openai', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
+    async login(_provider, _method, ui) {
+      ui.notify({ type: 'auth_url', url, instructions: 'A browser should open automatically.' });
+      assert.equal(await ui.prompt({ type: 'manual_code', message: 'Browser callback' }), returned);
+      ui.notify({ type: 'device_code', verificationUri: url, userCode: code });
+      await new Promise(resolve => { approve = resolve; });
+    },
+  };
+  const pending = terminalLogin(model, { provider: 'openai', method: 'oauth', terminal: tty.path, remote: true }, controller, 'id');
+  await tty.wait('Paste it below and press Enter. If a code is shown, paste that code.');
+  assert.match(visibleText(tty.text), /SSH: copy this link to your local browser/);
+  assert.match(visibleText(tty.text), /localhost or 127\.0\.0\.1,[\r\n]+this is expected over SSH/);
+  assert.match(visibleText(tty.text), /FULL address from its address bar/);
+  assert.ok(tty.text.includes('[ Copy link ]'));
+  assert.doesNotMatch(visibleText(tty.text), /automatically|No input is needed|Open browser/i);
+  tty.write('\r'); await tty.wait('Paste the complete return URL or code. Ctrl-C cancels.');
+  tty.write(returned.slice(0, 12) + '\x0f\x18' + returned.slice(12) + '\r');
+  await tty.wait('Do not paste the browser address here.');
+  assert.match(visibleText(tty.text), /Enter this code in your local browser\. This window updates automatically\./);
+  tty.write('\x19'); await delay(40);
+  approve(); assert.equal(await pending, false);
+  await tty.wait('Login saved');
+  const copied = Array.from(tty.text.matchAll(/\x1b\]52;c;([A-Za-z0-9+/=]+)\x1b\\/g), match => Buffer.from(match[1], 'base64').toString());
+  assert.deepEqual(copied, [url, url, code]);
+  await assert.rejects(readFile(log), { code: 'ENOENT' }, 'SSH never starts a remote browser, even after Ctrl-O');
+  assert.ok(!tty.text.includes(secret));
 });
 
 test('characters entered while a provider saves credentials do not become visible', async t => {
@@ -488,7 +501,7 @@ test('login link controls preserve private input and copy the complete current U
   assert.deepEqual(answers, [secret, secret, 'visible value']);
   const copied = Array.from(tty.text.matchAll(/\x1b\]52;c;([A-Za-z0-9+/=]+)\x1b\\/g), match => Buffer.from(match[1], 'base64').toString());
   assert.deepEqual(copied, [url, code, nextUrl, url]);
-  const links = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-login:callback=none;([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
+  const links = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-login;([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
     match => ({ url: match[1], label: match[2] }));
   assert.deepEqual(links, [url, nextUrl, url].map(value => ({ url: value, label: '[ Open browser ]' })));
   const codes = Array.from(tty.text.matchAll(/\x1b\]8;id=harness-code-([A-Za-z0-9+/=]+);([^\x1b]+)\x1b\\([^\x1b]+)\x1b\]8;;\x1b\\/g),
@@ -507,41 +520,6 @@ test('login link controls preserve private input and copy the complete current U
   assert.ok(!next.text.includes('\x1b]52;') && !next.text.includes(url) && !next.text.includes(code));
 });
 
-test('private login links describe fixed and allocated callback ports without changing the authorization URL', async t => {
-  const cases = [
-    ['redirect_uri', 'http://127.0.0.1:1455/auth/callback', 'ipv4,1455'],
-    ['redirect_uri', 'http://localhost:53692/callback', 'localhost,53692'],
-    ['callback_url', 'http://127.0.0.1:49157/oauth/callback/path', 'ipv4,49157'],
-    ['redirect_uri', 'http://[::1]:49158/callback', 'ipv6,49158'],
-    ['redirect_uri', 'http://localhost/callback', 'localhost,80'],
-    ['redirect_uri', 'https://platform.example.test/copy', 'none'],
-    ['redirect_uri', 'http://127.0.0.1.example.test:1455/callback', 'none'],
-    ['redirect_uri', 'http://constructor:1455/callback', 'none'],
-    ['redirect_uri', 'http://__proto__:1455/callback', 'none'],
-    ['redirect_uri', 'http://192.168.1.1:1455/callback', 'none'],
-    ['redirect_uri', 'https://localhost:1455/callback', 'none'],
-  ];
-  for (const [field, callback, expected] of cases) {
-    const tty = await pty(t);
-    const url = `https://example.invalid/auth?state=a%2fb%2Bc&${field}=${encodeURIComponent(callback)}`;
-    const model = {
-      refresh: async () => ({ errors: new Map() }),
-      getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
-      async login(_provider, _method, ui) {
-        ui.notify({ type: 'auth_url', url });
-        ui.notify({ type: 'device_code', verificationUri: url, userCode: 'TEST-CODE' });
-      },
-    };
-    assert.equal(await terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id'), false);
-    await tty.wait('Login saved');
-    assert.ok(tty.text.includes(`\x1b]8;id=harness-login:callback=${expected};${url}\x1b\\`),
-      `The ${callback} callback identifies its exact destination`);
-    assert.ok(tty.text.includes(`\x1b]8;id=harness-login:callback=none;${url}\x1b\\`),
-      'Device login never creates a callback forward, even when its verification URL contains that query field');
-    assert.ok(!visibleText(tty.text).includes(url));
-  }
-});
-
 test('invalid provider links and device codes cannot emit terminal commands or open a browser', async t => {
   const tty = await pty(t), previous = process.env.DISPLAY;
   delete process.env.DISPLAY;
@@ -554,10 +532,6 @@ test('invalid provider links and device codes cannot emit terminal commands or o
     ...['javascript:alert(1)', 'file:///tmp/key', 'https://name:password@example.invalid', 'https://example.invalid/\x1b]52;c;bad\x07',
       'https://example.invalid/\nnext', 'https://example.invalid/\u0085', 'https://example.invalid/' + 'a'.repeat(8192)]
       .map(url => ({ type: 'auth_url', url })),
-    ...['not a URL', 'http://user:password@localhost:1455/callback', 'http://localhost:0/callback',
-      'http://localhost:65536/callback', 'http://localhost:1455/\ncallback']
-      .map(callback => ({ type: 'auth_url', url: 'https://example.invalid/?redirect_uri=' + encodeURIComponent(callback) })),
-    { type: 'auth_url', url: 'https://example.invalid/?redirect_uri=http%3A%2F%2Flocalhost&callback_url=http%3A%2F%2Flocalhost' },
     { type: 'device_code', verificationUri: 'https://example.invalid', userCode: '\x1b]52;c;bad\x07' },
     { type: 'device_code', verificationUri: 'https://example.invalid', userCode: 'a'.repeat(1025) },
   ];

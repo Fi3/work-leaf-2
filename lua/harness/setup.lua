@@ -48,17 +48,9 @@ function M.new(transport, report)
     local window = vim.api.nvim_open_win(buffer, true, bounds())
     self.window = window
     local group = vim.api.nvim_create_augroup('HarnessLogin' .. buffer, { clear = true })
-    local job, link, code, link_buffer, ended, closed, callback_target
-    local browser_job, browser_failure
+    local job, link, code, link_buffer, ended, closed
+    local ssh = (vim.env.SSH_CONNECTION or '') ~= '' or (vim.env.SSH_TTY or '') ~= ''
     local browser_attempt, link_sequence = 0, 0
-    local function close_browser()
-      local channel = browser_job
-      browser_job, browser_failure = nil, nil
-      if channel then
-        pcall(vim.fn.chanclose, channel, 'stdin')
-        pcall(vim.fn.jobstop, channel)
-      end
-    end
     local actions = { window = window }
     actions.resume = function()
       if not ended and vim.api.nvim_win_get_buf(window) == buffer then enter() end
@@ -67,7 +59,6 @@ function M.new(transport, report)
     local function close(succeeded, focused)
       if closed then return end
       closed = true
-      close_browser()
       if focused == nil then focused = vim.api.nvim_get_current_win() == window end
       local delayed = focused and vim.api.nvim_get_current_win() == window
         and vim.api.nvim_get_current_buf() == buffer and vim.fn.mode() == 't'
@@ -93,16 +84,20 @@ function M.new(transport, report)
       local labels = width >= 54 and { '[ Open browser ]', 'Copy link', 'Full link', 'Cancel' }
         or width >= 30 and { '[Open]', 'Copy', 'Link', 'Cancel' }
         or width >= 26 and { 'Open', 'Copy', 'Link', 'Cancel' } or { 'Open', 'Copy', 'Link', '^C' }
+      if ssh then
+        labels = width >= 40 and { '[ Copy link ]', 'Full link', 'Cancel' } or { 'Copy', 'Link', 'Cancel' }
+      end
       if ended then labels = { 'Close' } elseif not link then labels = { 'Cancel' } end
       local parts = {}
       for index, label in ipairs(labels) do
-        local action = ended and 1 or not link and 3 or ({ 2, 1, 4, 3 })[index]
+        local action = ended and 1 or not link and 3 or (ssh and { 1, 4, 3 } or { 2, 1, 4, 3 })[index]
         parts[#parts + 1] = '%' .. action .. "@v:lua.require'harness.setup'.click@ " .. label .. ' %T'
       end
       vim.wo[window].winbar = table.concat(parts)
       if link then
         local hint = width >= 54 and 'Finish sign-in in browser. Keep this window open.'
           or width >= 34 and 'Finish in browser. Keep open.' or 'Keep login open.'
+        if ssh then hint = width >= 40 and 'SSH: copy link to local browser.' or 'SSH: copy link locally.' end
         vim.api.nvim_win_set_config(window, { footer = ' ' .. hint .. ' ', footer_pos = 'left' })
       end
     end
@@ -116,7 +111,7 @@ function M.new(transport, report)
       local mouse = vim.fn.getmousepos()
       if link and not closed and not ended and mouse.winid == window and mouse.winrow > 2 and mouse.line > 0 then
         local line = vim.api.nvim_buf_get_lines(vim.api.nvim_win_get_buf(window), mouse.line - 1, mouse.line, false)[1]
-        if (line == '[ Open browser ]' or line == link) and mouse.column >= 1 and mouse.column <= #line then
+        if (line == '[ Open browser ]' or line == '[ Copy link ]' or line == link) and mouse.column >= 1 and mouse.column <= #line then
           vim.schedule(function()
             if not closed and vim.api.nvim_get_current_win() == window then
               actions[2]()
@@ -164,83 +159,36 @@ function M.new(transport, report)
     local function copy(value)
       if not value then return end
       local ok = false
-      if vim.fn.has('clipboard') == 1 then ok = pcall(vim.fn.setreg, '+', value, 'v')
-      else ok = terminal_copy(value) end
+      if ssh or vim.fn.has('clipboard') ~= 1 then ok = terminal_copy(value)
+      else ok = pcall(vim.fn.setreg, '+', value, 'v') end
       if ok then
-        vim.api.nvim_win_set_config(window, { footer = ' Copy requested · Ctrl-L: link ', footer_pos = 'left' })
+        vim.api.nvim_win_set_config(window, { footer = ssh and vim.api.nvim_win_get_width(window) >= 54
+          and ' Copy requested · Paste in your local browser ' or ' Copy requested · Ctrl-L: link ', footer_pos = 'left' })
       else show_link('System clipboard unavailable.', value) end
     end
     local function open()
       if not link or ended or closed or not vim.api.nvim_win_is_valid(window) then return end
+      if ssh then copy(link); return end
       browser_attempt = browser_attempt + 1
       local attempt, url = browser_attempt, link
       toolbar()
-      local function failed(message)
+      local function failed()
         if closed or ended or not vim.api.nvim_win_is_valid(window) or link ~= url or attempt ~= browser_attempt then return end
-        vim.api.nvim_win_set_config(window, { footer = message and ' Browser not opened. See message. ' or ' Browser failed. Use Copy. ', footer_pos = 'left' })
-        report(message or 'Browser did not open. Use Open browser to retry, or Copy link.')
-      end
-      if vim.env.HARNESS_BROWSER_SOCKET and vim.env.HARNESS_BROWSER_SOCKET ~= '' then
-        if callback_target == nil then
-          failed('Upgrade the remote Harness server to open browser sign-in through SSH.')
-          return
-        end
-        browser_failure = failed
-        if not browser_job then
-          local pending = ''
-          local function broken()
-            local failure = browser_failure
-            close_browser()
-            if failure then failure('Browser connection failed. Start harness ssh again.') end
-          end
-          local ok, channel = pcall(vim.fn.jobstart, { transport.arguments('browser')[1], 'browser' }, {
-            on_stdout = vim.schedule_wrap(function(channel, data)
-              if channel ~= browser_job then return end
-              pending = pending .. table.concat(data, '\n')
-              while true do
-                local newline = pending:find('\n', 1, true)
-                if not newline then
-                  if #pending > 12288 then broken() end
-                  return
-                end
-                if newline > 12288 then broken(); return end
-                local ok, reply = pcall(vim.json.decode, pending:sub(1, newline - 1))
-                pending = pending:sub(newline + 1)
-                if not ok or type(reply) ~= 'table' or type(reply.id) ~= 'number'
-                  or (reply.error ~= vim.NIL and type(reply.error) ~= 'string') then broken(); return end
-                if reply.id == browser_attempt and reply.error ~= vim.NIL and browser_failure then browser_failure(reply.error) end
-              end
-            end),
-            on_exit = vim.schedule_wrap(function(channel)
-              if channel == browser_job then broken() end
-            end),
-          })
-          if not ok or channel <= 0 then broken(); return end
-          browser_job = channel
-        end
-        local request = vim.json.encode({ id = attempt, url = url, callback = callback_target }) .. '\n'
-        if #request > 12288 then failed('Login link exceeds the browser request limit.'); return end
-        local ok, written = pcall(vim.fn.chansend, browser_job, request)
-        if not ok or written == 0 then
-          close_browser()
-          failed('Browser connection failed. Start harness ssh again.')
-        end
-        return
-      end
-      if (vim.env.SSH_CONNECTION or '') ~= '' or (vim.env.SSH_TTY or '') ~= '' then
-        failed('Start harness ssh on your local computer to open the browser and receive its return automatically.')
-        return
+        vim.api.nvim_win_set_config(window, { footer = ' Browser failed. Use Copy. ', footer_pos = 'left' })
+        report('Browser did not open. Use Open browser to retry, or Copy link.')
       end
       local ok = pcall(vim.system, { 'xdg-open', url }, { detach = true, stdout = false, stderr = false },
         vim.schedule_wrap(function(result) if result.code ~= 0 or result.signal ~= 0 then failed() end end))
       if not ok then failed() end
     end
     actions[1], actions[2], actions[3], actions[4], actions[5] =
-      function() copy(link) end, open, cancel, function() show_link('Complete login link.') end, function() copy(code) end
+      function() copy(link) end, open, cancel, function()
+        show_link(ssh and 'SSH: paste this link in your local browser.' or 'Complete login link.')
+      end, function() copy(code) end
     for _, mode in ipairs({ 't', 'n', 'v' }) do
       vim.keymap.set(mode, '<C-c>', cancel, { buffer = buffer, silent = true })
       vim.keymap.set(mode, '<C-x>', actions[1], { buffer = buffer, silent = true, desc = 'Copy login link' })
-      vim.keymap.set(mode, '<C-o>', open, { buffer = buffer, silent = true, desc = 'Open login link' })
+      vim.keymap.set(mode, '<C-o>', open, { buffer = buffer, silent = true, desc = ssh and 'Copy login link' or 'Open login link' })
       vim.keymap.set(mode, '<C-l>', actions[4], { buffer = buffer, silent = true, desc = 'Select complete login link' })
       vim.keymap.set(mode, '<C-y>', actions[5], { buffer = buffer, silent = true, desc = 'Copy device code' })
     end
@@ -251,26 +199,14 @@ function M.new(transport, report)
     end
     vim.api.nvim_create_autocmd('TermRequest', { group = group, buffer = buffer, callback = function(event)
       local url = event.data.sequence:match('^\027%]8;id=harness%-login;(.*)$')
-      local target, metadata
-      if not url then
-        metadata, url = event.data.sequence:match('^\027%]8;id=harness%-login:callback=([^;]*);(.*)$')
-        if metadata == 'none' then target = vim.NIL
-        elseif metadata then
-          local host, port = metadata:match('^([a-z0-9]+),(%d+)$')
-          host = ({ ipv4 = '127.0.0.1', ipv6 = '::1', localhost = 'localhost' })[host]
-          port = tonumber(port)
-          if not host or not port or port < 1 or port > 65535 then return end
-          target = { host = host, port = port }
-        end
-      end
       if url and #url <= 8192 and url:match('^https?://%S+$') and not url:find('%c') then
-        local changed = link ~= url or not vim.deep_equal(callback_target, target)
-        link, code, callback_target = url, nil, target
+        local changed = link ~= url
+        link, code = url, nil
         if changed then link_sequence = link_sequence + 1 end
         local sequence = link_sequence
         vim.schedule(function()
           toolbar()
-          if changed and not closed and link_sequence == sequence then open() end
+          if changed and not closed and not ssh and link_sequence == sequence then open() end
         end)
       end
       local encoded, target = event.data.sequence:match('^\027%]8;id=harness%-code%-([A-Za-z0-9+/=]+);(.*)$')
@@ -296,7 +232,6 @@ function M.new(transport, report)
       vim.schedule(function()
         if closed or not vim.api.nvim_win_is_valid(window) or not vim.api.nvim_buf_is_valid(buffer) then return end
         ended = true
-        close_browser()
         if code == 0 then
           transport.connect(function(_, err)
             if err then report(err) end

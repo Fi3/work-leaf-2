@@ -88,9 +88,12 @@ fn login(client: &mut Client, provider: &Value, method: Option<&str>) -> Result<
     );
     io::stdout().flush()?;
     let guard = process::TerminalSession::open()?;
+    let remote = ["SSH_CONNECTION", "SSH_TTY"]
+        .iter()
+        .any(|name| std::env::var_os(name).is_some_and(|value| !value.is_empty()));
     let result = client.request(
         "auth.login",
-        json!({"provider":provider["id"],"method":method["id"],"terminal":guard.path}),
+        json!({"provider":provider["id"],"method":method["id"],"terminal":guard.path,"remote":remote}),
     )?;
     drop(guard);
     if result["cancelled"] == true {

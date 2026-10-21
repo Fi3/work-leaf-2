@@ -85,7 +85,7 @@ function M.new(options, changed, notification)
     self.request('system.hello', { api_version = 1 }, function(result, err)
       if err then fail(err); callback(nil, err); return end
       if type(result) ~= 'table' or result.api_version ~= 1 then fail('Incompatible server version.'); callback(nil, 'Incompatible server version.'); return end
-      if result.api_revision ~= 3 then
+      if result.api_revision ~= 4 then
         local message = 'Server uses a different chat interface. Use :Harness upgrade for an older server.'
         fail(message); callback(nil, message); return
       end

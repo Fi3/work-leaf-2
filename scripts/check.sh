@@ -24,5 +24,4 @@ wait "$integration_pid" || test_status=1
 cat "$test_logs/fixture" "$test_logs/exit" "$test_logs/integration"
 [ "$test_status" -eq 0 ]
 python3 tests/nvim/login_gui.py
-python3 tests/ssh.py
 sh scripts/test-install.sh

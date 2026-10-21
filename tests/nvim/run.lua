@@ -613,7 +613,7 @@ vim.wait(100, function() return false end)
 check(#calls('input.submit') == old_calls, 'Incompatible infrastructure cannot receive a new task')
 check(text(named('prompt')) == 'Retain input until server upgrade', 'Compatibility failure preserves the draft')
 vim.cmd('Harness upgrade')
-wait(function() return state().api_revision == 3 and has('Connection: connected') end, 'Explicit upgrade reconnects to the current contract')
+wait(function() return state().api_revision == 4 and has('Connection: connected') end, 'Explicit upgrade reconnects to the current contract')
 check(text(named('prompt')) == 'Retain input until server upgrade', 'Upgrade preserves unsent input')
 
 -- A local command queued during creation still belongs to that chat after a switch.
@@ -686,7 +686,7 @@ vim.fn.writefile({
   'assert sys.argv[1:] == ["rpc"]',
   'for line in sys.stdin:',
   '    request = json.loads(line)',
-  '    print(json.dumps({"jsonrpc": "2.0", "id": request["id"], "result": {"api_version": 1, "api_revision": 3}}), flush=True)',
+  '    print(json.dumps({"jsonrpc": "2.0", "id": request["id"], "result": {"api_version": 1, "api_revision": 4}}), flush=True)',
 }, proxy_path)
 local reconnected = false
 proxy.connect(function(value, err)

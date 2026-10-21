@@ -1,0 +1,179 @@
+{
+  "case": "login-ssh-copy-paste",
+  "passed": true,
+  "terminal": "nvim-terminal/desktop/login-ssh-copy-paste.ansi.gz",
+  "sha256": "e097fd4126b5cf384aceeabc26ab2ce0a5dff79e10d2acbcee6268434b4d2160",
+  "checks": {
+    "ssh_environment": "SSH_CONNECTION and SSH_TTY on the actual editor only; no SSH transport is used",
+    "worker_environment": "no SSH variables; client selects manual login",
+    "browser": "actual Firefox and /usr/bin/xdg-open with synthetic account replies",
+    "callback_boundary": "controlled browser proxy closes loopback requests to represent an unreachable remote callback",
+    "no_automatic_remote_browser": true,
+    "ssh_instructions_visible": true,
+    "native_mouse_copy": true,
+    "full_authorization_url_copied": true,
+    "blank_input_preserved_login": true,
+    "cancellation_preserved_draft": true,
+    "browser_error_expected": true,
+    "callback_source": "Firefox address bar Ctrl-L, Ctrl-C; actual Kitty clipboard paste into Neovim",
+    "callback_paste_authenticated": true,
+    "account_replaced_environment_key": true,
+    "generation_model": "gpt-5.6-luna",
+    "generation_credentials": "synthetic OAuth",
+    "steps": [
+      {
+        "time": 0.79,
+        "text": "SSH is detected. The instructions explain that browser sign-in requires copy and paste."
+      },
+      {
+        "time": 2.05,
+        "text": "Cancel before signing in. The unsent task stays in the chat."
+      },
+      {
+        "time": 3.38,
+        "text": "Click Copy link. The complete address goes to the local terminal clipboard."
+      },
+      {
+        "time": 4.95,
+        "text": "Open the copied link on the local desktop. Approve the synthetic account in Firefox."
+      },
+      {
+        "time": 6.81,
+        "text": "The callback connection error is expected over SSH. Copy the complete browser address."
+      },
+      {
+        "time": 7.76,
+        "text": "Paste the browser address into Neovim and press Enter. The saved account completes login."
+      },
+      {
+        "time": 8.22,
+        "text": "Send the retained task. Pi uses the saved account and returns the controlled model response."
+      }
+    ]
+  },
+  "screenshots": {
+    "ssh-manual-screens/ssh-account-reply.png": "d90a14caf3b74371a849654e59f64d96e0266937684f3196d2176d71c1ced5df",
+    "ssh-manual-screens/ssh-expected-callback-error.png": "65d8b1559b0b42ffb9bdea0c04f7273af34264dfff50f26983b995a3e9dc14cd",
+    "ssh-manual-screens/ssh-instructions.png": "27425cf7708c5bdd2e3fdd59fa98e848a94a550807b05bafbd3f2fdb7c5d546e",
+    "ssh-manual-screens/ssh-local-browser.png": "f7f6113e89e689b0ac74ece266a065d498e79cdd09b50827c1c595512d64bd17",
+    "ssh-manual-screens/ssh-return-draft.png": "28819dee2eb6ba66d3ee378988c8a95f6264775a01d319c64bf72fadc4b1bec9"
+  },
+  "source_video_sha256": "bc34883ce54e1f4456f3e9c64eb5d32d7826e471c3137d7326c2d88df76afdf5",
+  "video": "ssh-manual-login.mp4",
+  "video_sha256": "cd76d6e7dae890209b6516215af4a798eedc5fceda237f05b2e6990a0dff2a64",
+  "duration_seconds": 25.266667,
+  "source_duration_seconds": 9.134,
+  "initial_frame_hold_seconds": 3,
+  "playback_speed": 0.5,
+  "final_frame_hold_seconds": 4,
+  "steps": [
+    {
+      "seconds": 0,
+      "text": "Actual Neovim, Firefox, Rust and Pi. SSH mode; synthetic account replies. Half-speed playback."
+    },
+    {
+      "seconds": 4.58,
+      "text": "SSH is detected. The instructions explain that browser sign-in requires copy and paste."
+    },
+    {
+      "seconds": 7.1,
+      "text": "Cancel before signing in. The unsent task stays in the chat."
+    },
+    {
+      "seconds": 9.76,
+      "text": "Click Copy link. The complete address goes to the local terminal clipboard."
+    },
+    {
+      "seconds": 12.9,
+      "text": "Open the copied link on the local desktop. Approve the synthetic account in Firefox."
+    },
+    {
+      "seconds": 16.619999999999997,
+      "text": "The callback connection error is expected over SSH. Copy the complete browser address."
+    },
+    {
+      "seconds": 18.52,
+      "text": "Paste the browser address into Neovim and press Enter. The saved account completes login."
+    },
+    {
+      "seconds": 19.44,
+      "text": "Send the retained task. Pi uses the saved account and returns the controlled model response."
+    }
+  ],
+  "editing": "Continuous desktop recording at half speed with captions above the screen. No actions or screen regions removed.",
+  "scope": "Actual Kitty, Neovim, Firefox, Rust and Pi. SSH environment set on editor only. A controlled browser proxy refuses the callback to simulate remote loopback. Synthetic account and model replies. No actual SSH transport or real subscription is tested.",
+  "source_sha256": {
+    ".github/workflows/check.yml": "191f41619583b7d8b230856f85f4e0d70302898b9bd910b2220c76520117d437",
+    "Cargo.lock": "a4c99f2f6de51c390ae2d11db28c27dcf2a57a675c17e8c2fd8e2669e5dc172f",
+    "Cargo.toml": "c1eb829ab24118016fc496e703955cd1d4b5ade296bead9f1551af171598757d",
+    "SPEC.md": "3bb5964a53087e460d45b019eafa611d899d063551d3448a9f2f863f35cb1f57",
+    "adapter/auth.mjs": "1d41fab118611207f13e14bc82ed0c5e2b71db560ffc396eefca0f6ac5232b07",
+    "adapter/pi.mjs": "be3e9f99d343f62de42bdea3e2b971d2fd2ac2bff64ed1d6324213165758e9e3",
+    "adapter/protocol.mjs": "973738ce52d618868fed6454cf9a1ff84d08c8f28cb981b052574a829e6731f9",
+    "adapter/test/application.test.mjs": "8cf98f491ed177d4b3472d3acd61261a072578ff727b895edbd194fd0afebda9",
+    "adapter/test/auth.test.mjs": "db6f818096fd4f00ffdbaac7caec11015f2400753e1faf30a9f4012ec1512e29",
+    "adapter/test/crash.test.mjs": "a32b551a8adcae9a0c6dfc3dfc31988c705098206d82884ea4505916d9c15672",
+    "adapter/test/protocol.test.mjs": "6e26bde012212d0e96b33c8cd9d3ab429262ef65d83716061d3d1f0be17c22c1",
+    "adapter/test/replay.test.mjs": "a14a269359c5db1a165403f177ebec918b916083ffc77af55f60b299ccbfcf3f",
+    "adapter/test/view.test.mjs": "8bd86dfc821b3518cd9142f314dfe86de82c1f03fba6e37ea95c80f290caa1b9",
+    "adapter/test/worker.test.mjs": "a304c7b2514fd2b93918f1a45b057ca25e97d5d126b58ab5559ed213220fa8f3",
+    "adapter/view.mjs": "d6f2b1d0dc90132d07f84ac9571cce56be9079dba00659cebdabb7fe5b0f2870",
+    "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+    "harness.sh": "7b3104e5aeb4e2709901c83228d00b27d3ae65ea5c318234a283630c8e0bc501",
+    "lua/harness/commands.lua": "970d4585a80f244b028d30941013a358a8bad5aa6d2a999aaa5775808efa8b91",
+    "lua/harness/context.lua": "1e4493139655687c8ed827223806ad494c83c284b307f9e8c6bb3d178a5dcd5d",
+    "lua/harness/exit.lua": "333d065732fec8564e3e62e8183b8e17c75238c3cbb14c57205815d9f47be898",
+    "lua/harness/init.lua": "2c61bf005119037bb56f693c3ba2e201b52e4f6d0129400047ed50551bdcadaa",
+    "lua/harness/select.lua": "3a5a6d77786aae27d1a334ee096069e5ff1f6b0fcb059cd8b1676918d5feaee6",
+    "lua/harness/setup.lua": "a742fa406839f55742cfc875d4083a30f4cc4dafadd2030aa72efde8f542015f",
+    "lua/harness/sidebar.lua": "2b7ed858b37aad752fb99a0a866572e73518c073c68602fd726c3d3712336323",
+    "lua/harness/transport.lua": "6758c3972ea01db236e9e1571a7674ed1a4379acbd47160d38895ed5484f178e",
+    "lua/harness/view.lua": "527ec752fe31900d7ddd335175960950b046c4c8e951979405343ec55d470316",
+    "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041",
+    "package.json": "f87b963dd4e91e7436ed5448c5ca52d8fd73523bce9d22434d32382f12bef78b",
+    "plugin/harness.lua": "799661fbdaae6ac856c46c85615b59edb3ebcfaa534f45495f6798cf2be26957",
+    "rust-toolchain.toml": "f53198ae4fdecfd87da36fe431c771b54c51e975d01c0e99f653bc14d5d48211",
+    "scripts/check-dependencies.sh": "17522ebf34316b482a41ca7b51074f8f60dec1bb2c996d8d8fd9b25c8d516737",
+    "scripts/check.sh": "c2c82d604e5e71537e8ddb9ff28a700810bc20880bdafe576cb6446422766447",
+    "scripts/dependencies.mjs": "06ffd775e9241bb737f6f056bb6e14eb2692f55a398e14d4fa27a47776484750",
+    "scripts/install.sh": "5ef0c4899ee243551b2cd6dff763e69ff67a1f4bb3d8996d0221db17f8ef5337",
+    "scripts/test-install.sh": "2a2b8985153abbdb1bd3eeddf05123a3165bcea57afd1feca5faba0bab3dad29",
+    "src/application.rs": "a767179cff42e61db0c0129fd3da04341421f72c7511a64f8b10050dc7aa9b99",
+    "src/cli.rs": "2c40c5a580d43904437a6085d742999fd19ef0a9ca299dc4b40bbfbd8735b785",
+    "src/client.rs": "79eb0e12d2338c52c8a56970c3fef06496b631d42b9b8168e08cf9c1b94d4103",
+    "src/config.rs": "804b9928b001e61aafe718342b0382da26bf890d838249489c0ea5a1d987c4e4",
+    "src/editor.rs": "c81ceb4d7dc462b4897d95eabb86c40c7fcec1a899bb2ef6112ec9d0d547d5ad",
+    "src/lib.rs": "671a36164ded2fc2c3e027faae1636c879ba7db4c56d16cd8ee4fbf69f25031f",
+    "src/main.rs": "316b18972c30f3a6a92d6ae1f309e5019efca6369fed83dd5aa23a5fe18fe856",
+    "src/process.rs": "f3f831fff448057a6d0803e492ba5a73ef6bc3ac83e7d60fc311c64a601b4447",
+    "src/protocol.rs": "48c8f912b6e2b2c64f729d37aa69748dff15bc95fdc2ae62cfb64c56044ed109",
+    "src/server.rs": "f54bc5d83df0de34e6442528cb80b1860b167dcc004a85033d6deffcc7cf0f57",
+    "src/setup.rs": "7737f35b9997d8d6c3c022dba15eb9216c9c77fbc6105f7f12bab890d0cf24f5",
+    "src/worker.rs": "9a565790fb9aa2fcd0ed1c21d1955b68a2b6e29d23b3a57f5a691a524a8045ab",
+    "tests/auth-oauth.test.mjs": "44f80caa5232b425a03a8880ee51c3a777d5229b1923c5721ba7abd9042e1210",
+    "tests/client.rs": "a1a635d3798a6a3aae71e5d451663fd1e0a88ab61061d3c312cd4226467e41dc",
+    "tests/editor.rs": "a4f54db8fa3929ae698ddf3d88d763ec488b989afd0adb3c33ddfd087beb0bad",
+    "tests/fixtures/generation.mjs": "cf0956bee7dc3dd6e8727ebbf134ecefe4625489204691d890d8c2a7e9614f35",
+    "tests/fixtures/oauth.mjs": "7226c9d58fb8050dde30edf81d2bab0ad9d40d3e4c76784826698fd0210282ac",
+    "tests/fixtures/protocol.json": "f70986f0bd17da85398d01d8be912339f05efd8e01bb406a9219a1f717654afd",
+    "tests/fixtures/terminal.mjs": "e6678a0fc7dff93ff495a75245e38b53e2869893bea51bddd9675dbbb39957a7",
+    "tests/fixtures/worker.mjs": "6266a2e631eda040c43dc741f7272f8e31dc17b3ecc9df50c6635318ed15c0f0",
+    "tests/nvim/drop_receipt.py": "b10777cc46fea0f54189713b03a34e56ba1a8696fc49003610e534c692f6f6d9",
+    "tests/nvim/fake.py": "39ae00041aabf50abca345927cae3a015e6e7b7fbb412ef9c0a3ce45d3daa98c",
+    "tests/nvim/interactive.py": "a14c2bdd52241153b2051e679d5b0a73c655708e011c4338fd07fa6a6417da4b",
+    "tests/nvim/interactive_init.lua": "5ad6e13b5c1abee11e9baeb7da6abb0d769115dabd4229cf2089cc1a22bf6ed8",
+    "tests/nvim/login_gui.py": "65c41acd067b64f5136f81c073bc7cf8ae698a239e7d4ed46a27adf2ef9d9320",
+    "tests/nvim/native_login.py": "5904aeb85fb66821455b8ca0fca1cfe430206eedd5228d798d20bb139b7d6237",
+    "tests/nvim/real.py": "bedf7ea5ef7c13531b789db334a45453d91c0ae17f2d09e9bbbefa08d905d974",
+    "tests/nvim/run.lua": "7d51ad7f399d26b05f80aba397042dc2779d1fea490d6f1f5f0c6a72830ec96c",
+    "tests/nvim/select.lua": "bf92e0972435462f034e873d8b30e4292c5cfa9e06818b59da214acc6717ef76",
+    "tests/nvim/setup.lua": "ad9099cbc88b528980b46fa8e68ac91b8833f646b92bc10d92130960a5471fb3",
+    "tests/nvim/view.lua": "b3002531195778135846a2b02641e7c6c4410ae1564c7332e80e47fe8b9aae64",
+    "tests/protocol.rs": "824e9e23566d6573467210cbbbc835786390dde36321acfda0244719e3c7a9bd",
+    "tests/provider-generation.test.mjs": "3ea08509445c1240368e35a7e8aa45978bd7c2f8fdc061149e3aa38d967a2846",
+    "tests/recovery.test.mjs": "0f5fa944a2ed40601f0be1f9f0ad15ce0f070d64dc64e365a5c11573c2c40d05",
+    "tests/scripts.test.mjs": "ca7524ceadd2bc15c9f8d019e4e75686489fb055be017a08f74cac717c2b998a",
+    "tests/server.rs": "725cf03b9f27cba1fa786c3e23eafbaaa9f8785beac83e1d2e602fc2fa5037a0",
+    "tests/setup.rs": "0416e3fb000e4bf22bec1ae3dc26b9b2b806d2955c7d73b356330f4bef206cdf"
+  }
+}

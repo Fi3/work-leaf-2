@@ -11,8 +11,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-const HELP: &str = "harness ssh --host HOST --workspace REMOTE_PATH [--remote-command PATH]\n\
-harness nvim [--config PATH] [--socket PATH]\n\
+const HELP: &str = "harness nvim [--config PATH] [--socket PATH]\n\
 harness setup [--config PATH] [--socket PATH]\n\
 harness auth [--provider ID] [--method api_key|oauth] [--config PATH] [--socket PATH]\n\
 harness logout --provider ID [--config PATH] [--socket PATH]\n\
@@ -80,8 +79,6 @@ impl Arguments {
         }
         let command = positional.join(" ");
         let allowed: &[&str] = match command.as_str() {
-            "ssh" => &["--host", "--workspace", "--remote-command"],
-            "browser" => &[],
             "start" | "serve" | "upgrade" => &["--socket", "--config", "--state-dir"],
             "auth" => &["--socket", "--provider", "--method"],
             "logout" => &["--socket", "--provider"],
@@ -141,22 +138,6 @@ fn execute(args: Vec<String>) -> Result<i32, RpcError> {
         return Ok(0);
     }
     let args = Arguments::parse(args)?;
-    if matches!(args.command.as_str(), "ssh" | "browser") {
-        if args.get("--config").is_some() || args.get("--state-dir").is_some() {
-            return Err(RpcError::invalid(
-                "This command does not use a local Harness configuration",
-            ));
-        }
-        return if args.command == "browser" {
-            crate::browser::connect()
-        } else {
-            crate::ssh::run(
-                args.required("--host")?,
-                args.required("--workspace")?,
-                args.get("--remote-command").unwrap_or("harness"),
-            )
-        };
-    }
     let (method, params) = operation(&args)?;
     crate::protocol::validate(method, &params)?;
     let load = if matches!(args.command.as_str(), "setup" | "auth") {

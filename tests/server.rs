@@ -231,7 +231,7 @@ fn an_explicit_upgrade_replaces_an_idle_legacy_server_after_release() {
     );
     old.join().unwrap();
     let hello: Value = serde_json::from_slice(&upgraded.stdout).unwrap();
-    assert_eq!(hello["api_revision"], 3);
+    assert_eq!(hello["api_revision"], 4);
     assert_eq!(hello["state_dir"], json!(server.root.join("state")));
     assert_ne!(hello["instance_id"], "legacy");
     server.pid = Some(process::peer_pid(&UnixStream::connect(&server.socket).unwrap()).unwrap());
@@ -274,7 +274,7 @@ fn upgrade_checks_legacy_state_before_shutdown() {
 #[test]
 fn upgrade_never_shuts_down_an_unknown_or_newer_interface() {
     for after_probe in [false, true] {
-        for revision in [json!(4), json!("3"), Value::Null] {
+        for revision in [json!(5), json!("4"), Value::Null] {
             let server = Server::new();
             let state = server.root.join("state");
             process::private_dir(&state).unwrap();
@@ -339,7 +339,7 @@ fn an_old_worker_interface_never_becomes_ready_or_accepts_mutations() {
     let hello = client
         .request("system.hello", json!({"api_version":1}))
         .unwrap();
-    assert_eq!(hello["api_revision"], 3);
+    assert_eq!(hello["api_revision"], 4);
     assert_eq!(hello["storage_ready"], false);
     assert_eq!(hello["ready"], false);
     let error = client
