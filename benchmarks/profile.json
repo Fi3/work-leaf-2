@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "name": "capacity-v1",
+  "platform": "linux/amd64",
+  "resources": {
+    "cpus": 2,
+    "memory_bytes": 536870912,
+    "memory_swap_bytes": 536870912,
+    "pids_limit": 256
+  },
+  "sample_interval_ms": 500,
+  "idle_seconds": 5,
+  "load_seconds": 10,
+  "concurrent_sessions": [1, 2, 4],
+  "capacity_input_bytes": 65536,
+  "capacity_instructions_bytes": 262144,
+  "capacity_batch_size": 4,
+  "max_capacity_sessions": 10000,
+  "timeout_seconds": 600,
+  "provider": "openai",
+  "model": "gpt-5.6-luna",
+  "simulated_output_bytes": 2048,
+  "simulated_chunk_delay_ms": 3,
+  "node_max_old_space_mib": 1024
+}

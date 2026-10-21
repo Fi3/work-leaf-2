@@ -133,6 +133,59 @@ fn request(reader: &mut BufReader<UnixStream>, id: &str, method: &str, params: V
 }
 
 #[test]
+fn idle_server_waits_without_periodic_wakeups_and_handles_termination() {
+    for (mode, signal) in [("", "-TERM"), ("stderr-closed", "-INT")] {
+        let mut server = Server::new();
+        server.serve(mode);
+        let switches = || -> u64 {
+            let status =
+                fs::read_to_string(format!("/proc/{}/status", server.pid.unwrap())).unwrap();
+            assert!(
+                status.lines().any(|line| line.starts_with("State:\tS")),
+                "idle server does not sleep"
+            );
+            status
+                .lines()
+                .find_map(|line| line.strip_prefix("voluntary_ctxt_switches:"))
+                .unwrap()
+                .trim()
+                .parse()
+                .unwrap()
+        };
+        std::thread::sleep(Duration::from_millis(50));
+        let before = switches();
+        std::thread::sleep(Duration::from_millis(200));
+        assert!(switches() - before <= 3, "idle server wakes repeatedly");
+        server
+            .client()
+            .unwrap()
+            .request("session.list", json!({}))
+            .unwrap();
+        kill(server.pid.unwrap(), signal);
+        until(|| server.child.as_mut().unwrap().try_wait().unwrap().is_some());
+        assert!(!server.socket.exists());
+        server.pid = None;
+    }
+}
+
+#[test]
+fn worker_handshake_expires_without_client_activity() {
+    let mut server = Server::new();
+    server.child = Some(
+        server
+            .command("serve")
+            .env("HARNESS_FAKE_MODE", "silent-handshake")
+            .spawn()
+            .unwrap(),
+    );
+    server.pid = Some(server.child.as_ref().unwrap().id());
+    until(|| server.workers().len() == 1);
+    // Leave the sockets untouched past the worker's ten-second handshake limit.
+    std::thread::sleep(Duration::from_secs(11));
+    assert_eq!(server.workers().len(), 2);
+}
+
+#[test]
 fn two_starters_converge_and_permissions_are_private() {
     let mut server = Server::new();
     let mut first = server.command("start").spawn().unwrap();
@@ -616,6 +669,27 @@ fn slow_client_cannot_block_another_stop() {
     assert!(start.elapsed() < Duration::from_secs(1));
     while let Ok(Some(_)) = protocol::read_frame(&mut slow) {}
     assert!(protocol::read_frame(&mut slow).unwrap().is_none());
+}
+
+#[test]
+fn blocked_output_resumes_without_another_request() {
+    let mut server = Server::new();
+    server.serve("");
+    let mut client = raw(&server);
+    for n in 0..12 {
+        request(
+            &mut client,
+            &format!("bulk{n}"),
+            "entry.read",
+            json!({"session_id":"work","entry_id":"e"}),
+        );
+    }
+    std::thread::sleep(Duration::from_millis(150));
+    for n in 0..12 {
+        let response = read(&mut client);
+        assert_eq!(response["id"], format!("bulk{n}"));
+        assert_eq!(response["result"]["text"].as_str().unwrap().len(), 65536);
+    }
 }
 
 #[test]

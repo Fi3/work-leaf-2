@@ -33,6 +33,9 @@ local function header(out, connection, snapshot)
 end
 
 local function entries(out, snapshot, history)
+  if history and history.limited then
+    out.line('[Loaded history limited to 200 entries and 1 MiB. Reopen this chat for recent pages.]')
+  end
   local seen = {}
   for _, item in ipairs(snapshot.entries) do seen[item.entry_id] = true end
   for _, item in ipairs(history or {}) do if not seen[item.entry_id] then out.entry(item) end end

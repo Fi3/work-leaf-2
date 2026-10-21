@@ -121,7 +121,10 @@ show_file(source)
 vim.cmd('2,2Harness context selection')
 vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'First request' })
 vim.cmd('Harness send')
-wait(function() return #calls('input.submit') == 1 and has('tool progress') end, 'Streamed tool activity')
+wait(function() return #calls('input.submit') == 1 and text(named('transcript')) == '' end, 'A hidden chat can submit work without rendering its transcript')
+check(vim.api.nvim_get_current_buf() == source, 'Hidden work leaves source focus unchanged')
+vim.cmd('Harness')
+wait(function() return has('tool progress') end, 'Reopening a chat restores streamed tool activity')
 local envelope = calls('input.submit')[1].params
 check(envelope.context[1].text == 'unsaved λ 世界\nsecond line\n', 'Explicit unsaved buffer snapshot')
 check(envelope.context[1].modified and envelope.context[1].changedtick == tick, 'Context flags match source state')
@@ -139,15 +142,18 @@ wait(function() return has('Connection closed') end, 'Connection loss is visible
 check(text(named('prompt')) == 'drop', 'Uncertain draft retained')
 local before = calls('input.submit')[2].params
 show_file(source)
+local reconnect_watches = #calls('session.watch')
 vim.env.HARNESS_TEST_START_DELAY = '0.1'
 vim.cmd('Harness context buffer')
 vim.env.HARNESS_TEST_START_DELAY = nil
 vim.fn.writefile({ 'alternate source' }, temp .. '/alternate.txt')
 vim.cmd('hide edit ' .. vim.fn.fnameescape(temp .. '/alternate.txt'))
 vim.cmd('Harness status')
+wait(function() return #calls('session.watch') > reconnect_watches end, 'A hidden command can reconnect without rendering')
+check(vim.api.nvim_buf_get_name(0) == temp .. '/alternate.txt', 'Reconnect preserves the later selected source file')
+vim.cmd('Harness')
 wait(function() return has('Connection: connected') end, 'Reconnect')
 wait(function() return has('Context snapshot: source.txt') end, 'Context uses the source selected before asynchronous reconnect')
-vim.cmd('Harness')
 vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'New unsent draft' })
 vim.cmd('Harness send')
 wait(function() return #calls('input.submit') == 3 end, 'Explicit duplicate retry')
@@ -210,6 +216,46 @@ check(history_text:find('Older entry', 1, true) < history_text:find('Retain roll
   and history_text:find('Stored gap entry', 1, true) < history_text:find('Newest entry', 1, true), 'History remains in transcript order')
 local _, repeated = history_text:gsub('Retain rolling entry', '')
 check(repeated == 1, 'Overlapping history pages do not duplicate entries')
+for _, size in ipairs({ 128, 8192 }) do
+  local bounded = state()
+  bounded.sessions[id].entries = { { entry_id = 'recent', kind = 'user', text = 'Current recent entry', truncated = false } }
+  bounded.sessions[id].cursor = 'bounded-1'
+  bounded.history_pages = {}
+  for page = 1, 6 do
+    local items = {}
+    for index = (6 - page) * 50 + 1, (7 - page) * 50 do
+      local label = 'History item ' .. index .. ':'
+      items[#items + 1] = { entry_id = 'bounded-' .. index, kind = 'user', text = label .. string.rep('x', size - #label), truncated = false }
+    end
+    bounded.history_pages['bounded-' .. page] = { items = items, next_cursor = page < 6 and 'bounded-' .. (page + 1) or vim.NIL }
+  end
+  save(bounded)
+  show_file(source)
+  wait(function() return text(named('transcript')) == '' end, 'Hidden history releases its displayed text')
+  vim.cmd('Harness')
+  wait(function() return has('Current recent entry') end, 'Reopening starts from the current snapshot')
+  check(not has('Loaded history limited'), 'Reopening releases the previous history window')
+  for page = 1, 6 do
+    vim.cmd('Harness history')
+    wait(function() return has('History item ' .. ((6 - page) * 50 + 1) .. ':') end, 'Older pages remain reachable after cache eviction')
+    local loaded = text(named('transcript'))
+    local _, count = loaded:gsub('%[user%] You', '')
+    check(count <= 201, 'At most 200 cached history entries appear beside the current snapshot')
+    check(#loaded <= 1024 * 1024 + 16384, 'Cached history text stays within 1 MiB plus display labels and the current snapshot')
+  end
+  check(has('Loaded history limited') and has('Current recent entry'), 'A bounded older window explains its limit and retains the current snapshot')
+  show_file(source)
+  wait(function() return text(named('transcript')) == '' end, 'Closing the history window releases the page cache')
+  vim.cmd('Harness')
+  wait(function() return has('Current recent entry') end, 'Reopening restores recent state after reaching the oldest page')
+  check(not has('History item '), 'Old pages do not remain in the new display')
+  vim.cmd('Harness history')
+  wait(function() return has('History item 251:') end, 'An evicted newer history page can be loaded again')
+  bounded = state()
+  bounded.history_pages = nil
+  bounded.sessions[id].cursor = vim.NIL
+  save(bounded)
+end
 local transcript_window = vim.fn.win_findbuf(named('transcript'))[1]
 vim.api.nvim_win_set_cursor(transcript_window, { 1, 0 })
 vim.api.nvim_win_call(transcript_window, function() vim.cmd('normal! zt') end)
@@ -245,7 +291,8 @@ list_state.sessions.second = { metadata = vim.tbl_extend('force', list_state.ses
 save(list_state)
 vim.cmd('Harness sessions')
 wait(function() return choice ~= nil end, 'Native session choice')
-check(#choice == 2 and has('Session: ' .. id), 'Multiple sessions require an explicit choice')
+check(#choice == 2 and vim.api.nvim_buf_get_name(named('transcript')) == 'harness://chat/' .. id,
+  'Multiple sessions require an explicit choice and cancellation keeps the selected chat')
 vim.ui.select = select
 for _, newer in ipairs({ false, true }) do
   vim.cmd('Harness attach ' .. id)

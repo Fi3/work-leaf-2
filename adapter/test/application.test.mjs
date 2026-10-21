@@ -9,6 +9,7 @@ import { createModels } from '@earendil-works/pi-ai/models';
 import { anthropicProvider } from '@earendil-works/pi-ai/providers/anthropic';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai/providers/faux';
+import { LiveDoc } from '@earendil-works/pi-durable';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { openApplication, SessionDoc } from '../pi.mjs';
 import { application } from '../../tests/fixtures/application.mjs';
@@ -240,8 +241,11 @@ test('a long workspace path produces a usable scoped continuation cursor', async
 test('a watch attached before settings change starts with the latest committed name and model', async t => {
   const { app, call, create } = await setup(t);
   await create('work'); const frames = [];
+  const render = t.mock.method(app, 'render');
   const watch = await app.dispatch('session.watch', { session_id: 'work' }, 'watch', record => frames.push(record.params.snapshot));
   const selected = await call('session.configure', { session_id: 'work', name: 'Renamed', provider: 'anthropic', model: 'claude-sonnet-4-6' });
+  assert.equal(render.mock.callCount(), 1); assert.deepEqual(frames, []);
+  assert.equal(watch.result.snapshot.session.name, 'work');
   watch.start(); await delay(10);
   assert.deepEqual(frames.at(-1).session, selected); assert.equal(frames.at(-1).state, 'idle');
   await call('session.unwatch', { watch_id: watch.result.watch_id });
@@ -345,6 +349,47 @@ test('watches start with complete state and converge; full answer is available a
   assert.equal(text, answer);
   await call('session.unwatch', { watch_id: watch.result.watch_id });
   await call('session.unwatch', { watch_id: watch.result.watch_id });
+});
+
+test('watch bursts render once per interval and terminal changes bypass the interval', async t => {
+  const { app, call, create } = await setup(t);
+  await create('work'); const records = [], session = app.sessions.get('work');
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 100000 });
+  const render = t.mock.method(app, 'render');
+  const watch = await app.dispatch('session.watch', { session_id: 'work' }, 'watch', record => records.push(record));
+  watch.start(); render.mock.resetCalls();
+  for (let index = 0; index < 50; index++) {
+    await app.harness.commit(async tx => {
+      const live = await tx.doc(LiveDoc, session.conversation.id);
+      live.run = { taskId: 1, inputs: [1] };
+      live.generation = { attempt: 1, message: fauxAssistantMessage(`Progress ${index}`) };
+    }, context);
+  }
+  assert.equal(render.mock.callCount(), 0); assert.equal(records.length, 1);
+  t.mock.timers.tick(99);
+  assert.equal(render.mock.callCount(), 0);
+  t.mock.timers.tick(1);
+  assert.equal(render.mock.callCount(), 1); assert.equal(records.length, 2);
+  assert.equal(records.at(-1).params.snapshot.assistant.text, 'Progress 49');
+  assert.equal(records.at(-1).params.snapshot.state, 'running');
+  await app.harness.commit(async tx => {
+    const live = await tx.doc(LiveDoc, session.conversation.id);
+    live.generation.message = fauxAssistantMessage('Pending progress');
+  }, context);
+  assert.equal(render.mock.callCount(), 1);
+  await app.harness.commit(async tx => {
+    const live = await tx.doc(LiveDoc, session.conversation.id);
+    delete live.run; delete live.generation;
+    await tx.appendEntry(session.conversation.id, { kind: 'pi.assistant', model: [fauxAssistantMessage('Complete answer')] });
+  }, context);
+  assert.equal(render.mock.callCount(), 2); assert.equal(records.length, 3);
+  assert.equal(records.at(-1).params.snapshot.state, 'idle');
+  assert.equal(records.at(-1).params.snapshot.assistant.text, 'Complete answer');
+  assert.deepEqual(records.map(record => record.params.sequence), [1, 2, 3]);
+  t.mock.timers.tick(100);
+  assert.equal(render.mock.callCount(), 2); assert.equal(records.length, 3);
+  await call('session.unwatch', { watch_id: watch.result.watch_id });
+  t.mock.timers.reset();
 });
 
 test('explicit unsaved context is stored without changing disk and rejects escape through symbolic links', async t => {

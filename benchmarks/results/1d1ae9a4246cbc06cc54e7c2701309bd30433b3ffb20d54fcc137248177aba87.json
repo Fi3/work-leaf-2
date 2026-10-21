@@ -1,0 +1,7918 @@
+{
+  "completed": true,
+  "error": null,
+  "measurements": [
+    {
+      "elapsed_seconds": 0.001,
+      "phase": "startup",
+      "cpu_usec": 76408,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 11874304,
+      "memory_peak_bytes": 11874304,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13877248,
+          "pss_bytes": 13197312
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2605056,
+          "pss_bytes": 1831936
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 0.502,
+      "phase": "startup",
+      "cpu_usec": 390289,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 60219392,
+      "memory_peak_bytes": 60489728,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13893632,
+          "pss_bytes": 12271616
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11198464,
+          "pss_bytes": 9608192
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 1.005,
+      "phase": "idle",
+      "cpu_usec": 395466,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 60420096,
+      "memory_peak_bytes": 60489728,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13910016,
+          "pss_bytes": 12288000
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11202560,
+          "pss_bytes": 9612288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 1.508,
+      "phase": "idle",
+      "cpu_usec": 398874,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 60362752,
+      "memory_peak_bytes": 60682240,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13910016,
+          "pss_bytes": 12288000
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11206656,
+          "pss_bytes": 9616384
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 2.011,
+      "phase": "idle",
+      "cpu_usec": 403192,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 59932672,
+      "memory_peak_bytes": 60682240,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13910016,
+          "pss_bytes": 12288000
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11206656,
+          "pss_bytes": 9616384
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 2.515,
+      "phase": "idle",
+      "cpu_usec": 408064,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 59998208,
+      "memory_peak_bytes": 60682240,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13918208,
+          "pss_bytes": 12296192
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11210752,
+          "pss_bytes": 9620480
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 3.019,
+      "phase": "idle",
+      "cpu_usec": 412729,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 59772928,
+      "memory_peak_bytes": 60682240,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13918208,
+          "pss_bytes": 12296192
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11214848,
+          "pss_bytes": 9624576
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 3.523,
+      "phase": "idle",
+      "cpu_usec": 417683,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 60022784,
+      "memory_peak_bytes": 60682240,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13922304,
+          "pss_bytes": 12300288
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11214848,
+          "pss_bytes": 9624576
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 4.027,
+      "phase": "idle",
+      "cpu_usec": 422694,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 60272640,
+      "memory_peak_bytes": 60682240,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13926400,
+          "pss_bytes": 12304384
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11218944,
+          "pss_bytes": 9628672
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 4.531,
+      "phase": "idle",
+      "cpu_usec": 428015,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 60256256,
+      "memory_peak_bytes": 60682240,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13930496,
+          "pss_bytes": 12308480
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11223040,
+          "pss_bytes": 9632768
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 5.034,
+      "phase": "idle",
+      "cpu_usec": 432655,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 60243968,
+      "memory_peak_bytes": 60682240,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 13930496,
+          "pss_bytes": 12308480
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 90968064,
+          "pss_bytes": 89369600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11231232,
+          "pss_bytes": 9640960
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 5.536,
+      "phase": "load-1",
+      "cpu_usec": 458317,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 61800448,
+      "memory_peak_bytes": 61800448,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14155776,
+          "pss_bytes": 12533760
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2781184,
+          "pss_bytes": 1136640
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 91484160,
+          "pss_bytes": 89885696
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11235328,
+          "pss_bytes": 9645056
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2723840,
+          "pss_bytes": 1012736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 6.038,
+      "phase": "load-1",
+      "cpu_usec": 693257,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 75145216,
+      "memory_peak_bytes": 76292096,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14159872,
+          "pss_bytes": 12536832
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2920448,
+          "pss_bytes": 1271808
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 103088128,
+          "pss_bytes": 101431296
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 11743232,
+          "pss_bytes": 10109952
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2838528,
+          "pss_bytes": 1127424
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 6.54,
+      "phase": "load-1",
+      "cpu_usec": 822221,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 85712896,
+      "memory_peak_bytes": 87543808,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14163968,
+          "pss_bytes": 12540928
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2973696,
+          "pss_bytes": 1325056
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 110432256,
+          "pss_bytes": 108775424
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 13049856,
+          "pss_bytes": 11416576
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2957312,
+          "pss_bytes": 1246208
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 7.043,
+      "phase": "load-1",
+      "cpu_usec": 963802,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 92778496,
+      "memory_peak_bytes": 94642176,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14163968,
+          "pss_bytes": 12540928
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2985984,
+          "pss_bytes": 1337344
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 116072448,
+          "pss_bytes": 114415616
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 13660160,
+          "pss_bytes": 12026880
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3076096,
+          "pss_bytes": 1364992
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 7.545,
+      "phase": "load-1",
+      "cpu_usec": 1098258,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 103862272,
+      "memory_peak_bytes": 105820160,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14163968,
+          "pss_bytes": 12540928
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 2990080,
+          "pss_bytes": 1341440
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 126726144,
+          "pss_bytes": 125069312
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14295040,
+          "pss_bytes": 12661760
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3198976,
+          "pss_bytes": 1487872
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 8.047,
+      "phase": "load-1",
+      "cpu_usec": 1264830,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 106680320,
+      "memory_peak_bytes": 107827200,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14163968,
+          "pss_bytes": 12540928
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3321856,
+          "pss_bytes": 1673216
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 128610304,
+          "pss_bytes": 126953472
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14528512,
+          "pss_bytes": 12895232
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3207168,
+          "pss_bytes": 1496064
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 8.55,
+      "phase": "load-1",
+      "cpu_usec": 1403279,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 118611968,
+      "memory_peak_bytes": 120823808,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14168064,
+          "pss_bytes": 12545024
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3010560,
+          "pss_bytes": 1361920
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 140009472,
+          "pss_bytes": 138352640
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14667776,
+          "pss_bytes": 13034496
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3207168,
+          "pss_bytes": 1496064
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 9.053,
+      "phase": "load-1",
+      "cpu_usec": 1526544,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 128413696,
+      "memory_peak_bytes": 129675264,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14172160,
+          "pss_bytes": 12549120
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3383296,
+          "pss_bytes": 1734656
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 150134784,
+          "pss_bytes": 148477952
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14667776,
+          "pss_bytes": 13034496
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3207168,
+          "pss_bytes": 1496064
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 9.555,
+      "phase": "load-1",
+      "cpu_usec": 1621238,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 129155072,
+      "memory_peak_bytes": 132567040,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14176256,
+          "pss_bytes": 12553216
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3010560,
+          "pss_bytes": 1361920
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 150831104,
+          "pss_bytes": 149174272
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14675968,
+          "pss_bytes": 13042688
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 2990080,
+          "pss_bytes": 1278976
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 10.058,
+      "phase": "load-1",
+      "cpu_usec": 1746802,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 131043328,
+      "memory_peak_bytes": 134139904,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14176256,
+          "pss_bytes": 12553216
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3211264,
+          "pss_bytes": 1562624
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 152137728,
+          "pss_bytes": 150480896
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14614528,
+          "pss_bytes": 12981248
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3088384,
+          "pss_bytes": 1377280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 10.56,
+      "phase": "load-1",
+      "cpu_usec": 1890172,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 123146240,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14184448,
+          "pss_bytes": 12561408
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3002368,
+          "pss_bytes": 1353728
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 144465920,
+          "pss_bytes": 142809088
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14618624,
+          "pss_bytes": 12985344
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3182592,
+          "pss_bytes": 1471488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 11.063,
+      "phase": "load-1",
+      "cpu_usec": 2020198,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 123883520,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14184448,
+          "pss_bytes": 12561408
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3325952,
+          "pss_bytes": 1677312
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 144261120,
+          "pss_bytes": 142604288
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14688256,
+          "pss_bytes": 13054976
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3215360,
+          "pss_bytes": 1504256
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 11.566,
+      "phase": "load-1",
+      "cpu_usec": 2267128,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 119758848,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14184448,
+          "pss_bytes": 12561408
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3325952,
+          "pss_bytes": 1677312
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 139534336,
+          "pss_bytes": 137877504
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14544896,
+          "pss_bytes": 12911616
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3215360,
+          "pss_bytes": 1504256
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 12.071,
+      "phase": "load-1",
+      "cpu_usec": 2519080,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 119803904,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14188544,
+          "pss_bytes": 12565504
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3321856,
+          "pss_bytes": 1673216
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 139284480,
+          "pss_bytes": 137627648
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14675968,
+          "pss_bytes": 13042688
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3215360,
+          "pss_bytes": 1504256
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 12.576,
+      "phase": "load-1",
+      "cpu_usec": 2665287,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 109641728,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14196736,
+          "pss_bytes": 12573696
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3387392,
+          "pss_bytes": 1738752
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 129703936,
+          "pss_bytes": 128047104
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14708736,
+          "pss_bytes": 13075456
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3215360,
+          "pss_bytes": 1504256
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 13.081,
+      "phase": "load-1",
+      "cpu_usec": 2849182,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 110096384,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14196736,
+          "pss_bytes": 12573696
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3010560,
+          "pss_bytes": 1361920
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 130154496,
+          "pss_bytes": 128497664
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14700544,
+          "pss_bytes": 13067264
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3215360,
+          "pss_bytes": 1504256
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 13.586,
+      "phase": "load-1",
+      "cpu_usec": 3034498,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 110477312,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14196736,
+          "pss_bytes": 12573696
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3121152,
+          "pss_bytes": 1472512
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 130273280,
+          "pss_bytes": 128616448
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14647296,
+          "pss_bytes": 13014016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3215360,
+          "pss_bytes": 1504256
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 14.09,
+      "phase": "load-1",
+      "cpu_usec": 3247366,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 114806784,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14196736,
+          "pss_bytes": 12573696
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3321856,
+          "pss_bytes": 1673216
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 133611520,
+          "pss_bytes": 131954688
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14635008,
+          "pss_bytes": 13001728
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3215360,
+          "pss_bytes": 1504256
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 14.595,
+      "phase": "load-1",
+      "cpu_usec": 3474851,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 122146816,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14204928,
+          "pss_bytes": 12581888
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3330048,
+          "pss_bytes": 1681408
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 140963840,
+          "pss_bytes": 139307008
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14835712,
+          "pss_bytes": 13202432
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3219456,
+          "pss_bytes": 1508352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 15.1,
+      "phase": "load-1",
+      "cpu_usec": 3745194,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 113831936,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14209024,
+          "pss_bytes": 12585984
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3010560,
+          "pss_bytes": 1361920
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 131907584,
+          "pss_bytes": 130250752
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14708736,
+          "pss_bytes": 13075456
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3219456,
+          "pss_bytes": 1508352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 15.605,
+      "phase": "load-1",
+      "cpu_usec": 3932328,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 120610816,
+      "memory_peak_bytes": 134483968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14209024,
+          "pss_bytes": 12585984
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3325952,
+          "pss_bytes": 1677312
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 138665984,
+          "pss_bytes": 137009152
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14544896,
+          "pss_bytes": 12911616
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3219456,
+          "pss_bytes": 1508352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 16.11,
+      "phase": "load-2",
+      "cpu_usec": 4262333,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 132063232,
+      "memory_peak_bytes": 135548928,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14385152,
+          "pss_bytes": 12683264
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3387392,
+          "pss_bytes": 1737728
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 149123072,
+          "pss_bytes": 147439616
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14692352,
+          "pss_bytes": 13043712
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3219456,
+          "pss_bytes": 1508352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 16.614,
+      "phase": "load-2",
+      "cpu_usec": 4522677,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 137588736,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14389248,
+          "pss_bytes": 11128832
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3391488,
+          "pss_bytes": 1692672
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 151420928,
+          "pss_bytes": 149639168
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14700544,
+          "pss_bytes": 12903424
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3219456,
+          "pss_bytes": 1456128
+        },
+        {
+          "pid": 100,
+          "role": "driver_or_tool",
+          "rss_bytes": 8011776,
+          "pss_bytes": 4793344
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 17.118,
+      "phase": "load-2",
+      "cpu_usec": 4785148,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 137502720,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14393344,
+          "pss_bytes": 11122688
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3391488,
+          "pss_bytes": 1694720
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 151805952,
+          "pss_bytes": 150024192
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14692352,
+          "pss_bytes": 12917760
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3219456,
+          "pss_bytes": 1459200
+        },
+        {
+          "pid": 105,
+          "role": "driver_or_tool",
+          "rss_bytes": 7884800,
+          "pss_bytes": 4771840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 17.621,
+      "phase": "load-2",
+      "cpu_usec": 5136317,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 121470976,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14393344,
+          "pss_bytes": 12691456
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3391488,
+          "pss_bytes": 1741824
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 137318400,
+          "pss_bytes": 135634944
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14639104,
+          "pss_bytes": 12990464
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3219456,
+          "pss_bytes": 1508352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 18.126,
+      "phase": "load-2",
+      "cpu_usec": 5483905,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 122343424,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14393344,
+          "pss_bytes": 11235328
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3395584,
+          "pss_bytes": 1695744
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 137117696,
+          "pss_bytes": 135324672
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14630912,
+          "pss_bytes": 12880896
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3219456,
+          "pss_bytes": 1455104
+        },
+        {
+          "pid": 116,
+          "role": "driver_or_tool",
+          "rss_bytes": 7421952,
+          "pss_bytes": 4333568
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 18.631,
+      "phase": "load-2",
+      "cpu_usec": 5760158,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 122933248,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14393344,
+          "pss_bytes": 12691456
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 138731520,
+          "pss_bytes": 137048064
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14696448,
+          "pss_bytes": 13047808
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3362816,
+          "pss_bytes": 1651712
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 19.135,
+      "phase": "load-2",
+      "cpu_usec": 6125288,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 118349824,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14401536,
+          "pss_bytes": 12699648
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 133804032,
+          "pss_bytes": 132120576
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14700544,
+          "pss_bytes": 13051904
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3362816,
+          "pss_bytes": 1651712
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 19.64,
+      "phase": "load-2",
+      "cpu_usec": 6429994,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 125497344,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14401536,
+          "pss_bytes": 12699648
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 140468224,
+          "pss_bytes": 138784768
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14704640,
+          "pss_bytes": 13056000
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 20.143,
+      "phase": "load-2",
+      "cpu_usec": 6697089,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 128180224,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14409728,
+          "pss_bytes": 12707840
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 144121856,
+          "pss_bytes": 142438400
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14692352,
+          "pss_bytes": 13043712
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 20.646,
+      "phase": "load-2",
+      "cpu_usec": 6936775,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 117784576,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14409728,
+          "pss_bytes": 12707840
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 132460544,
+          "pss_bytes": 130777088
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14704640,
+          "pss_bytes": 13056000
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 21.149,
+      "phase": "load-2",
+      "cpu_usec": 7206611,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 120430592,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14413824,
+          "pss_bytes": 12711936
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 134438912,
+          "pss_bytes": 132755456
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14704640,
+          "pss_bytes": 13056000
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 21.654,
+      "phase": "load-2",
+      "cpu_usec": 7506119,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 126382080,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14413824,
+          "pss_bytes": 12711936
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 140402688,
+          "pss_bytes": 138719232
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14651392,
+          "pss_bytes": 13002752
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 22.159,
+      "phase": "load-2",
+      "cpu_usec": 7832203,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 131080192,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14417920,
+          "pss_bytes": 12716032
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 145035264,
+          "pss_bytes": 143351808
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14639104,
+          "pss_bytes": 12990464
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 22.663,
+      "phase": "load-2",
+      "cpu_usec": 8157738,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 122093568,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14417920,
+          "pss_bytes": 12716032
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 136179712,
+          "pss_bytes": 134496256
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14704640,
+          "pss_bytes": 13056000
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 23.166,
+      "phase": "load-2",
+      "cpu_usec": 8478143,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 131510272,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14426112,
+          "pss_bytes": 12724224
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 145854464,
+          "pss_bytes": 144171008
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14712832,
+          "pss_bytes": 13064192
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 23.671,
+      "phase": "load-2",
+      "cpu_usec": 8796684,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 126238720,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14426112,
+          "pss_bytes": 12695552
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1915904
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 139665408,
+          "pss_bytes": 137921536
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 12944384
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1724416
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 24.174,
+      "phase": "load-2",
+      "cpu_usec": 9054577,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 127721472,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14426112,
+          "pss_bytes": 12724224
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 141545472,
+          "pss_bytes": 139862016
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14704640,
+          "pss_bytes": 13056000
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1737728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 24.679,
+      "phase": "load-2",
+      "cpu_usec": 9335066,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 130232320,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14438400,
+          "pss_bytes": 12736512
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 142991360,
+          "pss_bytes": 141307904
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1737728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 25.185,
+      "phase": "load-2",
+      "cpu_usec": 9639905,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 117669888,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14438400,
+          "pss_bytes": 12736512
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 129650688,
+          "pss_bytes": 127967232
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1737728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 25.689,
+      "phase": "load-2",
+      "cpu_usec": 9880991,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 121163776,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14438400,
+          "pss_bytes": 12736512
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 132640768,
+          "pss_bytes": 130957312
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14659584,
+          "pss_bytes": 13010944
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1737728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 26.192,
+      "phase": "load-4",
+      "cpu_usec": 10249966,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 133578752,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14516224,
+          "pss_bytes": 10448896
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1827840
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 137613312,
+          "pss_bytes": 135754752
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14692352,
+          "pss_bytes": 12838912
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1644544
+        },
+        {
+          "pid": 208,
+          "role": "driver_or_tool",
+          "rss_bytes": 7847936,
+          "pss_bytes": 4151296
+        },
+        {
+          "pid": 209,
+          "role": "driver_or_tool",
+          "rss_bytes": 6914048,
+          "pss_bytes": 3421184
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 26.695,
+      "phase": "load-4",
+      "cpu_usec": 10653326,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 118702080,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14524416,
+          "pss_bytes": 12822528
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3584000,
+          "pss_bytes": 1934336
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 129249280,
+          "pss_bytes": 127565824
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1737728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 27.199,
+      "phase": "load-4",
+      "cpu_usec": 11093605,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 137523200,
+      "memory_peak_bytes": 140034048,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14524416,
+          "pss_bytes": 12822528
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 144900096,
+          "pss_bytes": 143216640
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14729216,
+          "pss_bytes": 13080576
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3452928,
+          "pss_bytes": 1741824
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 27.702,
+      "phase": "load-4",
+      "cpu_usec": 11506426,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 133390336,
+      "memory_peak_bytes": 147587072,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14528512,
+          "pss_bytes": 12826624
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 142147584,
+          "pss_bytes": 140464128
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14725120,
+          "pss_bytes": 13076480
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3452928,
+          "pss_bytes": 1741824
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 28.207,
+      "phase": "load-4",
+      "cpu_usec": 11950861,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 138383360,
+      "memory_peak_bytes": 153395200,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14528512,
+          "pss_bytes": 10735616
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 1987584
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 141012992,
+          "pss_bytes": 139158528
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14729216,
+          "pss_bytes": 12887040
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3293184,
+          "pss_bytes": 1494016
+        },
+        {
+          "pid": 247,
+          "role": "driver_or_tool",
+          "rss_bytes": 8040448,
+          "pss_bytes": 4249600
+        },
+        {
+          "pid": 248,
+          "role": "driver_or_tool",
+          "rss_bytes": 7561216,
+          "pss_bytes": 3940352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 28.71,
+      "phase": "load-4",
+      "cpu_usec": 12305103,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 147120128,
+      "memory_peak_bytes": 153899008,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14540800,
+          "pss_bytes": 12838912
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 154791936,
+          "pss_bytes": 153108480
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14725120,
+          "pss_bytes": 13076480
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3248128,
+          "pss_bytes": 1537024
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 29.215,
+      "phase": "load-4",
+      "cpu_usec": 12730580,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 144805888,
+      "memory_peak_bytes": 158724096,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14540800,
+          "pss_bytes": 12838912
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 151506944,
+          "pss_bytes": 149823488
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3248128,
+          "pss_bytes": 1537024
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 29.72,
+      "phase": "load-4",
+      "cpu_usec": 13123981,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 159485952,
+      "memory_peak_bytes": 164270080,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14540800,
+          "pss_bytes": 12838912
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 166072320,
+          "pss_bytes": 164388864
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3248128,
+          "pss_bytes": 1537024
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 30.222,
+      "phase": "load-4",
+      "cpu_usec": 13471980,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 148013056,
+      "memory_peak_bytes": 164270080,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14544896,
+          "pss_bytes": 12843008
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 155029504,
+          "pss_bytes": 153346048
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14680064,
+          "pss_bytes": 13031424
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3248128,
+          "pss_bytes": 1537024
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 30.725,
+      "phase": "load-4",
+      "cpu_usec": 13836612,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 154845184,
+      "memory_peak_bytes": 164270080,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14553088,
+          "pss_bytes": 12851200
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 160608256,
+          "pss_bytes": 158924800
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14708736,
+          "pss_bytes": 13060096
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3252224,
+          "pss_bytes": 1541120
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 31.229,
+      "phase": "load-4",
+      "cpu_usec": 14262777,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 148545536,
+      "memory_peak_bytes": 164270080,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14553088,
+          "pss_bytes": 12851200
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 153366528,
+          "pss_bytes": 151683072
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3252224,
+          "pss_bytes": 1541120
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 31.732,
+      "phase": "load-4",
+      "cpu_usec": 14672637,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 153841664,
+      "memory_peak_bytes": 164270080,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14561280,
+          "pss_bytes": 11252736
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2022400
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 155586560,
+          "pss_bytes": 153903104
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3252224,
+          "pss_bytes": 1541120
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 32.236,
+      "phase": "load-4",
+      "cpu_usec": 15115362,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 148602880,
+      "memory_peak_bytes": 169144320,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14561280,
+          "pss_bytes": 12859392
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 152678400,
+          "pss_bytes": 150994944
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14729216,
+          "pss_bytes": 13080576
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3256320,
+          "pss_bytes": 1545216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 32.739,
+      "phase": "load-4",
+      "cpu_usec": 15437340,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 165851136,
+      "memory_peak_bytes": 169144320,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14573568,
+          "pss_bytes": 11592704
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2022400
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 167374848,
+          "pss_bytes": 165599232
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14729216,
+          "pss_bytes": 12943360
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3256320,
+          "pss_bytes": 1494016
+        },
+        {
+          "pid": 338,
+          "role": "driver_or_tool",
+          "rss_bytes": 7311360,
+          "pss_bytes": 4272128
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 33.242,
+      "phase": "load-4",
+      "cpu_usec": 15796313,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 153796608,
+      "memory_peak_bytes": 170229760,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14573568,
+          "pss_bytes": 12871680
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 156995584,
+          "pss_bytes": 155312128
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3256320,
+          "pss_bytes": 1545216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 33.747,
+      "phase": "load-4",
+      "cpu_usec": 16235613,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 153722880,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14573568,
+          "pss_bytes": 12871680
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 156270592,
+          "pss_bytes": 154587136
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3256320,
+          "pss_bytes": 1545216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 34.25,
+      "phase": "load-4",
+      "cpu_usec": 16582060,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 161972224,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14577664,
+          "pss_bytes": 12875776
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 163774464,
+          "pss_bytes": 162091008
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14651392,
+          "pss_bytes": 13002752
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3256320,
+          "pss_bytes": 1545216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 34.755,
+      "phase": "load-4",
+      "cpu_usec": 16996949,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 164847616,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14585856,
+          "pss_bytes": 12883968
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 167190528,
+          "pss_bytes": 165507072
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14696448,
+          "pss_bytes": 13047808
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3256320,
+          "pss_bytes": 1545216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 35.259,
+      "phase": "load-4",
+      "cpu_usec": 17428906,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 151158784,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14589952,
+          "pss_bytes": 12888064
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 152031232,
+          "pss_bytes": 150347776
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3256320,
+          "pss_bytes": 1545216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 35.761,
+      "phase": "load-4",
+      "cpu_usec": 17794956,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 163618816,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14594048,
+          "pss_bytes": 12892160
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 164749312,
+          "pss_bytes": 163065856
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3436544,
+          "pss_bytes": 1725440
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 36.265,
+      "phase": "hidden-editor",
+      "cpu_usec": 18010680,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 138567680,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14589952,
+          "pss_bytes": 12888064
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 139104256,
+          "pss_bytes": 137420800
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14782464,
+          "pss_bytes": 13133824
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 36.77,
+      "phase": "hidden-editor",
+      "cpu_usec": 18239226,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 149282816,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14589952,
+          "pss_bytes": 12888064
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 150163456,
+          "pss_bytes": 148480000
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14782464,
+          "pss_bytes": 13133824
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 37.273,
+      "phase": "hidden-editor",
+      "cpu_usec": 18359224,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 151588864,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14589952,
+          "pss_bytes": 12888064
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 152272896,
+          "pss_bytes": 150589440
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 37.776,
+      "phase": "hidden-editor",
+      "cpu_usec": 18493622,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 151416832,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14594048,
+          "pss_bytes": 12892160
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 152842240,
+          "pss_bytes": 151158784
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14782464,
+          "pss_bytes": 13133824
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 38.281,
+      "phase": "hidden-editor",
+      "cpu_usec": 18681410,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 150921216,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14594048,
+          "pss_bytes": 12892160
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 152436736,
+          "pss_bytes": 150753280
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14721024,
+          "pss_bytes": 13072384
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 38.784,
+      "phase": "hidden-editor",
+      "cpu_usec": 18834892,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 151384064,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14602240,
+          "pss_bytes": 12900352
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 152965120,
+          "pss_bytes": 151281664
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14766080,
+          "pss_bytes": 13117440
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 39.288,
+      "phase": "hidden-editor",
+      "cpu_usec": 18954922,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 157945856,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14602240,
+          "pss_bytes": 12900352
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 158814208,
+          "pss_bytes": 157130752
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 39.791,
+      "phase": "hidden-editor",
+      "cpu_usec": 19191623,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 148701184,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14606336,
+          "pss_bytes": 12904448
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 149065728,
+          "pss_bytes": 147382272
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 40.294,
+      "phase": "hidden-editor",
+      "cpu_usec": 19314716,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 157065216,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14614528,
+          "pss_bytes": 12912640
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 157646848,
+          "pss_bytes": 155963392
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 40.796,
+      "phase": "hidden-editor",
+      "cpu_usec": 19421414,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 162553856,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14614528,
+          "pss_bytes": 12912640
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 162500608,
+          "pss_bytes": 160817152
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 41.299,
+      "phase": "hidden-editor",
+      "cpu_usec": 19511967,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 163094528,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14614528,
+          "pss_bytes": 12912640
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 162721792,
+          "pss_bytes": 161038336
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14782464,
+          "pss_bytes": 13133824
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 41.802,
+      "phase": "hidden-editor",
+      "cpu_usec": 19619553,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 165875712,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14614528,
+          "pss_bytes": 11510784
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2022400
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 163078144,
+          "pss_bytes": 161299456
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14745600,
+          "pss_bytes": 12988416
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1677312
+        },
+        {
+          "pid": 434,
+          "role": "driver_or_tool",
+          "rss_bytes": 7675904,
+          "pss_bytes": 4554752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 42.305,
+      "phase": "hidden-editor",
+      "cpu_usec": 19731065,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 163790848,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14622720,
+          "pss_bytes": 12920832
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 163418112,
+          "pss_bytes": 161734656
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14778368,
+          "pss_bytes": 13129728
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 42.809,
+      "phase": "hidden-editor",
+      "cpu_usec": 19842877,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 164392960,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14622720,
+          "pss_bytes": 12920832
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 163549184,
+          "pss_bytes": 161865728
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 43.313,
+      "phase": "hidden-editor",
+      "cpu_usec": 19965111,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 165003264,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14622720,
+          "pss_bytes": 12920832
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 163991552,
+          "pss_bytes": 162308096
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 43.817,
+      "phase": "hidden-editor",
+      "cpu_usec": 20143196,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 150302720,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14622720,
+          "pss_bytes": 12920832
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 149549056,
+          "pss_bytes": 147865600
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14782464,
+          "pss_bytes": 13133824
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 44.32,
+      "phase": "hidden-editor",
+      "cpu_usec": 20216157,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 150495232,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14626816,
+          "pss_bytes": 12924928
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 149696512,
+          "pss_bytes": 148013056
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 44.824,
+      "phase": "hidden-editor",
+      "cpu_usec": 20319172,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 151068672,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14630912,
+          "pss_bytes": 12929024
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 149692416,
+          "pss_bytes": 148008960
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14782464,
+          "pss_bytes": 13133824
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 45.327,
+      "phase": "hidden-editor",
+      "cpu_usec": 20407418,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 150982656,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14635008,
+          "pss_bytes": 12933120
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 149852160,
+          "pss_bytes": 148168704
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14716928,
+          "pss_bytes": 13068288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 45.829,
+      "phase": "hidden-editor",
+      "cpu_usec": 20513577,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 155496448,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14635008,
+          "pss_bytes": 12933120
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 154357760,
+          "pss_bytes": 152674304
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14925824,
+          "pss_bytes": 13277184
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3444736,
+          "pss_bytes": 1733632
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 46.332,
+      "phase": "hidden-editor",
+      "cpu_usec": 20568949,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 159277056,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14635008,
+          "pss_bytes": 12933120
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 157548544,
+          "pss_bytes": 155865088
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1737728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 46.835,
+      "phase": "hidden-editor",
+      "cpu_usec": 20572064,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 159326208,
+      "memory_peak_bytes": 173428736,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 14635008,
+          "pss_bytes": 12933120
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3719168,
+          "pss_bytes": 2069504
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 157548544,
+          "pss_bytes": 155865088
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 14790656,
+          "pss_bytes": 13142016
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3448832,
+          "pss_bytes": 1737728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 47.337,
+      "phase": "capacity",
+      "cpu_usec": 20952266,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 179523584,
+      "memory_peak_bytes": 184119296,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16863232,
+          "pss_bytes": 15161344
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3371008,
+          "pss_bytes": 1721344
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 162865152,
+          "pss_bytes": 161181696
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 16199680,
+          "pss_bytes": 14551040
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4423680,
+          "pss_bytes": 2712576
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 47.84,
+      "phase": "capacity",
+      "cpu_usec": 21315278,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 198381568,
+      "memory_peak_bytes": 206180352,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16871424,
+          "pss_bytes": 15169536
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3506176,
+          "pss_bytes": 1856512
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 170487808,
+          "pss_bytes": 168804352
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 16465920,
+          "pss_bytes": 14817280
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3653632,
+          "pss_bytes": 1942528
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 48.343,
+      "phase": "capacity",
+      "cpu_usec": 21641088,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 223723520,
+      "memory_peak_bytes": 235479040,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16875520,
+          "pss_bytes": 15173632
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3371008,
+          "pss_bytes": 1721344
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 182759424,
+          "pss_bytes": 181075968
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 16142336,
+          "pss_bytes": 14493696
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4194304,
+          "pss_bytes": 2483200
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 48.846,
+      "phase": "capacity",
+      "cpu_usec": 22057452,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 255946752,
+      "memory_peak_bytes": 257187840,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16674816,
+          "pss_bytes": 14972928
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 5599232,
+          "pss_bytes": 3949568
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 200732672,
+          "pss_bytes": 199049216
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 15876096,
+          "pss_bytes": 14227456
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4202496,
+          "pss_bytes": 2491392
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 49.352,
+      "phase": "capacity",
+      "cpu_usec": 22433111,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 290590720,
+      "memory_peak_bytes": 292278272,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16879616,
+          "pss_bytes": 15177728
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3907584,
+          "pss_bytes": 2257920
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 220569600,
+          "pss_bytes": 218886144
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 16285696,
+          "pss_bytes": 14637056
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4202496,
+          "pss_bytes": 2491392
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 49.856,
+      "phase": "capacity",
+      "cpu_usec": 22846364,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 302710784,
+      "memory_peak_bytes": 303480832,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16887808,
+          "pss_bytes": 15185920
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3694592,
+          "pss_bytes": 2044928
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 215478272,
+          "pss_bytes": 212657152
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 16592896,
+          "pss_bytes": 14809088
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1454080
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 50.361,
+      "phase": "capacity",
+      "cpu_usec": 23237475,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 332746752,
+      "memory_peak_bytes": 338100224,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16887808,
+          "pss_bytes": 15185920
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 235819008,
+          "pss_bytes": 234135552
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 17022976,
+          "pss_bytes": 15374336
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3641344,
+          "pss_bytes": 1930240
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 50.865,
+      "phase": "capacity",
+      "cpu_usec": 23587846,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 341819392,
+      "memory_peak_bytes": 348946432,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16891904,
+          "pss_bytes": 15190016
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 233394176,
+          "pss_bytes": 231710720
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 17534976,
+          "pss_bytes": 15886336
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 51.368,
+      "phase": "capacity",
+      "cpu_usec": 23968795,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 355663872,
+      "memory_peak_bytes": 377786368,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16896000,
+          "pss_bytes": 15194112
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 232783872,
+          "pss_bytes": 231100416
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 17207296,
+          "pss_bytes": 15558656
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4702208,
+          "pss_bytes": 2991104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 51.872,
+      "phase": "capacity",
+      "cpu_usec": 24346266,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 385982464,
+      "memory_peak_bytes": 388435968,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16769024,
+          "pss_bytes": 15067136
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3887104,
+          "pss_bytes": 2237440
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 249802752,
+          "pss_bytes": 248119296
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 16945152,
+          "pss_bytes": 15296512
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4198400,
+          "pss_bytes": 2487296
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 52.376,
+      "phase": "capacity",
+      "cpu_usec": 24717468,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 425979904,
+      "memory_peak_bytes": 426041344,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16900096,
+          "pss_bytes": 15100928
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3825664,
+          "pss_bytes": 2125824
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 273227776,
+          "pss_bytes": 270457856
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 17731584,
+          "pss_bytes": 15916032
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1454080
+        },
+        {
+          "pid": 649,
+          "role": "driver_or_tool",
+          "rss_bytes": 7282688,
+          "pss_bytes": 4211712
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 52.88,
+      "phase": "capacity",
+      "cpu_usec": 25146505,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 426369024,
+      "memory_peak_bytes": 457080832,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16908288,
+          "pss_bytes": 15206400
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3825664,
+          "pss_bytes": 2176000
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 262316032,
+          "pss_bytes": 260632576
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 17276928,
+          "pss_bytes": 15628288
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 53.384,
+      "phase": "capacity",
+      "cpu_usec": 25480508,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 460144640,
+      "memory_peak_bytes": 465776640,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16908288,
+          "pss_bytes": 15206400
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 282841088,
+          "pss_bytes": 281157632
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 18337792,
+          "pss_bytes": 16689152
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 53.888,
+      "phase": "capacity",
+      "cpu_usec": 25790947,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 485552128,
+      "memory_peak_bytes": 491991040,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16908288,
+          "pss_bytes": 15206400
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3694592,
+          "pss_bytes": 2044928
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 298950656,
+          "pss_bytes": 297267200
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 18194432,
+          "pss_bytes": 16545792
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 54.392,
+      "phase": "capacity",
+      "cpu_usec": 26168183,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 523051008,
+      "memory_peak_bytes": 524427264,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16719872,
+          "pss_bytes": 15017984
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 5148672,
+          "pss_bytes": 3499008
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 317841408,
+          "pss_bytes": 316157952
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 18657280,
+          "pss_bytes": 17008640
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4702208,
+          "pss_bytes": 2991104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 54.898,
+      "phase": "capacity",
+      "cpu_usec": 26575443,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536809472,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 155,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16924672,
+          "pss_bytes": 15222784
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3694592,
+          "pss_bytes": 2044928
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 345006080,
+          "pss_bytes": 343322624
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 18083840,
+          "pss_bytes": 16435200
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4202496,
+          "pss_bytes": 2491392
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 55.403,
+      "phase": "capacity",
+      "cpu_usec": 26954797,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 526213120,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 160,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16928768,
+          "pss_bytes": 15226880
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 319397888,
+          "pss_bytes": 317714432
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 19021824,
+          "pss_bytes": 17333248
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3653632,
+          "pss_bytes": 1895424
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 55.911,
+      "phase": "capacity",
+      "cpu_usec": 27372886,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 535797760,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 300,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16928768,
+          "pss_bytes": 15226880
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 338182144,
+          "pss_bytes": 336498688
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 18468864,
+          "pss_bytes": 16820224
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4194304,
+          "pss_bytes": 2483200
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 56.416,
+      "phase": "capacity",
+      "cpu_usec": 27770844,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 531673088,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 361,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16932864,
+          "pss_bytes": 15230976
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 330416128,
+          "pss_bytes": 328732672
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 19263488,
+          "pss_bytes": 17614848
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3932160,
+          "pss_bytes": 2221056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 56.921,
+      "phase": "capacity",
+      "cpu_usec": 28100440,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 533786624,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 534,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16932864,
+          "pss_bytes": 15230976
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 345776128,
+          "pss_bytes": 344092672
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 18874368,
+          "pss_bytes": 17225728
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4714496,
+          "pss_bytes": 3003392
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 57.426,
+      "phase": "capacity",
+      "cpu_usec": 28469527,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536444928,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 717,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16740352,
+          "pss_bytes": 15038464
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 5607424,
+          "pss_bytes": 3957760
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 364138496,
+          "pss_bytes": 362455040
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 20336640,
+          "pss_bytes": 18688000
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3940352,
+          "pss_bytes": 2229248
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 57.931,
+      "phase": "capacity",
+      "cpu_usec": 28852944,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536834048,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 834,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16936960,
+          "pss_bytes": 15235072
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3694592,
+          "pss_bytes": 2044928
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 385146880,
+          "pss_bytes": 383463424
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 20082688,
+          "pss_bytes": 18434048
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 58.438,
+      "phase": "capacity",
+      "cpu_usec": 29277213,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 524865536,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 872,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16945152,
+          "pss_bytes": 13015040
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1925120
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 362987520,
+          "pss_bytes": 361304064
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 19488768,
+          "pss_bytes": 17840128
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 58.943,
+      "phase": "capacity",
+      "cpu_usec": 29633053,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 532865024,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 938,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16945152,
+          "pss_bytes": 15243264
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 382300160,
+          "pss_bytes": 380616704
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 19984384,
+          "pss_bytes": 18335744
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4481024,
+          "pss_bytes": 2769920
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 59.449,
+      "phase": "capacity",
+      "cpu_usec": 29995675,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 533123072,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 1052,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16945152,
+          "pss_bytes": 15243264
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 399769600,
+          "pss_bytes": 398086144
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 20799488,
+          "pss_bytes": 19150848
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3932160,
+          "pss_bytes": 2221056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 59.954,
+      "phase": "capacity",
+      "cpu_usec": 30336198,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 534630400,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 1168,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16957440,
+          "pss_bytes": 15255552
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 414900224,
+          "pss_bytes": 413216768
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 20606976,
+          "pss_bytes": 18958336
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4194304,
+          "pss_bytes": 2483200
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 60.459,
+      "phase": "capacity",
+      "cpu_usec": 30671963,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 534937600,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 1298,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16957440,
+          "pss_bytes": 15255552
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3694592,
+          "pss_bytes": 2044928
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 429879296,
+          "pss_bytes": 428195840
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 21311488,
+          "pss_bytes": 19662848
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 60.965,
+      "phase": "capacity",
+      "cpu_usec": 31029786,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 535232512,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 1498,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16957440,
+          "pss_bytes": 15255552
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 451055616,
+          "pss_bytes": 449372160
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 20979712,
+          "pss_bytes": 19331072
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4435968,
+          "pss_bytes": 2724864
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 61.471,
+      "phase": "capacity",
+      "cpu_usec": 31443767,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 477102080,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 1659,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16957440,
+          "pss_bytes": 15255552
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 408768512,
+          "pss_bytes": 407085056
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 20713472,
+          "pss_bytes": 19064832
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3940352,
+          "pss_bytes": 2229248
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 61.976,
+      "phase": "capacity",
+      "cpu_usec": 31793635,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 514826240,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 1659,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 17223680,
+          "pss_bytes": 15521792
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 429924352,
+          "pss_bytes": 428240896
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 21282816,
+          "pss_bytes": 19634176
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3653632,
+          "pss_bytes": 1942528
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 62.49,
+      "phase": "capacity",
+      "cpu_usec": 32184322,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536674304,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 1701,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16834560,
+          "pss_bytes": 15132672
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3887104,
+          "pss_bytes": 2237440
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 445222912,
+          "pss_bytes": 443539456
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 21131264,
+          "pss_bytes": 19482624
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3940352,
+          "pss_bytes": 2229248
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 62.996,
+      "phase": "capacity",
+      "cpu_usec": 32564710,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 535035904,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 1906,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16969728,
+          "pss_bytes": 15267840
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3756032,
+          "pss_bytes": 2106368
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 464457728,
+          "pss_bytes": 462774272
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 22044672,
+          "pss_bytes": 20396032
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3653632,
+          "pss_bytes": 1942528
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 63.503,
+      "phase": "capacity",
+      "cpu_usec": 32941312,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536309760,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2034,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16969728,
+          "pss_bytes": 15267840
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3694592,
+          "pss_bytes": 2044928
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 481980416,
+          "pss_bytes": 480296960
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 22454272,
+          "pss_bytes": 20805632
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 64.009,
+      "phase": "capacity",
+      "cpu_usec": 33306191,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536846336,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2218,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16973824,
+          "pss_bytes": 14661632
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 4018176,
+          "pss_bytes": 2326528
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 500965376,
+          "pss_bytes": 499137536
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 22720512,
+          "pss_bytes": 20970496
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1467392
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 64.518,
+      "phase": "capacity",
+      "cpu_usec": 33712768,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 533868544,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2405,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 815104,
+          "pss_bytes": 811008
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16977920,
+          "pss_bytes": 15276032
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3694592,
+          "pss_bytes": 2044928
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 520486912,
+          "pss_bytes": 518803456
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 22171648,
+          "pss_bytes": 20523008
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 65.025,
+      "phase": "capacity",
+      "cpu_usec": 34048033,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536838144,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2602,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16982016,
+          "pss_bytes": 13725696
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 4149248,
+          "pss_bytes": 2449408
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 540315648,
+          "pss_bytes": 538406912
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 22458368,
+          "pss_bytes": 20612096
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1432576
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 65.535,
+      "phase": "capacity",
+      "cpu_usec": 34421882,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 471334912,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2846,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16986112,
+          "pss_bytes": 15284224
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 471179264,
+          "pss_bytes": 469495808
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 23015424,
+          "pss_bytes": 21366784
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 66.041,
+      "phase": "capacity",
+      "cpu_usec": 34769309,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 503189504,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2846,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16986112,
+          "pss_bytes": 15284224
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 488939520,
+          "pss_bytes": 487256064
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 23465984,
+          "pss_bytes": 21817344
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3932160,
+          "pss_bytes": 2221056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 66.547,
+      "phase": "capacity",
+      "cpu_usec": 35165645,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 535998464,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2854,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16990208,
+          "pss_bytes": 15288320
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 508760064,
+          "pss_bytes": 507076608
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 22720512,
+          "pss_bytes": 21071872
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4194304,
+          "pss_bytes": 2483200
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 67.054,
+      "phase": "capacity",
+      "cpu_usec": 35209149,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536408064,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2861,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 17125376,
+          "pss_bytes": 15423488
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3624960,
+          "pss_bytes": 1975296
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 510644224,
+          "pss_bytes": 508960768
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 22589440,
+          "pss_bytes": 20940800
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 67.561,
+      "phase": "capacity",
+      "cpu_usec": 35292841,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 520372224,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2878,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16994304,
+          "pss_bytes": 15292416
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3756032,
+          "pss_bytes": 2106368
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 485580800,
+          "pss_bytes": 483897344
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 22589440,
+          "pss_bytes": 20940800
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 68.068,
+      "phase": "capacity",
+      "cpu_usec": 35651422,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 534790144,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 2888,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16998400,
+          "pss_bytes": 15296512
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3825664,
+          "pss_bytes": 2176000
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 500895744,
+          "pss_bytes": 499212288
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 24367104,
+          "pss_bytes": 22718464
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 68.575,
+      "phase": "capacity",
+      "cpu_usec": 35997817,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536662016,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 3022,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16998400,
+          "pss_bytes": 15296512
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3768320,
+          "pss_bytes": 2118656
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 516354048,
+          "pss_bytes": 514670592
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 23490560,
+          "pss_bytes": 21841920
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4202496,
+          "pss_bytes": 2491392
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 69.085,
+      "phase": "capacity",
+      "cpu_usec": 36364189,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536788992,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 3214,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16805888,
+          "pss_bytes": 15104000
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 3825664,
+          "pss_bytes": 2176000
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 537763840,
+          "pss_bytes": 536080384
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 24117248,
+          "pss_bytes": 22468608
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 4202496,
+          "pss_bytes": 2491392
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 69.592,
+      "phase": "capacity",
+      "cpu_usec": 36576721,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 536633344,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 3389,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16744448,
+          "pss_bytes": 15042560
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 5087232,
+          "pss_bytes": 3437568
+        },
+        {
+          "pid": 11,
+          "role": "worker",
+          "rss_bytes": 541380608,
+          "pss_bytes": 539697152
+        },
+        {
+          "pid": 22,
+          "role": "editor",
+          "rss_bytes": 23535616,
+          "pss_bytes": 21886976
+        },
+        {
+          "pid": 23,
+          "role": "server",
+          "rss_bytes": 3231744,
+          "pss_bytes": 1520640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 69.943,
+      "phase": "capacity",
+      "cpu_usec": 36650787,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 29978624,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 3489,
+        "oom": 2,
+        "oom_kill": 2,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16932864,
+          "pss_bytes": 16158720
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 4022272,
+          "pss_bytes": 3248128
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 69.943,
+      "phase": "capacity",
+      "cpu_usec": 36651630,
+      "cpu_throttled_usec": 0,
+      "memory_bytes": 30224384,
+      "memory_peak_bytes": 536870912,
+      "memory_events": {
+        "low": 0,
+        "high": 0,
+        "max": 3489,
+        "oom": 2,
+        "oom_kill": 2,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "processes": [
+        {
+          "pid": 1,
+          "role": "driver_or_tool",
+          "rss_bytes": 806912,
+          "pss_bytes": 802816
+        },
+        {
+          "pid": 8,
+          "role": "driver_or_tool",
+          "rss_bytes": 16928768,
+          "pss_bytes": 16154624
+        },
+        {
+          "pid": 10,
+          "role": "server",
+          "rss_bytes": 4022272,
+          "pss_bytes": 3248128
+        }
+      ]
+    }
+  ],
+  "stages": [
+    {
+      "phase": "load-1",
+      "completed_tasks": 60,
+      "p50_ms": 155.687,
+      "p95_ms": 200.467,
+      "p99_ms": 264.976
+    },
+    {
+      "phase": "load-2",
+      "completed_tasks": 104,
+      "p50_ms": 186.155,
+      "p95_ms": 222.501,
+      "p99_ms": 320.875
+    },
+    {
+      "phase": "load-4",
+      "completed_tasks": 200,
+      "p50_ms": 194.918,
+      "p95_ms": 229.339,
+      "p99_ms": 345.116
+    },
+    {
+      "phase": "hidden-editor",
+      "completed_tasks": 62,
+      "p50_ms": 155.243,
+      "p95_ms": 187.661,
+      "p99_ms": 264.829
+    }
+  ],
+  "capacity_completed_sessions": 356,
+  "exhaustion": {
+    "observed": true,
+    "reason": "memory_limit",
+    "phase": "capacity",
+    "oom_delta": 2,
+    "oom_kill_delta": 2
+  },
+  "editor": {
+    "changes": 354,
+    "transcript_lines": 334,
+    "undo_blocks": 0
+  },
+  "runtimes": {
+    "node": "v26.10.0",
+    "nvim": "NVIM v0.12.6"
+  },
+  "docker_image_id": "sha256:ba8b11fddafe63717b67da87e651edc88b6a8ad185b42f2662a6fa51774ac855",
+  "docker_limits": {
+    "cpus": 2.0,
+    "memory_bytes": 536870912,
+    "memory_swap_bytes": 536870912,
+    "pids_limit": 256
+  },
+  "docker_state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": true,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-21T15:52:42.667780374Z",
+    "FinishedAt": "2026-10-21T15:53:52.766207726Z"
+  },
+  "resources_by_phase": {
+    "startup": {
+      "sampled_seconds": 0.501,
+      "mean_cpu_cores": 0.626509,
+      "cpu_throttled_seconds": 0.0,
+      "peak_sampled_memory_bytes": 60219392
+    },
+    "idle": {
+      "sampled_seconds": 4.029,
+      "mean_cpu_cores": 0.00923,
+      "cpu_throttled_seconds": 0.0,
+      "peak_sampled_memory_bytes": 60420096
+    },
+    "load-1": {
+      "sampled_seconds": 10.069,
+      "mean_cpu_cores": 0.34502,
+      "cpu_throttled_seconds": 0.0,
+      "peak_sampled_memory_bytes": 131043328
+    },
+    "load-2": {
+      "sampled_seconds": 9.579,
+      "mean_cpu_cores": 0.58656,
+      "cpu_throttled_seconds": 0.0,
+      "peak_sampled_memory_bytes": 137588736
+    },
+    "load-4": {
+      "sampled_seconds": 9.569,
+      "mean_cpu_cores": 0.788483,
+      "cpu_throttled_seconds": 0.0,
+      "peak_sampled_memory_bytes": 165851136
+    },
+    "hidden-editor": {
+      "sampled_seconds": 10.57,
+      "mean_cpu_cores": 0.242326,
+      "cpu_throttled_seconds": 0.0,
+      "peak_sampled_memory_bytes": 165875712
+    },
+    "capacity": {
+      "sampled_seconds": 22.606,
+      "mean_cpu_cores": 0.694478,
+      "cpu_throttled_seconds": 0.0,
+      "peak_sampled_memory_bytes": 536846336
+    }
+  },
+  "schema": 1,
+  "source_fingerprint": "1d1ae9a4246cbc06cc54e7c2701309bd30433b3ffb20d54fcc137248177aba87",
+  "profile_sha256": "a21de9d3a4140908ef156fa79b8619eb334e52d7c4edf1b51b84a9aa7d94e1ce",
+  "profile": {
+    "schema": 1,
+    "name": "capacity-v1",
+    "platform": "linux/amd64",
+    "resources": {
+      "cpus": 2,
+      "memory_bytes": 536870912,
+      "memory_swap_bytes": 536870912,
+      "pids_limit": 256
+    },
+    "sample_interval_ms": 500,
+    "idle_seconds": 5,
+    "load_seconds": 10,
+    "concurrent_sessions": [
+      1,
+      2,
+      4
+    ],
+    "capacity_input_bytes": 65536,
+    "capacity_instructions_bytes": 262144,
+    "capacity_batch_size": 4,
+    "max_capacity_sessions": 10000,
+    "timeout_seconds": 600,
+    "provider": "openai",
+    "model": "gpt-5.6-luna",
+    "simulated_output_bytes": 2048,
+    "simulated_chunk_delay_ms": 3,
+    "node_max_old_space_mib": 1024
+  },
+  "source_revision": "08e63b5627760ef91fdd98f27467acf225d1e7d6",
+  "started_at": "2026-10-21T15:52:40Z",
+  "elapsed_seconds": 71.99,
+  "host": {
+    "kernel": "7.2.7-arch1-1",
+    "machine": "x86_64",
+    "logical_cpus": 32
+  }
+}

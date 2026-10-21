@@ -7,6 +7,7 @@ use crate::{
 use serde_json::{Value, json};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fs::File;
+use std::os::fd::RawFd;
 use std::time::{Duration, Instant};
 
 pub enum Delivery {
@@ -96,6 +97,21 @@ impl Application {
                     .map(|(key, _)| key.clone()),
             );
             self.release_watches.extend(client.watches);
+            self.release();
+        }
+    }
+
+    pub(crate) fn wait_fds(&self, readable: &mut Vec<RawFd>, writable: &mut Vec<RawFd>) {
+        if let Some(worker) = &self.worker {
+            worker.wait_fds(readable, writable);
+        }
+    }
+
+    pub(crate) fn deadline(&self) -> Option<Instant> {
+        if self.worker.is_some() && self.handshake.is_none() {
+            Some(self.started + Duration::from_secs(10))
+        } else {
+            self.retry_at
         }
     }
 
@@ -523,7 +539,7 @@ impl Application {
         }
         if self.worker.is_some()
             && self.handshake.is_none()
-            && self.started.elapsed() > Duration::from_secs(10)
+            && self.started.elapsed() >= Duration::from_secs(10)
         {
             self.failed();
         }

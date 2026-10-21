@@ -41,6 +41,22 @@ assert(win(chat) == main, 'Conversation uses the normal file window')
 assert(#vim.api.nvim_tabpage_list_wins(0) == 2, 'Only the small input adds a window')
 assert(vim.bo[chat].buflisted and not vim.bo[prompt].buflisted, 'Native buffer lists contain chats, not inputs')
 assert(vim.bo[chat].buftype == '' and vim.bo[chat].readonly and not vim.bo[chat].modifiable, 'File explorers see a normal buffer, protected from editing')
+assert(vim.bo[chat].undolevels == -1 and vim.bo[prompt].undolevels ~= -1, 'Generated history does not retain undo data; editable drafts retain undo')
+local edits = {}
+vim.api.nvim_buf_attach(chat, false, { on_lines = function(_, _, _, first, last, new_last)
+  edits[#edits + 1] = { first, last, new_last }
+end })
+view.render('connected', snapshot, {}, {}, 'First line\nSecond line')
+local rendered_tick, rendered_edits = vim.api.nvim_buf_get_changedtick(chat), #edits
+view.render('connected', snapshot, {}, {}, 'First line\nSecond line')
+assert(vim.api.nvim_buf_get_changedtick(chat) == rendered_tick and #edits == rendered_edits,
+  'An unchanged snapshot does not change buffer text or notify attached clients')
+local last_line = vim.api.nvim_buf_line_count(chat)
+view.render('connected', snapshot, {}, {}, 'First line\nChanged line')
+assert(vim.deep_equal(edits[#edits], { last_line - 1, last_line, last_line }), 'A changed last line replaces only that line')
+for index = 1, 100 do view.render('connected', snapshot, {}, {}, 'Progress ' .. index) end
+assert(#vim.api.nvim_buf_call(chat, vim.fn.undotree).entries == 0, 'Repeated generated updates retain no undo history')
+view.render('connected', snapshot, {}, {})
 assert(vim.api.nvim_buf_get_name(chat) == 'harness://chat/work', 'Chat buffers have stable session names')
 assert(view.session(chat) == 'work' and view.session(prompt) == 'work' and not view.session(source), 'Buffer identity distinguishes files from chats')
 assert(vim.wo[win(prompt)].winbar:find('Enter send', 1, true), 'The send key must be visible beside the prompt')
@@ -138,6 +154,12 @@ assert(#vim.api.nvim_tabpage_list_wins(0) == 1, 'File editing hides the input wi
 assert(not vim.wo.wrap and vim.wo.number, 'Native buffer switching restores source window options')
 view.render('connected', snapshot, {}, {})
 assert(vim.api.nvim_get_current_buf() == source and #vim.api.nvim_tabpage_list_wins(0) == 1, 'Streaming does not reopen chat or take file focus')
+assert(text(chat) == '' and not view.visible('work'), 'Hidden transcript text is released while its native buffer remains available')
+local hidden_tick = vim.api.nvim_buf_get_changedtick(chat)
+snapshot.assistant.text = 'Hidden progress'
+view.render('connected', snapshot, {}, {})
+assert(vim.api.nvim_buf_get_changedtick(chat) == hidden_tick, 'Hidden progress does not change the transcript buffer')
+snapshot.assistant.text = ''
 local switched, failure = pcall(vim.cmd, 'buffer #')
 assert(not switched and failure:find('E37', 1, true) and vim.api.nvim_get_current_buf() == source, 'Native navigation preserves the nohidden modified-file check')
 assert(not vim.o.hidden and vim.bo[source].modified, 'Harness does not change hidden or clear modified file state')

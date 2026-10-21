@@ -30,6 +30,10 @@ function M.new(transport, actions)
     return type(item.name) == 'string' and item.name or 'New chat'
   end
 
+  local function remember(snapshot)
+    self.snapshots[snapshot.session.session_id] = { state = snapshot.state, active_submission_id = snapshot.active_submission_id }
+  end
+
   local function render()
     if not self.buffer or not vim.api.nvim_buf_is_valid(self.buffer) then return end
     local win = window()
@@ -126,7 +130,7 @@ function M.new(transport, actions)
           return
         end
         request('session.get', { session_id = items[index].session_id }, function(value)
-          self.snapshots[value.session.session_id] = value.snapshot
+          remember(value.snapshot)
           render(); states(index + 1)
         end)
       end
@@ -150,7 +154,7 @@ function M.new(transport, actions)
     if snapshot then
       selected = snapshot.session.session_id
       local previous = self.snapshots[selected]
-      self.snapshots[selected] = snapshot
+      remember(snapshot)
       if window() and snapshot.session.workspace == self.directory and previous
         and previous.active_submission_id and previous.active_submission_id ~= vim.NIL
         and snapshot.active_submission_id == vim.NIL then self.refresh() end
@@ -172,6 +176,7 @@ function M.new(transport, actions)
       vim.api.nvim_buf_set_name(self.buffer, 'harness://agents')
       vim.bo[self.buffer].buftype, vim.bo[self.buffer].bufhidden = 'nofile', 'hide'
       vim.bo[self.buffer].swapfile, vim.bo[self.buffer].filetype = false, 'harness'
+      vim.bo[self.buffer].undolevels = -1
       vim.api.nvim_create_autocmd('BufEnter', { buffer = self.buffer, callback = function() self.refresh() end })
       local function row() return rows[vim.api.nvim_win_get_cursor(0)[1]] end
       local function map(key, action) vim.keymap.set('n', key, action, { buffer = self.buffer, silent = true }) end

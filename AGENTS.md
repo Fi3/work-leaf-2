@@ -65,6 +65,9 @@ or important implementation notes, but keep the first line strong enough to stan
 ## Application specification
 
 - The user authorized `SPEC.md` as an exception to the README-only rule. Implement the first version from this specification.
+- `ARCHITECTURE.md` and `PERFORMANCE.md` are also authorized. Read architecture guidance for ownership,
+  lifecycle, or interface changes; read performance guidance for resource limits, display caches, or benchmarks.
+  Read only the relevant documentation and specification sections when a task needs them. Do not load all documents at startup.
 - Use Rust for the server and command client. Small JavaScript Pi and Lua Neovim adapters are authorized.
 - The mandatory Pi dependency tree is permitted after audit. Follow the strict application dependency rules in `SPEC.md`.
 
@@ -83,3 +86,7 @@ or important implementation notes, but keep the first line strong enough to stan
 - Run `sh scripts/check.sh` for the complete local release gate.
 - Use the exact runtimes and locked installation in README.md. Terminal tests use Python 3 standard-library tools only.
 - Keep dependency changes subject to `scripts/check-dependencies.sh` and review its recorded baseline.
+- Run `python3 scripts/bench.py --publish` only when a human completes a PR, or when the user explicitly requests a baseline.
+  It runs the fixed Docker load to memory exhaustion. It is not part of the routine release gate.
+- Install the local push check with `sh scripts/install-hooks.sh`. Missing benchmark evidence for an outgoing source
+  tree requires an explicit human confirmation. Never supply that confirmation for the user. See `PERFORMANCE.md` when needed.

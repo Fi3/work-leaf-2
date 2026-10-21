@@ -7,6 +7,7 @@ use crate::{
 use serde_json::{Value, json};
 use std::collections::{HashMap, VecDeque};
 use std::io::{Read, Write};
+use std::os::fd::AsRawFd;
 use std::os::unix::fs::PermissionsExt;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::process::{Command, Stdio};
@@ -92,6 +93,9 @@ impl Connection {
     }
     fn empty(&self) -> bool {
         self.replies.is_empty() && self.writing.is_none()
+    }
+    fn has_output(&self) -> bool {
+        !self.empty() || !self.watches.is_empty()
     }
 }
 
@@ -232,7 +236,22 @@ fn run(listener: UnixListener, config: Config, lock: std::fs::File) -> Result<()
                 break;
             }
         }
-        std::thread::sleep(Duration::from_millis(5));
+        let mut readable = Vec::new();
+        let mut writable = Vec::new();
+        if !app.finished {
+            readable.push(listener.as_raw_fd());
+        }
+        for connection in clients.values() {
+            if !app.finished {
+                readable.push(connection.socket.as_raw_fd());
+            }
+            if connection.has_output() {
+                writable.push(connection.socket.as_raw_fd());
+            }
+        }
+        app.wait_fds(&mut readable, &mut writable);
+        let deadline = app.deadline().into_iter().chain(finish_at).min();
+        process::wait(&readable, &writable, deadline)?;
     }
     Ok(())
 }

@@ -1,4 +1,4 @@
-import { appendFileSync, readFileSync } from 'node:fs';
+import { appendFileSync, closeSync, readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 const config = JSON.parse(process.env.HARNESS_CONFIG);
 const fixture = JSON.parse(readFileSync(new URL('./protocol.json', import.meta.url)));
@@ -10,8 +10,10 @@ process.on('SIGHUP', () => {});
 createInterface({ input: process.stdin }).on('line', line => {
   const request = JSON.parse(line), { id, method, params } = request;
   if (method === 'system.hello') {
+    if (mode === 'silent-handshake') return;
     send(id, { api_version: 1, ...(mode === 'old-interface' ? {} : { api_revision: 4 }), node_version: process.version, artifacts: { durable: '1.3.0', ai: '1.3.0', chord: '1.3.0' }, ready: mode !== 'paused', scheduling_enabled: mode !== 'paused' });
     if (mode === 'crash') setTimeout(() => process.exit(9), 60);
+    if (mode === 'stderr-closed') closeSync(2);
   } else if (method === 'session.watch') {
     setTimeout(() => {
       const watch_id = `watch-${id}`;

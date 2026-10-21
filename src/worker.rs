@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{Read, Write};
-use std::os::fd::AsRawFd;
+use std::os::fd::{AsRawFd, RawFd};
 use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, Stdio};
 use std::time::{Duration, Instant};
 
@@ -15,7 +15,7 @@ pub struct Worker {
     child: Child,
     input: Option<ChildStdin>,
     output: ChildStdout,
-    errors: ChildStderr,
+    errors: Option<ChildStderr>,
     frames: Framer,
     queue: VecDeque<Vec<u8>>,
     offset: usize,
@@ -66,7 +66,7 @@ impl Worker {
             child,
             input: Some(input),
             output,
-            errors,
+            errors: Some(errors),
             frames: Framer::default(),
             queue: VecDeque::new(),
             offset: 0,
@@ -87,6 +87,18 @@ impl Worker {
         self.queued += frame.len();
         self.queue.push_back(frame);
         Ok(())
+    }
+
+    pub(crate) fn wait_fds(&self, readable: &mut Vec<RawFd>, writable: &mut Vec<RawFd>) {
+        readable.push(self.output.as_raw_fd());
+        if let Some(errors) = &self.errors {
+            readable.push(errors.as_raw_fd());
+        }
+        if !self.queue.is_empty()
+            && let Some(input) = &self.input
+        {
+            writable.push(input.as_raw_fd());
+        }
     }
 
     fn flush(&mut self) -> Result<(), RpcError> {
@@ -143,8 +155,14 @@ impl Worker {
             }
         }
         for _ in 0..4 {
-            match self.errors.read(&mut bytes) {
-                Ok(0) => break,
+            let Some(errors) = &mut self.errors else {
+                break;
+            };
+            match errors.read(&mut bytes) {
+                Ok(0) => {
+                    self.errors = None;
+                    break;
+                }
                 Ok(_) => result.diagnostics = true,
                 Err(e)
                     if matches!(

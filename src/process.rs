@@ -8,6 +8,7 @@ use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::process::{Child, Command};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
 static INTERRUPTED: AtomicBool = AtomicBool::new(false);
 
@@ -294,6 +295,64 @@ pub fn nonblocking(fd: RawFd) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+pub(crate) fn wait(
+    readable: &[RawFd],
+    writable: &[RawFd],
+    deadline: Option<Instant>,
+) -> io::Result<()> {
+    let mut descriptors: Vec<_> = readable
+        .iter()
+        .map(|fd| (*fd, libc::POLLIN))
+        .chain(writable.iter().map(|fd| (*fd, libc::POLLOUT)))
+        .map(|(fd, events)| libc::pollfd {
+            fd,
+            events,
+            revents: 0,
+        })
+        .collect();
+    let timeout = deadline.map(|deadline| {
+        let remaining = deadline.saturating_duration_since(Instant::now());
+        libc::timespec {
+            tv_sec: remaining.as_secs().try_into().unwrap_or(libc::time_t::MAX),
+            tv_nsec: remaining.subsec_nanos().into(),
+        }
+    });
+    // Each descriptor remains open for this call. The signal sets and timeout are
+    // valid local values. Masking before checking INTERRUPTED prevents a lost
+    // signal between that check and ppoll; ppoll restores the mask while asleep.
+    unsafe {
+        let mut signals: libc::sigset_t = std::mem::zeroed();
+        let mut previous: libc::sigset_t = std::mem::zeroed();
+        libc::sigemptyset(&mut signals);
+        libc::sigaddset(&mut signals, libc::SIGINT);
+        libc::sigaddset(&mut signals, libc::SIGTERM);
+        if libc::sigprocmask(libc::SIG_BLOCK, &signals, &mut previous) < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        let result = if !interrupted()
+            && libc::ppoll(
+                descriptors.as_mut_ptr(),
+                descriptors.len() as libc::nfds_t,
+                timeout.as_ref().map_or(std::ptr::null(), |value| value),
+                &previous,
+            ) < 0
+        {
+            let error = io::Error::last_os_error();
+            if error.kind() == io::ErrorKind::Interrupted {
+                Ok(())
+            } else {
+                Err(error)
+            }
+        } else {
+            Ok(())
+        };
+        if libc::sigprocmask(libc::SIG_SETMASK, &previous, std::ptr::null_mut()) < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        result
+    }
 }
 
 pub fn send_nonblocking(fd: RawFd, bytes: &[u8]) -> io::Result<usize> {

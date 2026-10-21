@@ -64,6 +64,7 @@ function M.new(options, actions)
       hint()
     else
       vim.bo[buf].readonly = true
+      vim.bo[buf].undolevels = -1
       vim.api.nvim_create_autocmd({ 'BufWriteCmd', 'FileWriteCmd', 'FileAppendCmd' }, { buffer = buf, callback = function()
         error('Chat history is stored by Harness. Use :q to close this window.')
       end })
@@ -96,6 +97,31 @@ function M.new(options, actions)
     if not chat.transcript or not vim.api.nvim_buf_is_valid(chat.transcript) then chat.transcript = buffer('chat', id, false) end
     if not chat.prompt or not vim.api.nvim_buf_is_valid(chat.prompt) then chat.prompt = buffer('prompt', id, true) end
     self.transcript, self.prompt = chat.transcript, chat.prompt
+  end
+
+  function self.visible(id)
+    local chat = id and chats[id]
+    return chat and chat.transcript and #vim.fn.win_findbuf(chat.transcript) > 0 or false
+  end
+
+  local function write_lines(buf, first, last, lines)
+    vim.bo[buf].readonly, vim.bo[buf].modifiable = false, true
+    vim.api.nvim_buf_set_lines(buf, first, last, false, lines)
+    vim.bo[buf].modifiable, vim.bo[buf].modified = false, false
+    vim.bo[buf].readonly = true
+  end
+
+  local function release_hidden()
+    for id, chat in pairs(chats) do
+      if chat.lines and not self.visible(id) then
+        if vim.api.nvim_buf_is_valid(chat.transcript) then
+          write_lines(chat.transcript, 0, -1, {})
+          vim.api.nvim_buf_clear_namespace(chat.transcript, namespace, 0, -1)
+        end
+        chat.lines, chat.highlights = nil, nil
+        if actions.release then actions.release(id) end
+      end
+    end
   end
 
   local function current_window(win)
@@ -203,6 +229,7 @@ function M.new(options, actions)
       elseif vim.bo[buf].buftype == '' and host then close_prompt(host)
       elseif host and current_window(host.main) and vim.api.nvim_win_get_buf(host.main) == host.chat then show_prompt(host.main) end
     end)
+    release_hidden()
   end
 
   local function schedule()
@@ -275,7 +302,7 @@ function M.new(options, actions)
     files[win] = nil
     schedule()
   end })
-  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'TabEnter', 'WinResized' }, { callback = schedule })
+  vim.api.nvim_create_autocmd({ 'BufWinEnter', 'BufWinLeave', 'TabEnter', 'WinResized' }, { callback = schedule })
 
   function self.focus()
     reconcile()
@@ -320,7 +347,18 @@ function M.new(options, actions)
 
   function self.render(connection, snapshot, history, attachments, notice)
     if not self.transcript or not vim.api.nvim_buf_is_valid(self.transcript) then return end
+    local id = self.session(self.transcript)
+    if not self.visible(id) then return end
+    local chat = chats[id]
     local lines, highlights = require('harness.transcript').format(connection, snapshot, history, attachments, notice)
+    local previous = chat.lines or vim.api.nvim_buf_get_lines(self.transcript, 0, -1, false)
+    local first, old_last, new_last = 0, #previous, #lines
+    while first < math.min(old_last, new_last) and previous[first + 1] == lines[first + 1] do first = first + 1 end
+    while old_last > first and new_last > first and previous[old_last] == lines[new_last] do
+      old_last, new_last = old_last - 1, new_last - 1
+    end
+    local changed = first ~= old_last or first ~= new_last
+    if not changed and vim.deep_equal(chat.highlights, highlights) then return end
     local positions, old_count = {}, vim.api.nvim_buf_line_count(self.transcript)
     for _, win in ipairs(vim.fn.win_findbuf(self.transcript)) do
       positions[win] = {
@@ -328,14 +366,12 @@ function M.new(options, actions)
         view = vim.api.nvim_win_call(win, vim.fn.winsaveview),
       }
     end
-    vim.bo[self.transcript].readonly, vim.bo[self.transcript].modifiable = false, true
-    vim.api.nvim_buf_set_lines(self.transcript, 0, -1, false, lines)
-    vim.bo[self.transcript].modifiable, vim.bo[self.transcript].modified = false, false
-    vim.bo[self.transcript].readonly = true
+    if changed then write_lines(self.transcript, first, old_last, vim.list_slice(lines, first + 1, new_last)) end
     vim.api.nvim_buf_clear_namespace(self.transcript, namespace, 0, -1)
     for _, mark in ipairs(highlights) do
       vim.api.nvim_buf_set_extmark(self.transcript, namespace, mark.row - 1, 0, { end_row = mark.row, hl_group = mark.group, hl_eol = true })
     end
+    chat.lines, chat.highlights = lines, highlights
     for win, position in pairs(positions) do
       if position.at_end then
         vim.api.nvim_win_set_cursor(win, { #lines, 0 })

@@ -8,41 +8,18 @@ import signal
 import socket
 import struct
 import subprocess
+import sys
 import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
 from interactive import Editor, EVIDENCE, REPO, RESULTS, ARGS
 
+sys.path.insert(0, str(REPO / 'tests/fixtures'))
+from rpc import Rpc
+
 BINARY = REPO / 'target/debug/harness'
 MESSAGE = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import {fauxAssistantMessage} from '@earendil-works/pi-ai/providers/faux'; console.log(JSON.stringify(fauxAssistantMessage('Streamed answer λ 世界. '.repeat(400))));"], cwd=REPO, text=True))
-
-class Rpc:
-    def __init__(self, path):
-        self.socket = socket.socket(socket.AF_UNIX)
-        self.socket.settimeout(15)
-        self.socket.connect(str(path))
-        self.input = self.socket.makefile('rb')
-        self.serial = 0
-        self.request('system.hello', {'api_version': 1})
-
-    def request(self, method, params=None):
-        self.serial += 1
-        identifier = str(self.serial)
-        self.socket.sendall((json.dumps({'jsonrpc': '2.0', 'id': identifier, 'method': method, 'params': params or {}}) + '\n').encode())
-        while True:
-            line = self.input.readline()
-            if not line: raise ConnectionError('Server disconnected')
-            record = json.loads(line)
-            if 'method' in record:
-                continue
-            assert record['id'] == identifier, record
-            assert 'error' not in record, record
-            return record['result']
-
-    def close(self):
-        self.input.close()
-        self.socket.close()
 
 class RealEditor(Editor):
     def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None, first_run=False, oauth_mock=False, generation=None):
@@ -1168,6 +1145,9 @@ def explicit_editor_context_and_streaming_case():
         entries = editor.snapshot()['entries']
         assert any('unsaved λ 世界' in item['text'] and 'Explicit selection snapshot: one lines 2-2' in item['text'] for item in entries), entries
         editor.wait(lambda: editor.snapshot()['assistant']['text'], 'actual streamed assistant text')
+        assert editor.panel_text().strip() == '', 'A hidden transcript releases generated text during streaming'
+        editor.command('Harness')
+        editor.wait(lambda: 'assistant progress' in editor.panel_text(), 'reopening restores the current assistant progress')
         panel = editor.panel_text()
         assert 'assistant progress' in panel and 'Context request' in panel
         assert (editor.root / 'one').read_text() == 'one\n'

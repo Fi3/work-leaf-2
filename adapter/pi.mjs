@@ -282,19 +282,18 @@ class Application {
   async watch(session, send) {
     if (this.watches.size >= limits.clients * limits.watches) throw appError('resource_limit', 'Worker watch limit reached');
     const view = await session.conversation.viewState(context), id = randomUUID();
-    const state = { view, timer: null, latest: null, sequence: 0, last: 0, session, started: false };
+    const state = { view, timer: null, sequence: 0, last: 0, session, started: false };
     this.watches.set(id, state);
     const emit = () => {
       state.timer = null;
-      if (!this.watches.has(id) || !state.latest) return;
-      state.last = Date.now(); const value = state.latest; state.latest = null;
+      if (!this.watches.has(id)) return;
+      // Commits within the interval share one render of the current Pi view.
+      state.last = Date.now(); const value = this.render(session, view.value);
       send({ jsonrpc: '2.0', method: 'session.state', params: { watch_id: id, sequence: ++state.sequence, snapshot: value } });
     };
     state.update = () => {
-      if (!this.watches.has(id)) return;
-      state.latest = this.render(session, view.value);
-      if (!state.started) return;
-      if (!state.latest.active_submission_id) { clearTimeout(state.timer); emit(); }
+      if (!this.watches.has(id) || !state.started) return;
+      if (view.value.docs['pi.live']?.run?.inputs[0] === undefined) { clearTimeout(state.timer); emit(); }
       else if (!state.timer) state.timer = setTimeout(emit, Math.max(0, 100 - (Date.now() - state.last)));
     };
     const initial = this.render(session, view.value);

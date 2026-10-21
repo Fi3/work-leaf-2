@@ -6,6 +6,11 @@ stores conversations, inputs, tool results, and final answers in SQLite.
 [SPEC.md](SPEC.md) is the requirements source. The files in `dev-docs/` are saved
 references. They are not implementation instructions.
 
+[ARCHITECTURE.md](ARCHITECTURE.md) explains process ownership, state, and the design
+choices. [PERFORMANCE.md](PERFORMANCE.md) explains resource limits, display memory,
+and the optional Docker capacity benchmark. Read these documents when the task
+affects those areas.
+
 ## Start
 
 Run from this directory, including in an ordinary SSH session:
@@ -690,6 +695,14 @@ values, duplicate versions, and scripts:
 
 ## Verification
 
+When a human completes a PR, run `python3 scripts/bench.py --publish` to record
+CPU and RAM use under the fixed Docker limits, through memory exhaustion.
+This benchmark uses simulated model responses and is separate from the release
+checks below. Install the push warning with `sh scripts/install-hooks.sh`.
+The hook checks each outgoing source tree and asks for explicit confirmation
+when matching benchmark evidence is absent. See [PERFORMANCE.md](PERFORMANCE.md)
+for setup, evidence, and comparison rules.
+
 Run `sh scripts/check.sh` for the deterministic release checks. Each integration
 test uses temporary workspaces, state directories, and sockets. No test needs
 paid provider access. The faux provider controls responses and actual coding
@@ -703,14 +716,15 @@ Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
 `PATH`. These are test tools, not application dependencies. The desktop check
 fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
 
-The complete release gate passed on **2026-10-21** with the final source files. It passed
-formatting, Clippy with warnings denied, 57 Rust tests, the release build, six
-adapter syntax checks, and 136 Node tests. The Node tests include 72 adapter tests,
+The release checks passed on **2026-10-21** with the final source files. They passed
+formatting, Clippy with warnings denied, 60 Rust tests, the release build, six
+adapter syntax checks, and 153 Node tests. The Node tests include 73 adapter tests,
 35 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
-ten actual server recovery tests, and one process exit test. Independent
+ten actual server recovery tests, one process exit test, and 16 benchmark and
+push-evidence tests. These 16 tests do not run the Docker capacity benchmark. Independent
 Node test files run concurrently with separate temporary directories and sockets.
 
-Neovim passed four headless suites, **73 actual terminal cases with the Rust
+Neovim passed four headless suites, **67 actual terminal cases with the Rust
 server and Pi**, six desktop login cases, and 43 terminal cases with controlled
 protocol fixtures. The independent terminal groups run concurrently. The actual
 tests cover each normal exit command, exact answers, write

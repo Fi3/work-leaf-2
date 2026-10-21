@@ -30,6 +30,7 @@ end
 
 local function merge_entries(entries, incoming, before)
   local result = vim.list_extend({}, entries)
+  result.limited = entries.limited
   local at = #result + 1
   for index, item in ipairs(result) do if item.entry_id == before then at = index; break end end
   for index = #incoming, 1, -1 do
@@ -41,6 +42,41 @@ local function merge_entries(entries, incoming, before)
     else table.insert(result, at, item) end
   end
   return result
+end
+
+local function limit_history(entries, anchor)
+  local bytes, last, at = 0, 0, 1
+  for index, item in ipairs(entries) do
+    if item.entry_id == anchor then at = index end
+    local size = #item.text + #item.entry_id + #item.kind
+    if index == last + 1 and index <= 200 and bytes + size <= 1024 * 1024 then
+      bytes, last = bytes + size, index
+    end
+  end
+  if last == #entries then return entries end
+  if at > last then
+    bytes, last = 0, at - 1
+    for index = at, math.min(#entries, at + 199) do
+      local item = entries[index]
+      local size = #item.text + #item.entry_id + #item.kind
+      if bytes + size > 1024 * 1024 then break end
+      bytes, last = bytes + size, index
+    end
+  else at = 1 end
+  local result = vim.list_slice(entries, at, last)
+  result.limited = true
+  return result
+end
+
+local function release_history(id)
+  local session = sessions[id]
+  if not session then return end
+  session.history, session.history_loaded = {}, false
+  session.history_request = nil
+  local snapshot = session.snapshot
+  session.cursor = snapshot and snapshot.history_cursor
+  session.history_before = snapshot and snapshot.entries[1] and snapshot.entries[1].entry_id
+  if selected ~= id then session.snapshot = nil end
 end
 
 local function update(snapshot)
@@ -60,7 +96,7 @@ local function update(snapshot)
     session.cursor = snapshot.history_cursor
     session.history_before = snapshot.entries[1] and snapshot.entries[1].entry_id
   end
-  if session.history_loaded then session.history = merge_entries(session.history, snapshot.entries) end
+  if session.history_loaded then session.history = limit_history(merge_entries(session.history, snapshot.entries)) end
   if selected == id then render() end
   if sidebar then sidebar.update(snapshot) end
   if previous and previous.state ~= 'idle' and snapshot.state == 'idle' then vim.cmd('checktime') end
@@ -68,7 +104,10 @@ end
 
 local function initialize()
   if view then return end
-  view = require('harness.view').new(options, { activate = function(...) if activate then activate(...) end end })
+  view = require('harness.view').new(options, {
+    activate = function(...) if activate then activate(...) end end,
+    release = release_history,
+  })
   transport = require('harness.transport').new(options, function(err)
     connection = err or 'connected'
     if err then watch, watch_sequence = nil, 0 end
@@ -97,12 +136,14 @@ local function clear_watch()
 end
 
 local function select_session(id)
+  local previous = selected
   if selected ~= id then
     attachment = attachment + 1
     pending_attachment = nil
     clear_watch()
   end
   selected = id
+  if previous and previous ~= id and not view.visible(previous) then release_history(previous) end
   if id then sessions[id] = sessions[id] or { context = {}, history = {} } end
   view.select(id)
 end
@@ -336,19 +377,26 @@ end
 
 local function history()
   local session = sessions[selected]
+  if session.history_request then return end
   if not session.cursor or session.cursor == vim.NIL then
     vim.notify('Harness: No older transcript entries.'); return
   end
-  local cursor, before = session.cursor, session.history_before
+  local id, cursor, before = selected, session.cursor, session.history_before
+  local request = {}
+  session.history_request = request
   session.history_loaded = true
-  session.history = merge_entries(session.history, session.snapshot.entries)
-  rpc('transcript.list', { session_id = selected, cursor = cursor, limit = 50 }, function(result)
-    session.history = merge_entries(session.history, result.items, before)
+  session.history = limit_history(merge_entries(session.history, session.snapshot.entries))
+  transport.request('transcript.list', { session_id = id, cursor = cursor, limit = 50 }, function(result, err)
+    if session.history_request ~= request then return end
+    session.history_request = nil
+    if err then report(err, id); return end
+    if not view.visible(id) then release_history(id); return end
+    session.history = limit_history(merge_entries(session.history, result.items, before), result.items[1] and result.items[1].entry_id)
     if session.cursor == cursor then
       session.cursor = result.next_cursor
       session.history_before = result.items[1] and result.items[1].entry_id or before
     end
-    render()
+    if selected == id then render() end
   end)
 end
 
