@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai/providers/faux';
+import { readRecords } from './fixtures/records.mjs';
 
 const executable = resolve(process.env.HARNESS_TEST_BINARY ?? 'target/debug/harness');
 const credential = 'test-provider-secret-DO-NOT-PRINT';
@@ -150,11 +151,8 @@ test('actual watch streams and proxy EOF preserve admitted work and drain an out
   const app = await fixture(t, [fauxAssistantMessage('Streaming '.repeat(1000))], 100);
   await app.create('work');
   const watch = spawn(executable, ['watch', '--session', 'work', '--socket', app.socket], { env: app.env, stdio: ['ignore', 'pipe', 'pipe'] });
-  const exit = once(watch, 'exit'); let bytes = '', records = [];
-  watch.stdout.setEncoding('utf8'); watch.stdout.on('data', text => {
-    bytes += text; let end;
-    while ((end = bytes.indexOf('\n')) >= 0) { records.push(JSON.parse(bytes.slice(0, end))); bytes = bytes.slice(end + 1); }
-  });
+  const exit = once(watch, 'exit'), records = [];
+  readRecords(watch.stdout, record => records.push(record));
   t.after(async () => { if (watch.exitCode === null && watch.signalCode === null) { watch.kill('SIGINT'); await exit; } });
   for (let count = 0; count < 100 && !records.length; count++) await delay(10);
   assert.equal(records[0].snapshot.state, 'idle');

@@ -1,3 +1,4 @@
+local feed_keys = dofile(vim.fn.getcwd() .. '/tests/nvim/helpers.lua').keys
 vim.opt.runtimepath:append(vim.fn.getcwd())
 vim.o.columns, vim.o.lines = 120, 40
 local saved_environment = {}
@@ -54,7 +55,7 @@ local setup = require('harness.setup').new({
 local function wait(predicate, message) assert(vim.wait(3000, predicate, 5), message) end
 local function keys(value)
   vim.cmd('stopinsert')
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(value, true, false, true), 'xt', false)
+  feed_keys(value)
   vim.wait(10)
 end
 local window, buffer, channel

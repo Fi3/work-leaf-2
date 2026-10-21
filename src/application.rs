@@ -114,111 +114,131 @@ impl Application {
     }
 
     pub fn request(&mut self, client: u64, request: Request) {
-        let Some(state) = self.clients.get_mut(&client) else {
+        if !self.admit(client, &request) {
             return;
+        }
+        match request.method.as_str() {
+            "system.hello" => self.client_hello(client, request),
+            "server.restart_worker" => self.restart(client, request.id),
+            _ => {
+                if let Err(error) = self.check_available(&request.method) {
+                    self.reply(client, request.id, Err(error));
+                    return;
+                }
+                match request.method.as_str() {
+                    "server.shutdown" => self.request_shutdown(client, request.id),
+                    "session.watch" => self.request_watch(client, request),
+                    "session.unwatch" => self.request_unwatch(client, request),
+                    _ => self.forward(client, request),
+                }
+            }
+        }
+    }
+
+    fn admit(&mut self, client: u64, request: &Request) -> bool {
+        let Some(state) = self.clients.get_mut(&client) else {
+            return false;
         };
         if state.pending.contains(&request.id) {
             self.deliveries.push(Delivery::Close(client));
-            return;
+            return false;
         }
         if state.pending.len() >= protocol::MAX_PENDING {
             self.reply(
                 client,
-                request.id,
+                request.id.clone(),
                 Err(RpcError::app(
                     "resource_limit",
                     "At most 32 requests may be pending",
                 )),
             );
-            return;
+            return false;
         }
         state.pending.insert(request.id.clone());
-        if request.method == "system.hello" {
-            let result = if request.params["api_version"] == protocol::API_VERSION {
-                state.hello = true;
-                Ok(self.hello())
-            } else {
-                Err(RpcError::app(
-                    "incompatible_version",
-                    "This server requires api_version 1",
-                ))
-            };
-            self.reply(client, request.id, result);
-            return;
-        }
-        if !state.hello {
+        if request.method != "system.hello" && !state.hello {
             self.reply(
                 client,
-                request.id,
+                request.id.clone(),
                 Err(RpcError::app(
                     "incompatible_version",
                     "Call system.hello first",
                 )),
             );
-            return;
+            return false;
         }
-        if request.method == "server.restart_worker" {
-            self.restart(client, request.id);
-            return;
-        }
-        if self.shutdown.is_some()
-            && (mutation(&request.method) || request.method == "server.shutdown")
-        {
-            self.reply(
-                client,
-                request.id,
-                Err(RpcError::app("busy", "Server shutdown is in progress")),
-            );
-            return;
+        true
+    }
+
+    fn client_hello(&mut self, client: u64, request: Request) {
+        let result = if request.params["api_version"] == protocol::API_VERSION {
+            if let Some(state) = self.clients.get_mut(&client) {
+                state.hello = true;
+            }
+            Ok(self.hello())
+        } else {
+            Err(RpcError::app(
+                "incompatible_version",
+                "This server requires api_version 1",
+            ))
+        };
+        self.reply(client, request.id, result);
+    }
+
+    fn check_available(&self, method: &str) -> Result<(), RpcError> {
+        if self.shutdown.is_some() && (mutation(method) || method == "server.shutdown") {
+            return Err(RpcError::app("busy", "Server shutdown is in progress"));
         }
         if self.handshake.is_none() {
+            return Err(RpcError::app("not_ready", "Worker storage is unavailable"));
+        }
+        Ok(())
+    }
+
+    fn request_shutdown(&mut self, client: u64, id: String) {
+        if self.pending.values().any(|p| p.method == "auth.login") {
             self.reply(
                 client,
-                request.id,
-                Err(RpcError::app("not_ready", "Worker storage is unavailable")),
+                id,
+                Err(RpcError::app(
+                    "busy",
+                    "Finish or cancel the open login before shutdown",
+                )),
             );
             return;
         }
-        if request.method == "server.shutdown" {
-            if self.pending.values().any(|p| p.method == "auth.login") {
-                self.reply(
-                    client,
-                    request.id,
-                    Err(RpcError::app(
-                        "busy",
-                        "Finish or cancel the open login before shutdown",
-                    )),
-                );
-                return;
-            }
-            self.shutdown = Some((client, request.id));
+        self.shutdown = Some((client, id));
+    }
+
+    fn request_watch(&mut self, client: u64, request: Request) {
+        let count = self.clients[&client].watches.len()
+            + self
+                .pending
+                .values()
+                .filter(|p| p.client == client && p.method == "session.watch")
+                .count();
+        if count >= protocol::MAX_WATCHES {
+            self.reply(
+                client,
+                request.id,
+                Err(RpcError::app(
+                    "resource_limit",
+                    "At most 8 watches are permitted",
+                )),
+            );
             return;
         }
-        if request.method == "session.watch" {
-            let count = state.watches.len()
-                + self
-                    .pending
-                    .values()
-                    .filter(|p| p.client == client && p.method == "session.watch")
-                    .count();
-            if count >= protocol::MAX_WATCHES {
-                self.reply(
-                    client,
-                    request.id,
-                    Err(RpcError::app(
-                        "resource_limit",
-                        "At most 8 watches are permitted",
-                    )),
-                );
-                return;
-            }
-        }
-        if request.method == "session.unwatch" {
-            let watch = request.params["watch_id"].as_str().unwrap_or_default();
-            if !state.watches.remove(watch) {
-                self.reply(client, request.id, Ok(json!({})));
-                return;
-            }
+        self.forward(client, request);
+    }
+
+    fn request_unwatch(&mut self, client: u64, request: Request) {
+        let watch = request.params["watch_id"].as_str().unwrap_or_default();
+        if !self
+            .clients
+            .get_mut(&client)
+            .is_some_and(|state| state.watches.remove(watch))
+        {
+            self.reply(client, request.id, Ok(json!({})));
+            return;
         }
         self.forward(client, request);
     }
@@ -283,9 +303,7 @@ impl Application {
             );
             return;
         }
-        if let Some(mut worker) = self.worker.take() {
-            worker.close();
-        }
+        self.close();
         self.fail_pending();
         match self.config.reload().and_then(|config| {
             let worker = Worker::spawn(&config, &self.lock)?;
@@ -312,45 +330,56 @@ impl Application {
 
     fn worker_record(&mut self, record: Value) -> Result<(), RpcError> {
         if record["method"] == "session.state" {
-            let watch = record["params"]["watch_id"]
-                .as_str()
-                .ok_or_else(|| RpcError::app("internal_error", "Invalid worker watch"))?;
-            for (id, client) in &mut self.clients {
-                if client.watches.contains(watch) {
-                    client.sequence += 1;
-                    let mut value = record.clone();
-                    value["params"]["sequence"] = json!(client.sequence);
-                    self.deliveries.push(Delivery::Record(*id, value));
-                    break;
-                }
-            }
-            return Ok(());
+            return self.watch_notification(record);
         }
         let id = record["id"]
             .as_str()
             .ok_or_else(|| RpcError::app("internal_error", "Worker response has no id"))?;
         if id == "_hello" {
-            let hello = &record["result"];
-            if hello["api_version"] != 1
-                || hello["api_revision"] != protocol::API_REVISION
-                || hello["node_version"] != "v26.10.0"
-                || ["durable", "ai", "chord"]
-                    .iter()
-                    .any(|key| hello["artifacts"][key] != "1.3.0")
-                || !hello["ready"].is_boolean()
-                || !hello["scheduling_enabled"].is_boolean()
-            {
-                return Err(RpcError::app(
-                    "incompatible_version",
-                    "Worker runtime or artifact version does not match",
-                ));
-            }
-            self.handshake = Some(hello.clone());
-            if let Some(p) = self.pending.remove("_restart") {
-                self.reply(p.client, p.id, Ok(self.hello()));
-            }
-            return Ok(());
+            self.worker_hello(&record["result"])
+        } else {
+            self.worker_response(id, &record)
         }
+    }
+
+    fn watch_notification(&mut self, mut record: Value) -> Result<(), RpcError> {
+        let watch = record["params"]["watch_id"]
+            .as_str()
+            .ok_or_else(|| RpcError::app("internal_error", "Invalid worker watch"))?;
+        for (id, client) in &mut self.clients {
+            if client.watches.contains(watch) {
+                client.sequence += 1;
+                record["params"]["sequence"] = json!(client.sequence);
+                self.deliveries.push(Delivery::Record(*id, record));
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    fn worker_hello(&mut self, hello: &Value) -> Result<(), RpcError> {
+        if hello["api_version"] != 1
+            || hello["api_revision"] != protocol::API_REVISION
+            || hello["node_version"] != "v26.10.0"
+            || ["durable", "ai", "chord"]
+                .iter()
+                .any(|key| hello["artifacts"][key] != "1.3.0")
+            || !hello["ready"].is_boolean()
+            || !hello["scheduling_enabled"].is_boolean()
+        {
+            return Err(RpcError::app(
+                "incompatible_version",
+                "Worker runtime or artifact version does not match",
+            ));
+        }
+        self.handshake = Some(hello.clone());
+        if let Some(p) = self.pending.remove("_restart") {
+            self.reply(p.client, p.id, Ok(self.hello()));
+        }
+        Ok(())
+    }
+
+    fn worker_response(&mut self, id: &str, record: &Value) -> Result<(), RpcError> {
         let Some(pending) = self.pending.remove(id) else {
             return Ok(());
         };
@@ -372,37 +401,47 @@ impl Application {
                 &format!("Internal error for worker request {id}"),
             );
         }
-        if pending.method == "session.watch"
-            && let Ok(value) = &result
-        {
-            let watch = value["watch_id"]
-                .as_str()
-                .ok_or_else(|| RpcError::app("internal_error", "Invalid watch receipt"))?;
-            if let Some(client) = self.clients.get_mut(&pending.client) {
-                client.watches.insert(watch.into());
-            } else {
-                self.release_watches.insert(watch.into());
-            }
-        }
         if pending.method == "server.shutdown" {
-            self.shutdown = None;
-            if result.is_ok() {
-                if let Some(mut worker) = self.worker.take() {
-                    worker.close();
-                }
-                self.finished = true;
+            self.complete_shutdown(result.is_ok());
+        }
+        if let Ok(value) = &result {
+            match pending.method.as_str() {
+                "session.watch" => self.complete_watch(pending.client, value)?,
+                "auth.login" | "auth.logout" => self.complete_auth(value),
+                _ => {}
             }
         }
-        if matches!(pending.method.as_str(), "auth.login" | "auth.logout")
-            && let Ok(value) = &result
-            && let Some(ready) = value["worker_ready"].as_bool()
+        self.reply(pending.client, pending.id, result);
+        Ok(())
+    }
+
+    fn complete_watch(&mut self, client: u64, value: &Value) -> Result<(), RpcError> {
+        let watch = value["watch_id"]
+            .as_str()
+            .ok_or_else(|| RpcError::app("internal_error", "Invalid watch receipt"))?;
+        if let Some(client) = self.clients.get_mut(&client) {
+            client.watches.insert(watch.into());
+        } else {
+            self.release_watches.insert(watch.into());
+        }
+        Ok(())
+    }
+
+    fn complete_shutdown(&mut self, succeeded: bool) {
+        self.shutdown = None;
+        if succeeded {
+            self.close();
+            self.finished = true;
+        }
+    }
+
+    fn complete_auth(&mut self, value: &Value) {
+        if let Some(ready) = value["worker_ready"].as_bool()
             && let Some(hello) = self.handshake.as_mut()
         {
             hello["ready"] = json!(ready);
             hello["scheduling_enabled"] = json!(ready);
         }
-        self.reply(pending.client, pending.id, result);
-        Ok(())
     }
 
     fn fail_pending(&mut self) {

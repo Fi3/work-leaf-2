@@ -1,24 +1,19 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import test from 'node:test';
 import { builtinModels } from '@earendil-works/pi-ai/providers/all';
 import { openApplication } from '../adapter/pi.mjs';
 import { installOAuthMock, secret } from './fixtures/oauth.mjs';
 import { pty } from './fixtures/terminal.mjs';
+import { application as openTestApplication } from './fixtures/application.mjs';
 
 const nativeFetch = globalThis.fetch;
 const deviceId = '74c92438-a3ee-45c1-b6db-949badc75d07';
 const expected = ['anthropic', 'github-copilot', 'kimi-coding', 'meta', 'openai', 'openai-codex', 'openrouter', 'radius', 'xai'];
 
 async function application(t) {
-  const directory = await mkdtemp(join(tmpdir(), 'harness-oauth-'));
-  const config = { state_dir: directory };
-  const app = await openApplication(config);
-  t.after(async () => { await app.close().catch(() => {}); await rm(directory, { recursive: true, force: true }); });
-  return { app, models: app.models, store: app.credentials, config };
+  const fixture = await openTestApplication(t, { prefix: 'harness-oauth-' });
+  return { ...fixture, models: fixture.app.models, store: fixture.app.credentials };
 }
 
 function callbackUrl(event) {

@@ -96,22 +96,23 @@ impl Connection {
 }
 
 fn route(client: u64, bytes: &[u8], app: &mut Application, connection: &mut Connection) -> bool {
-    let value: Option<Value> = serde_json::from_slice(bytes).ok();
+    let value = protocol::decode(bytes);
     if value
         .as_ref()
-        .is_some_and(|v| v.is_object() && !v.as_object().is_some_and(|o| o.contains_key("id")))
+        .is_ok_and(|v| v.is_object() && !v.as_object().is_some_and(|o| o.contains_key("id")))
     {
         return false;
     }
-    match protocol::Request::parse(bytes) {
+    let id = value
+        .as_ref()
+        .ok()
+        .and_then(|v| v.get("id"))
+        .filter(|id| id.as_str().is_some_and(|s| !s.is_empty() && s.len() <= 128))
+        .cloned()
+        .unwrap_or(Value::Null);
+    match value.and_then(protocol::Request::from_value) {
         Ok(request) => app.request(client, request),
         Err(error) => {
-            let id = value
-                .as_ref()
-                .and_then(|v| v.get("id"))
-                .filter(|id| id.as_str().is_some_and(|s| !s.is_empty() && s.len() <= 128))
-                .cloned()
-                .unwrap_or(Value::Null);
             if connection
                 .queue(protocol::response(id, Err(error)))
                 .is_err()

@@ -1,13 +1,8 @@
-import { constants, openSync, closeSync, fstatSync } from 'node:fs';
-import { ReadStream, WriteStream, isatty } from 'node:tty';
-import { Writable } from 'node:stream';
-import { createInterface } from 'node:readline/promises';
-import { emitKeypressEvents } from 'node:readline';
 import { randomUUID } from 'node:crypto';
-import { spawn } from 'node:child_process';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { defineDoc } from '@earendil-works/pi-durable';
 import { appError, invalid, RpcError } from './protocol.mjs';
+import { openLoginTerminal } from './terminal.mjs';
 
 const AuthDoc = defineDoc({
   kind: 'app.auth', version: 1, scope: 'session',
@@ -59,199 +54,87 @@ export class AuthStore {
   settle() { return Promise.allSettled([...this.chains.values()]); }
 }
 
-function terminal(path) {
-  if (!/^\/dev\/pts\/[0-9]+$/.test(path)) throw invalid('Login requires a private terminal');
-  const descriptors = [];
-  try {
-    for (let i = 0; i < 2; i++) {
-      const fd = openSync(path, constants.O_RDWR | constants.O_NOFOLLOW | constants.O_NOCTTY);
-      descriptors.push(fd);
-      const info = fstatSync(fd);
-      if (!info.isCharacterDevice() || info.uid !== process.getuid() || !isatty(fd)) throw Error();
-    }
-    const input = new ReadStream(descriptors[0]), output = new WriteStream(descriptors[1]);
-    return { input, output };
-  } catch {
-    for (const fd of descriptors) { try { closeSync(fd); } catch {} }
-    throw invalid('Cannot open the private login terminal');
+async function selectLoginOption(ui, prompt, signal, provider, remote) {
+  if (remote && provider === 'radius' && prompt.options.some(item => item.id === 'device-code')) {
+    ui.write('SSH uses device-code sign-in for Radius. Copy the link and code below.\r\n');
+    return 'device-code';
+  }
+  ui.write(`\r\n${prompt.message}\r\n`);
+  for (const [index, item] of prompt.options.entries()) ui.write(`  ${index + 1}. ${item.label}${item.description ? ` — ${item.description}` : ''}\r\n`);
+  while (true) {
+    const value = (await ui.question(`Choice [1-${prompt.options.length}, Enter=1]: `, false, signal)).trim();
+    const index = value === '' ? 0 : Number(value) - 1;
+    if (Number.isInteger(index) && prompt.options[index]) return prompt.options[index].id;
+    ui.write('Enter a listed number, or press Ctrl-C to cancel.\r\n');
   }
 }
 
-function loginUrl(value) {
-  if (typeof value !== 'string' || Buffer.byteLength(value) > 8192 || /[\u0000-\u0020\u007f-\u009f]/.test(value)) throw invalid('Login link is not a valid web address');
-  let url; try { url = new URL(value); } catch { throw invalid('Login link is not a valid web address'); }
-  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw invalid('Login link is not a valid web address');
-  return value;
+async function readLoginValue(ui, prompt, signal, controller, { remote, browserLogin }) {
+  const secret = prompt.type === 'secret' || prompt.type === 'manual_code';
+  const automatic = browserLogin && prompt.type === 'manual_code';
+  const manual = remote && prompt.type === 'manual_code';
+  if (manual) ui.write('If the browser cannot connect to localhost or 127.0.0.1,\r\nthis is expected over SSH. Copy the FULL address from its address bar.\r\nPaste it below and press Enter. If a code is shown, paste that code.\r\n');
+  const label = automatic ? 'Waiting for browser sign-in. No input is needed here. '
+    : `${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ''}: `;
+  while (true) {
+    const value = await ui.question(label, secret, signal);
+    if (prompt.type === 'manual_code' && !value.trim()) {
+      ui.write(automatic ? 'The browser sign-in is still open. Ctrl-C cancels.\r\n'
+        : manual ? 'Paste the complete return URL or code. Ctrl-C cancels.\r\n'
+          : 'Wait for your browser, or paste the complete code or redirect URL. Ctrl-C cancels.\r\n');
+      continue;
+    }
+    if (prompt.type === 'secret' && value === '') { controller.abort(new Error('Login cancelled')); controller.signal.throwIfAborted(); }
+    if (prompt.type === 'secret' && (!value.trim() || /[\u0000-\u001f\u007f-\u009f]/.test(value))) throw invalid('Credentials must contain text without control characters');
+    return value;
+  }
 }
-function openBrowser(url, report) {
-  const browser = spawn('xdg-open', [url], { stdio: 'ignore', detached: true });
-  const failed = () => report('Cannot open a browser here. Press Ctrl-X to copy the link.');
-  browser.on('error', failed);
-  browser.on('exit', code => { if (code !== 0) failed(); });
-  browser.unref();
+
+function notifyLogin(ui, event, { remote, browserLogin }) {
+  if (event.type === 'auth_url') {
+    ui.showLink(event.url);
+    ui.write(`${remote ? 'Sign in with your local browser. Keep this login window open.'
+      : browserLogin ? 'Finish sign-in in your browser. This window updates automatically.' : event.instructions ?? ''}\r\n`);
+  } else if (event.type === 'device_code') {
+    ui.showDeviceCode(event.verificationUri, event.userCode);
+    if (remote) ui.write('Enter this code in your local browser. This window updates automatically.\r\nDo not paste the browser address here.\r\n');
+  } else ui.showInformation(event);
+}
+
+async function refreshCatalog(models, provider, signal, ui) {
+  try {
+    const updated = await models.refresh({ providers: [provider], signal });
+    if (updated.errors.size) throw Error();
+  } catch {
+    ui.write('\r\nThe account is saved, but the model list could not update. Retry login later to update the list.\r\n');
+  }
 }
 
 export async function terminalLogin(models, params, controller, deviceId) {
   const provider = models.getProvider(params.provider);
   const method = params.method === 'oauth' ? provider?.auth.oauth : provider?.auth.apiKey;
   if (!method?.login) throw invalid('This provider does not support the selected login method');
-  const remote = params.remote === true;
-  const browserLogin = !remote && provider.id === 'openai' && params.method === 'oauth';
-  const { input, output } = terminal(params.terminal);
-  let hidden = true, link, deviceCode, activeReader;
-  const display = new Writable({ write(value, encoding, done) {
-    if (!hidden && output.writableLength <= 65536) output.write(value, encoding);
-    done();
-  } });
-  display.columns = output.columns;
-  const cancel = () => controller.abort(new Error('Login cancelled'));
-  const setRawMode = input.setRawMode.bind(input);
-  input.setRawMode = value => {
-    try { return setRawMode(value); }
-    catch (error) {
-      if (error.code !== 'EIO') throw error;
-      // Node readline also changes raw mode on EOF, after a closed PTY rejects the ioctl.
-      cancel(); return input;
-    }
-  };
-  emitKeypressEvents(input);
-  input.on('keypress', (_, key) => {
-    if (key?.name === 'escape' || (key?.ctrl && ['c', 'z'].includes(key.name))) cancel();
-    else if (key?.ctrl && key.name === 'x') {
-      if (link) copy(link); else status('No browser link is available for this step.');
-    } else if (key?.ctrl && key.name === 'o') {
-      if (link) {
-        if (remote) copy(link); else openBrowser(link, status);
-      } else status('No browser link is available for this step.');
-    } else if (key?.ctrl && key.name === 'l') {
-      key.name = undefined; // Keep readline from clearing the link and the private prompt.
-      status(link ? `Complete login link:\r\n${link}` : 'No browser link is available for this step.');
-    } else if (key?.ctrl && key.name === 'y' && deviceCode) {
-      key.name = undefined; // Do not also paste readline's removed text into a hidden prompt.
-      copy(deviceCode);
-    }
-  });
-  input.on('error', cancel); output.on('error', cancel);
-  input.on('end', cancel);
-  input.setRawMode(true); input.resume();
-  const write = value => {
-    if (output.destroyed || output.writableEnded) return;
-    if (output.writableLength > 65536) { cancel(); return; }
-    output.write(value);
-  };
-  const status = text => {
-    write(`\r\n${text}\r\n`);
-    if (activeReader) {
-      if (hidden) write(activeReader.getPrompt());
-      else activeReader.prompt(true);
-    }
-  };
-  const copy = value => {
-    write(`\x1b]52;c;${Buffer.from(value).toString('base64')}\x1b\\`);
-    status('Clipboard copy requested. Ctrl-L shows the complete link.');
-  };
-  const showLink = value => {
-    link = loginUrl(value);
-    write(`\r\n${remote ? 'SSH: copy this link to your local browser.' : 'Continue in your browser:'}\r\n\x1b]8;id=harness-login;${link}\x1b\\[ ${remote ? 'Copy link' : 'Open browser'} ]\x1b]8;;\x1b\\\r\n${remote ? 'Ctrl-X or Ctrl-O: copy link. Ctrl-L: show link.' : 'Ctrl-O: open browser. Ctrl-X: copy link. Ctrl-L: show link.'}\r\n`);
-  };
-  const question = async (message, secret, signal) => {
-    controller.signal.throwIfAborted();
-    // Fresh native editing state prevents secret text from crossing prompts through history or Ctrl-Y.
-    const reader = createInterface({ input, output: display, terminal: true, historySize: 0 });
-    activeReader = reader;
-    reader.on('SIGINT', cancel); reader.on('SIGTSTP', cancel); reader.on('close', cancel);
-    const limit = () => { if (Buffer.byteLength(reader.line) > 65536) cancel(); };
-    input.on('data', limit);
-    hidden = false;
-    const answer = reader.question(message, { signal });
-    hidden = secret;
-    try {
-      const value = await answer;
-      if (Buffer.byteLength(value) > 65536) throw invalid('Login input exceeds 64 KiB');
-      return value;
-    }
-    finally {
-      hidden = true;
-      activeReader = null;
-      reader.removeListener('close', cancel); reader.close(); input.removeListener('data', limit);
-      if (!input.destroyed) { input.setRawMode(true); input.resume(); }
-      if (secret) write('\r\n');
-    }
-  };
-  write(`\r\n${provider.name}: ${method.loginLabel ?? method.name}\r\nCtrl-C cancels. Secret input is hidden.\r\n`);
+  const options = { remote: params.remote === true, browserLogin: params.remote !== true && provider.id === 'openai' && params.method === 'oauth' };
+  const ui = openLoginTerminal(params.terminal, controller, options.remote);
   try {
+    ui.write(`\r\n${provider.name}: ${method.loginLabel ?? method.name}\r\nCtrl-C cancels. Secret input is hidden.\r\n`);
     await models.login(provider.id, params.method, {
       signal: controller.signal,
-      prompt: async prompt => {
+      prompt: prompt => {
         const signal = prompt.signal ? AbortSignal.any([controller.signal, prompt.signal]) : controller.signal;
-        if (prompt.type === 'select') {
-          if (remote && provider.id === 'radius' && prompt.options.some(item => item.id === 'device-code')) {
-            write('SSH uses device-code sign-in for Radius. Copy the link and code below.\r\n');
-            return 'device-code';
-          }
-          write(`\r\n${prompt.message}\r\n`);
-          for (const [index, item] of prompt.options.entries()) write(`  ${index + 1}. ${item.label}${item.description ? ` — ${item.description}` : ''}\r\n`);
-          while (true) {
-            const value = (await question(`Choice [1-${prompt.options.length}, Enter=1]: `, false, signal)).trim();
-            const index = value === '' ? 0 : Number(value) - 1;
-            if (Number.isInteger(index) && prompt.options[index]) return prompt.options[index].id;
-            write('Enter a listed number, or press Ctrl-C to cancel.\r\n');
-          }
-        }
-        const secret = prompt.type === 'secret' || prompt.type === 'manual_code';
-        const automatic = browserLogin && prompt.type === 'manual_code';
-        const manual = remote && prompt.type === 'manual_code';
-        if (manual) write('If the browser cannot connect to localhost or 127.0.0.1,\r\nthis is expected over SSH. Copy the FULL address from its address bar.\r\nPaste it below and press Enter. If a code is shown, paste that code.\r\n');
-        const label = automatic ? 'Waiting for browser sign-in. No input is needed here. '
-          : `${prompt.message}${prompt.placeholder ? ` (${prompt.placeholder})` : ''}: `;
-        while (true) {
-          const value = await question(label, secret, signal);
-          if (prompt.type === 'manual_code' && !value.trim()) {
-            write(automatic ? 'The browser sign-in is still open. Ctrl-C cancels.\r\n'
-              : manual ? 'Paste the complete return URL or code. Ctrl-C cancels.\r\n'
-                : 'Wait for your browser, or paste the complete code or redirect URL. Ctrl-C cancels.\r\n');
-            continue;
-          }
-          if (prompt.type === 'secret' && value === '') { cancel(); controller.signal.throwIfAborted(); }
-          if (prompt.type === 'secret' && (!value.trim() || /[\u0000-\u001f\u007f-\u009f]/.test(value))) throw invalid('Credentials must contain text without control characters');
-          return value;
-        }
+        return prompt.type === 'select' ? selectLoginOption(ui, prompt, signal, provider.id, options.remote)
+          : readLoginValue(ui, prompt, signal, controller, options);
       },
-      notify: event => {
-        if (event.type === 'auth_url') {
-          deviceCode = undefined;
-          showLink(event.url);
-          write(`${remote ? 'Sign in with your local browser. Keep this login window open.'
-            : browserLogin ? 'Finish sign-in in your browser. This window updates automatically.' : event.instructions ?? ''}\r\n`);
-        } else if (event.type === 'device_code') {
-          if (typeof event.userCode !== 'string' || !event.userCode || Buffer.byteLength(event.userCode) > 1024 || /[\u0000-\u001f\u007f-\u009f]/.test(event.userCode)) throw invalid('Device login code is invalid');
-          deviceCode = event.userCode;
-          showLink(event.verificationUri);
-          write(`Enter code: \x1b]8;id=harness-code-${Buffer.from(deviceCode).toString('base64')};${link}\x1b\\${deviceCode}\x1b]8;;\x1b\\\r\nCtrl-Y: copy device code.\r\n`);
-          if (remote) write('Enter this code in your local browser. This window updates automatically.\r\nDo not paste the browser address here.\r\n');
-        } else {
-          write(`\r\n${event.message}\r\n`);
-          for (const link of event.links ?? []) write(`${link.label ?? 'More information'}: ${loginUrl(link.url)}\r\n`);
-        }
-      },
+      notify: event => notifyLogin(ui, event, options),
     }, { getDeviceId: () => deviceId, agentName: 'harness' });
-    write('\r\nLogin saved. No model request was made.\r\n');
-    try {
-      const updated = await models.refresh({ providers: [provider.id], signal: controller.signal });
-      if (updated.errors.size) throw Error();
-    } catch {
-      write('\r\nThe account is saved, but the model list could not update. Retry login later to update the list.\r\n');
-    }
+    ui.write('\r\nLogin saved. No model request was made.\r\n');
+    await refreshCatalog(models, provider.id, controller.signal, ui);
     return false;
   } catch (error) {
-    if (controller.signal.aborted) { write('\r\nLogin cancelled. Previous credentials are unchanged.\r\n'); return true; }
+    if (controller.signal.aborted) { ui.write('\r\nLogin cancelled. Previous credentials are unchanged.\r\n'); return true; }
     if (error instanceof RpcError) throw error;
     // Provider errors can contain raw token responses. Do not copy them into the terminal or RPC.
-    write('\r\nLogin failed. Check the account, network, and any other open login, then try again.\r\n');
+    ui.write('\r\nLogin failed. Check the account, network, and any other open login, then try again.\r\n');
     throw appError('provider_error', 'Login failed. Check the account, network, and any other open login, then try again');
-  } finally {
-    try { input.setRawMode(false); } catch {}
-    input.destroy(); display.end();
-    output.end(() => output.destroy());
-  }
+  } finally { ui.close(); }
 }

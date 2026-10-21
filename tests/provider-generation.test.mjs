@@ -1,23 +1,18 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import test from 'node:test';
 import { openApplication } from '../adapter/pi.mjs';
 import { apiKey, accountToken, answer, installGenerationMock } from './fixtures/generation.mjs';
 import { secret as oauthSecret } from './fixtures/oauth.mjs';
+import { application as openTestApplication } from './fixtures/application.mjs';
 
 async function application(t, type = 'api_key') {
-  const directory = await mkdtemp(join(tmpdir(), 'harness-provider-')), workspace = join(directory, 'work');
-  await mkdir(workspace);
-  const config = { state_dir: directory, provider: 'openai', model: 'gpt-6-sol', instructions: '' };
-  const app = await openApplication(config);
-  t.after(async () => { await app.close().catch(() => {}); await rm(directory, { recursive: true, force: true }); });
+  const { app, config, workspace, call } = await openTestApplication(t, { prefix: 'harness-provider-',
+    settings: { provider: 'openai', model: 'gpt-6-sol', instructions: '' } });
   await app.credentials.modify('openai', async () => type === 'api_key'
     ? { type, key: apiKey } : { type, access: accountToken, refresh: 'synthetic-refresh', expires: Date.now() + 3600000, clientId: 'test-client' });
-  let sequence = 0;
-  const call = (method, params = {}) => app.dispatch(method, params, `provider_${++sequence}`, () => {});
   await call('session.create', { session_id: 'chat', workspace });
   const send = request_id => call('input.submit', { session_id: 'chat', request_id, text: 'Run the provider test.', context: [] });
   const wait = request_id => call('submission.wait', { session_id: 'chat', request_id, timeout_ms: 25000 });

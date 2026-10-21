@@ -9,6 +9,7 @@ import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai/providers/faux';
 import { openApplication } from '../pi.mjs';
+import { readRecords } from '../../tests/fixtures/records.mjs';
 
 async function fixture(t) {
   const directory = await mkdtemp(join(tmpdir(), 'harness-worker-'));
@@ -22,11 +23,12 @@ async function fixture(t) {
 function start(t, fixture) {
   const fd = openSync(join(fixture.config.state_dir, 'owner.lock'), 'a+', 0o600);
   const child = spawn(process.execPath, ['adapter/worker.mjs'], { env: { ...process.env, HARNESS_CONFIG: JSON.stringify(fixture.config), HARNESS_LOCK_FD: '3', HARNESS_FAUX_RESPONSES: fixture.path, HARNESS_FAUX_TOKENS_PER_SECOND: String(fixture.tokens ?? 20) }, stdio: ['pipe', 'pipe', 'pipe', fd] });
-  closeSync(fd); let bytes = '', sequence = 0, stderr = '', unclaimed = 0; const pending = new Map(), notices = [];
+  closeSync(fd); let sequence = 0, stderr = '', unclaimed = 0; const pending = new Map();
   child.stderr.on('data', data => { stderr += data; });
-  child.stdout.setEncoding('utf8'); child.stdout.on('data', data => {
-    bytes += data; let index;
-    while ((index = bytes.indexOf('\n')) >= 0) { const value = JSON.parse(bytes.slice(0, index)); bytes = bytes.slice(index + 1); if (value.method) notices.push(value); else { const request = pending.get(value.id); pending.delete(value.id); if (request) request.resolve(value); else unclaimed++; } }
+  readRecords(child.stdout, value => {
+    if (value.method) return;
+    const request = pending.get(value.id); pending.delete(value.id);
+    if (request) request.resolve(value); else unclaimed++;
   });
   const exit = once(child, 'exit');
   t.after(async () => { if (child.exitCode === null && child.signalCode === null) { child.kill('SIGKILL'); await exit; } });
@@ -39,7 +41,7 @@ function start(t, fixture) {
       if (fragments) { for (const byte of Buffer.from(line)) child.stdin.write(Buffer.from([byte])); } else child.stdin.write(line);
     });
   }
-  return { child, request, exit, notices, diagnostics: () => stderr, unclaimed: () => unclaimed };
+  return { child, request, exit, unclaimed: () => unclaimed };
 }
 
 test('actual worker parses split UTF-8, handles concurrent wait and stop, and preserves stop across process kill', async t => {

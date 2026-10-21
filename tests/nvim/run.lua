@@ -1,3 +1,4 @@
+local key = dofile(vim.fn.getcwd() .. '/tests/nvim/helpers.lua').keys
 local root = vim.fn.getcwd()
 vim.o.columns = 120
 local initial_mappings = vim.api.nvim_get_keymap('n')
@@ -79,7 +80,7 @@ wait(function() return named('select') end, 'Login before creating a chat lists 
 check(vim.json.encode(calls('configuration.get')[1].params) == '{}', 'A request without a session sends an empty JSON object')
 check(vim.tbl_isempty(state().sessions) and not named('prompt') and not state().auth_calls,
   'The first login menu does not create a chat or start authentication')
-vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'xt', false)
+key('<Esc>')
 check(vim.api.nvim_get_current_buf() == source and vim.api.nvim_buf_get_changedtick(source) == tick,
   'Cancelling the first login menu returns to the unchanged file')
 vim.cmd('Harness new')
@@ -263,9 +264,6 @@ for _, newer in ipairs({ false, true }) do
     vim.cmd('Harness send')
     check(#calls('input.submit') == sent + 1 and text(named('prompt')) == '', 'Returning to a session cannot resend its admitted draft')
   end
-end
-local function key(value)
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(value, true, false, true), 'xt', false)
 end
 local function tree_row(value)
   local buffer = named('agents')

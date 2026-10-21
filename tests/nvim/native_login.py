@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Optional Alacritty and tmux login test with actual desktop mouse input."""
-import ctypes
 import hashlib
 import json
 import os
@@ -9,6 +8,7 @@ import time
 
 from interactive import REPO
 from login_gui import GuiEditor, desktop, login
+from desktop import Desktop
 
 URL = 'https://login.example.test/device?state=' + 'abc%2F09' * 200
 
@@ -62,68 +62,19 @@ class NativeEditor(GuiEditor):
         subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-f', 'x11grab', '-video_size', '1280x960',
                         '-i', self.display, '-frames:v', '1', '-y', str(self.root / (name + '.png'))], check=True)
 
-
-class Mouse:
-    def __init__(self, display):
-        self.x, self.t = ctypes.CDLL('libX11.so.6'), ctypes.CDLL('libXtst.so.6')
-        pointer, window = ctypes.c_void_p, ctypes.c_ulong
-        self.x.XOpenDisplay.restype = pointer
-        self.x.XDefaultRootWindow.argtypes, self.x.XDefaultRootWindow.restype = [pointer], window
-        self.x.XQueryTree.argtypes = [pointer, window, ctypes.POINTER(window), ctypes.POINTER(window),
-                                     ctypes.POINTER(ctypes.POINTER(window)), ctypes.POINTER(ctypes.c_uint)]
-        self.x.XFetchName.argtypes = [pointer, window, ctypes.POINTER(pointer)]
-        self.x.XGetGeometry.argtypes = [pointer, window, ctypes.POINTER(window), ctypes.POINTER(ctypes.c_int),
-                                       ctypes.POINTER(ctypes.c_int), *[ctypes.POINTER(ctypes.c_uint)] * 4]
-        self.x.XSetInputFocus.argtypes, self.x.XRaiseWindow.argtypes = [pointer, window, ctypes.c_int, window], [pointer, window]
-        self.x.XKeysymToKeycode.argtypes = [pointer, window]
-        self.x.XFlush.argtypes = self.x.XCloseDisplay.argtypes = self.x.XFree.argtypes = [pointer]
-        self.t.XTestFakeMotionEvent.argtypes = [pointer, ctypes.c_int, ctypes.c_int, ctypes.c_int, window]
-        self.t.XTestFakeButtonEvent.argtypes = self.t.XTestFakeKeyEvent.argtypes = [pointer, ctypes.c_uint, ctypes.c_int, window]
-        self.connection = self.x.XOpenDisplay(display.encode())
-        assert self.connection, 'Cannot open the isolated desktop'
-
-    def find(self, window=None):
-        window = window or self.x.XDefaultRootWindow(self.connection)
-        name = ctypes.c_void_p()
-        if self.x.XFetchName(self.connection, window, ctypes.byref(name)) and name.value:
-            try: title = ctypes.string_at(name).decode(errors='replace')
-            finally: self.x.XFree(name)
-            if title == 'Harness URL test': return window
-        root, parent, count = ctypes.c_ulong(), ctypes.c_ulong(), ctypes.c_uint()
-        children = ctypes.POINTER(ctypes.c_ulong)()
-        if not self.x.XQueryTree(self.connection, window, ctypes.byref(root), ctypes.byref(parent),
-                                 ctypes.byref(children), ctypes.byref(count)): return None
-        try: items = [children[index] for index in range(count.value)]
-        finally:
-            if children: self.x.XFree(children)
-        return next((found for child in items if (found := self.find(child))), None)
-
-    def click(self, editor, column, row, modified=False):
-        window, root, left, top = self.find(), ctypes.c_ulong(), ctypes.c_int(), ctypes.c_int()
-        assert window, 'Cannot find the Alacritty window'
-        width, height, border, depth = [ctypes.c_uint() for _ in range(4)]
-        assert self.x.XGetGeometry(self.connection, window, ctypes.byref(root), ctypes.byref(left), ctypes.byref(top),
-                                  ctypes.byref(width), ctypes.byref(height), ctypes.byref(border), ctypes.byref(depth))
-        columns, lines = editor.observe('{vim.o.columns,vim.o.lines}')
-        x, y = left.value + int((column - .5) * width.value / columns), top.value + int((row - .5) * height.value / (lines + 1))
-        self.x.XRaiseWindow(self.connection, window)
-        self.x.XSetInputFocus(self.connection, window, 1, 0)
-        self.t.XTestFakeMotionEvent(self.connection, -1, x, y, 0)
-        keys = [self.x.XKeysymToKeycode(self.connection, key) for key in (0xffe3, 0xffe1)] if modified else []
-        for key in keys: self.t.XTestFakeKeyEvent(self.connection, key, 1, 0)
-        self.t.XTestFakeButtonEvent(self.connection, 1, 1, 0)
-        self.t.XTestFakeButtonEvent(self.connection, 1, 0, 0)
-        for key in reversed(keys): self.t.XTestFakeKeyEvent(self.connection, key, 0, 0)
-        self.x.XFlush(self.connection)
-        editor.pump(.5)
-
-    def close(self):
-        self.x.XCloseDisplay(self.connection)
+    def mouse(self, button, column, row, modifiers=()):
+        assert button == 0, 'Desktop login controls use the left mouse button'
+        columns, lines = self.observe('{vim.o.columns,vim.o.lines}')
+        with Desktop(self.display) as desktop:
+            window = desktop.find('Harness URL test', exact=True)
+            assert window, 'Cannot find the Alacritty window'
+            desktop.click(window, column, row, columns, lines + 1, modifiers)
+        self.pump(.5)
 
 
 def main():
     with desktop() as display:
-        mouse, editor = Mouse(display), None
+        editor = None
         try:
             editor = NativeEditor('alacritty-tmux-browser-link', display, pending=100000)
             login(editor, 'github-copilot', 'GitHub Copilot')
@@ -138,10 +89,10 @@ def main():
             row = next(index for index, line in enumerate(window['lines'], 1) if line == '[ Open browser ]')
             position = editor.observe('vim.fn.screenpos(' + str(window['id']) + ',' + str(row) + ',6)')
             assert position['row'] > 0 and position['col'] > 0, 'The action must be visible'
-            mouse.click(editor, position['col'], position['row'])
+            editor.mouse(0, position['col'], position['row'])
             editor.wait(lambda: len(editor.browser_urls()) == 2, 'a native mouse click opens the browser')
             assert editor.browser_urls() == [URL, URL], 'The mouse action must preserve the complete URL'
-            mouse.click(editor, position['col'], position['row'], modified=True)
+            editor.mouse(0, position['col'], position['row'], modifiers=(0xffe3, 0xffe1))
             assert editor.browser_urls() == [URL, URL], 'Outer terminal link detection must not open a partial URL'
             editor.screenshot('native-login')
             editor.keys('\x03')
@@ -167,7 +118,6 @@ def main():
             (editor.root / 'observed.json').write_text(json.dumps(report, indent=2) + '\n')
             print(json.dumps({'passed': 1, 'evidence': str(editor.root / 'observed.json')}))
         finally:
-            mouse.close()
             if editor: editor.abort()
             for instance in GuiEditor.instances:
                 if not instance.finished: instance.abort()

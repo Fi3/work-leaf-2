@@ -95,7 +95,7 @@ class Application {
   }
   environment({ conversationId, cwd }) {
     if (!this.environments.has(conversationId)) {
-      const session = [...this.sessions.values()].find(item => item.conversation.id === conversationId);
+      const session = this.sessionByConversationId(conversationId);
       if (!session) throw appError('not_found', 'Unknown session environment');
       this.environments.set(conversationId, new NodeExecutionEnv({ cwd, shellEnv: {
         HARNESS_SESSION_ID: session.metadata.session_id, HARNESS_SOCKET: this.config.socket_path ?? '',
@@ -120,7 +120,7 @@ class Application {
     let blocked = null;
     this.recovering = new Set(inspection.submissions.map(record => record.id));
     for (const record of inspection.submissions) {
-      const session = [...this.sessions.values()].find(s => s.conversation.id === record.conversationId);
+      const session = this.sessionByConversationId(record.conversationId);
       try { if (!session) throw notReady(); await this.checkConfiguration(session.metadata); }
       catch { blocked = 'A pending session cannot restore its fixed configuration'; }
     }
@@ -186,7 +186,7 @@ class Application {
       if (this.authentication?.provider === params.provider) throw appError('busy', 'This provider has a login in progress');
       const pending = (await this.harness.inspect(context)).submissions;
       for (const record of pending) {
-        const session = [...this.sessions.values()].find(item => item.conversation.id === record.conversationId);
+        const session = this.sessionByConversationId(record.conversationId);
         if (session?.metadata.provider === params.provider) throw appError('busy', 'This provider has unfinished work');
       }
       await this.models.logout(params.provider);
@@ -195,6 +195,9 @@ class Application {
   }
   session(id) {
     const session = this.sessions.get(id); if (!session) throw appError('not_found', 'Unknown session'); return session;
+  }
+  sessionByConversationId(id) {
+    for (const session of this.sessions.values()) if (session.conversation.id === id) return session;
   }
   publish(publication) {
     const changed = new Set();

@@ -1,13 +1,20 @@
-Use only README for documenting things, use ASD-STE100 communication standard for both documentation
-and your answears. Do not make up words, if yuo need to do it make sure to define them before. Use a
-modularized logic with good abstractions (hide complexity under high level reusable abstractions)
-always. Do not reimplement things if they are already available. Try to keep functions small (modules
-are internally complex, module interfaces are simple, functions are simple when possible)
+Use README.md for documentation unless an exception below permits another file. Use ASD-STE100
+for documentation and answers. Do not invent words. Define a necessary new term before use.
+Use modular logic with simple, reusable interfaces. Reuse existing code before adding new code.
 
-Put new things that will be need by every new agent in this file, not everything keep it as short as
-possible. (tooling, how to execute things, any file that should never be changed ecc ecc)
+## Code structure
 
-Always reuse the stile and the conventions used by the files that you are changing.
+- Two copies of the same operation are permitted. At the third use, extract one shared function
+  or module and replace all copies. Share the operation, not unrelated caller behavior.
+- Keep each function focused on one task. Separate parsing, state changes, external operations,
+  and presentation when they make a function difficult to follow. Keep module interfaces small.
+- Remove unused code, unused state, and redundant work. Check callers and documented compatibility
+  requirements before removal. Do not keep speculative code for possible future use.
+
+Keep this file short. Add only instructions that each new agent needs, such as tool commands
+and files that must not change.
+
+Use the style and conventions of the files that you change.
 
 ## Commit message rules
 Every commit message must clearly say what was done and why it was done. When adding new features it
@@ -61,12 +68,18 @@ or important implementation notes, but keep the first line strong enough to stan
 - Use Rust for the server and command client. Small JavaScript Pi and Lua Neovim adapters are authorized.
 - The mandatory Pi dependency tree is permitted after audit. Follow the strict application dependency rules in `SPEC.md`.
 
-## Test
-test must not mirror the implementation. use prop test when possible.
+## Tests
+
+- Test observable behavior, failure boundaries, and invariants. Do not copy the implementation
+  into the expected result or add tests that only check private function structure.
+- Use property tests when possible. Reuse test support at the third copy, as for application code.
+- Remove tests that add no distinct behavioral coverage. Keep separate tests for different public
+  interfaces or failure conditions, even when some actions are the same.
 
 ## Implementation checks
 
 - Shared protocol fixtures are in `tests/fixtures/protocol.json`.
+- Shared test support is in `tests/fixtures/`, `tests/nvim/helpers.lua`, and `tests/nvim/desktop.py`.
 - Run `sh scripts/check.sh` for the complete local release gate.
 - Use the exact runtimes and locked installation in README.md. Terminal tests use Python 3 standard-library tools only.
 - Keep dependency changes subject to `scripts/check-dependencies.sh` and review its recorded baseline.

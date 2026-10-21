@@ -1,3 +1,4 @@
+local key = dofile(vim.fn.getcwd() .. '/tests/nvim/helpers.lua').keys
 local root = vim.fn.getcwd()
 vim.opt.runtimepath:append(root)
 vim.o.columns, vim.o.lines, vim.o.hidden = 120, 40, false
@@ -51,7 +52,7 @@ for _, buffer in ipairs({ chat, prompt }) do
   local window = win(buffer)
   assert(vim.wo[window].winbar:find('F1 actions', 1, true), 'Each chat window shows the action key')
   vim.api.nvim_set_current_win(window)
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<F1>', true, false, true), 'xt', false)
+  key('<F1>')
 end
 assert(vim.deep_equal(commands, { 'actions', 'actions' }) and view.draft() == 'Keep this draft while choosing an action.',
   'F1 opens actions from either chat window without replacing the draft')
@@ -179,7 +180,7 @@ wait(function() return visible(prompt) end, 'Native next-buffer navigation resto
 assert(vim.api.nvim_get_current_buf() == chat, 'Native next-buffer navigation includes chats')
 assert(view.draft() == 'Draft λ 世界\nSecond line', 'Next-buffer navigation retains the chat draft')
 vim.api.nvim_set_current_win(win(prompt))
-vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<C-^>', true, false, true), 'xt', false)
+key('<C-^>')
 wait(function() return not visible(prompt) end, 'The alternate-file key hides the input')
 assert(vim.api.nvim_get_current_buf() == source and vim.api.nvim_get_current_win() == main, 'Ctrl-^ from input restores the previous file in the main area')
 vim.cmd('buffer #')
@@ -255,7 +256,6 @@ local sidebar = require('harness.sidebar').new(transport, {
   select = function(id) selected = id end,
   report = function(message) error(message) end,
 })
-local function key(value) vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(value, true, false, true), 'xt', false) end
 local function row(value)
   vim.api.nvim_set_current_win(win(sidebar.buffer))
   for index, line in ipairs(vim.api.nvim_buf_get_lines(sidebar.buffer, 0, -1, false)) do

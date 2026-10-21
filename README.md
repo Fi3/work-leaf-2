@@ -704,7 +704,7 @@ Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
 fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
 
 The complete release gate passed on **2026-10-21** with the final source files. It passed
-formatting, Clippy with warnings denied, 56 Rust tests, the release build, five
+formatting, Clippy with warnings denied, 57 Rust tests, the release build, six
 adapter syntax checks, and 136 Node tests. The Node tests include 72 adapter tests,
 35 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
 ten actual server recovery tests, and one process exit test. Independent

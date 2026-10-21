@@ -91,12 +91,16 @@ local function rpc(method, params, callback)
   end)
 end
 
+local function clear_watch()
+  if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
+  watch, watch_sequence = nil, 0
+end
+
 local function select_session(id)
   if selected ~= id then
     attachment = attachment + 1
     pending_attachment = nil
-    if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
-    watch, watch_sequence = nil, 0
+    clear_watch()
   end
   selected = id
   if id then sessions[id] = sessions[id] or { context = {}, history = {} } end
@@ -117,8 +121,7 @@ local function attach(id, callback, focus)
   local attempt = attachment
   local pending = { id = id, callbacks = callback and { callback } or {} }
   pending_attachment = pending
-  if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
-  watch, watch_sequence = nil, 0
+  clear_watch()
   render()
   transport.request('session.watch', { session_id = id }, function(value, err)
     if err then
@@ -186,9 +189,6 @@ local function admit_chat(id)
 end
 
 local function create(directory, name, parent)
-  if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
-  attachment = attachment + 1
-  watch, watch_sequence, pending_attachment = nil, 0, nil
   local id = 'chat_' .. random_id()
   sessions[id] = { context = {}, history = {}, notice = 'Opening chat...',
     creation = { session_id = id, workspace = directory, name = name and name ~= '' and name or 'New chat', parent_session_id = parent } }
@@ -552,86 +552,114 @@ function M.sidebar()
   view.resize()
 end
 
-function M.command(command)
-  local ok, err = pcall(function()
-    if command.fargs[1] == 'sidebar' then M.sidebar(); return end
-    initialize()
-    local buf = vim.api.nvim_get_current_buf()
-    if not view.session(buf) and vim.bo[buf].buftype == '' then
-      source, source_window = buf, vim.api.nvim_get_current_win()
-    end
-    local context_source = source
-    local action = command.fargs[1]
-    local origin = selected
-    local origin_tab = vim.api.nvim_get_current_tabpage()
-    local origin_window, origin_buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
-    local send_text = action == 'send' and view.draft() or nil
-    local send_command = send_text and require('harness.commands').parse(send_text)
-    if send_command == 'upgrade' then view.set_draft(''); upgrade(); return end
-    if action == 'upgrade' then upgrade(); return end
-    if action == 'setup' or action == 'login' then authenticate(command.fargs[2]); return end
-    if action == 'new' then create(workspace(), command.fargs[2]); return end
-    if action == 'status' then
-      local state = selected and watch and connection == 'connected' and sessions[selected].snapshot.state or 'unknown'
-      vim.notify('Harness: ' .. connection .. (selected and '; session ' .. selected .. '; state ' .. state or '')); return
-    end
-    if action and not vim.tbl_contains({ 'new', 'sessions', 'attach', 'send', 'stop', 'history', 'context', 'actions' }, action) then error('Unknown Harness command.') end
-    if action == 'attach' and not command.fargs[2] then error('Supply a session identifier.') end
-    local stop_session, stop_target
-    if action == 'stop' then
-      if connection ~= 'connected' or not watch then error('Session state is unknown. Use :Harness to reconnect.') end
-      stop_session, stop_target = selected, sessions[selected].snapshot.active_submission_id
-    end
-    local directory = (not selected or action == 'sessions') and workspace() or nil
-    if selected and not action then view.open(selected, source_window) end
-    render()
-    transport.connect(function(_, failure)
-      if failure then report(failure); return end
-      if action == 'send' and origin and not send_command then
-        local session = sessions[origin]
-        if send_text == '' and #session.context == 0 and not session.pending then return end
-        if session.creation then
-          if not session.after_send and not session.after_create then session.after_send = send_text
-          else session.notice = 'Chat is opening. The first action is queued. Your later text is kept.'; render() end
-          admit_chat(origin)
-        elseif selected == origin and not watch then attach(origin, function() send(send_text, origin) end)
-        else send(send_text, origin) end
-        return
-      end
-      if origin_tab ~= vim.api.nvim_get_current_tabpage() or selected ~= origin then return end
-      local function execute()
-        if (action == 'actions' or send_command and vim.tbl_contains({ 'actions', 'model', 'provider', 'login', 'auth' }, send_command))
-          and (vim.api.nvim_get_current_win() ~= origin_window or vim.api.nvim_get_current_buf() ~= origin_buffer) then return end
-        local success, message = pcall(function()
-          if action == 'sessions' then choose(true, directory)
-          elseif action == 'attach' then attach(command.fargs[2], nil, true)
-          elseif not selected then
-            if action then error('Open or attach a session first.') end
-            choose(false, directory)
-          elseif not action then attach(selected)
-          elseif action == 'actions' then actions()
-          elseif action == 'send' then
-            local name, argument = require('harness.commands').parse(send_text)
-            if name then chat_command(name, argument, send_text) else send(send_text) end
-          elseif action == 'history' then history()
-          elseif action == 'context' then context(command, context_source)
-          elseif action == 'stop' then
-            if stop_target == vim.NIL then vim.notify('Harness: No active run.'); return end
-            rpc('run.stop', { session_id = stop_session, submission_id = stop_target }, function() end)
-          end
-        end)
-        if not success then report(tostring(message)) end
-      end
-      if selected and sessions[selected].creation then
-        local session = sessions[selected]
-        if not session.after_create and not session.after_send then session.after_create = execute
-        else session.notice = 'Chat is opening. The first action is queued. Your later text is kept.'; render() end
-        admit_chat(selected)
-      elseif selected and not watch and action and action ~= 'sessions' and action ~= 'attach' then
-        attach(selected, execute)
-      else execute() end
-    end)
+local function capture_command(command)
+  local buf = vim.api.nvim_get_current_buf()
+  if not view.session(buf) and vim.bo[buf].buftype == '' then
+    source, source_window = buf, vim.api.nvim_get_current_win()
+  end
+  local request = {
+    command = command, action = command.fargs[1], source = source, session = selected,
+    tab = vim.api.nvim_get_current_tabpage(), window = vim.api.nvim_get_current_win(), buffer = buf,
+  }
+  if request.action == 'send' then
+    request.text = view.draft()
+    request.chat_name, request.chat_argument = require('harness.commands').parse(request.text)
+  end
+  return request
+end
+
+local function immediate_command(request)
+  local action, command = request.action, request.command
+  if request.chat_name == 'upgrade' then view.set_draft(''); upgrade()
+  elseif action == 'upgrade' then upgrade()
+  elseif action == 'setup' or action == 'login' then authenticate(command.fargs[2])
+  elseif action == 'new' then create(workspace(), command.fargs[2])
+  elseif action == 'status' then
+    local state = selected and watch and connection == 'connected' and sessions[selected].snapshot.state or 'unknown'
+    vim.notify('Harness: ' .. connection .. (selected and '; session ' .. selected .. '; state ' .. state or ''))
+  else return false end
+  return true
+end
+
+local function prepare_command(request)
+  local action = request.action
+  if action and not vim.tbl_contains({ 'sessions', 'attach', 'send', 'stop', 'history', 'context', 'actions' }, action) then error('Unknown Harness command.') end
+  if action == 'attach' and not request.command.fargs[2] then error('Supply a session identifier.') end
+  if action == 'stop' then
+    if connection ~= 'connected' or not watch then error('Session state is unknown. Use :Harness to reconnect.') end
+    request.stop_target = sessions[request.session].snapshot.active_submission_id
+  end
+  request.directory = (not request.session or action == 'sessions') and workspace() or nil
+  if request.session and not action then view.open(request.session, source_window) end
+  render()
+end
+
+local function queue_creation(id, field, value)
+  local session = sessions[id]
+  if not session.after_create and not session.after_send then session[field] = value
+  else session.notice = 'Chat is opening. The first action is queued. Your later text is kept.'; render() end
+  admit_chat(id)
+end
+
+local function send_captured(request)
+  if request.action ~= 'send' or not request.session or request.chat_name then return false end
+  local id, text = request.session, request.text
+  local session = sessions[id]
+  if text == '' and #session.context == 0 and not session.pending then return true end
+  if session.creation then queue_creation(id, 'after_send', text)
+  elseif selected == id and not watch then attach(id, function() send(text, id) end)
+  else send(text, id) end
+  return true
+end
+
+local function execute_command(request)
+  local action, command = request.action, request.command
+  if (action == 'actions' or request.chat_name and vim.tbl_contains({ 'actions', 'model', 'provider', 'login', 'auth' }, request.chat_name))
+    and (vim.api.nvim_get_current_win() ~= request.window or vim.api.nvim_get_current_buf() ~= request.buffer) then return end
+  if action == 'sessions' then choose(true, request.directory)
+  elseif action == 'attach' then attach(command.fargs[2], nil, true)
+  elseif not selected then
+    if action then error('Open or attach a session first.') end
+    choose(false, request.directory)
+  elseif not action then attach(selected)
+  elseif action == 'actions' then actions()
+  elseif action == 'send' then
+    if request.chat_name then chat_command(request.chat_name, request.chat_argument, request.text) else send(request.text) end
+  elseif action == 'history' then history()
+  elseif action == 'context' then context(command, request.source)
+  elseif action == 'stop' then
+    if request.stop_target == vim.NIL then vim.notify('Harness: No active run.'); return end
+    rpc('run.stop', { session_id = request.session, submission_id = request.stop_target }, function() end)
+  end
+end
+
+local function continue_command(request)
+  if send_captured(request) then return end
+  if request.tab ~= vim.api.nvim_get_current_tabpage() or selected ~= request.session then return end
+  local function execute()
+    local ok, err = pcall(execute_command, request)
+    if not ok then report(tostring(err)) end
+  end
+  if selected and sessions[selected].creation then queue_creation(selected, 'after_create', execute)
+  elseif selected and not watch and request.action and request.action ~= 'sessions' and request.action ~= 'attach' then
+    attach(selected, execute)
+  else execute() end
+end
+
+local function start_command(command)
+  if command.fargs[1] == 'sidebar' then M.sidebar(); return end
+  initialize()
+  local request = capture_command(command)
+  if immediate_command(request) then return end
+  prepare_command(request)
+  transport.connect(function(_, failure)
+    if failure then report(failure); return end
+    continue_command(request)
   end)
+end
+
+function M.command(command)
+  local ok, err = pcall(start_command, command)
   if not ok then report(tostring(err)) end
 end
 
@@ -644,8 +672,7 @@ vim.api.nvim_create_autocmd('TabEnter', { callback = function()
   if not view then return end
   attachment = attachment + 1
   pending_attachment = nil
-  if watch then transport.request('session.unwatch', { watch_id = watch }, function() end) end
-  watch, watch_sequence = nil, 0
+  clear_watch()
   local tab = tabs[vim.api.nvim_get_current_tabpage()] or {}
   source, source_window = tab.source, tab.source_window
   select_session(tab.selected)

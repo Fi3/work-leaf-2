@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Test native mouse, clipboard, and login controls in Kitty and Neovim."""
 import contextlib
-import ctypes
 import hashlib
 import http.server
 import json
@@ -16,6 +15,7 @@ import urllib.request
 from pathlib import Path
 
 from real import RealEditor, EVIDENCE, RESULTS
+from desktop import Desktop
 
 DESKTOP = {}
 
@@ -63,27 +63,7 @@ class Browser:
         self.address = 'http://127.0.0.1:'+str(self.server.server_port)
         self.thread = threading.Thread(target=self.server.serve_forever,daemon=True)
         self.thread.start()
-        self.x11 = ctypes.CDLL('libX11.so.6')
-        self.xtest = ctypes.CDLL('libXtst.so.6')
-        pointer, window = ctypes.c_void_p, ctypes.c_ulong
-        self.x11.XOpenDisplay.restype = pointer
-        self.x11.XDefaultRootWindow.argtypes = [pointer]
-        self.x11.XDefaultRootWindow.restype = window
-        self.x11.XQueryTree.argtypes = [pointer,window,ctypes.POINTER(window),ctypes.POINTER(window),ctypes.POINTER(ctypes.POINTER(window)),ctypes.POINTER(ctypes.c_uint)]
-        self.x11.XFetchName.argtypes = [pointer,window,ctypes.POINTER(ctypes.c_void_p)]
-        self.x11.XInternAtom.argtypes = [pointer,ctypes.c_char_p,ctypes.c_int]
-        self.x11.XInternAtom.restype = window
-        self.x11.XGetWindowProperty.argtypes = [pointer,window,window,ctypes.c_long,ctypes.c_long,ctypes.c_int,window,
-                                               ctypes.POINTER(window),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(window),
-                                               ctypes.POINTER(window),ctypes.POINTER(pointer)]
-        self.x11.XFree.argtypes = [pointer]
-        self.x11.XRaiseWindow.argtypes = [pointer,window]
-        self.x11.XSetInputFocus.argtypes = [pointer,window,ctypes.c_int,window]
-        self.x11.XKeysymToKeycode.argtypes = [pointer,window]
-        self.x11.XFlush.argtypes = self.x11.XCloseDisplay.argtypes = [pointer]
-        self.xtest.XTestFakeKeyEvent.argtypes = [pointer,ctypes.c_uint,ctypes.c_int,window]
-        self.connection = self.x11.XOpenDisplay(display.encode())
-        assert self.connection, 'Cannot connect to the isolated browser display'
+        self.desktop = Desktop(display)
 
     def open(self, request):
         url, pid = request['url'], request['pid']
@@ -114,49 +94,19 @@ class Browser:
         return [self.executable,'--no-remote','--new-instance','--profile',str(profile),self.address+'/authorize/'+str(number)]
 
     def title(self, window):
-        atom = self.x11.XInternAtom(self.connection,b'_NET_WM_NAME',0)
-        kind,length,remaining = ctypes.c_ulong(),ctypes.c_ulong(),ctypes.c_ulong()
-        size,value = ctypes.c_int(),ctypes.c_void_p()
-        self.x11.XGetWindowProperty(self.connection,window,atom,0,1024,0,0,ctypes.byref(kind),ctypes.byref(size),
-                                   ctypes.byref(length),ctypes.byref(remaining),ctypes.byref(value))
-        if value.value:
-            try: title = ctypes.string_at(value,length.value).decode(errors='replace')
-            finally: self.x11.XFree(value)
-            if title: return title
-        value = ctypes.c_void_p()
-        if not self.x11.XFetchName(self.connection,window,ctypes.byref(value)) or not value.value: return ''
-        try: return ctypes.string_at(value).decode(errors='replace')
-        finally: self.x11.XFree(value)
+        return self.desktop.title(window)
 
-    def find(self, title, window=None):
-        window = window or self.x11.XDefaultRootWindow(self.connection)
-        if title in self.title(window): return window
-        root,parent = ctypes.c_ulong(),ctypes.c_ulong()
-        children,count = ctypes.POINTER(ctypes.c_ulong)(),ctypes.c_uint()
-        if not self.x11.XQueryTree(self.connection,window,ctypes.byref(root),ctypes.byref(parent),ctypes.byref(children),ctypes.byref(count)): return None
-        try: items = [children[index] for index in range(count.value)]
-        finally:
-            if children: self.x11.XFree(children)
-        return next((found for child in items if (found:=self.find(title,child))),None)
+    def find(self, title):
+        return self.desktop.find(title)
 
     def focus(self, window):
-        self.x11.XRaiseWindow(self.connection,window)
-        self.x11.XSetInputFocus(self.connection,window,1,0)
-        self.x11.XFlush(self.connection)
+        self.desktop.focus(window)
 
     def approve(self, window):
-        self.key(window,0xff0d)
+        self.key(window, 0xff0d)
 
     def key(self, window, symbol, modifiers=()):
-        self.focus(window)
-        for modifier in modifiers:
-            self.xtest.XTestFakeKeyEvent(self.connection,self.x11.XKeysymToKeycode(self.connection,modifier),1,0)
-        code = self.x11.XKeysymToKeycode(self.connection,symbol)
-        self.xtest.XTestFakeKeyEvent(self.connection,code,1,0)
-        self.xtest.XTestFakeKeyEvent(self.connection,code,0,0)
-        for modifier in reversed(modifiers):
-            self.xtest.XTestFakeKeyEvent(self.connection,self.x11.XKeysymToKeycode(self.connection,modifier),0,0)
-        self.x11.XFlush(self.connection)
+        self.desktop.key(window, symbol, modifiers)
 
     def screenshot(self, name):
         subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-f','x11grab','-video_size','1280x960',
@@ -184,7 +134,7 @@ class Browser:
             except subprocess.TimeoutExpired:
                 self.opener.kill(); self.opener.wait(timeout=5)
         self.server.shutdown(); self.server.server_close(); self.thread.join(timeout=5)
-        self.x11.XCloseDisplay(self.connection)
+        self.desktop.close()
 
 
 @contextlib.contextmanager
@@ -200,13 +150,8 @@ def desktop():
             with os.fdopen(read_fd) as selected:
                 display = ':' + selected.readline().strip()
             assert display != ':' and process.poll() is None, 'Xvfb did not start'
-            x11 = ctypes.CDLL('libX11.so.6')
-            x11.XOpenDisplay.restype = ctypes.c_void_p
-            x11.XVendorRelease.argtypes = x11.XCloseDisplay.argtypes = [ctypes.c_void_p]
-            connection = x11.XOpenDisplay(display.encode())
-            assert connection, 'Cannot inspect the actual X display'
-            DESKTOP['xvfb_vendor_release'] = x11.XVendorRelease(connection)
-            x11.XCloseDisplay(connection)
+            with Desktop(display) as connection:
+                DESKTOP['xvfb_vendor_release'] = connection.vendor_release()
             yield display
         finally:
             process.terminate()
@@ -315,46 +260,11 @@ class GuiEditor(RealEditor):
     def mouse(self, button, column, row, modifiers=()):
         """Send real desktop events through Kitty, including its own link handler."""
         assert button==0, 'Desktop login controls use the left mouse button'
-        x11, xtest = ctypes.CDLL('libX11.so.6'), ctypes.CDLL('libXtst.so.6')
-        pointer, window = ctypes.c_void_p, ctypes.c_ulong
-        x11.XOpenDisplay.restype = pointer
-        x11.XDefaultRootWindow.argtypes = [pointer]
-        x11.XDefaultRootWindow.restype = window
-        x11.XGetGeometry.argtypes = [pointer,window,ctypes.POINTER(window),
-            ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),*[ctypes.POINTER(ctypes.c_uint)]*4]
-        x11.XTranslateCoordinates.argtypes = [pointer,window,window,ctypes.c_int,ctypes.c_int,
-            ctypes.POINTER(ctypes.c_int),ctypes.POINTER(ctypes.c_int),ctypes.POINTER(window)]
-        x11.XSetInputFocus.argtypes = [pointer,window,ctypes.c_int,window]
-        x11.XRaiseWindow.argtypes = [pointer,window]
-        x11.XFlush.argtypes = x11.XCloseDisplay.argtypes = [pointer]
-        x11.XKeysymToKeycode.argtypes = [pointer,window]
-        xtest.XTestFakeKeyEvent.argtypes = [pointer,ctypes.c_uint,ctypes.c_int,window]
-        xtest.XTestFakeMotionEvent.argtypes = [pointer,ctypes.c_int,ctypes.c_int,ctypes.c_int,window]
-        xtest.XTestFakeButtonEvent.argtypes = [pointer,ctypes.c_uint,ctypes.c_int,window]
-        connection = x11.XOpenDisplay(self.display.encode())
-        assert connection, 'Cannot connect the mouse to the test display'
-        try:
-            native = json.loads(self.remote('ls'))[0]['platform_window_id']
-            root, child = window(), window()
-            left, top = ctypes.c_int(), ctypes.c_int()
-            width, height, border, depth = [ctypes.c_uint() for _ in range(4)]
-            assert x11.XGetGeometry(connection,native,ctypes.byref(root),ctypes.byref(left),ctypes.byref(top),
-                ctypes.byref(width),ctypes.byref(height),ctypes.byref(border),ctypes.byref(depth))
-            assert x11.XTranslateCoordinates(connection,native,x11.XDefaultRootWindow(connection),0,0,
-                ctypes.byref(left),ctypes.byref(top),ctypes.byref(child))
-            columns, lines = self.observe('{vim.o.columns,vim.o.lines}')
-            x = left.value + int((column-.5)*width.value/columns)
-            y = top.value + int((row-.5)*height.value/lines)
-            x11.XRaiseWindow(connection,native)
-            x11.XSetInputFocus(connection,native,1,0)
-            for key in modifiers: xtest.XTestFakeKeyEvent(connection,x11.XKeysymToKeycode(connection,key),1,0)
-            xtest.XTestFakeMotionEvent(connection,-1,x,y,0)
-            xtest.XTestFakeButtonEvent(connection,1,1,0)
-            xtest.XTestFakeButtonEvent(connection,1,0,0)
-            for key in reversed(modifiers): xtest.XTestFakeKeyEvent(connection,x11.XKeysymToKeycode(connection,key),0,0)
-            x11.XFlush(connection)
-            self.pump(.3)
-        finally: x11.XCloseDisplay(connection)
+        native = json.loads(self.remote('ls'))[0]['platform_window_id']
+        columns, lines = self.observe('{vim.o.columns,vim.o.lines}')
+        with Desktop(self.display) as desktop:
+            desktop.click(native, column, row, columns, lines, modifiers)
+        self.pump(.3)
 
     def mark(self, text):
         if self.video: self.steps.append({'time':round(time.monotonic()-self.video_started,2),'text':text})
@@ -406,18 +316,11 @@ class GuiEditor(RealEditor):
             except AssertionError: time.sleep(.1)
 
 
-def choose(editor, label):
-    editor.wait(lambda:any(window['name']=='harness://select' and any(label in line for line in window['lines'])
-                           for window in editor.windows()),'visible choice '+label)
-    lines = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
-    row = next(index for index,line in enumerate(lines,1) if label in line)
-    editor.keys(str(row)+'G\r')
-
 
 def login(editor, provider, method):
     editor.command('Harness login '+provider)
     item = next(item for item in editor.rpc.request('configuration.get')['providers'] if item['id']==provider)
-    if len(item['methods'])>1: choose(editor,method)
+    if len(item['methods'])>1: editor.choose(method)
     editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='t','private input is immediately ready')
 
 

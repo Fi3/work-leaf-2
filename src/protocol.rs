@@ -1,3 +1,6 @@
+mod validation;
+pub use validation::{identifier, validate};
+
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::io::{self, BufRead};
@@ -102,11 +105,10 @@ impl Request {
         }
     }
     pub fn parse(bytes: &[u8]) -> Result<Self, RpcError> {
-        let value: Value = serde_json::from_slice(bytes).map_err(|_| RpcError {
-            code: -32700,
-            message: "Invalid JSON record".into(),
-            data: None,
-        })?;
+        Self::from_value(decode(bytes)?)
+    }
+
+    pub(crate) fn from_value(value: Value) -> Result<Self, RpcError> {
         let request: Self = serde_json::from_value(value).map_err(|_| RpcError {
             code: -32600,
             message: "Expected one JSON-RPC request with a string id".into(),
@@ -124,177 +126,12 @@ impl Request {
     }
 }
 
-pub fn identifier(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 128
-        && value
-            .bytes()
-            .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
-}
-
-fn string<'a>(params: &'a Value, name: &str) -> Result<&'a str, RpcError> {
-    params
-        .get(name)
-        .and_then(Value::as_str)
-        .ok_or_else(|| RpcError::invalid(format!("{name} must be a string")))
-}
-
-fn integer(params: &Value, name: &str, min: u64, max: u64) -> Result<(), RpcError> {
-    if let Some(value) = params.get(name)
-        && !value.as_u64().is_some_and(|n| n >= min && n <= max)
-    {
-        return Err(RpcError::invalid(format!("Invalid {name}")));
-    }
-    Ok(())
-}
-
-pub fn validate(method: &str, params: &Value) -> Result<(), RpcError> {
-    let (required, optional): (&[&str], &[&str]) = match method {
-        "system.hello" => (&["api_version"], &[]),
-        "configuration.get" => (&[], &["session_id"]),
-        "auth.login" => (&["provider", "method", "terminal"], &["remote"]),
-        "auth.logout" => (&["provider"], &[]),
-        "session.create" => (&["session_id", "workspace"], &["parent_session_id", "name"]),
-        "session.configure" => (
-            &["session_id"],
-            &["provider", "model", "instructions", "name"],
-        ),
-        "session.list" => (&[], &["cursor", "limit", "workspace"]),
-        "session.get" | "session.watch" => (&["session_id"], &[]),
-        "session.unwatch" => (&["watch_id"], &[]),
-        "input.submit" => (&["session_id", "request_id", "text", "context"], &[]),
-        "submission.get" => (&["session_id", "request_id"], &[]),
-        "submission.wait" => (&["session_id", "request_id"], &["timeout_ms"]),
-        "run.stop" => (&["session_id", "submission_id"], &[]),
-        "transcript.list" => (&["session_id"], &["cursor", "limit"]),
-        "entry.read" => (&["session_id", "entry_id"], &["offset", "limit"]),
-        "server.shutdown" | "server.restart_worker" => (&[], &[]),
-        _ => {
-            return Err(RpcError {
-                code: -32601,
-                message: "Unknown method".into(),
-                data: None,
-            });
-        }
-    };
-    let object = params
-        .as_object()
-        .ok_or_else(|| RpcError::invalid("params must be an object"))?;
-    for key in required {
-        if !object.contains_key(*key) {
-            return Err(RpcError::invalid(format!("Missing {key}")));
-        }
-    }
-    for key in object.keys() {
-        if !required.contains(&key.as_str()) && !optional.contains(&key.as_str()) {
-            return Err(RpcError::invalid("Unknown parameter field"));
-        }
-    }
-    for key in ["session_id", "request_id", "parent_session_id"] {
-        if key == "parent_session_id" && params[key].is_null() {
-            continue;
-        }
-        if object.contains_key(key) && !identifier(string(params, key)?) {
-            return Err(RpcError::invalid(format!("Invalid {key}")));
-        }
-    }
-    for key in ["provider", "model", "name"] {
-        if object.contains_key(key) {
-            let value = string(params, key)?;
-            if value
-                .trim_matches(|c: char| c.is_whitespace() || c == '\u{feff}')
-                .is_empty()
-                || value.len() > 128
-                || value.chars().any(char::is_control)
-            {
-                return Err(RpcError::invalid(format!("Invalid {key}")));
-            }
-        }
-    }
-    if object.contains_key("instructions") {
-        let value = string(params, "instructions")?;
-        if value.len() > MAX_INPUT || value.contains('\0') {
-            return Err(RpcError::invalid("Invalid instructions"));
-        }
-    }
-    if method == "session.configure"
-        && (object.len() == 1 || object.contains_key("provider") != object.contains_key("model"))
-    {
-        return Err(RpcError::invalid(
-            "Supply settings; provider and model must be supplied together",
-        ));
-    }
-    if method == "auth.login"
-        && (!matches!(params["method"].as_str(), Some("api_key" | "oauth"))
-            || !string(params, "terminal")?.starts_with("/dev/"))
-    {
-        return Err(RpcError::invalid("Invalid login method or terminal"));
-    }
-    if object.contains_key("remote") && !params["remote"].is_boolean() {
-        return Err(RpcError::invalid("remote must be a boolean"));
-    }
-    for key in [
-        "submission_id",
-        "entry_id",
-        "watch_id",
-        "cursor",
-        "workspace",
-        "terminal",
-    ] {
-        if object.contains_key(key) {
-            let value = string(params, key)?;
-            if value.is_empty() || value.len() > 4096 || value.contains('\0') {
-                return Err(RpcError::invalid(format!("Invalid {key}")));
-            }
-        }
-    }
-    if method == "system.hello" {
-        integer(params, "api_version", 0, 9_007_199_254_740_991)?;
-    }
-    integer(params, "timeout_ms", 0, 9_007_199_254_740_991)?;
-    integer(params, "offset", 0, 9_007_199_254_740_991)?;
-    integer(
-        params,
-        "limit",
-        1,
-        if method == "entry.read" {
-            MAX_CHUNK as u64
-        } else {
-            100
-        },
-    )?;
-    if method == "input.submit" {
-        let text = string(params, "text")?;
-        let context: Vec<Context> = serde_json::from_value(params["context"].clone())
-            .map_err(|_| RpcError::invalid("Invalid context attachment"))?;
-        if context.len() > 16 {
-            return Err(RpcError::app(
-                "resource_limit",
-                "At most 16 attachments are permitted",
-            ));
-        }
-        let mut size = text.len();
-        for item in context {
-            size = size.saturating_add(item.text.len());
-            if item.path.is_empty()
-                || item.path.contains('\0')
-                || std::path::Path::new(&item.path).is_absolute()
-                || item.changedtick > 9_007_199_254_740_991
-                || !matches!(item.kind.as_str(), "buffer" | "selection")
-                || (item.kind == "buffer" && (item.start_line.is_some() || item.end_line.is_some()))
-                || (item.kind == "selection"
-                    && !matches!((item.start_line,item.end_line), (Some(a),Some(b)) if a > 0 && b >= a && b <= 9_007_199_254_740_991))
-            {
-                return Err(RpcError::invalid(
-                    "Invalid context path, kind, or line range",
-                ));
-            }
-        }
-        if size > MAX_INPUT {
-            return Err(RpcError::app("resource_limit", "Input text exceeds 1 MiB"));
-        }
-    }
-    Ok(())
+pub(crate) fn decode(bytes: &[u8]) -> Result<Value, RpcError> {
+    serde_json::from_slice(bytes).map_err(|_| RpcError {
+        code: -32700,
+        message: "Invalid JSON record".into(),
+        data: None,
+    })
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

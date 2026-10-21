@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Exercise the real Rust server and Pi adapter from an actual Neovim terminal."""
+import contextlib
 import hashlib
 import json
 import os
@@ -23,7 +24,6 @@ class Rpc:
         self.socket.connect(str(path))
         self.input = self.socket.makefile('rb')
         self.serial = 0
-        self.events = []
         self.request('system.hello', {'api_version': 1})
 
     def request(self, method, params=None):
@@ -35,7 +35,6 @@ class Rpc:
             if not line: raise ConnectionError('Server disconnected')
             record = json.loads(line)
             if 'method' in record:
-                self.events.append(record)
                 continue
             assert record['id'] == identifier, record
             assert 'error' not in record, record
@@ -47,6 +46,25 @@ class Rpc:
 
 class RealEditor(Editor):
     def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None, first_run=False, oauth_mock=False, generation=None):
+        self.server = self.observer = self.rpc = None
+        self.request_ids = {}
+        self.prepare_configuration(name, first_run, responses or [message or MESSAGE] * 12, rate)
+        if oauth_mock or generation is not None: self.prepare_oauth()
+        if generation is not None: self.prepare_generation(generation)
+        if first_run: self.prepare_first_run()
+        if drop_receipt:
+            self.env.update(HARNESS_EXECUTABLE=str(REPO / 'tests/nvim/drop_receipt.py'), HARNESS_REAL_EXECUTABLE=str(BINARY), HARNESS_DROPPED_RECEIPT=str(self.root / 'dropped.json'))
+        try:
+            if startup: self.env['HARNESS_INITIAL_COMMAND'] = 'Harness'
+            else: self.start_server(foreground, active)
+            if launcher: self.launch_editor(launcher, first_run)
+            else: self.launch(self.env)
+            self.attach_session(startup, launcher)
+        except BaseException:
+            RealEditor.abort(self)
+            raise
+
+    def prepare_configuration(self, name, first_run, responses, rate):
         self.name = name
         self.root = EVIDENCE / name
         self.root.mkdir()
@@ -61,80 +79,78 @@ class RealEditor(Editor):
         else:
             self.config.write_text(json.dumps({'provider': 'faux', 'model': 'test', 'state_dir': str(self.root / 'state'), 'socket_path': str(self.socket_path), 'worker_path': str(REPO / 'adapter/worker.mjs')}))
         response_file = self.root / 'responses.json'
-        response_file.write_text(json.dumps(responses or [message or MESSAGE] * 12))
+        response_file.write_text(json.dumps(responses))
         self.env = dict(os.environ, TERM='xterm-256color', HARNESS_REPO=str(REPO), HARNESS_EXECUTABLE=str(BINARY), HARNESS_WORKSPACE=str(self.root), HARNESS_CONFIG=str(self.config), HARNESS_SOCKET=str(self.socket_path), HARNESS_FAUX_RESPONSES=str(response_file), HARNESS_FAUX_TOKENS_PER_SECOND=str(rate))
-        if oauth_mock or generation is not None:
-            self.env = {name:value for name,value in self.env.items() if name.startswith('HARNESS_') or name in ('PATH','TERM','LANG','LC_ALL','CARGO_HOME','RUSTUP_HOME')}
-            self.env['HOME'] = str(self.root / 'home')
-            self.env.update(NODE_OPTIONS='--import=' + str(REPO / 'tests/fixtures/oauth.mjs'),
-                            HARNESS_TEST_OAUTH_RECORD=str(self.root / 'oauth-requests.jsonl'))
-            directory = self.root / 'bin'
-            directory.mkdir()
-            opener = directory / 'xdg-open'
-            opener.write_text('#!/usr/bin/env python3\nimport json,os,sys\nwith open(os.environ["HARNESS_BROWSER_LOG"],"a") as output: output.write(json.dumps(sys.argv[1:])+"\\n")\n')
-            opener.chmod(0o700)
-            self.env.update(PATH=str(directory)+':'+self.env['PATH'], HARNESS_BROWSER_LOG=str(self.root/'browser.jsonl'))
-        if generation is not None:
-            control = self.root / 'generation.json'
-            control.write_text(json.dumps({'responses': generation}))
-            self.env.update(NODE_OPTIONS='--import=' + str(REPO / 'tests/fixtures/generation.mjs'),
-                            HARNESS_TEST_GENERATION_RECORD=str(self.root / 'generation-requests.jsonl'),
-                            HARNESS_TEST_GENERATION_CONTROL=str(control),
-                            OPENAI_API_KEY='sk-generation-test-NOT-FOR-OUTPUT')
-        if first_run:
-            self.env.pop('ANTHROPIC_API_KEY', None)
-            self.env.update(HOME=str(self.root / 'home'), XDG_RUNTIME_DIR=str(self.root / 'runtime'),
-                            CARGO_HOME=os.environ.get('CARGO_HOME', str(Path.home() / '.cargo')),
-                            RUSTUP_HOME=os.environ.get('RUSTUP_HOME', str(Path.home() / '.rustup')))
-        if drop_receipt:
-            self.env.update(HARNESS_EXECUTABLE=str(REPO / 'tests/nvim/drop_receipt.py'), HARNESS_REAL_EXECUTABLE=str(BINARY), HARNESS_DROPPED_RECEIPT=str(self.root / 'dropped.json'))
-        self.server = None
-        self.observer = None
-        self.request_ids = {}
-        self.rpc = None
-        if not startup:
-            if foreground:
-                self.log = open(self.root / 'serve.log', 'wb')
-                self.server = subprocess.Popen([str(BINARY), '--config', str(self.config), 'serve'], env=self.env, stdin=subprocess.DEVNULL, stdout=self.log, stderr=self.log)
-                end = time.monotonic() + 10
-                while not self.socket_path.exists() and time.monotonic() < end: time.sleep(.01)
-            else: self.cli('start')
-            self.rpc = Rpc(self.socket_path)
-            deadline = time.monotonic() + 10
-            while not self.rpc.request('system.hello', {'api_version': 1})['storage_ready']:
-                assert time.monotonic() < deadline, 'Worker readiness timed out'
-                time.sleep(.01)
-            self.create('work')
-            if active: self.submit('work', 'first')
-        else:
-            self.env['HARNESS_INITIAL_COMMAND'] = 'Harness'
-        if launcher:
-            self.env.update(NVIM_APPNAME='nvim', XDG_CONFIG_HOME=str(self.root / 'config'), XDG_DATA_HOME=str(self.root / 'data'), XDG_STATE_HOME=str(self.root / 'editor-state'), XDG_CACHE_HOME=str(self.root / 'cache'))
-            user_init = self.root / 'config/nvim/init.lua'
-            user_init.parent.mkdir(parents=True)
-            user_init.write_text("vim.g.launcher_user_init = true\nvim.o.number = true\nvim.o.shadafile = 'NONE'\nvim.o.swapfile = false\nvim.cmd('edit one')\n" + ("vim.o.loadplugins = false\nvim.wo.wrap = false\nrequire('harness').setup({ width = 43, prompt_height = 5 })\n" if launcher == 'configured' else ''))
-            command = [str(REPO / 'harness.sh')] + ([] if first_run else ['--config', str(self.config)]) if launcher == 'plain' else [str(BINARY), '--config', str(self.config), 'nvim']
-            self.launch(self.env, command)
-            self.wait(lambda: b'one' in self.output, 'normal Neovim startup', timeout=15)
-            self.command('lua vim.fn.writefile({vim.json.encode({window=vim.api.nvim_get_current_win(), windows=#vim.api.nvim_list_wins(), loaded=vim.g.loaded_harness, mapped=vim.fn.maparg(";","n")~="", panels=vim.fn.bufnr("harness://prompt/.*")>0})}, vim.env.HARNESS_WORKSPACE .. "/before-sidebar.json")')
-            self.wait(lambda: (self.root / 'before-sidebar.json').exists(), 'normal editor before opening sidebar')
-            before = json.loads((self.root / 'before-sidebar.json').read_text())
-            self.content_window = before.pop('window')
-            assert before == {'windows': 1, 'loaded': True, 'mapped': True, 'panels': False}
-            assert not self.socket_path.exists(), 'Loading the launcher must not start the server'
-            self.keys(';')
-        else:
-            self.launch(self.env)
+
+    def prepare_oauth(self):
+        self.env = {name:value for name,value in self.env.items() if name.startswith('HARNESS_') or name in ('PATH','TERM','LANG','LC_ALL','CARGO_HOME','RUSTUP_HOME')}
+        self.env['HOME'] = str(self.root / 'home')
+        self.env.update(NODE_OPTIONS='--import=' + str(REPO / 'tests/fixtures/oauth.mjs'),
+                        HARNESS_TEST_OAUTH_RECORD=str(self.root / 'oauth-requests.jsonl'))
+        directory = self.root / 'bin'
+        directory.mkdir()
+        opener = directory / 'xdg-open'
+        opener.write_text('#!/usr/bin/env python3\nimport json,os,sys\nwith open(os.environ["HARNESS_BROWSER_LOG"],"a") as output: output.write(json.dumps(sys.argv[1:])+"\\n")\n')
+        opener.chmod(0o700)
+        self.env.update(PATH=str(directory)+':'+self.env['PATH'], HARNESS_BROWSER_LOG=str(self.root/'browser.jsonl'))
+
+    def prepare_generation(self, generation):
+        control = self.root / 'generation.json'
+        control.write_text(json.dumps({'responses': generation}))
+        self.env.update(NODE_OPTIONS='--import=' + str(REPO / 'tests/fixtures/generation.mjs'),
+                        HARNESS_TEST_GENERATION_RECORD=str(self.root / 'generation-requests.jsonl'),
+                        HARNESS_TEST_GENERATION_CONTROL=str(control),
+                        OPENAI_API_KEY='sk-generation-test-NOT-FOR-OUTPUT')
+
+    def prepare_first_run(self):
+        self.env.pop('ANTHROPIC_API_KEY', None)
+        self.env.update(HOME=str(self.root / 'home'), XDG_RUNTIME_DIR=str(self.root / 'runtime'),
+                        CARGO_HOME=os.environ.get('CARGO_HOME', str(Path.home() / '.cargo')),
+                        RUSTUP_HOME=os.environ.get('RUSTUP_HOME', str(Path.home() / '.rustup')))
+
+    def connect_server(self):
+        self.rpc = Rpc(self.socket_path)
+        deadline = time.monotonic() + 10
+        while not self.rpc.request('system.hello', {'api_version': 1})['storage_ready']:
+            assert time.monotonic() < deadline, 'Worker readiness timed out'
+            time.sleep(.01)
+
+    def start_server(self, foreground, active):
+        if foreground:
+            self.log = open(self.root / 'serve.log', 'wb')
+            self.server = subprocess.Popen([str(BINARY), '--config', str(self.config), 'serve'], env=self.env, stdin=subprocess.DEVNULL, stdout=self.log, stderr=self.log)
+            end = time.monotonic() + 10
+            while not self.socket_path.exists() and time.monotonic() < end: time.sleep(.01)
+        else: self.cli('start')
+        self.connect_server()
+        self.create('work')
+        if active: self.submit('work', 'first')
+
+    def launch_editor(self, launcher, first_run):
+        self.env.update(NVIM_APPNAME='nvim', XDG_CONFIG_HOME=str(self.root / 'config'), XDG_DATA_HOME=str(self.root / 'data'), XDG_STATE_HOME=str(self.root / 'editor-state'), XDG_CACHE_HOME=str(self.root / 'cache'))
+        user_init = self.root / 'config/nvim/init.lua'
+        user_init.parent.mkdir(parents=True)
+        user_init.write_text("vim.g.launcher_user_init = true\nvim.o.number = true\nvim.o.shadafile = 'NONE'\nvim.o.swapfile = false\nvim.cmd('edit one')\n" + ("vim.o.loadplugins = false\nvim.wo.wrap = false\nrequire('harness').setup({ width = 43, prompt_height = 5 })\n" if launcher == 'configured' else ''))
+        command = [str(REPO / 'harness.sh')] + ([] if first_run else ['--config', str(self.config)]) if launcher == 'plain' else [str(BINARY), '--config', str(self.config), 'nvim']
+        self.launch(self.env, command)
+        self.wait(lambda: b'one' in self.output, 'normal Neovim startup', timeout=15)
+        self.command('lua vim.fn.writefile({vim.json.encode({window=vim.api.nvim_get_current_win(), windows=#vim.api.nvim_list_wins(), loaded=vim.g.loaded_harness, mapped=vim.fn.maparg(";","n")~="", panels=vim.fn.bufnr("harness://prompt/.*")>0})}, vim.env.HARNESS_WORKSPACE .. "/before-sidebar.json")')
+        self.wait(lambda: (self.root / 'before-sidebar.json').exists(), 'normal editor before opening sidebar')
+        before = json.loads((self.root / 'before-sidebar.json').read_text())
+        self.content_window = before.pop('window')
+        self.launcher_state = before
+        self.server_started_before_sidebar = self.socket_path.exists()
+        self.keys(';')
+
+    def attach_session(self, startup, launcher):
         if startup:
             self.wait(self.socket_path.exists, 'Neovim starts the server', timeout=12)
-            self.rpc = Rpc(self.socket_path)
-            self.wait(lambda: self.rpc.request('system.hello', {'api_version': 1})['storage_ready'], 'Neovim waits for worker readiness', timeout=12)
+            self.connect_server()
             if launcher:
-                assert self.rpc.request('session.list')['items'] == [], 'Opening the tree must not create an agent'
+                self.sessions_before_new = self.rpc.request('session.list')['items']
                 self.keys('n')
                 self.wait(lambda: b'Message' in self.output, 'New opens a chat input immediately')
-                assert b'New agent name:' not in self.output and b'Provider [1/2/q]:' not in self.output
-                if first_run: assert not self.config.exists(), 'New chat does not require or create a default config'
+                self.new_chat_output = bytes(self.output)
             self.wait(lambda: len(self.rpc.request('session.list')['items']) == 1, 'Neovim creates a session')
             self.session_id = self.rpc.request('session.list')['items'][0]['session_id']
         else: self.session_id = 'work'
@@ -142,6 +158,53 @@ class RealEditor(Editor):
         self.wait(lambda: 'Session: ' + self.display_name in self.panel_text(), 'actual session panels')
         self.observer = Rpc(self.socket_path)
         self.observer.request('session.watch', {'session_id': self.session_id})
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, kind, error, traceback):
+        if kind is not None:
+            self.abort()
+            return False
+        try: self.finish()
+        except BaseException:
+            self.abort()
+            raise
+
+    def abort(self):
+        if getattr(self, 'process', None) and self.alive():
+            with contextlib.suppress(Exception):
+                self.command('noautocmd qa!')
+                self.process.wait(timeout=5)
+            if self.alive():
+                self.process.kill()
+                self.process.wait(timeout=5)
+        if hasattr(self, 'output'):
+            with contextlib.suppress(Exception): self.record()
+        if getattr(self, 'master', None) is not None:
+            with contextlib.suppress(OSError): os.close(self.master)
+            self.master = None
+        if self.socket_path.exists():
+            with contextlib.suppress(Exception):
+                connection = Rpc(self.socket_path)
+                try: self.shutdown_server(connection)
+                finally: connection.close()
+        for connection in (self.rpc, self.observer):
+            if connection:
+                with contextlib.suppress(Exception): connection.close()
+        if self.server:
+            if self.server.poll() is None:
+                self.server.kill()
+                self.server.wait(timeout=5)
+            self.log.close()
+
+    @staticmethod
+    def shutdown_server(connection):
+        for session in connection.request('session.list')['items']:
+            session_id = session['session_id']
+            target = connection.request('session.get', {'session_id': session_id})['snapshot']['active_submission_id']
+            if target: connection.request('run.stop', {'session_id': session_id, 'submission_id': target})
+        connection.request('server.shutdown')
 
     def cli(self, *args):
         result = subprocess.run([str(BINARY), '--config', str(self.config), *args], env=self.env, stdin=subprocess.DEVNULL, text=True, capture_output=True, timeout=15)
@@ -161,6 +224,13 @@ class RealEditor(Editor):
 
     def windows(self):
         return self.observe('(function() local result={} for _,w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do local b=vim.api.nvim_win_get_buf(w); local pos=vim.fn.win_screenpos(w); result[#result+1]={id=w,name=vim.api.nvim_buf_get_name(b),row=pos[1],col=pos[2],width=vim.api.nvim_win_get_width(w),height=vim.api.nvim_win_get_height(w),current=w==vim.api.nvim_get_current_win(),top=vim.api.nvim_win_call(w,function() return vim.fn.line("w0") end),cursor=vim.api.nvim_win_get_cursor(w)[1],lines=vim.api.nvim_buf_get_lines(b,0,-1,false)} end return result end)()')
+
+    def choose(self, label):
+        self.wait(lambda: any(window['name'] == 'harness://select' and any(label in line for line in window['lines'])
+                              for window in self.windows()), 'visible choice ' + label)
+        lines = next(window['lines'] for window in self.windows() if window['name'] == 'harness://select')
+        row = next(index for index, line in enumerate(lines, 1) if label in line)
+        self.keys(str(row) + 'G\r')
 
     def mouse(self, button, column, row):
         self.keys(f'\x1b[<{button};{column};{row}M')
@@ -206,9 +276,9 @@ class RealEditor(Editor):
             self.exits()
         self.record()
         os.close(self.master)
+        self.master = None
         if self.rpc:
-            for session in self.rpc.request('session.list')['items']: self.stop(session['session_id'])
-            self.rpc.request('server.shutdown')
+            self.shutdown_server(self.rpc)
             self.rpc.close()
         if self.observer: self.observer.close()
         if self.server:
@@ -306,9 +376,16 @@ def exit_cases():
     assert editor.outcome()['reason'] == 'cancelled'
     editor.finish()
 
+def assert_launcher_startup(editor):
+    assert editor.launcher_state == {'windows': 1, 'loaded': True, 'mapped': True, 'panels': False}
+    assert not editor.server_started_before_sidebar, 'Loading the launcher must not start the server'
+    assert editor.sessions_before_new == [], 'Opening the tree must not create an agent'
+    assert b'New agent name:' not in editor.new_chat_output and b'Provider [1/2/q]:' not in editor.new_chat_output
+
 def launcher_cases():
     for launcher in ('plain', 'configured'):
         editor = RealEditor('launcher-' + launcher, active=False, startup=True, launcher=launcher, rate=400)
+        assert_launcher_startup(editor)
         initial = (editor.root / 'config/nvim/init.lua').read_text()
         assert ("require('harness')" in initial) == (launcher == 'configured')
         editor.command('lua local p=' + editor.panel('prompt') + '; local t=' + editor.panel() + '; local w=vim.fn.win_findbuf(p)[1]; local tw=vim.fn.win_findbuf(t)[1]; local source=vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one"); vim.fn.writefile({vim.json.encode({init=vim.g.launcher_user_init, cwd=vim.fn.getcwd(), windows=#vim.api.nvim_list_wins(), prompt=vim.bo[p].modifiable, transcript=vim.bo[t].modifiable, listed=vim.bo[t].buflisted, width=vim.api.nvim_win_get_width(w), chat_width=vim.api.nvim_win_get_width(tw), height=vim.api.nvim_win_get_height(w), content_window=tw, source_loaded=vim.api.nvim_buf_is_loaded(source), source_hidden=#vim.fn.win_findbuf(source)==0, prompt_wrap=vim.wo[w].wrap, transcript_wrap=vim.wo[tw].wrap, cleared=vim.env.HARNESS_NVIM_RUNTIME==nil and vim.env.HARNESS_NVIM_OPTIONS==nil})}, vim.env.HARNESS_WORKSPACE .. "/launcher.json")')
@@ -439,11 +516,6 @@ def login_case():
     config = editor.config.read_bytes()
     def status():
         return editor.rpc.request('configuration.get', {'session_id': editor.session_id})
-    def picker(label):
-        editor.wait(lambda: any(w['name']=='harness://select' for w in editor.windows()), 'login choice ' + label)
-        lines = next(w for w in editor.windows() if w['name']=='harness://select')['lines']
-        row = next(index for index,line in enumerate(lines,1) if label in line)
-        editor.keys(str(row) + 'G\r')
     def terminal_text():
         return '\n'.join(line for w in editor.windows() if w['name']=='harness://setup' for line in w['lines'])
     def terminal_closed():
@@ -454,8 +526,8 @@ def login_case():
         return editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')
 
     editor.chat('\\login')
-    picker('OpenAI ·')
-    picker('OpenAI API key')
+    editor.choose('OpenAI ·')
+    editor.choose('OpenAI API key')
     editor.wait(lambda: 'Enter OpenAI API key' in terminal_text(), 'private OpenAI prompt')
     assert editor.observe('vim.fn.mode(1)') == 't', 'Typed login must immediately accept terminal keys'
     editor.observe('(function() vim.api.nvim_buf_set_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false,{"Retain this task"}); return true end)()')
@@ -468,7 +540,7 @@ def login_case():
     assert editor.snapshot()['session']['model']=='gpt-4o' and not editor.snapshot()['entries']
 
     editor.command('Harness login openai')
-    picker('OpenAI API key')
+    editor.choose('OpenAI API key')
     editor.wait(lambda: 'Enter OpenAI API key' in terminal_text(), 'retry OpenAI key entry')
     assert editor.observe('vim.fn.mode(1)') == 't'
     editor.keys(secret + '\r')
@@ -482,7 +554,7 @@ def login_case():
     def browser_login():
         opened = len(editor.browser_urls())
         editor.command('Harness login openrouter')
-        picker('Sign in with OpenRouter')
+        editor.choose('Sign in with OpenRouter')
         editor.wait(lambda: len(editor.browser_urls())==opened+1, 'actual Pi browser login opens automatically once')
         assert editor.observe('vim.fn.mode(1)') == 't'
         authorize = urllib.parse.urlsplit(editor.browser_urls()[-1])
@@ -527,84 +599,82 @@ def login_case():
 
 
 def provider_generation_case():
-    editor = RealEditor('openai-generation-login-and-retry', active=False, generation=[
+    with RealEditor('openai-generation-login-and-retry', active=False, generation=[
         {'kind': 'failed', 'message': 'The API organization has no credit. Check billing.'},
         {'kind': 'tool'}, {'kind': 'answer', 'delay_ms': 80},
-    ])
-    editor.observe('true')
-    editor.keys('i\\model openai/gpt-6-sol\r')
-    editor.wait(lambda: editor.snapshot()['session']['model']=='gpt-6-sol', 'select the reported OpenAI model')
-    assert editor.observe('vim.fn.mode(1)')=='i', 'Model selection must leave the prompt ready for typing'
-    instance = editor.rpc.request('system.hello', {'api_version': 1})['instance_id']
-    config = editor.config.read_bytes()
-    def draft():
-        return editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')
-    def transcript():
-        return '\n'.join(line for window in editor.windows() if window['name']=='harness://chat/work' for line in window['lines'])
+    ]) as editor:
+        editor.observe('true')
+        editor.keys('i\\model openai/gpt-6-sol\r')
+        editor.wait(lambda: editor.snapshot()['session']['model']=='gpt-6-sol', 'select the reported OpenAI model')
+        assert editor.observe('vim.fn.mode(1)')=='i', 'Model selection must leave the prompt ready for typing'
+        instance = editor.rpc.request('system.hello', {'api_version': 1})['instance_id']
+        config = editor.config.read_bytes()
+        def draft():
+            return editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')
+        def transcript():
+            return '\n'.join(line for window in editor.windows() if window['name']=='harness://chat/work' for line in window['lines'])
 
-    editor.keys('Run the provider test.\r')
-    assert editor.observe('vim.fn.mode(1)') == 'i', 'Enter must leave the prompt ready for the next draft'
-    editor.keys('Unsent draft stays here.')
-    editor.wait(lambda: editor.snapshot()['error'] is not None, 'actual OpenAI SDK reports the API credit failure')
-    editor.wait(lambda: '[error] Run failed' in transcript(), 'provider failure appears in the visible chat')
-    failed = editor.snapshot()
-    failure = failed['entries'][-1]
-    assert failed['error']['kind']=='provider_error'
-    assert 'quota or credit' in failure['text'] and 'usage and billing' in failure['text'] and '\\login' in failure['text']
-    assert failure['kind']=='error'
-    assert editor.rpc.request('entry.read', {'session_id':'work','entry_id':failure['entry_id']})['text']==failure['text']
-    assert transcript().count('[error] Run failed')==1 and '[assistant] Agent' not in transcript()
-    assert transcript().endswith(failure['text']), 'The current failure must appear after usage and notices'
-    assert draft()==['Unsent draft stays here.'], 'Typing after Enter must preserve every character'
+        editor.keys('Run the provider test.\r')
+        assert editor.observe('vim.fn.mode(1)') == 'i', 'Enter must leave the prompt ready for the next draft'
+        editor.wait(lambda: draft()==[''], 'accepted submission clears the sent draft')
+        editor.keys('Unsent draft stays here.')
+        editor.wait(lambda: editor.snapshot()['error'] is not None, 'actual OpenAI SDK reports the API credit failure')
+        editor.wait(lambda: '[error] Run failed' in transcript(), 'provider failure appears in the visible chat')
+        failed = editor.snapshot()
+        failure = failed['entries'][-1]
+        assert failed['error']['kind']=='provider_error'
+        assert 'quota or credit' in failure['text'] and 'usage and billing' in failure['text'] and '\\login' in failure['text']
+        assert failure['kind']=='error'
+        assert editor.rpc.request('entry.read', {'session_id':'work','entry_id':failure['entry_id']})['text']==failure['text']
+        assert transcript().count('[error] Run failed')==1 and '[assistant] Agent' not in transcript()
+        assert transcript().endswith(failure['text']), 'The current failure must appear after usage and notices'
+        assert draft()==['Unsent draft stays here.'], ('Typing after Enter must preserve every character', draft())
 
-    editor.command('Harness login openai')
-    editor.wait(lambda: any(window['name']=='harness://select' for window in editor.windows()), 'OpenAI login methods')
-    choices = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
-    row = next(index for index,line in enumerate(choices,1) if 'Sign in with ChatGPT' in line)
-    editor.keys(str(row) + 'G\r')
-    editor.wait(lambda: len(editor.browser_urls())==1, 'actual Pi ChatGPT account opens automatically')
-    assert editor.observe('vim.fn.mode(1)')=='t', 'Account login must immediately accept terminal input'
-    authorize = urllib.parse.urlsplit(editor.browser_urls()[0])
-    assert authorize.scheme=='https' and authorize.hostname=='auth.openai.com'
-    query = urllib.parse.parse_qs(authorize.query)
-    assert query['code_challenge_method']==['S256']
-    callback = urllib.parse.urlsplit(query['redirect_uri'][0])
-    assert callback.scheme=='http' and callback.hostname in ('localhost','127.0.0.1')
-    parameters = urllib.parse.urlencode({'code':'test-code','state':query['state'][0],'client_id':'test-issued-client'})
-    with urllib.request.urlopen(query['redirect_uri'][0] + '?' + parameters, timeout=5) as response:
-        assert response.status==200
-    editor.wait(lambda: not any(window['name']=='harness://setup' for window in editor.windows()), 'account callback completes without Enter')
-    editor.wait(lambda: editor.observe('vim.fn.mode(1)')=='i', 'login returns to the same draft')
-    assert draft()==['Unsent draft stays here.']
-    assert editor.snapshot()['session']['model']=='gpt-6-sol'
-    assert editor.rpc.request('system.hello', {'api_version':1})['instance_id']==instance
-    assert editor.config.read_bytes()==config
-    editor.keys('\x13')
-    assert editor.observe('vim.fn.mode(1)')=='i', 'Ctrl-S must also leave the prompt ready for the next draft'
-    editor.keys('Next draft stays intact.')
-    editor.wait(lambda: editor.snapshot()['active_submission_id'] is not None
-                and 'λ 世界' in editor.snapshot()['assistant']['text'], 'actual OpenAI SDK streams Unicode into the same chat')
-    editor.wait(lambda: editor.snapshot()['state']=='idle' and editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.',
-                'actual OpenAI SDK receives the tool result and completes the reply')
-    editor.wait(lambda: 'OpenAI streamed λ 世界 and completed the task.' in transcript(), 'successful reply is displayed')
-    current = editor.snapshot()
-    assert current['error'] is None
-    assert [entry['text'] for entry in current['entries'] if entry['kind']=='user']==['Run the provider test.','Unsent draft stays here.']
-    assert sum(entry['kind']=='error' and entry['entry_id']==failure['entry_id'] for entry in current['entries'])==1
-    assert transcript().count('[error] Run failed')==1
-    assert transcript().count('[assistant] Agent')==2, 'The tool request and final reply each have a nonempty assistant entry'
-    assert transcript().count('OpenAI streamed λ 世界 and completed the task.')==1
-    assert draft()==['Next draft stays intact.']
-    assert (editor.root/'provider-result.txt').read_text()=='provider tool ran\n'
-    requests = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
-    assert [request['credential_kind'] for request in requests]==['api_key','oauth','oauth'], 'Saved account credentials must replace the inherited API key on actual requests'
-    assert [request['response'] for request in requests]==['failed','tool','answer']
-    assert all(request['model']=='gpt-6-sol' for request in requests)
-    public = editor.output + json.dumps(current).encode()
-    for path in (editor.root/'state/logs').glob('*'): public += path.read_bytes()
-    for secret in (b'sk-generation-test-NOT-FOR-OUTPUT',b'generation-account-token-NOT-FOR-OUTPUT',b'oauth-test-secret-DO-NOT-PRINT'):
-        assert secret not in public, 'Provider errors, logs, and terminal output must not expose credentials'
-    editor.finish()
+        editor.command('Harness login openai')
+        editor.choose('Sign in with ChatGPT')
+        editor.wait(lambda: len(editor.browser_urls())==1, 'actual Pi ChatGPT account opens automatically')
+        assert editor.observe('vim.fn.mode(1)')=='t', 'Account login must immediately accept terminal input'
+        authorize = urllib.parse.urlsplit(editor.browser_urls()[0])
+        assert authorize.scheme=='https' and authorize.hostname=='auth.openai.com'
+        query = urllib.parse.parse_qs(authorize.query)
+        assert query['code_challenge_method']==['S256']
+        callback = urllib.parse.urlsplit(query['redirect_uri'][0])
+        assert callback.scheme=='http' and callback.hostname in ('localhost','127.0.0.1')
+        parameters = urllib.parse.urlencode({'code':'test-code','state':query['state'][0],'client_id':'test-issued-client'})
+        with urllib.request.urlopen(query['redirect_uri'][0] + '?' + parameters, timeout=5) as response:
+            assert response.status==200
+        editor.wait(lambda: not any(window['name']=='harness://setup' for window in editor.windows()), 'account callback completes without Enter')
+        editor.wait(lambda: editor.observe('vim.fn.mode(1)')=='i', 'login returns to the same draft')
+        assert draft()==['Unsent draft stays here.'], draft()
+        assert editor.snapshot()['session']['model']=='gpt-6-sol'
+        assert editor.rpc.request('system.hello', {'api_version':1})['instance_id']==instance
+        assert editor.config.read_bytes()==config
+        editor.keys('\x13')
+        assert editor.observe('vim.fn.mode(1)')=='i', 'Ctrl-S must also leave the prompt ready for the next draft'
+        editor.wait(lambda: draft()==[''], 'accepted Ctrl-S submission clears the sent draft')
+        editor.keys('Next draft stays intact.')
+        editor.wait(lambda: editor.snapshot()['active_submission_id'] is not None
+                    and 'λ 世界' in editor.snapshot()['assistant']['text'], 'actual OpenAI SDK streams Unicode into the same chat')
+        editor.wait(lambda: editor.snapshot()['state']=='idle' and editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.',
+                    'actual OpenAI SDK receives the tool result and completes the reply')
+        editor.wait(lambda: 'OpenAI streamed λ 世界 and completed the task.' in transcript(), 'successful reply is displayed')
+        current = editor.snapshot()
+        assert current['error'] is None
+        assert [entry['text'] for entry in current['entries'] if entry['kind']=='user']==['Run the provider test.','Unsent draft stays here.']
+        assert sum(entry['kind']=='error' and entry['entry_id']==failure['entry_id'] for entry in current['entries'])==1
+        assert transcript().count('[error] Run failed')==1
+        assert transcript().count('[assistant] Agent')==2, 'The tool request and final reply each have a nonempty assistant entry'
+        assert transcript().count('OpenAI streamed λ 世界 and completed the task.')==1
+        assert draft()==['Next draft stays intact.'], draft()
+        assert (editor.root/'provider-result.txt').read_text()=='provider tool ran\n'
+        requests = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
+        assert [request['credential_kind'] for request in requests]==['api_key','oauth','oauth'], 'Saved account credentials must replace the inherited API key on actual requests'
+        assert [request['response'] for request in requests]==['failed','tool','answer']
+        assert all(request['model']=='gpt-6-sol' for request in requests)
+        public = editor.output + json.dumps(current).encode()
+        for path in (editor.root/'state/logs').glob('*'): public += path.read_bytes()
+        for secret in (b'sk-generation-test-NOT-FOR-OUTPUT',b'generation-account-token-NOT-FOR-OUTPUT',b'oauth-test-secret-DO-NOT-PRINT'):
+            assert secret not in public, 'Provider errors, logs, and terminal output must not expose credentials'
 
 
 def chat_actions_case():
@@ -612,12 +682,6 @@ def chat_actions_case():
     editor.observe('true')
     expected = 'Unsent task'
     editor.keys('i'+expected)
-    def choose(label):
-        editor.wait(lambda:any(window['name']=='harness://select' and any(label in line for line in window['lines'])
-                               for window in editor.windows()),'choice '+label)
-        lines = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
-        row = next(index for index,line in enumerate(lines,1) if label in line)
-        editor.keys(str(row)+'G\r')
     def cancelled(suffix):
         nonlocal expected
         editor.keys('\x1b')
@@ -631,20 +695,20 @@ def chat_actions_case():
     editor.wait(lambda:any(window['name']=='harness://select' for window in editor.windows()),'F1 opens chat actions')
     cancelled(' after actions')
     editor.keys('\x1bOP')
-    choose('Choose a model')
+    editor.choose('Choose a model')
     editor.wait(lambda:any(window['name']=='harness://select' and len(window['lines'])>20 for window in editor.windows()),'full model choice')
     cancelled(' after model')
     editor.keys('\x1bOP')
-    choose('Connect an account')
+    editor.choose('Connect an account')
     editor.wait(lambda:any(window['name']=='harness://select' and len(window['lines'])>20 for window in editor.windows()),'provider choice')
     cancelled(' after provider')
     editor.keys('\x1bOP')
-    choose('Connect an account')
-    choose('OpenAI ·')
+    editor.choose('Connect an account')
+    editor.choose('OpenAI ·')
     editor.wait(lambda:any(window['name']=='harness://select' and len(window['lines'])==2 for window in editor.windows()),'login method choice')
     cancelled(' after method')
     editor.keys('\x1bOP')
-    choose('Attach source buffer')
+    editor.choose('Attach source buffer')
     editor.wait(lambda:editor.observe('vim.fn.mode(1)')=='i','attachment returns to the unchanged draft')
     assert editor.observe('vim.api.nvim_buf_get_lines(0,0,-1,false)')==[expected]
     assert 'Context snapshot: one (buffer)' in '\n'.join(line for window in editor.windows() if window['name']=='harness://chat/work' for line in window['lines'])
@@ -653,7 +717,7 @@ def chat_actions_case():
     assert len([entry for entry in editor.snapshot()['entries'] if entry['kind']=='user'])==1
     editor.keys('Next draft')
     editor.keys('\x1bOP')
-    choose('Stop current task')
+    editor.choose('Stop current task')
     editor.wait(lambda:editor.snapshot()['active_submission_id'] is None,'stop through chat actions')
     assert editor.observe('vim.api.nvim_buf_get_lines(vim.fn.bufnr("harness://prompt/work"),0,-1,false)')==['Next draft']
     assert editor.snapshot()['session']['provider']=='faux'
@@ -675,10 +739,7 @@ def login_cancel_case():
     for mode in ('terminal','normal','visual','forced-close','retry'):
         opened = len(editor.browser_urls())
         editor.command('Harness login openai')
-        editor.wait(lambda:any(window['name']=='harness://select' for window in editor.windows()),'login methods')
-        lines = next(window['lines'] for window in editor.windows() if window['name']=='harness://select')
-        row = next(index for index,line in enumerate(lines,1) if 'Sign in with ChatGPT' in line)
-        editor.keys(str(row)+'G\r')
+        editor.choose('Sign in with ChatGPT')
         editor.wait(lambda:setup_window() and len(editor.browser_urls())==opened+1,'waiting browser login with a complete URL')
         if mode in ('normal','visual','forced-close'): editor.keys('\x1c\x0e')
         if mode=='visual': editor.keys('v')
@@ -874,6 +935,296 @@ def explorer_cases(plugin):
             finally:
                 editor.finish()
 
+def first_run_setup_case():
+    with RealEditor('first-run-setup', active=False, startup=True, launcher='plain', first_run=True, rate=400) as editor:
+        assert_launcher_startup(editor)
+        assert not editor.config.exists(), 'New chat does not require or create a default config'
+        assert editor.snapshot()['session']['provider'] is None
+        assert 'setup' not in editor.panel_text('agents').lower()
+        editor.chat('Task before model choice')
+        editor.wait(lambda: '\\model' in editor.panel_text(), 'missing-model remedy stays inside chat')
+        assert not editor.snapshot()['entries'], 'A missing model cannot admit a task'
+        assert editor.panel_text('prompt') == 'Task before model choice\n'
+        editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {""})')
+        editor.chat('\\model demo')
+        editor.wait(lambda: editor.snapshot()['session']['provider'] == 'faux', 'chat command sets model without setup')
+        editor.chat('\\name First chat')
+        editor.wait(lambda: editor.snapshot()['session']['name'] == 'First chat', 'chat rename')
+        editor.chat('\\instructions Give short answers.')
+        editor.wait(lambda: editor.snapshot()['session']['instructions'] == 'Give short answers.', 'chat instructions')
+        editor.chat('\\unknown')
+        editor.wait(lambda: 'Unknown command' in editor.panel_text(), 'unknown commands stay local')
+        assert not editor.snapshot()['entries']
+        editor.chat('First chat task λ 世界\x1b[13;2uSecond line')
+        editor.wait(lambda: any(item['kind'] == 'user' for item in editor.snapshot()['entries']), 'Enter sends the chat message')
+        editor.wait(lambda: editor.snapshot()['state'] == 'idle', 'first chat completes', timeout=15)
+        assert any(item['kind'] == 'user' and item['text'] == 'First chat task λ 世界\nSecond line' for item in editor.snapshot()['entries'])
+        assert not editor.config.exists(), 'Chat settings are stored in Pi, not a second settings file'
+        editor.command('qa')
+        editor.exits()
+
+def narrow_screen_controls_case():
+    with RealEditor('narrow-screen-controls', active=False, startup=True, launcher='configured', rate=400) as editor:
+        editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]); vim.cmd("startinsert")')
+        editor.keys('Draft λ 世界 across sizes\x1b')
+        for columns, lines in ((80, 24), (60, 20), (120, 40)):
+            editor.resize(columns, lines)
+            path = editor.root / 'layout.json'
+            path.unlink(missing_ok=True)
+            editor.command('lua local p=vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]; local t=vim.fn.win_findbuf(' + editor.panel() + ')[1]; vim.fn.writefile({vim.json.encode({columns=vim.o.columns, lines=vim.o.lines, prompt_width=vim.api.nvim_win_get_width(p), transcript_width=vim.api.nvim_win_get_width(t), prompt_row=vim.fn.win_screenpos(p)[1], transcript_row=vim.fn.win_screenpos(t)[1], prompt_help=vim.wo[p].winbar, windows=#vim.api.nvim_tabpage_list_wins(0)})}, vim.env.HARNESS_WORKSPACE .. "/layout.json")')
+            editor.wait(path.exists, 'read responsive layout')
+            layout = json.loads(path.read_text())
+            assert layout['columns'] == columns and layout['lines'] == lines, layout
+            assert 'send' in layout['prompt_help'], layout
+            assert layout['prompt_width'] >= 35 and layout['transcript_width'] >= 35, layout
+            assert layout['transcript_row'] < layout['prompt_row'] and layout['windows'] == 2, layout
+            assert layout['prompt_width'] == columns and layout['transcript_width'] == columns, layout
+            assert editor.panel_text('prompt') == 'Draft λ 世界 across sizes\n'
+
+def sidebar_controls_case():
+    with RealEditor('sidebar-controls', active=False, startup=True, launcher='configured') as editor:
+        work = editor.session_id
+        editor.rpc.request('session.configure', {'session_id': work, 'name': 'work'})
+        editor.create('second')
+        editor.rpc.request('session.create', {'session_id': 'child', 'workspace': str(editor.root), 'parent_session_id': work})
+        (editor.root / 'other').mkdir()
+        editor.rpc.request('session.create', {'session_id': 'remote', 'workspace': str(editor.root / 'other')})
+        editor.submit(work, 'work-task')
+        editor.submit('second', 'second-task')
+        editor.tree_row('+ New chat')
+        editor.keys('r')
+        editor.wait(lambda: 'second [running]' in editor.panel_text('agents') and 'child [idle]' in editor.panel_text('agents'), 'current-directory agents and child are listed')
+        assert 'remote [' not in editor.panel_text('agents'), 'Another directory must not appear'
+        tree = editor.panel_text('agents').splitlines()
+        assert next(i for i,line in enumerate(tree) if 'work [running]' in line) < next(i for i,line in enumerate(tree) if 'child [idle]' in line)
+        editor.tree_row('work [')
+        editor.keys('h')
+        assert 'child [' not in editor.panel_text('agents'), 'Parent folds its actual children'
+        editor.keys('l')
+        editor.wait(lambda: 'child [idle]' in editor.panel_text('agents'), 'Parent expands')
+        editor.tree_row('second [')
+        editor.keys('\r')
+        editor.wait(lambda: 'Session: second' in editor.panel_text(), 'Enter selects second agent')
+        editor.keys('iDraft survives tree hiding\x1b')
+        editor.tree_row('work [')
+        editor.keys('s')
+        editor.wait(lambda: editor.outcome(work)['status'] == 'unanswered', 's stops the highlighted agent')
+        assert editor.outcome(work)['reason'] == 'cancelled'
+        assert editor.outcome('second')['status'] == 'accepted', 'Stopping a highlighted row must preserve another selected run'
+        editor.keys('q')
+        assert editor.panel_text('prompt') == 'Draft survives tree hiding\n'
+        editor.keys(';')
+        editor.wait(lambda: 'second [running]' in editor.panel_text('agents'), 'semicolon reopens the sidebar')
+        editor.tree_row('+ New chat')
+        editor.keys('\r')
+        editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 5, 'Enter on New creates a chat without a name dialog')
+        editor.stays()
+        editor.prompt('qa')
+        editor.keys('no\r')
+        editor.exits()
+        assert editor.outcome('second')['reason'] == 'cancelled'
+
+def separate_tab_chats_case():
+    with RealEditor('separate-tab-chats', active=False, startup=True, launcher='plain') as editor:
+        first = editor.session_id
+        editor.chat('\\name First tab')
+        editor.wait(lambda: editor.snapshot(first)['session']['name'] == 'First tab', 'first tab name')
+        editor.command('lua vim.g.first_source = vim.fn.win_findbuf(' + editor.panel() + ')[1]; vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ',0,-1,false,{"Draft in first tab"})')
+        (editor.root / 'other').mkdir()
+        editor.command('tabnew | execute "tcd " .. fnameescape($HARNESS_WORKSPACE .. "/other")')
+        editor.keys(';')
+        editor.wait(lambda: '+ New chat' in editor.panel_text('agents'), 'second directory tree')
+        assert 'First tab [' not in editor.panel_text('agents')
+        editor.keys('n')
+        editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 2, 'new chat in second tab')
+        second = next(item['session_id'] for item in editor.rpc.request('session.list')['items'] if item['session_id'] != first)
+        assert editor.snapshot(second)['session']['workspace'] == str(editor.root / 'other')
+        editor.wait(lambda: 'Session: New chat' in editor.panel_text(), 'second tab selected')
+        editor.chat('\\name Second tab')
+        editor.wait(lambda: editor.snapshot(second)['session']['name'] == 'Second tab', 'second tab name')
+        editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ',0,-1,false,{"Draft in second tab"})')
+        editor.command('tabprevious')
+        editor.wait(lambda: 'Session: First tab' in editor.panel_text(), 'first tab selection restored')
+        assert editor.panel_text('prompt') == 'Draft in first tab\n'
+        editor.wait(lambda: 'First tab [' in editor.panel_text('agents'), 'first directory tree restored')
+        assert 'Second tab [' not in editor.panel_text('agents')
+        editor.command('lua vim.fn.writefile({tostring(vim.api.nvim_win_is_valid(vim.g.first_source) and vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(vim.g.first_source)):match("^harness://chat/") ~= nil and vim.api.nvim_buf_is_loaded(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one")))}, vim.env.HARNESS_WORKSPACE .. "/source-preserved")')
+        editor.wait(lambda: (editor.root / 'source-preserved').exists(), 'source window preserved')
+        assert (editor.root / 'source-preserved').read_text() == 'true\n'
+        editor.command('tabnext')
+        editor.wait(lambda: 'Session: Second tab' in editor.panel_text(), 'second tab selection restored')
+        assert editor.panel_text('prompt') == 'Draft in second tab\n'
+
+def multiple_sessions_case():
+    with RealEditor('multiple-sessions') as editor:
+        for session_id in ('second', 'other-client-only'):
+            editor.create(session_id)
+            editor.submit(session_id, 'first')
+        editor.command('Harness attach second')
+        editor.wait(lambda: 'Session: second' in editor.panel_text(), 'second attached session')
+        editor.prompt('HarnessQuit')
+        editor.keys('no\r')
+        editor.exits()
+        for session_id in ('work', 'second'): assert editor.outcome(session_id)['reason'] == 'cancelled'
+        assert editor.snapshot('other-client-only')['active_submission_id']
+
+def completion_during_prompt_case():
+    short = dict(MESSAGE, content=[{'type': 'text', 'text': 'Natural completion. ' * 40}])
+    with RealEditor('completion-during-prompt', message=short, rate=200) as editor:
+        editor.prompt('qa')
+        editor.wait(lambda: editor.outcome()['status'] == 'done', 'natural completion during native prompt', timeout=10)
+        editor.keys('no\r')
+        editor.exits()
+        assert editor.outcome()['status'] == 'done'
+
+def new_run_during_prompt_case():
+    with RealEditor('new-run-during-prompt') as editor:
+        editor.prompt('qa')
+        editor.stop()
+        new = editor.submit('work', 'second')
+        start = len(editor.output)
+        editor.keys('yes\r')
+        editor.wait(lambda: new['submission_id'].encode() in editor.output[start:], 'new target needs a new prompt')
+        editor.keys('\x1b')
+        editor.stays()
+        assert editor.snapshot()['active_submission_id'] == new['submission_id']
+
+def connection_failure_during_stop_case():
+    with RealEditor('connection-failure-during-stop', foreground=True) as editor:
+        editor.prompt('qa')
+        os.kill(editor.server.pid, signal.SIGSTOP)
+        editor.keys('no\r')
+        os.kill(editor.server.pid, signal.SIGKILL)
+        editor.server.wait(timeout=5)
+        editor.stays()
+        editor.reconnect_server()
+
+def connection_failure_during_prompt_case():
+    with RealEditor('connection-failure-during-prompt', foreground=True) as editor:
+        target = editor.snapshot()['active_submission_id']
+        editor.prompt('qa')
+        os.kill(editor.server.pid, signal.SIGKILL)
+        editor.server.wait(timeout=5)
+        editor.keys('yes\r')
+        editor.stays()
+        editor.reconnect_server()
+        assert editor.snapshot()['active_submission_id'] == target
+
+def escape_during_stop_wait_case():
+    with RealEditor('escape-during-stop-wait', foreground=True) as editor:
+        editor.prompt('qa')
+        children = Path(f'/proc/{editor.server.pid}/task/{editor.server.pid}/children').read_text().split()
+        assert len(children) == 1, children
+        worker = int(children[0])
+        os.kill(worker, signal.SIGSTOP)
+        try:
+            editor.keys('no\r')
+            editor.keys('\x1b')
+            editor.stays()
+        finally:
+            os.kill(worker, signal.SIGCONT)
+        editor.wait(lambda: editor.outcome()['status'] == 'unanswered', 'stop continues after exit cancellation')
+        assert editor.outcome()['reason'] == 'cancelled'
+        editor.stays()
+
+def forced_exit_and_recovery_case():
+    with RealEditor('forced-exit-and-recovery') as editor:
+        target = editor.snapshot()['active_submission_id']
+        editor.command('noautocmd qa!')
+        editor.exits()
+        assert editor.snapshot()['active_submission_id'] == target
+        editor.record()
+        os.close(editor.master)
+        editor.launch(editor.env)
+        editor.wait(lambda: 'Session: work' in editor.panel_text(), 'reconnect after forced editor exit')
+        assert editor.snapshot()['active_submission_id'] == target
+
+def neovim_starts_missing_server_case():
+    with RealEditor('neovim-starts-missing-server', active=False, startup=True) as editor:
+        editor.stays()
+        assert editor.snapshot(editor.session_id)['state'] == 'idle'
+        editor.command('qa')
+        editor.exits()
+
+def hidden_unsent_draft_case():
+    with RealEditor('hidden-unsent-draft', active=False) as editor:
+        editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Retained unsent text"})')
+        editor.source(True)
+        editor.command('Harness')
+        editor.wait(lambda: 'Connection: connected' in editor.panel_text(), 'reopen hidden panels')
+        assert editor.panel_text('prompt') == 'Retained unsent text\n'
+        assert editor.snapshot()['active_submission_id'] is None
+
+def explicit_editor_context_and_streaming_case():
+    with RealEditor('explicit-editor-context-and-streaming', active=False) as editor:
+        editor.source()
+        editor.command('lua vim.api.nvim_buf_set_lines(0, 0, -1, false, {"unsaved λ 世界", "selection line", "last line"}); vim.g.context_tick = vim.api.nvim_buf_get_changedtick(0)')
+        editor.command('Harness context buffer')
+        editor.source()
+        editor.command('2,2Harness context selection')
+        editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Context request"})')
+        editor.command('Harness send')
+        editor.wait(lambda: editor.snapshot()['active_submission_id'], 'actual input admission')
+        entries = editor.snapshot()['entries']
+        assert any('unsaved λ 世界' in item['text'] and 'Explicit selection snapshot: one lines 2-2' in item['text'] for item in entries), entries
+        editor.wait(lambda: editor.snapshot()['assistant']['text'], 'actual streamed assistant text')
+        panel = editor.panel_text()
+        assert 'assistant progress' in panel and 'Context request' in panel
+        assert (editor.root / 'one').read_text() == 'one\n'
+        editor.source()
+        editor.command('lua vim.fn.writefile({vim.json.encode({modified=vim.bo.modified, unchanged=vim.g.context_tick == vim.api.nvim_buf_get_changedtick(0), windows=#vim.api.nvim_list_wins()})}, vim.env.HARNESS_WORKSPACE .. "/buffer.json")')
+        editor.wait(lambda: (editor.root / 'buffer.json').exists(), 'editor responds during model output')
+        observed = json.loads((editor.root / 'buffer.json').read_text())
+        assert observed == {'modified': True, 'unchanged': True, 'windows': 1}, observed
+
+def actual_tool_activity_case():
+    tool = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import {fauxAssistantMessage,fauxToolCall} from '@earendil-works/pi-ai/providers/faux'; console.log(JSON.stringify(fauxAssistantMessage(fauxToolCall('bash',{command:'echo tool-visible; sleep 1; echo tool-complete'}),{stopReason:'toolUse'})));"], cwd=REPO, text=True))
+    with RealEditor('actual-tool-activity', responses=[tool, MESSAGE], rate=1000) as editor:
+        editor.wait(lambda: 'bash' in editor.panel_text(), 'actual bash tool name')
+        editor.stays()
+        editor.wait(lambda: 'tool-complete' in editor.panel_text(), 'actual bash result', timeout=10)
+
+def tool_created_child_tree_case():
+    child_command = '"$HARNESS_EXECUTABLE" --socket "$HARNESS_SOCKET" session create --id tool-child --workspace "$PWD" --name "Tool child"'
+    child_tool = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import {fauxAssistantMessage,fauxToolCall} from '@earendil-works/pi-ai/providers/faux'; console.log(JSON.stringify(fauxAssistantMessage(fauxToolCall('bash',{command:process.argv[1]}),{stopReason:'toolUse'})));", child_command], cwd=REPO, text=True))
+    with RealEditor('tool-created-child-tree', active=False, startup=True, launcher='plain', responses=[child_tool, MESSAGE], rate=1000) as editor:
+        editor.chat('Create a child agent with the command client.')
+        editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 2, 'Bash creates an actual child agent', timeout=15)
+        child = editor.snapshot('tool-child')['session']
+        assert child['parent_session_id'] == editor.session_id and child['workspace'] == str(editor.root), child
+        editor.observe('true')
+        editor.wait(lambda: editor.snapshot()['active_submission_id'] is None, 'parent finishes after creating the child', timeout=15)
+        def tree_lines():
+            return next(window['lines'] for window in editor.windows() if window['name']=='harness://agents')
+        editor.wait(lambda: any('Tool child [idle]' in line for line in tree_lines()), 'tool child appears without refreshing or entering the open tree')
+        lines = tree_lines()
+        parent = next(i for i,line in enumerate(lines) if 'New chat [' in line)
+        nested = next(i for i,line in enumerate(lines) if 'Tool child [' in line)
+        assert nested > parent and lines[nested].startswith('    '), lines
+        editor.tree_row('Tool child [')
+        editor.keys('\r')
+        editor.wait(lambda: 'Session: Tool child' in editor.panel_text(), 'Enter selects tool-created chat')
+        assert not editor.snapshot('tool-child')['entries'], 'Child history is separate'
+
+def lost_receipt_draft_and_duplicate_case():
+    with RealEditor('lost-receipt-draft-and-duplicate', active=False, drop_receipt=True) as editor:
+        editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Original request"})')
+        editor.command('Harness send')
+        editor.wait(lambda: (editor.root / 'dropped.json').exists(), 'durable receipt before injected disconnect')
+        receipt = json.loads((editor.root / 'dropped.json').read_text())
+        editor.wait(lambda: 'Connection closed' in editor.panel_text(), 'visible uncertain receipt')
+        assert editor.panel_text('prompt') == 'Original request\n'
+        editor.command('Harness')
+        editor.wait(lambda: 'Connection: connected' in editor.panel_text(), 'reconnect after receipt loss')
+        editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"New unsent request"})')
+        editor.command('Harness send')
+        editor.pump(.3)
+        stored = editor.rpc.request('submission.get', {'session_id': 'work', 'request_id': receipt['request_id']})
+        assert stored['submission_id'] == receipt['submission_id']
+        inputs = [item for item in editor.snapshot()['entries'] if item['kind'] == 'user']
+        assert len(inputs) == 1 and inputs[0]['text'] == 'Original request', inputs
+        assert editor.panel_text('prompt') == 'New unsent request\n'
+
 def integration_cases():
     launcher_cases()
     buffer_switch_case()
@@ -886,300 +1237,23 @@ def integration_cases():
     prompt_window_case()
     if os.environ.get('HARNESS_TEST_NERDTREE'):
         explorer_cases(os.environ['HARNESS_TEST_NERDTREE'])
-    editor = RealEditor('first-run-setup', active=False, startup=True, launcher='plain', first_run=True, rate=400)
-    assert not editor.config.exists()
-    assert editor.snapshot()['session']['provider'] is None
-    assert 'setup' not in editor.panel_text('agents').lower()
-    editor.chat('Task before model choice')
-    editor.wait(lambda: '\\model' in editor.panel_text(), 'missing-model remedy stays inside chat')
-    assert not editor.snapshot()['entries'], 'A missing model cannot admit a task'
-    assert editor.panel_text('prompt') == 'Task before model choice\n'
-    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {""})')
-    editor.chat('\\model demo')
-    editor.wait(lambda: editor.snapshot()['session']['provider'] == 'faux', 'chat command sets model without setup')
-    editor.chat('\\name First chat')
-    editor.wait(lambda: editor.snapshot()['session']['name'] == 'First chat', 'chat rename')
-    editor.chat('\\instructions Give short answers.')
-    editor.wait(lambda: editor.snapshot()['session']['instructions'] == 'Give short answers.', 'chat instructions')
-    editor.chat('\\unknown')
-    editor.wait(lambda: 'Unknown command' in editor.panel_text(), 'unknown commands stay local')
-    assert not editor.snapshot()['entries']
-    editor.chat('First chat task λ 世界\x1b[13;2uSecond line')
-    editor.wait(lambda: any(item['kind'] == 'user' for item in editor.snapshot()['entries']), 'Enter sends the chat message')
-    editor.wait(lambda: editor.snapshot()['state'] == 'idle', 'first chat completes', timeout=15)
-    assert any(item['kind'] == 'user' and item['text'] == 'First chat task λ 世界\nSecond line' for item in editor.snapshot()['entries'])
-    assert not editor.config.exists(), 'Chat settings are stored in Pi, not a second settings file'
-    editor.command('qa')
-    editor.exits()
-    editor.finish()
-
-    editor = RealEditor('narrow-screen-controls', active=False, startup=True, launcher='configured', rate=400)
-    editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]); vim.cmd("startinsert")')
-    editor.keys('Draft λ 世界 across sizes\x1b')
-    for columns, lines in ((80, 24), (60, 20), (120, 40)):
-        editor.resize(columns, lines)
-        path = editor.root / 'layout.json'
-        path.unlink(missing_ok=True)
-        editor.command('lua local p=vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]; local t=vim.fn.win_findbuf(' + editor.panel() + ')[1]; vim.fn.writefile({vim.json.encode({columns=vim.o.columns, lines=vim.o.lines, prompt_width=vim.api.nvim_win_get_width(p), transcript_width=vim.api.nvim_win_get_width(t), prompt_row=vim.fn.win_screenpos(p)[1], transcript_row=vim.fn.win_screenpos(t)[1], prompt_help=vim.wo[p].winbar, windows=#vim.api.nvim_tabpage_list_wins(0)})}, vim.env.HARNESS_WORKSPACE .. "/layout.json")')
-        editor.wait(path.exists, 'read responsive layout')
-        layout = json.loads(path.read_text())
-        assert layout['columns'] == columns and layout['lines'] == lines, layout
-        assert 'send' in layout['prompt_help'], layout
-        assert layout['prompt_width'] >= 35 and layout['transcript_width'] >= 35, layout
-        assert layout['transcript_row'] < layout['prompt_row'] and layout['windows'] == 2, layout
-        assert layout['prompt_width'] == columns and layout['transcript_width'] == columns, layout
-        assert editor.panel_text('prompt') == 'Draft λ 世界 across sizes\n'
-    editor.finish()
-
-    editor = RealEditor('sidebar-controls', active=False, startup=True, launcher='configured')
-    work = editor.session_id
-    editor.rpc.request('session.configure', {'session_id': work, 'name': 'work'})
-    editor.create('second')
-    editor.rpc.request('session.create', {'session_id': 'child', 'workspace': str(editor.root), 'parent_session_id': work})
-    (editor.root / 'other').mkdir()
-    editor.rpc.request('session.create', {'session_id': 'remote', 'workspace': str(editor.root / 'other')})
-    editor.submit(work, 'work-task')
-    editor.submit('second', 'second-task')
-    editor.tree_row('+ New chat')
-    editor.keys('r')
-    editor.wait(lambda: 'second [running]' in editor.panel_text('agents') and 'child [idle]' in editor.panel_text('agents'), 'current-directory agents and child are listed')
-    assert 'remote [' not in editor.panel_text('agents'), 'Another directory must not appear'
-    tree = editor.panel_text('agents').splitlines()
-    assert next(i for i,line in enumerate(tree) if 'work [running]' in line) < next(i for i,line in enumerate(tree) if 'child [idle]' in line)
-    editor.tree_row('work [')
-    editor.keys('h')
-    assert 'child [' not in editor.panel_text('agents'), 'Parent folds its actual children'
-    editor.keys('l')
-    editor.wait(lambda: 'child [idle]' in editor.panel_text('agents'), 'Parent expands')
-    editor.tree_row('second [')
-    editor.keys('\r')
-    editor.wait(lambda: 'Session: second' in editor.panel_text(), 'Enter selects second agent')
-    editor.keys('iDraft survives tree hiding\x1b')
-    editor.tree_row('work [')
-    editor.keys('s')
-    editor.wait(lambda: editor.outcome(work)['status'] == 'unanswered', 's stops the highlighted agent')
-    assert editor.outcome(work)['reason'] == 'cancelled'
-    assert editor.outcome('second')['status'] == 'accepted', 'Stopping a highlighted row must preserve another selected run'
-    editor.keys('q')
-    assert editor.panel_text('prompt') == 'Draft survives tree hiding\n'
-    editor.keys(';')
-    editor.wait(lambda: 'second [running]' in editor.panel_text('agents'), 'semicolon reopens the sidebar')
-    editor.tree_row('+ New chat')
-    editor.keys('\r')
-    editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 5, 'Enter on New creates a chat without a name dialog')
-    editor.stays()
-    editor.prompt('qa')
-    editor.keys('no\r')
-    editor.exits()
-    assert editor.outcome('second')['reason'] == 'cancelled'
-    editor.finish()
-
-    editor = RealEditor('separate-tab-chats', active=False, startup=True, launcher='plain')
-    first = editor.session_id
-    editor.chat('\\name First tab')
-    editor.wait(lambda: editor.snapshot(first)['session']['name'] == 'First tab', 'first tab name')
-    editor.command('lua vim.g.first_source = vim.fn.win_findbuf(' + editor.panel() + ')[1]; vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ',0,-1,false,{"Draft in first tab"})')
-    (editor.root / 'other').mkdir()
-    editor.command('tabnew | execute "tcd " .. fnameescape($HARNESS_WORKSPACE .. "/other")')
-    editor.keys(';')
-    editor.wait(lambda: '+ New chat' in editor.panel_text('agents'), 'second directory tree')
-    assert 'First tab [' not in editor.panel_text('agents')
-    editor.keys('n')
-    editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 2, 'new chat in second tab')
-    second = next(item['session_id'] for item in editor.rpc.request('session.list')['items'] if item['session_id'] != first)
-    assert editor.snapshot(second)['session']['workspace'] == str(editor.root / 'other')
-    editor.wait(lambda: 'Session: New chat' in editor.panel_text(), 'second tab selected')
-    editor.chat('\\name Second tab')
-    editor.wait(lambda: editor.snapshot(second)['session']['name'] == 'Second tab', 'second tab name')
-    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ',0,-1,false,{"Draft in second tab"})')
-    editor.command('tabprevious')
-    editor.wait(lambda: 'Session: First tab' in editor.panel_text(), 'first tab selection restored')
-    assert editor.panel_text('prompt') == 'Draft in first tab\n'
-    editor.wait(lambda: 'First tab [' in editor.panel_text('agents'), 'first directory tree restored')
-    assert 'Second tab [' not in editor.panel_text('agents')
-    editor.command('lua vim.fn.writefile({tostring(vim.api.nvim_win_is_valid(vim.g.first_source) and vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(vim.g.first_source)):match("^harness://chat/") ~= nil and vim.api.nvim_buf_is_loaded(vim.fn.bufnr(vim.env.HARNESS_WORKSPACE .. "/one")))}, vim.env.HARNESS_WORKSPACE .. "/source-preserved")')
-    editor.wait(lambda: (editor.root / 'source-preserved').exists(), 'source window preserved')
-    assert (editor.root / 'source-preserved').read_text() == 'true\n'
-    editor.command('tabnext')
-    editor.wait(lambda: 'Session: Second tab' in editor.panel_text(), 'second tab selection restored')
-    assert editor.panel_text('prompt') == 'Draft in second tab\n'
-    editor.finish()
-
-    editor = RealEditor('multiple-sessions')
-    for session_id in ('second', 'other-client-only'):
-        editor.create(session_id)
-        editor.submit(session_id, 'first')
-    editor.command('Harness attach second')
-    editor.wait(lambda: 'Session: second' in editor.panel_text(), 'second attached session')
-    editor.prompt('HarnessQuit')
-    editor.keys('no\r')
-    editor.exits()
-    for session_id in ('work', 'second'): assert editor.outcome(session_id)['reason'] == 'cancelled'
-    assert editor.snapshot('other-client-only')['active_submission_id']
-    editor.finish()
-
-    short = dict(MESSAGE, content=[{'type': 'text', 'text': 'Natural completion. ' * 40}])
-    editor = RealEditor('completion-during-prompt', message=short, rate=200)
-    editor.prompt('qa')
-    editor.wait(lambda: editor.outcome()['status'] == 'done', 'natural completion during native prompt', timeout=10)
-    editor.keys('no\r')
-    editor.exits()
-    assert editor.outcome()['status'] == 'done'
-    editor.finish()
-
-    editor = RealEditor('new-run-during-prompt')
-    editor.prompt('qa')
-    editor.stop()
-    new = editor.submit('work', 'second')
-    start = len(editor.output)
-    editor.keys('yes\r')
-    editor.wait(lambda: new['submission_id'].encode() in editor.output[start:], 'new target needs a new prompt')
-    editor.keys('\x1b')
-    editor.stays()
-    assert editor.snapshot()['active_submission_id'] == new['submission_id']
-    editor.finish()
-
-    editor = RealEditor('connection-failure-during-stop', foreground=True)
-    editor.prompt('qa')
-    os.kill(editor.server.pid, signal.SIGSTOP)
-    editor.keys('no\r')
-    os.kill(editor.server.pid, signal.SIGKILL)
-    editor.server.wait(timeout=5)
-    editor.stays()
-    editor.reconnect_server()
-    editor.finish()
-
-    editor = RealEditor('connection-failure-during-prompt', foreground=True)
-    target = editor.snapshot()['active_submission_id']
-    editor.prompt('qa')
-    os.kill(editor.server.pid, signal.SIGKILL)
-    editor.server.wait(timeout=5)
-    editor.keys('yes\r')
-    editor.stays()
-    editor.reconnect_server()
-    assert editor.snapshot()['active_submission_id'] == target
-    editor.finish()
-
-    editor = RealEditor('escape-during-stop-wait', foreground=True)
-    editor.prompt('qa')
-    children = Path(f'/proc/{editor.server.pid}/task/{editor.server.pid}/children').read_text().split()
-    assert len(children) == 1, children
-    worker = int(children[0])
-    os.kill(worker, signal.SIGSTOP)
-    try:
-        editor.keys('no\r')
-        editor.keys('\x1b')
-        editor.stays()
-    finally:
-        os.kill(worker, signal.SIGCONT)
-    editor.wait(lambda: editor.outcome()['status'] == 'unanswered', 'stop continues after exit cancellation')
-    assert editor.outcome()['reason'] == 'cancelled'
-    editor.stays()
-    editor.finish()
-
-    editor = RealEditor('forced-exit-and-recovery')
-    target = editor.snapshot()['active_submission_id']
-    editor.command('noautocmd qa!')
-    editor.exits()
-    assert editor.snapshot()['active_submission_id'] == target
-    editor.record()
-    os.close(editor.master)
-    editor.launch(editor.env)
-    editor.wait(lambda: 'Session: work' in editor.panel_text(), 'reconnect after forced editor exit')
-    assert editor.snapshot()['active_submission_id'] == target
-    editor.finish()
-
-    editor = RealEditor('neovim-starts-missing-server', active=False, startup=True)
-    editor.stays()
-    assert editor.snapshot(editor.session_id)['state'] == 'idle'
-    editor.command('qa')
-    editor.exits()
-    editor.finish()
-
-    editor = RealEditor('hidden-unsent-draft', active=False)
-    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Retained unsent text"})')
-    editor.source(True)
-    editor.command('Harness')
-    editor.wait(lambda: 'Connection: connected' in editor.panel_text(), 'reopen hidden panels')
-    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(' + editor.panel('prompt') + ', 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/draft.txt")')
-    editor.wait(lambda: (editor.root / 'draft.txt').exists(), 'draft after panel hide')
-    assert (editor.root / 'draft.txt').read_text() == 'Retained unsent text\n'
-    assert editor.snapshot()['active_submission_id'] is None
-    editor.finish()
-
-    editor = RealEditor('explicit-editor-context-and-streaming', active=False)
-    editor.source()
-    editor.command('lua vim.api.nvim_buf_set_lines(0, 0, -1, false, {"unsaved λ 世界", "selection line", "last line"}); vim.g.context_tick = vim.api.nvim_buf_get_changedtick(0)')
-    editor.command('Harness context buffer')
-    editor.source()
-    editor.command('2,2Harness context selection')
-    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Context request"})')
-    editor.command('Harness send')
-    editor.wait(lambda: editor.snapshot()['active_submission_id'], 'actual input admission')
-    entries = editor.snapshot()['entries']
-    assert any('unsaved λ 世界' in item['text'] and 'Explicit selection snapshot: one lines 2-2' in item['text'] for item in entries), entries
-    editor.wait(lambda: editor.snapshot()['assistant']['text'], 'actual streamed assistant text')
-    panel = editor.panel_text()
-    assert 'assistant progress' in panel and 'Context request' in panel
-    assert (editor.root / 'one').read_text() == 'one\n'
-    editor.source()
-    editor.command('lua vim.fn.writefile({vim.json.encode({modified=vim.bo.modified, unchanged=vim.g.context_tick == vim.api.nvim_buf_get_changedtick(0), windows=#vim.api.nvim_list_wins()})}, vim.env.HARNESS_WORKSPACE .. "/buffer.json")')
-    editor.wait(lambda: (editor.root / 'buffer.json').exists(), 'editor responds during model output')
-    observed = json.loads((editor.root / 'buffer.json').read_text())
-    assert observed == {'modified': True, 'unchanged': True, 'windows': 1}, observed
-    editor.finish()
-
-    tool = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import {fauxAssistantMessage,fauxToolCall} from '@earendil-works/pi-ai/providers/faux'; console.log(JSON.stringify(fauxAssistantMessage(fauxToolCall('bash',{command:'echo tool-visible; sleep 1; echo tool-complete'}),{stopReason:'toolUse'})));"], cwd=REPO, text=True))
-    editor = RealEditor('actual-tool-activity', responses=[tool, MESSAGE], rate=1000)
-    editor.wait(lambda: 'bash' in editor.panel_text(), 'actual bash tool name')
-    editor.stays()
-    editor.wait(lambda: 'tool-complete' in editor.panel_text(), 'actual bash result', timeout=10)
-    editor.finish()
-
-    child_command = '"$HARNESS_EXECUTABLE" --socket "$HARNESS_SOCKET" session create --id tool-child --workspace "$PWD" --name "Tool child"'
-    child_tool = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import {fauxAssistantMessage,fauxToolCall} from '@earendil-works/pi-ai/providers/faux'; console.log(JSON.stringify(fauxAssistantMessage(fauxToolCall('bash',{command:process.argv[1]}),{stopReason:'toolUse'})));", child_command], cwd=REPO, text=True))
-    editor = RealEditor('tool-created-child-tree', active=False, startup=True, launcher='plain', responses=[child_tool, MESSAGE], rate=1000)
-    editor.chat('Create a child agent with the command client.')
-    editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 2, 'Bash creates an actual child agent', timeout=15)
-    child = editor.snapshot('tool-child')['session']
-    assert child['parent_session_id'] == editor.session_id and child['workspace'] == str(editor.root), child
-    editor.observe('true')
-    editor.wait(lambda: editor.snapshot()['active_submission_id'] is None, 'parent finishes after creating the child', timeout=15)
-    def tree_lines():
-        return next(window['lines'] for window in editor.windows() if window['name']=='harness://agents')
-    editor.wait(lambda: any('Tool child [idle]' in line for line in tree_lines()), 'tool child appears without refreshing or entering the open tree')
-    lines = tree_lines()
-    parent = next(i for i,line in enumerate(lines) if 'New chat [' in line)
-    nested = next(i for i,line in enumerate(lines) if 'Tool child [' in line)
-    assert nested > parent and lines[nested].startswith('    '), lines
-    editor.tree_row('Tool child [')
-    editor.keys('\r')
-    editor.wait(lambda: 'Session: Tool child' in editor.panel_text(), 'Enter selects tool-created chat')
-    assert not editor.snapshot('tool-child')['entries'], 'Child history is separate'
-    editor.finish()
-
-    editor = RealEditor('lost-receipt-draft-and-duplicate', active=False, drop_receipt=True)
-    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"Original request"})')
-    editor.command('Harness send')
-    editor.wait(lambda: (editor.root / 'dropped.json').exists(), 'durable receipt before injected disconnect')
-    receipt = json.loads((editor.root / 'dropped.json').read_text())
-    editor.wait(lambda: 'Connection closed' in editor.panel_text(), 'visible uncertain receipt')
-    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(' + editor.panel('prompt') + ', 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/draft.txt")')
-    editor.wait(lambda: (editor.root / 'draft.txt').exists(), 'retained draft')
-    assert (editor.root / 'draft.txt').read_text() == 'Original request\n'
-    editor.command('Harness')
-    editor.wait(lambda: 'Connection: connected' in editor.panel_text(), 'reconnect after receipt loss')
-    editor.command('lua vim.api.nvim_buf_set_lines(' + editor.panel('prompt') + ', 0, -1, false, {"New unsent request"})')
-    editor.command('Harness send')
-    editor.pump(.3)
-    stored = editor.rpc.request('submission.get', {'session_id': 'work', 'request_id': receipt['request_id']})
-    assert stored['submission_id'] == receipt['submission_id']
-    inputs = [item for item in editor.snapshot()['entries'] if item['kind'] == 'user']
-    assert len(inputs) == 1 and inputs[0]['text'] == 'Original request', inputs
-    editor.command('lua vim.fn.writefile(vim.api.nvim_buf_get_lines(' + editor.panel('prompt') + ', 0, -1, false), vim.env.HARNESS_WORKSPACE .. "/new-draft.txt")')
-    editor.wait(lambda: (editor.root / 'new-draft.txt').exists(), 'new draft after duplicate retry')
-    assert (editor.root / 'new-draft.txt').read_text() == 'New unsent request\n'
-    editor.finish()
+    first_run_setup_case()
+    narrow_screen_controls_case()
+    sidebar_controls_case()
+    separate_tab_chats_case()
+    multiple_sessions_case()
+    completion_during_prompt_case()
+    new_run_during_prompt_case()
+    connection_failure_during_stop_case()
+    connection_failure_during_prompt_case()
+    escape_during_stop_wait_case()
+    forced_exit_and_recovery_case()
+    neovim_starts_missing_server_case()
+    hidden_unsent_draft_case()
+    explicit_editor_context_and_streaming_case()
+    actual_tool_activity_case()
+    tool_created_child_tree_case()
+    lost_receipt_draft_and_duplicate_case()
 
 def legacy_case(prior):
     root = EVIDENCE / 'legacy-server-upgrade-and-enter'

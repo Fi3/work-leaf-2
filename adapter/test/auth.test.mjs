@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -11,26 +11,18 @@ import { openApplication } from '../pi.mjs';
 import { terminalLogin } from '../auth.mjs';
 import { installOAuthMock, secret as oauthSecret } from '../../tests/fixtures/oauth.mjs';
 import { pty, until } from '../../tests/fixtures/terminal.mjs';
+import { application } from '../../tests/fixtures/application.mjs';
+import { loginModels } from '../../tests/fixtures/login.mjs';
 
 const secret = 'synthetic-key-NOT-FOR-OUTPUT';
 const isKind = kind => error => error.data?.kind === kind;
 const offline = { env: async () => undefined, fileExists: async () => false };
 const visibleText = text => text.replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '');
-async function setup(t, tokens) {
-  const directory = await mkdtemp(join(tmpdir(), 'harness-auth-'));
-  const state = join(directory, 'state'), workspace = join(directory, 'work');
-  await mkdir(state); await mkdir(workspace);
-  const config = { state_dir: state, provider: 'faux', model: 'test', instructions: '' };
-  const previous = process.env.HARNESS_FAUX_TOKENS_PER_SECOND;
-  if (tokens) process.env.HARNESS_FAUX_TOKENS_PER_SECOND = String(tokens);
-  const app = await openApplication(config);
-  if (previous === undefined) delete process.env.HARNESS_FAUX_TOKENS_PER_SECOND;
-  else process.env.HARNESS_FAUX_TOKENS_PER_SECOND = previous;
-  t.after(async () => { await app.close().catch(() => {}); await rm(directory, { recursive: true, force: true }); });
-  let sequence = 0;
-  const call = (method, params = {}) => app.dispatch(method, params, `auth_${++sequence}`, () => {});
-  return { app, call, config, workspace };
+function setup(t, tokens) {
+  return application(t, { prefix: 'harness-auth-', tokens,
+    settings: { provider: 'faux', model: 'test', instructions: '' } });
 }
+
 const login = (app, tty, provider = 'openai', requestId = 'login') =>
   app.dispatch('auth.login', { provider, method: 'api_key', terminal: tty.path }, requestId);
 
@@ -268,12 +260,10 @@ test('native text and choice prompts accept valid blank answers, while secrets n
   assert.equal((await result).cancelled, false);
   assert.deepEqual(await app.credentials.read('amazon-bedrock'), { type: 'api_key' });
   const second = await pty(t), controller = new AbortController(), observed = [];
-  const model = { refresh: async () => ({ errors: new Map() }),
-    getProvider: () => ({ id: 'test', name: 'Test', auth: { apiKey: { name: 'Key', login() {} } } }),
-    async login(_provider, _method, ui) {
-      observed.push(await ui.prompt({ type: 'secret', message: 'Private value' }));
-      observed.push(await ui.prompt({ type: 'text', message: 'Optional value' }));
-    } };
+  const model = loginModels(async (_provider, _method, ui) => {
+    observed.push(await ui.prompt({ type: 'secret', message: 'Private value' }));
+    observed.push(await ui.prompt({ type: 'text', message: 'Optional value' }));
+  }, { method: 'api_key' });
   const history = terminalLogin(model, { provider: 'test', method: 'api_key', terminal: second.path }, controller, 'id');
   await second.wait('Private value'); second.write('deleted-private-text\x15' + secret + '\r');
   await second.wait('Optional value'); second.write('\x1b[A\x19\r');
@@ -285,13 +275,11 @@ test('native text and choice prompts accept valid blank answers, while secrets n
 test('provider prompt cancellation leaves the login alive, and private provider errors cannot escape', async t => {
   const tty = await pty(t), controller = new AbortController(), prompt = new AbortController();
   let ready;
-  const model = { refresh: async () => ({ errors: new Map() }),
-    getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
-    async login(_provider, _method, ui) {
-      ready = ui.prompt({ type: 'manual_code', message: 'Optional callback paste', signal: prompt.signal });
-      await assert.rejects(ready);
-      assert.equal(await ui.prompt({ type: 'text', message: 'After callback' }), '');
-    } };
+  const model = loginModels(async (_provider, _method, ui) => {
+    ready = ui.prompt({ type: 'manual_code', message: 'Optional callback paste', signal: prompt.signal });
+    await assert.rejects(ready);
+    assert.equal(await ui.prompt({ type: 'text', message: 'After callback' }), '');
+  });
   const success = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, controller, 'id');
   await tty.wait('Optional callback paste'); tty.write(secret); await delay(20); prompt.abort();
   await tty.wait('After callback'); tty.write('\x1b[A\r');
@@ -310,18 +298,16 @@ test('empty manual callback input keeps waiting, accepts private input, and pres
   for (const finish of ['manual', 'callback', 'cancel']) {
     const tty = await pty(t), controller = new AbortController(), callback = new AbortController();
     let received = false;
-    const model = { refresh: async () => ({ errors: new Map() }),
-      getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
-      async login(_provider, _method, ui) {
-        const answer = ui.prompt({ type: 'manual_code', message: 'Private callback', signal: callback.signal });
-        if (finish === 'callback') {
-          await assert.rejects(answer);
-          assert.equal(controller.signal.aborted, false, 'A browser callback cancels only its manual prompt');
-        } else {
-          assert.equal(await answer, secret);
-          received = true;
-        }
-      } };
+    const model = loginModels(async (_provider, _method, ui) => {
+      const answer = ui.prompt({ type: 'manual_code', message: 'Private callback', signal: callback.signal });
+      if (finish === 'callback') {
+        await assert.rejects(answer);
+        assert.equal(controller.signal.aborted, false, 'A browser callback cancels only its manual prompt');
+      } else {
+        assert.equal(await answer, secret);
+        received = true;
+      }
+    });
     const pending = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, controller, 'id');
     await tty.wait('Private callback');
     for (const input of ['\r', '   \r']) {
@@ -350,18 +336,14 @@ test('OpenAI waits for the browser without a paste instruction and retains priva
   for (const [provider, finish] of [['openai', 'callback'], ['openai', 'manual'], ['other', 'manual']]) {
     const tty = await pty(t), controller = new AbortController(), callback = new AbortController();
     let complete = false;
-    const model = {
-      refresh: async () => ({ errors: new Map() }),
-      getProvider: () => ({ id: provider, name: 'Test account', auth: { oauth: { name: 'Account', login() {} } } }),
-      async login(_provider, _method, ui) {
-        ui.notify({ type: 'auth_url', url: 'https://example.invalid/sign-in', instructions });
-        const answer = ui.prompt({ type: 'manual_code', message: 'Provider callback instruction',
-          placeholder: 'Provider placeholder', signal: callback.signal });
-        if (finish === 'callback') await assert.rejects(answer, { name: 'AbortError' });
-        else assert.equal(await answer, manual);
-        complete = true;
-      },
-    };
+    const model = loginModels(async (_provider, _method, ui) => {
+      ui.notify({ type: 'auth_url', url: 'https://example.invalid/sign-in', instructions });
+      const answer = ui.prompt({ type: 'manual_code', message: 'Provider callback instruction',
+        placeholder: 'Provider placeholder', signal: callback.signal });
+      if (finish === 'callback') await assert.rejects(answer, { name: 'AbortError' });
+      else assert.equal(await answer, manual);
+      complete = true;
+    }, { provider });
     const pending = terminalLogin(model, { provider, method: 'oauth', terminal: tty.path }, controller, 'id');
     await tty.wait(provider === 'openai' ? waiting : 'Provider callback instruction (Provider placeholder):');
     if (provider === 'openai') {
@@ -404,16 +386,12 @@ test('SSH login copies complete links, explains local browser errors, and keeps 
   const returned = 'http://127.0.0.1:1455/auth/callback?code=' + secret, code = 'TEST-CODE';
   const tty = await pty(t), controller = new AbortController();
   let approve;
-  const model = {
-    refresh: async () => ({ errors: new Map() }),
-    getProvider: () => ({ id: 'openai', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
-    async login(_provider, _method, ui) {
-      ui.notify({ type: 'auth_url', url, instructions: 'A browser should open automatically.' });
-      assert.equal(await ui.prompt({ type: 'manual_code', message: 'Browser callback' }), returned);
-      ui.notify({ type: 'device_code', verificationUri: url, userCode: code });
-      await new Promise(resolve => { approve = resolve; });
-    },
-  };
+  const model = loginModels(async (_provider, _method, ui) => {
+    ui.notify({ type: 'auth_url', url, instructions: 'A browser should open automatically.' });
+    assert.equal(await ui.prompt({ type: 'manual_code', message: 'Browser callback' }), returned);
+    ui.notify({ type: 'device_code', verificationUri: url, userCode: code });
+    await new Promise(resolve => { approve = resolve; });
+  }, { provider: 'openai' });
   const pending = terminalLogin(model, { provider: 'openai', method: 'oauth', terminal: tty.path, remote: true }, controller, 'id');
   await tty.wait('Paste it below and press Enter. If a code is shown, paste that code.');
   assert.match(visibleText(tty.text), /SSH: copy this link to your local browser/);
@@ -437,15 +415,11 @@ test('SSH login copies complete links, explains local browser errors, and keeps 
 test('characters entered while a provider saves credentials do not become visible', async t => {
   const tty = await pty(t);
   let finish, saved = false;
-  const model = {
-    refresh: async () => ({ errors: new Map() }),
-    getProvider: () => ({ id: 'test', name: 'Test', auth: { apiKey: { name: 'Key', login() {} } } }),
-    async login(_provider, _method, ui) {
-      assert.equal(await ui.prompt({ type: 'secret', message: 'Private value' }), secret);
-      saved = true; await new Promise(resolve => { finish = resolve; });
-      assert.equal(await ui.prompt({ type: 'text', message: 'Next value' }), '');
-    },
-  };
+  const model = loginModels(async (_provider, _method, ui) => {
+    assert.equal(await ui.prompt({ type: 'secret', message: 'Private value' }), secret);
+    saved = true; await new Promise(resolve => { finish = resolve; });
+    assert.equal(await ui.prompt({ type: 'text', message: 'Next value' }), '');
+  }, { method: 'api_key' });
   const result = terminalLogin(model, { provider: 'test', method: 'api_key', terminal: tty.path }, new AbortController(), 'id');
   await tty.wait('Private value'); tty.write(secret + '\r');
   await until(() => saved, 'Credential persistence must start');
@@ -473,18 +447,14 @@ test('login link controls preserve private input and copy the complete current U
   const previous = {};
   for (const key of ['DISPLAY', 'WAYLAND_DISPLAY', 'BROWSER']) { previous[key] = process.env[key]; delete process.env[key]; }
   t.after(() => { for (const [key, value] of Object.entries(previous)) if (value !== undefined) process.env[key] = value; });
-  const model = {
-    refresh: async () => ({ errors: new Map() }),
-    getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
-    async login(_provider, _method, ui) {
-      ui.notify({ type: 'auth_url', url });
-      answers.push(await ui.prompt({ type: 'manual_code', message: 'Private callback' }));
-      ui.notify({ type: 'device_code', verificationUri: nextUrl, userCode: code });
-      answers.push(await ui.prompt({ type: 'secret', message: 'Private device value' }));
-      ui.notify({ type: 'auth_url', url });
-      answers.push(await ui.prompt({ type: 'text', message: 'Visible input' }));
-    },
-  };
+  const model = loginModels(async (_provider, _method, ui) => {
+    ui.notify({ type: 'auth_url', url });
+    answers.push(await ui.prompt({ type: 'manual_code', message: 'Private callback' }));
+    ui.notify({ type: 'device_code', verificationUri: nextUrl, userCode: code });
+    answers.push(await ui.prompt({ type: 'secret', message: 'Private device value' }));
+    ui.notify({ type: 'auth_url', url });
+    answers.push(await ui.prompt({ type: 'text', message: 'Visible input' }));
+  });
   const result = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id');
   await tty.wait('Private callback');
   assert.ok(!visibleText(tty.text).includes(url), 'The default terminal view must not expose a long URL to screen-based link detection');
@@ -524,10 +494,7 @@ test('invalid provider links and device codes cannot emit terminal commands or o
   const tty = await pty(t), previous = process.env.DISPLAY;
   delete process.env.DISPLAY;
   t.after(() => { if (previous !== undefined) process.env.DISPLAY = previous; });
-  const model = {
-    refresh: async () => assert.fail('Invalid login must not refresh'),
-    getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
-  };
+  const model = loginModels(undefined, { refresh: async () => assert.fail('Invalid login must not refresh') });
   const events = [
     ...['javascript:alert(1)', 'file:///tmp/key', 'https://name:password@example.invalid', 'https://example.invalid/\x1b]52;c;bad\x07',
       'https://example.invalid/\nnext', 'https://example.invalid/\u0085', 'https://example.invalid/' + 'a'.repeat(8192)]
@@ -550,6 +517,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { terminalLogin } from ${JSON.stringify(new URL('../auth.mjs', import.meta.url).href)};
+import { loginModels } from ${JSON.stringify(new URL('../../tests/fixtures/login.mjs', import.meta.url).href)};
 async function terminal() {
   const process = spawn('python3', ['-u', '-c', 'import os, pty, sys\\nm,s=pty.openpty()\\nprint(os.ttyname(s),flush=True)\\nfor line in sys.stdin: os.write(m,bytes.fromhex(line.strip()))'], { stdio: ['pipe', 'pipe', 'inherit'] });
   const [path] = await once(process.stdout, 'data');
@@ -558,11 +526,7 @@ async function terminal() {
 const first = await terminal();
 let started;
 const ready = new Promise(resolve => { started = resolve; });
-const model = {
-  refresh: async () => ({ errors: new Map() }),
-  getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
-  async login(_provider, _method, ui) { started(); assert.equal(await ui.prompt({ type: 'manual_code', message: 'Private callback' }), 'test-code'); },
-};
+const model = loginModels(async (_provider, _method, ui) => { started(); assert.equal(await ui.prompt({ type: 'manual_code', message: 'Private callback' }), 'test-code'); });
 const pending = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: first.path }, new AbortController(), 'id');
 await ready; first.process.stdin.end(); await once(first.process, 'exit');
 assert.equal(await pending, true);
@@ -604,17 +568,13 @@ appendFileSync(process.env.HARNESS_TEST_BROWSER_LOG, JSON.stringify(process.argv
   const tty = await pty(t), browserUrl = 'https://example.invalid/login?flow=synthetic&state=' + 'abc%2F09'.repeat(200),
     deviceUrl = 'https://example.invalid/device';
   let saved = false;
-  const model = {
-    getProvider: () => ({ id: 'test', name: 'Test', auth: { oauth: { name: 'Account', login() {} } } }),
-    async login(_provider, _method, ui) {
-      ui.notify({ type: 'auth_url', url: browserUrl });
-      assert.equal(await ui.prompt({ type: 'manual_code', message: 'Browser callback' }), secret);
-      ui.notify({ type: 'device_code', verificationUri: deviceUrl, userCode: 'TEST-CODE' });
-      assert.equal(await ui.prompt({ type: 'manual_code', message: 'Device callback' }), secret);
-      saved = true;
-    },
-    async refresh() { assert.ok(saved); return { errors: new Map([['test', Error(oauthSecret)]]) }; },
-  };
+  const model = loginModels(async (_provider, _method, ui) => {
+    ui.notify({ type: 'auth_url', url: browserUrl });
+    assert.equal(await ui.prompt({ type: 'manual_code', message: 'Browser callback' }), secret);
+    ui.notify({ type: 'device_code', verificationUri: deviceUrl, userCode: 'TEST-CODE' });
+    assert.equal(await ui.prompt({ type: 'manual_code', message: 'Device callback' }), secret);
+    saved = true;
+  }, { async refresh() { assert.ok(saved); return { errors: new Map([['test', Error(oauthSecret)]]) }; } });
   const pending = terminalLogin(model, { provider: 'test', method: 'oauth', terminal: tty.path }, new AbortController(), 'id');
   await tty.wait('Browser callback');
   await delay(100);

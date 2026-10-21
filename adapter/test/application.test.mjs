@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, rm, writeFile, readFile, mkdir, symlink } from 'node:fs/promises';
+import { writeFile, readFile, mkdir, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
 import { BACKGROUND_CONTEXT as context } from '@earendil-works/chord/context';
 import { createModels } from '@earendil-works/pi-ai/models';
@@ -12,21 +11,15 @@ import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai/providers/faux';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { openApplication, SessionDoc } from '../pi.mjs';
+import { application } from '../../tests/fixtures/application.mjs';
 
 async function setup(t, messages, tokens = 100000) {
-  const directory = await mkdtemp(join(tmpdir(), 'harness-adapter-'));
-  const state = join(directory, 'state'), workspace = join(directory, 'work'); await mkdir(state); await mkdir(workspace);
-  process.env.HARNESS_FAUX_TOKENS_PER_SECOND = String(tokens);
-  if (messages) { const file = join(directory, 'responses.json'); await writeFile(file, JSON.stringify(messages)); process.env.HARNESS_FAUX_RESPONSES = file; }
-  else delete process.env.HARNESS_FAUX_RESPONSES;
-  const config = { state_dir: state, provider: 'faux', model: 'test', instructions: '' };
-  const app = await openApplication(config);
-  t.after(async () => { await app.close().catch(() => {}); await rm(directory, { recursive: true, force: true }); delete process.env.HARNESS_FAUX_RESPONSES; delete process.env.HARNESS_FAUX_TOKENS_PER_SECOND; });
-  let sequence = 0;
-  const call = (method, params = {}) => app.dispatch(method, params, `test_${++sequence}`, () => {});
-  const create = id => call('session.create', { session_id: id, workspace });
-  return { directory, state, workspace, config, app, call, create };
+  const fixture = await application(t, { prefix: 'harness-adapter-', messages, tokens,
+    settings: { provider: 'faux', model: 'test', instructions: '' } });
+  const create = id => fixture.call('session.create', { session_id: id, workspace: fixture.workspace });
+  return { ...fixture, create };
 }
+
 const input = (session_id, request_id, text = 'Task') => ({ session_id, request_id, text, context: [] });
 const isKind = kind => error => error.data?.kind === kind;
 

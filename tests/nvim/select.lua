@@ -1,3 +1,4 @@
+local feed_keys = dofile(vim.fn.getcwd() .. '/tests/nvim/helpers.lua').keys
 vim.opt.runtimepath:append(vim.fn.getcwd())
 vim.o.columns, vim.o.lines = 100, 30
 vim.o.mouse = ''
@@ -9,7 +10,7 @@ local items = {}
 for index = 1, 47 do items[index] = { name = 'Model ' .. index .. ' λ', id = index } end
 local result, calls, window, buffer
 local function keys(value)
-  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(value, true, false, true), 'xt', false)
+  feed_keys(value)
   vim.wait(10)
 end
 local function open(selected)

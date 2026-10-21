@@ -15,6 +15,7 @@ import { Harness, createRegistry } from '@earendil-works/pi-durable';
 import { CodingTools } from '@earendil-works/pi-durable/tools';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { SessionDoc } from '../adapter/pi.mjs';
+import { readRecords } from './fixtures/records.mjs';
 
 const execute = promisify(execFile), binary = resolve(process.env.HARNESS_BINARY ?? 'target/debug/harness');
 const deadline = async (check, message, timeout = 8000) => {
@@ -32,16 +33,13 @@ const activeProcess = async pid => {
 const signal = (pid, name) => { try { process.kill(pid, name); } catch (error) { if (error.code !== 'ESRCH') throw error; } };
 async function rpc(socketPath) {
   const socket = connect(socketPath); await once(socket, 'connect');
-  let data = '', counter = 0, ended = false; const pending = new Map(), notices = [];
-  socket.setEncoding('utf8'); socket.on('data', part => {
-    data += part; let index;
-    while ((index = data.indexOf('\n')) >= 0) {
-      const record = JSON.parse(data.slice(0, index)); data = data.slice(index + 1);
-      if (record.method) notices.push(record); else { const waiter = pending.get(record.id); pending.delete(record.id); waiter?.resolve(record); }
-    }
-  });
+  let counter = 0, ended = false; const pending = new Map();
   const close = () => { ended = true; for (const item of pending.values()) item.reject(Error('Disconnected')); pending.clear(); };
-  socket.on('close', close); socket.on('error', close);
+  readRecords(socket, record => {
+    if (record.method) return;
+    const waiter = pending.get(record.id); pending.delete(record.id); waiter?.resolve(record);
+  }, close);
+  socket.on('close', close);
   function raw(method, params = {}, timeout = 8000) {
     if (ended) return Promise.reject(Error('Disconnected'));
     const id = `r${++counter}`;
@@ -53,7 +51,7 @@ async function rpc(socketPath) {
   }
   async function call(method, params, timeout) { const record = await raw(method, params, timeout); if (record.error) throw Object.assign(Error(record.error.message), record.error); return record.result; }
   await call('system.hello', { api_version: 1 });
-  return { socket, raw, call, notices, get ended() { return ended; } };
+  return { socket, raw, call, get ended() { return ended; } };
 }
 async function system(t, messages, tokens = 100000) {
   const directory = await mkdtemp(join(tmpdir(), 'harness-recovery-'));

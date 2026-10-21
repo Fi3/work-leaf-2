@@ -127,11 +127,6 @@ function M.new(options, actions)
     end
   end
 
-  function self.hide_prompt()
-    local host = hosts[vim.api.nvim_get_current_tabpage()]
-    if host then host.closed = true; change_windows(function() close_prompt(host) end) end
-  end
-
   local function paired(layout, main, prompt)
     if layout[1] == 'leaf' then return false end
     for index, child in ipairs(layout[2]) do
@@ -325,66 +320,7 @@ function M.new(options, actions)
 
   function self.render(connection, snapshot, history, attachments, notice)
     if not self.transcript or not vim.api.nvim_buf_is_valid(self.transcript) then return end
-    local lines, highlights = { 'Connection: ' .. connection }, {}
-    local function text(value)
-      vim.list_extend(lines, vim.split(value or '', '\n', { plain = true }))
-    end
-    local function entry(item, label)
-      if item.kind == 'assistant' and not item.truncated and not item.text:find('%S') then return end
-      if item.kind == 'error' and snapshot and snapshot.error ~= vim.NIL
-        and item == snapshot.entries[#snapshot.entries] and item.text == snapshot.error.message then return end
-      lines[#lines + 1] = ''
-      local labels = { user = 'You', assistant = 'Agent', tool = 'Tool result', compaction = 'Earlier conversation summary', system = 'Notice', error = 'Run failed' }
-      lines[#lines + 1] = '[' .. item.kind .. '] ' .. (label or labels[item.kind] or item.kind)
-      highlights[#highlights + 1] = { row = #lines, group = item.kind == 'error' and 'DiagnosticError' or item.kind == 'user' and 'Title' or 'Special' }
-      text(item.text)
-      if item.truncated then lines[#lines + 1] = '[Text truncated. Use the command client to read the complete entry.]' end
-    end
-    if snapshot then
-      lines[#lines + 1] = 'Session: ' .. (type(snapshot.session.name) == 'string' and snapshot.session.name or snapshot.session.session_id)
-      lines[#lines + 1] = 'State: ' .. (connection == 'connected' and snapshot.state or 'unknown')
-      if type(snapshot.session.provider) == 'string' and type(snapshot.session.model) == 'string' then
-        lines[#lines + 1] = snapshot.session.provider == 'faux' and 'Local demo' or snapshot.session.provider .. ' / ' .. snapshot.session.model
-      elseif #snapshot.entries == 0 then
-        lines[#lines + 1] = 'Choose a model: \\model · Connect an account: \\login'
-      end
-      local seen = {}
-      for _, item in ipairs(snapshot.entries) do seen[item.entry_id] = true end
-      for _, item in ipairs(history or {}) do if not seen[item.entry_id] then entry(item) end end
-      for _, item in ipairs(snapshot.entries) do entry(item) end
-      if snapshot.state ~= 'idle' and snapshot.assistant.text ~= '' then
-        lines[#lines + 1] = ''
-        lines[#lines + 1] = '[assistant progress]'
-        text(snapshot.assistant.text)
-        if snapshot.assistant.truncated then lines[#lines + 1] = '[Text truncated.]' end
-      end
-      for _, tool in ipairs(snapshot.tools) do
-        lines[#lines + 1] = '[' .. tool.name .. ': ' .. tool.status .. ']'
-        text(tool.text)
-        if tool.truncated then lines[#lines + 1] = '[Tool output truncated.]' end
-      end
-      if snapshot.activity ~= vim.NIL then
-        lines[#lines + 1] = snapshot.activity.compaction and 'Summarizing earlier messages...' or 'Retrying the model request...'
-      end
-      if snapshot.usage ~= vim.NIL and snapshot.usage.models then
-        local tokens = 0
-        for _, model in pairs(snapshot.usage.models) do tokens = tokens + (model.usage and model.usage.totalTokens or 0) end
-        if tokens > 0 then lines[#lines + 1] = 'Tokens used: ' .. tokens end
-      end
-      if snapshot.truncated or snapshot.history_cursor ~= vim.NIL then lines[#lines + 1] = '[Older text available: :Harness history]' end
-    end
-    if attachments and #attachments > 0 then
-      lines[#lines + 1] = ''
-      for _, item in ipairs(attachments) do
-        local selection = item.kind == 'selection' and '; complete lines ' .. item.start_line .. '-' .. item.end_line or ''
-        lines[#lines + 1] = 'Context snapshot: ' .. item.path .. ' (' .. item.kind .. selection .. ')'
-      end
-    end
-    if notice and notice ~= '' then lines[#lines + 1] = ''; text(notice) end
-    if snapshot and snapshot.error ~= vim.NIL then
-      entry({ kind = 'error', text = snapshot.error.message },
-        snapshot.error.kind == 'provider_error' and 'Run failed' or 'Cannot run')
-    end
+    local lines, highlights = require('harness.transcript').format(connection, snapshot, history, attachments, notice)
     local positions, old_count = {}, vim.api.nvim_buf_line_count(self.transcript)
     for _, win in ipairs(vim.fn.win_findbuf(self.transcript)) do
       positions[win] = {
@@ -397,10 +333,6 @@ function M.new(options, actions)
     vim.bo[self.transcript].modifiable, vim.bo[self.transcript].modified = false, false
     vim.bo[self.transcript].readonly = true
     vim.api.nvim_buf_clear_namespace(self.transcript, namespace, 0, -1)
-    local groups = { connection == 'connected' and 'DiagnosticOk' or 'DiagnosticWarn', 'Title', 'Comment' }
-    for row = 1, math.min(#lines, snapshot and 3 or 1) do
-      vim.api.nvim_buf_set_extmark(self.transcript, namespace, row - 1, 0, { end_row = row, hl_group = groups[row], hl_eol = true })
-    end
     for _, mark in ipairs(highlights) do
       vim.api.nvim_buf_set_extmark(self.transcript, namespace, mark.row - 1, 0, { end_row = mark.row, hl_group = mark.group, hl_eol = true })
     end

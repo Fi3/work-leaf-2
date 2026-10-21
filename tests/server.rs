@@ -483,19 +483,46 @@ fn pending_wait_does_not_block_stop_and_lost_watch_is_released() {
 }
 
 #[test]
-fn framing_validation_and_connection_limits_are_enforced() {
+fn invalid_records_preserve_error_codes_and_response_ids() {
     let mut server = Server::new();
     server.serve("");
     let mut client = raw(&server);
     client.get_mut().write_all(b"{bad}\n").unwrap();
-    assert_eq!(read(&mut client)["error"]["code"], -32700);
-    request(
-        &mut client,
-        "bad",
-        "session.get",
-        json!({"session_id":"work","extra":true}),
-    );
-    assert_eq!(read(&mut client)["error"]["code"], -32602);
+    let malformed = read(&mut client);
+    assert_eq!(malformed["id"], Value::Null);
+    assert_eq!(malformed["error"]["code"], -32700);
+    for (record, id, code) in [
+        (json!([]), Value::Null, -32600),
+        (json!({"id": 7}), Value::Null, -32600),
+        (json!({"id": ""}), Value::Null, -32600),
+        (json!({"id": "x".repeat(129)}), Value::Null, -32600),
+        (json!({"id": "λ/世界"}), json!("λ/世界"), -32600),
+        (
+            json!({"jsonrpc":"2.0","id":"unknown","method":"unknown"}),
+            json!("unknown"),
+            -32601,
+        ),
+        (
+            json!({"jsonrpc":"2.0","id":"bad","method":"session.get","params":{"session_id":"work","extra":true}}),
+            json!("bad"),
+            -32602,
+        ),
+    ] {
+        client
+            .get_mut()
+            .write_all(&protocol::encode(&record).unwrap())
+            .unwrap();
+        let error = read(&mut client);
+        assert_eq!(error["id"], id);
+        assert_eq!(error["error"]["code"], code);
+    }
+}
+
+#[test]
+fn framing_validation_and_connection_limits_are_enforced() {
+    let mut server = Server::new();
+    server.serve("");
+    let mut client = raw(&server);
     request(
         &mut client,
         "version",
