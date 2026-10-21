@@ -10,12 +10,15 @@ local pending_attachment
 local message
 local render, send, activate, model, actions
 
-local function report(message, target)
-  local id = target or selected
+local function report(message, id)
   if id and sessions[id] then sessions[id].notice = message end
   if sidebar and not selected then sidebar.message(message) end
   if render and view then render() end
   vim.notify('Harness: ' .. message, vim.log.levels.ERROR)
+end
+
+local function report_current(message)
+  report(message, selected)
 end
 
 render = function()
@@ -118,12 +121,11 @@ local function initialize()
     watch_sequence = event.sequence
     update(event.snapshot)
   end)
-  setup = require('harness.setup').new(transport, report)
-  require('harness.exit').install(attached, transport, report)
+  setup = require('harness.setup').new(transport, report_current)
+  require('harness.exit').install(attached, transport, report_current)
 end
 
-local function rpc(method, params, callback)
-  local id = selected
+local function rpc(id, method, params, callback)
   transport.request(method, params, function(value, err)
     if err then report(err, id); return end
     callback(value)
@@ -153,7 +155,7 @@ local function attach(id, callback, focus)
   if focus then view.open(id, source_window) end
   if pending_attachment and pending_attachment.id == id then
     if callback then
-      if #pending_attachment.callbacks >= 32 then report('Too many pending commands.'); return end
+      if #pending_attachment.callbacks >= 32 then report('Too many pending commands.', id); return end
       pending_attachment.callbacks[#pending_attachment.callbacks + 1] = callback
     end
     return
@@ -204,8 +206,8 @@ local function workspace()
   return vim.uv.fs_realpath(vim.fn.getcwd()) or vim.fn.getcwd()
 end
 
-local function notice(text)
-  if selected then sessions[selected].notice = text else message = text end
+local function notice(text, id)
+  if id then sessions[id].notice = text else message = text end
   render()
 end
 
@@ -250,22 +252,23 @@ local function provider_label(item)
     .. ' [' .. status .. ']'
 end
 
-local function at_origin(id, window, buffer)
-  return selected == id and vim.api.nvim_get_current_win() == window and vim.api.nvim_get_current_buf() == buffer
+local function at_origin(request)
+  return selected == request.session and vim.api.nvim_get_current_tabpage() == request.tab
+    and vim.api.nvim_get_current_win() == request.window and vim.api.nvim_get_current_buf() == request.buffer
 end
 
-local function resume_prompt(id, window, buffer)
-  if at_origin(id, window, buffer) and buffer == view.prompt then view.focus() end
+local function resume_prompt(request)
+  if at_origin(request) and request.buffer == view.prompt then view.focus() end
 end
 
-local function authenticate(argument)
-  local id, origin, buffer = selected, vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+local function authenticate(request, argument)
+  local id = request.session
   local function current()
-    return at_origin(id, origin, buffer)
+    return at_origin(request)
   end
   transport.connect(function(_, failure)
-    if failure then report(failure); return end
-    rpc('configuration.get', { session_id = id }, function(value)
+    if failure then report(failure, id); return end
+    rpc(id, 'configuration.get', { session_id = id }, function(value)
       if not current() then return end
       local items, chosen, current_index = {}, nil, nil
       for _, provider in ipairs(value.providers) do
@@ -277,22 +280,22 @@ local function authenticate(argument)
       end
       local function login(provider)
         if not current() then return end
-        if not provider then resume_prompt(id, origin, buffer); return end
+        if not provider then resume_prompt(request); return end
         local function method(method)
           if not current() then return end
-          if not method then resume_prompt(id, origin, buffer); return end
+          if not method then resume_prompt(request); return end
           setup.open(provider, method, function(focused, succeeded)
             if not succeeded then
-              if focused then resume_prompt(id, origin, buffer) end
+              if focused then resume_prompt(request) end
               return
             end
-            rpc('configuration.get', { session_id = id }, function(status)
+            rpc(id, 'configuration.get', { session_id = id }, function(status)
               if id and sessions[id] then
                 sessions[id].notice = status.message
                 if selected == id then
                   render()
                   if focused and current() then
-                    if type(status.model) ~= 'string' then model('', provider.id) else resume_prompt(id, origin, buffer) end
+                    if type(status.model) ~= 'string' then model(request, '', provider.id) else resume_prompt(request) end
                   end
                 end
               else vim.notify('Harness: ' .. provider.name .. ' connected. Open a chat and use \\model.') end
@@ -306,19 +309,20 @@ local function authenticate(argument)
       end
       if argument and argument ~= '' then
         if chosen then login(chosen)
-        else notice('Choose a provider with \\login. Do not put a key in the command.'); view.focus() end
+        else notice('Choose a provider with \\login. Do not put a key in the command.', id); view.focus() end
       else require('harness.select').select(items, { prompt = 'Connect an account or API key', selected = current_index,
         format_item = provider_label }, login) end
     end)
   end)
 end
 
-local function choose(always, directory)
+local function choose(request, always)
+  local directory = request.directory
   local items = {}
   local function page(cursor)
     local params = { limit = 100, workspace = directory }
     if cursor then params.cursor = cursor end
-    rpc('session.list', params, function(result)
+    rpc(request.session, 'session.list', params, function(result)
       vim.list_extend(items, result.items)
       if result.next_cursor ~= vim.NIL then page(result.next_cursor); return end
       if #items == 0 then create(directory); return end
@@ -343,7 +347,7 @@ local function submit(session)
       report(err, envelope.session_id)
       return
     end
-    if receipt.submission_id == nil then report('Missing submission receipt.'); return end
+    if receipt.submission_id == nil then report('Missing submission receipt.', envelope.session_id); return end
     session.pending, session.notice = nil, nil
     if view.draft(envelope.session_id) == envelope.text then view.set_draft('', envelope.session_id) end
     for _ = 1, #envelope.context do table.remove(session.context, 1) end
@@ -351,13 +355,12 @@ local function submit(session)
   end)
 end
 
-send = function(captured, target)
-  local id = target or selected
+send = function(text, id)
   local session = sessions[id]
   if selected == id then view.focus() end
   if session.pending then submit(session); return end
   if session.checking then return end
-  local text, context = captured or view.draft(), vim.deepcopy(session.context)
+  local context = vim.deepcopy(session.context)
   if text == '' and #context == 0 then return end
   local bytes = #text
   for _, item in ipairs(context) do bytes = bytes + #item.text end
@@ -375,13 +378,13 @@ send = function(captured, target)
   end)
 end
 
-local function history()
-  local session = sessions[selected]
+local function history(id)
+  local session = sessions[id]
   if session.history_request then return end
   if not session.cursor or session.cursor == vim.NIL then
     vim.notify('Harness: No older transcript entries.'); return
   end
-  local id, cursor, before = selected, session.cursor, session.history_before
+  local cursor, before = session.cursor, session.history_before
   local request = {}
   session.history_request = request
   session.history_loaded = true
@@ -400,10 +403,10 @@ local function history()
   end)
 end
 
-local function context(command, buffer)
+local function context(id, command, buffer)
   if command.fargs[2] ~= 'buffer' and command.fargs[2] ~= 'selection' then error('Use :Harness context buffer or selection.') end
   if not buffer then error('Select a source file buffer first.') end
-  local session = sessions[selected]
+  local session = sessions[id]
   if #session.context >= 16 then error('At most 16 context attachments are permitted.') end
   local first, last
   if command.fargs[2] == 'selection' then
@@ -414,12 +417,11 @@ local function context(command, buffer)
   render()
 end
 
-local function settings(values, target)
-  local id = target or selected
-  local origin, buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+local function settings(request, values)
+  local id = request.session
   local session = sessions[id]
   values.session_id = id
-  rpc('session.configure', values, function()
+  rpc(id, 'session.configure', values, function()
     session.notice = 'Settings saved.'
     if values.model then
       transport.request('configuration.get', { session_id = id }, function(status, err)
@@ -427,22 +429,21 @@ local function settings(values, target)
       end)
     end
     if sidebar then sidebar.refresh() end
-    if selected == id then attach(id, function() render(); resume_prompt(id, origin, buffer) end) end
+    if selected == id then attach(id, function() render(); resume_prompt(request) end) end
   end)
 end
 
-model = function(argument, provider)
-  local id = selected
-  local origin, buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+model = function(request, argument, provider)
+  local id = request.session
   if argument ~= '' then
     local selected_provider, selected_model = argument:match('^([^/]+)/(.+)$')
     if argument == 'demo' then selected_provider, selected_model = 'faux', 'test' end
-    if not selected_model then notice('Use \\model provider/model, or \\model to choose.'); view.focus(); return end
-    settings({ provider = selected_provider, model = selected_model })
+    if not selected_model then notice('Use \\model provider/model, or \\model to choose.', id); view.focus(); return end
+    settings(request, { provider = selected_provider, model = selected_model })
     return
   end
-  rpc('configuration.get', { session_id = id }, function(value)
-    if not at_origin(id, origin, buffer) then return end
+  rpc(id, 'configuration.get', { session_id = id }, function(value)
+    if not at_origin(request) then return end
     local items, providers = {}, {}
     for _, item in ipairs(value.providers) do providers[item.id] = item end
     for _, item in ipairs(value.models) do
@@ -459,59 +460,64 @@ model = function(argument, provider)
     end
     require('harness.select').select(items, { prompt = 'Model for this chat', selected = current,
       format_item = function(item) return item.label end }, function(item)
-      if not at_origin(id, origin, buffer) then return end
-      if item then settings({ provider = item.provider, model = item.model }, id)
-      else resume_prompt(id, origin, buffer) end
+      if not at_origin(request) then return end
+      if item then settings(request, { provider = item.provider, model = item.model })
+      else resume_prompt(request) end
     end)
   end)
 end
 
-local function chat_command(name, argument, captured)
-  local session = sessions[selected]
-  local id = selected
-  local origin, buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
-  if view.draft() == captured then view.set_draft(session.pending and session.pending.text or '') end
+local function stop(request)
+  if not request.stop_target then error('Session state is unknown. Use :Harness to reconnect.') end
+  if request.stop_target == vim.NIL then vim.notify('Harness: No active run.'); return end
+  rpc(request.session, 'run.stop', { session_id = request.session, submission_id = request.stop_target }, function() end)
+end
+
+local function chat_command(request)
+  local id, name, argument = request.session, request.chat_name, request.chat_argument
+  local session = sessions[id]
+  if view.draft(id) == request.text then view.set_draft(session.pending and session.pending.text or '', id) end
   session.notice = nil
-  if name == 'actions' then actions()
-  elseif name == 'help' then notice(require('harness.commands').help()); view.focus()
-  elseif name == 'model' then model(argument)
+  if name == 'actions' then actions(request)
+  elseif name == 'help' then notice(require('harness.commands').help(), id); view.focus()
+  elseif name == 'model' then model(request, argument)
   elseif name == 'provider' then
-    rpc('configuration.get', { session_id = id }, function(value)
-      if not at_origin(id, origin, buffer) then return end
+    rpc(id, 'configuration.get', { session_id = id }, function(value)
+      if not at_origin(request) then return end
       if argument == 'demo' then argument = 'faux' end
       for _, provider in ipairs(value.providers) do
-        if provider.id == argument then model('', provider.id); return end
+        if provider.id == argument then model(request, '', provider.id); return end
       end
-      if argument ~= '' then notice('Choose a provider with \\provider.'); view.focus(); return end
+      if argument ~= '' then notice('Choose a provider with \\provider.', id); view.focus(); return end
       require('harness.select').select(value.providers, { prompt = 'Provider for this chat', format_item = provider_label }, function(item)
-        if not at_origin(id, origin, buffer) then return end
-        if item then model('', item.id) else resume_prompt(id, origin, buffer) end
+        if not at_origin(request) then return end
+        if item then model(request, '', item.id) else resume_prompt(request) end
       end)
     end)
   elseif name == 'login' or name == 'auth' then
-    authenticate(argument)
+    authenticate(request, argument)
   elseif name == 'name' then
-    if argument == '' then notice('Use \\name followed by a name.'); view.focus() else settings({ name = argument }) end
-  elseif name == 'instructions' then settings({ instructions = argument })
-  elseif name == 'new' or name == 'child' then create(session.snapshot.session.workspace, argument, name == 'child' and selected or nil)
+    if argument == '' then notice('Use \\name followed by a name.', id); view.focus() else settings(request, { name = argument }) end
+  elseif name == 'instructions' then settings(request, { instructions = argument })
+  elseif name == 'new' or name == 'child' then create(session.snapshot.session.workspace, argument, name == 'child' and id or nil)
   elseif name == 'context' then
     local command = { fargs = { 'context', argument == '' and 'buffer' or argument }, range = 0 }
-    if argument == 'selection' and source and vim.api.nvim_buf_is_valid(source) then
-      command.line1, command.line2 = vim.api.nvim_buf_get_mark(source, '<')[1], vim.api.nvim_buf_get_mark(source, '>')[1]
+    if argument == 'selection' and request.selection then
+      command.line1, command.line2 = request.selection[1], request.selection[2]
       command.range = command.line1 > 0 and command.line2 >= command.line1 and 2 or 0
     end
-    context(command, source); notice('Source context attached.'); view.focus()
-  elseif name == 'stop' or name == 'history' then M.command({ fargs = { name } }); view.focus()
+    context(id, command, request.source); notice('Source context attached.', id); view.focus()
+  elseif name == 'stop' then stop(request); view.focus()
+  elseif name == 'history' then history(id); view.focus()
   elseif name == 'status' then
-    rpc('configuration.get', { session_id = id }, function(value)
+    rpc(id, 'configuration.get', { session_id = id }, function(value)
       session.notice = value.message
-      if selected == id then render(); resume_prompt(id, origin, buffer) end
+      if selected == id then render(); resume_prompt(request) end
     end)
-  else notice('Unknown command. Use \\help or press Tab after \\.'); view.focus() end
+  else notice('Unknown command. Use \\help or press Tab after \\.', id); view.focus() end
 end
 
-actions = function()
-  local id, origin, buffer = selected, vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+actions = function(request)
   local items = {
     { 'Connect an account', 'login' },
     { 'Choose a model', 'model' },
@@ -525,10 +531,15 @@ actions = function()
   }
   require('harness.select').select(items, { prompt = 'Chat actions',
     format_item = function(item) return item[1] end }, function(item)
-    if not at_origin(id, origin, buffer) then return end
-    if not item then resume_prompt(id, origin, buffer); return end
-    local ok, err = pcall(chat_command, item[2], item[3] or '')
-    if not ok then report(tostring(err)); resume_prompt(id, origin, buffer) end
+    if not at_origin(request) then return end
+    if not item then resume_prompt(request); return end
+    local chosen = vim.tbl_extend('force', request, { chat_name = item[2], chat_argument = item[3] or '' })
+    chosen.text = nil
+    if chosen.chat_name == 'stop' then
+      chosen.stop_target = watch and connection == 'connected' and sessions[request.session].snapshot.active_submission_id or nil
+    end
+    local ok, err = pcall(chat_command, chosen)
+    if not ok then report(tostring(err), request.session); resume_prompt(request) end
   end)
 end
 
@@ -548,18 +559,18 @@ activate = function(id, buf, win)
   end)
 end
 
-local function upgrade()
+local function upgrade(request)
   transport.disconnect()
   vim.system(transport.arguments('upgrade'), { text = true, timeout = 20000 }, function(result)
     vim.schedule(function()
-      if result.code ~= 0 then report((result.stderr or ''):gsub('%s+$', '')); return end
+      if result.code ~= 0 then report((result.stderr or ''):gsub('%s+$', ''), request.session); return end
       transport.connect(function(_, err)
-        if err then report(err); return end
+        if err then report(err, request.session); return end
         if selected then
           if sessions[selected].creation then admit_chat(selected) else attach(selected) end
         end
         if sidebar then sidebar.refresh(workspace()) end
-        notice('Server upgraded. Your chats are available. Use \\login if a provider key is needed.')
+        notice('Server upgraded. Your chats are available. Use \\login if a provider key is needed.', selected)
       end)
     end)
   end)
@@ -591,7 +602,7 @@ function M.sidebar()
   sidebar = sidebar or require('harness.sidebar').new(transport, {
     select = function(id) M.command({ fargs = { 'attach', id } }) end,
     create = function(directory) create(directory) end,
-    report = report,
+    report = report_current,
   })
   if selected then sidebar.update(sessions[selected].snapshot) end
   local previous_source, previous_window = source, source_window
@@ -606,11 +617,17 @@ local function capture_command(command)
     source, source_window = buf, vim.api.nvim_get_current_win()
   end
   local request = {
-    command = command, action = command.fargs[1], source = source, session = selected,
+    command = command, action = command.fargs[1], source = source, source_window = source_window, session = selected,
     tab = vim.api.nvim_get_current_tabpage(), window = vim.api.nvim_get_current_win(), buffer = buf,
   }
+  if source and vim.api.nvim_buf_is_valid(source) then
+    request.selection = { vim.api.nvim_buf_get_mark(source, '<')[1], vim.api.nvim_buf_get_mark(source, '>')[1] }
+  end
+  if selected and watch and connection == 'connected' then
+    request.stop_target = sessions[selected].snapshot.active_submission_id
+  end
   if request.action == 'send' then
-    request.text = view.draft()
+    request.text = view.draft(request.session)
     request.chat_name, request.chat_argument = require('harness.commands').parse(request.text)
   end
   return request
@@ -618,9 +635,9 @@ end
 
 local function immediate_command(request)
   local action, command = request.action, request.command
-  if request.chat_name == 'upgrade' then view.set_draft(''); upgrade()
-  elseif action == 'upgrade' then upgrade()
-  elseif action == 'setup' or action == 'login' then authenticate(command.fargs[2])
+  if request.chat_name == 'upgrade' then view.set_draft('', request.session); upgrade(request)
+  elseif action == 'upgrade' then upgrade(request)
+  elseif action == 'setup' or action == 'login' then authenticate(request, command.fargs[2])
   elseif action == 'new' then create(workspace(), command.fargs[2])
   elseif action == 'status' then
     local state = selected and watch and connection == 'connected' and sessions[selected].snapshot.state or 'unknown'
@@ -633,12 +650,9 @@ local function prepare_command(request)
   local action = request.action
   if action and not vim.tbl_contains({ 'sessions', 'attach', 'send', 'stop', 'history', 'context', 'actions' }, action) then error('Unknown Harness command.') end
   if action == 'attach' and not request.command.fargs[2] then error('Supply a session identifier.') end
-  if action == 'stop' then
-    if connection ~= 'connected' or not watch then error('Session state is unknown. Use :Harness to reconnect.') end
-    request.stop_target = sessions[request.session].snapshot.active_submission_id
-  end
+  if action == 'stop' and not request.stop_target then error('Session state is unknown. Use :Harness to reconnect.') end
   request.directory = (not request.session or action == 'sessions') and workspace() or nil
-  if request.session and not action then view.open(request.session, source_window) end
+  if request.session and not action then view.open(request.session, request.source_window) end
   render()
 end
 
@@ -649,49 +663,24 @@ local function queue_creation(id, field, value)
   admit_chat(id)
 end
 
-local function send_captured(request)
-  if request.action ~= 'send' or not request.session or request.chat_name then return false end
-  local id, text = request.session, request.text
-  local session = sessions[id]
-  if text == '' and #session.context == 0 and not session.pending then return true end
-  if session.creation then queue_creation(id, 'after_send', text)
-  elseif selected == id and not watch then attach(id, function() send(text, id) end)
-  else send(text, id) end
-  return true
-end
-
 local function execute_command(request)
   local action, command = request.action, request.command
+  if selected ~= request.session then return end
   if (action == 'actions' or request.chat_name and vim.tbl_contains({ 'actions', 'model', 'provider', 'login', 'auth' }, request.chat_name))
-    and (vim.api.nvim_get_current_win() ~= request.window or vim.api.nvim_get_current_buf() ~= request.buffer) then return end
-  if action == 'sessions' then choose(true, request.directory)
+    and not at_origin(request) then return end
+  if action == 'sessions' then choose(request, true)
   elseif action == 'attach' then attach(command.fargs[2], nil, true)
-  elseif not selected then
+  elseif not request.session then
     if action then error('Open or attach a session first.') end
-    choose(false, request.directory)
-  elseif not action then attach(selected)
-  elseif action == 'actions' then actions()
+    choose(request, false)
+  elseif not action then attach(request.session)
+  elseif action == 'actions' then actions(request)
   elseif action == 'send' then
-    if request.chat_name then chat_command(request.chat_name, request.chat_argument, request.text) else send(request.text) end
-  elseif action == 'history' then history()
-  elseif action == 'context' then context(command, request.source)
-  elseif action == 'stop' then
-    if request.stop_target == vim.NIL then vim.notify('Harness: No active run.'); return end
-    rpc('run.stop', { session_id = request.session, submission_id = request.stop_target }, function() end)
+    if request.chat_name then chat_command(request) else send(request.text, request.session) end
+  elseif action == 'history' then history(request.session)
+  elseif action == 'context' then context(request.session, command, request.source)
+  elseif action == 'stop' then stop(request)
   end
-end
-
-local function continue_command(request)
-  if send_captured(request) then return end
-  if request.tab ~= vim.api.nvim_get_current_tabpage() or selected ~= request.session then return end
-  local function execute()
-    local ok, err = pcall(execute_command, request)
-    if not ok then report(tostring(err)) end
-  end
-  if selected and sessions[selected].creation then queue_creation(selected, 'after_create', execute)
-  elseif selected and not watch and request.action and request.action ~= 'sessions' and request.action ~= 'attach' then
-    attach(selected, execute)
-  else execute() end
 end
 
 local function start_command(command)
@@ -701,14 +690,16 @@ local function start_command(command)
   if immediate_command(request) then return end
   prepare_command(request)
   transport.connect(function(_, failure)
-    if failure then report(failure); return end
-    continue_command(request)
+    if failure then report(failure, request.session); return end
+    require('harness.commands').resume(request, {
+      session = sessions[request.session], selected = selected, tab = vim.api.nvim_get_current_tabpage(), watching = watch ~= nil,
+    }, { send = send, queue = queue_creation, attach = attach, execute = execute_command, report = report })
   end)
 end
 
 function M.command(command)
   local ok, err = pcall(start_command, command)
-  if not ok then report(tostring(err)) end
+  if not ok then report_current(tostring(err)) end
 end
 
 vim.api.nvim_create_autocmd('TabLeave', { callback = function()

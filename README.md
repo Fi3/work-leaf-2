@@ -768,6 +768,9 @@ block commands, and queued model changes cannot be overtaken by a task. They als
 check native command completion, private key entry callbacks, and reconnection.
 They check a queued settings command after switching during creation, and clear
 upgrade errors when autostart is disabled.
+Queued context commands retain their original source buffer and selected lines.
+Submission receipts clear only the submitted chat draft and preserve later edits.
+Login checks reject delayed callbacks after closure or a change to the login link.
 Rust setup tests use actual terminal devices and Pi. They check hidden input,
 restored terminal flags, private storage, retained settings, saved accounts
 after restart, write failures, and login while work remains active.
