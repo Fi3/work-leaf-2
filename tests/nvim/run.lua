@@ -174,15 +174,21 @@ vim.cmd('Harness send')
 wait(function() return #calls('input.submit') == 5 end, 'Retry after worker unavailability')
 check(vim.deep_equal(uncertain, calls('input.submit')[5].params), 'not_ready retains the original envelope')
 check(vim.tbl_count(state().receipts) == 3, 'Unavailable retry creates no replacement work')
-local current_state = state()
 local id = uncertain.session_id
-local displayed_target = current_state.sessions[id].active
-current_state.sessions[id].active = 'newer-undisplayed-run'
-save(current_state)
-vim.cmd('Harness stop')
-wait(function() return #calls('run.stop') == 3 end, 'Stop displayed target')
-check(calls('run.stop')[3].params.submission_id == displayed_target, 'Stop must target the displayed submission')
-check(state().sessions[id].active == 'newer-undisplayed-run', 'Stop must not replace the displayed target with newer work')
+for index, command in ipairs({ 'Harness stop', '/stop' }) do
+  vim.cmd('Harness')
+  wait(function() return text(named('transcript')):match('^Connection: connected\n') end, 'Refresh the displayed run before stopping it')
+  local current_state = state()
+  local displayed_target, newer_target = current_state.sessions[id].active, 'newer-undisplayed-run-' .. index
+  current_state.sessions[id].active = newer_target
+  save(current_state)
+  local stop_count = #calls('run.stop')
+  if command == '/stop' then chat(command) else vim.cmd(command) end
+  wait(function() return #calls('run.stop') == stop_count + 1 end, 'Stop displayed target')
+  local stopped = calls('run.stop')[stop_count + 1].params
+  check(stopped.session_id == id and stopped.submission_id == displayed_target, 'Stop must target the displayed submission')
+  check(state().sessions[id].active == newer_target, 'Stop must not replace the displayed target with newer work')
+end
 
 local history_state = state()
 history_state.sessions[id].cursor = 'older-page'
@@ -294,6 +300,9 @@ wait(function() return choice ~= nil end, 'Native session choice')
 check(#choice == 2 and vim.api.nvim_buf_get_name(named('transcript')) == 'harness://chat/' .. id,
   'Multiple sessions require an explicit choice and cancellation keeps the selected chat')
 vim.ui.select = select
+vim.cmd('Harness attach second')
+wait(function() return has('Session: second') end, 'Prepare another chat before delayed receipts')
+vim.api.nvim_buf_set_lines(named('prompt'), 0, -1, false, { 'deferred-receipt original' })
 for _, newer in ipairs({ false, true }) do
   vim.cmd('Harness attach ' .. id)
   wait(function() return has('Session: ' .. id) end, 'Original session before delayed receipt')
@@ -307,6 +316,7 @@ for _, newer in ipairs({ false, true }) do
   vim.cmd('Harness attach ' .. id)
   wait(function() return has('Session: ' .. id) end, 'Return after receipt')
   wait(function() return text(named('prompt')) == (newer and 'New saved draft' or '') end, 'Receipt clears only its matching saved draft')
+  check(text(vim.fn.bufnr('harness://prompt/second')) == 'deferred-receipt original', 'A receipt preserves identical draft text in another chat')
   if not newer then
     vim.cmd('Harness send')
     check(#calls('input.submit') == sent + 1 and text(named('prompt')) == '', 'Returning to a session cannot resend its admitted draft')
@@ -585,7 +595,44 @@ check(calls('session.configure')[configured_queued + 1].params.model == 'hosted'
 check(text(named('prompt')) == 'Keep this task after the model command', 'The later task remains a draft after a queued command')
 chat('\\model demo')
 wait(function() return #calls('session.configure') == configured_queued + 2 end, 'Restore the local model before the disconnect check')
+for _, capture in ipairs({
+  { kind = 'buffer', text = 'unsaved λ 世界\nsecond line\n' },
+  { kind = 'selection', text = 'second line\n', start_line = 2, end_line = 2 },
+}) do
+  show_file(source)
+  if capture.kind == 'selection' then
+    vim.api.nvim_buf_set_mark(source, '<', 2, 0, {})
+    vim.api.nvim_buf_set_mark(source, '>', 2, 0, {})
+  end
+  vim.cmd('Harness new')
+  chat('\\context ' .. capture.kind)
+  if capture.kind == 'selection' then
+    vim.api.nvim_buf_set_mark(source, '<', 1, 0, {})
+    vim.api.nvim_buf_set_mark(source, '>', 1, 0, {})
+  end
+  show_file(vim.fn.bufnr(temp .. '/alternate.txt'))
+  wait(function() return text(named('prompt')) == '' end, 'The queued context command completes after source navigation')
+  sent_before = #calls('input.submit')
+  chat('Submit the captured source')
+  wait(function() return #calls('input.submit') == sent_before + 1 and text(named('prompt')) == '' end, 'Submit the attachment from the queued context command')
+  local queued_context = calls('input.submit')[sent_before + 1].params.context
+  check(#queued_context == 1 and queued_context[1].path == 'source.txt' and queued_context[1].kind == capture.kind
+    and queued_context[1].text == capture.text and queued_context[1].start_line == capture.start_line
+    and queued_context[1].end_line == capture.end_line, 'A queued chat context command keeps its original source and selected lines')
+end
 delayed = state(); delayed.create_delay = nil; save(delayed)
+
+local failed_chat_id = calls('input.submit')[sent_before + 1].params.session_id
+local configure_before_failure = #calls('session.configure')
+delayed = state(); delayed.configure_delay = 0.15; save(delayed)
+chat('\\name Reject while busy')
+wait(function() return #calls('session.configure') == configure_before_failure + 1 end, 'A settings request starts in the busy chat')
+vim.cmd('Harness attach second')
+wait(function() return has('Session: second') and text(named('transcript')):match('^Connection: connected\n') end, 'Another chat opens after the delayed settings failure')
+check(not has('Session has active work'), 'A settings failure does not appear in another chat')
+delayed = state(); delayed.configure_delay = nil; save(delayed)
+vim.cmd('Harness attach ' .. failed_chat_id)
+wait(function() return has('Session has active work') end, 'The settings failure remains in the chat that sent the request')
 
 chat('drop')
 wait(function() return has('Connection closed') end, 'Disconnect before cross-chat startup check')
@@ -680,17 +727,19 @@ wait(function()
 end, 'Both chats are stored before returning to the queued command')
 check(#calls('session.configure') == configure_count and state().sessions[other_id].metadata.name == 'New chat', 'A queued command cannot change the selected second chat')
 delayed_command = state(); delayed_command.create_delay = nil; save(delayed_command)
+vim.cmd('tabnew')
 vim.cmd('Harness attach ' .. queued_id)
 wait(function()
   return state().sessions[queued_id].metadata.name == 'Rename while creating'
     and text(named('transcript')):match('^Connection: connected\n') and has('Session: Rename while creating')
-end, 'Returning to the first chat completes its queued command')
+end, 'Opening the first chat in another tab completes its queued command')
 local configured = calls('session.configure')
 check(#configured == configure_count + 1 and configured[#configured].params.session_id == queued_id
   and configured[#configured].params.name == 'Rename while creating', 'The queued command configures its exact chat once')
 check(text(named('prompt')) == 'Later draft in the first chat', 'A queued command preserves later input in its chat')
 check(text(vim.fn.bufnr('harness://prompt/' .. other_id)) == 'Keep the second chat draft'
   and state().sessions[other_id].metadata.name == 'New chat', 'The other chat keeps its draft and settings')
+vim.cmd('tabclose')
 vim.cmd('Harness attach ' .. other_id)
 wait(function() return text(named('transcript')):match('^Connection: connected\n') end, 'The second chat can be reopened after the command')
 vim.cmd('Harness attach ' .. queued_id)

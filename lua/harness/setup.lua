@@ -14,7 +14,7 @@ end
 
 function M.click(index, _, button)
   local actions = active
-  if actions and button == 'l' and vim.fn.getmousepos().winid == actions.window then
+  if actions and actions.state() ~= 'closed' and button == 'l' and vim.fn.getmousepos().winid == actions.window then
     vim.api.nvim_set_current_win(actions.window)
     actions.click(index)
     if active == actions then actions.resume() end
@@ -23,13 +23,7 @@ end
 
 function M.new(transport, report)
   local self = {}
-  local input
-  local function enter()
-    local window = self.window
-    vim.schedule(function()
-      if self.window == window and vim.api.nvim_get_current_win() == window then vim.cmd('startinsert') end
-    end)
-  end
+  local input, close_current
 
   function self.open(provider, method, callback)
     if self.window and vim.api.nvim_win_is_valid(self.window) then
@@ -37,6 +31,7 @@ function M.new(transport, report)
       input()
       return
     end
+    if close_current then close_current(false, false) end
     local previous = vim.api.nvim_get_current_win()
     local buffer = vim.api.nvim_create_buf(false, true)
     self.buffer = buffer
@@ -44,15 +39,23 @@ function M.new(transport, report)
     local window = vim.api.nvim_open_win(buffer, true, bounds(provider, method))
     self.window = window
     local group = vim.api.nvim_create_augroup('HarnessLogin' .. buffer, { clear = true })
-    local job, ended, closed, links
-    local actions = { window = window }
-    actions.resume = function()
-      if not ended and vim.api.nvim_win_get_buf(window) == buffer then enter() end
+    local job, links
+    local state = 'running'
+    local function terminal_state()
+      if state == 'closed' or not vim.api.nvim_win_is_valid(window) or not vim.api.nvim_buf_is_valid(buffer) then return 'closed' end
+      return state
     end
+    local function enter()
+      vim.schedule(function()
+        if terminal_state() == 'running' and vim.api.nvim_get_current_win() == window
+          and vim.api.nvim_win_get_buf(window) == buffer then vim.cmd('startinsert') end
+      end)
+    end
+    local actions = { window = window, state = terminal_state, resume = enter }
     active = actions
     local function close(succeeded, focused)
-      if closed then return end
-      closed = true
+      if state == 'closed' then return end
+      state = 'closed'
       if focused == nil then focused = vim.api.nvim_get_current_win() == window end
       local delayed = focused and vim.api.nvim_get_current_win() == window
         and vim.api.nvim_get_current_buf() == buffer and vim.fn.mode() == 't'
@@ -60,24 +63,27 @@ function M.new(transport, report)
       if delayed then after_terminal(complete) end
       vim.api.nvim_del_augroup_by_id(group)
       if active == actions then active = nil end
-      self.window, self.buffer = nil, nil
+      if self.window == window then self.window, self.buffer, close_current = nil, nil, nil end
       if vim.api.nvim_win_is_valid(window) then vim.api.nvim_win_close(window, true) end
       if vim.api.nvim_buf_is_valid(buffer) then vim.api.nvim_buf_delete(buffer, { force = true }) end
       links.close()
       if focused and vim.api.nvim_win_is_valid(previous) then vim.api.nvim_set_current_win(previous) end
       if not delayed then complete() end
     end
+    close_current = close
     local function cancel()
-      if ended then close(false)
+      if terminal_state() == 'closed' then return end
+      if state == 'ended' then close(false)
       elseif job and job > 0 then vim.fn.chansend(job, '\003') end
     end
     input = function()
-      if closed then return end
+      if terminal_state() == 'closed' then return end
       vim.api.nvim_win_set_buf(window, buffer)
       links.refresh()
       enter()
     end
     links = require('harness.login_links').new(window, {
+      state = terminal_state, click_handler = "v:lua.require'harness.setup'.click",
       input = input, cancel = cancel, resume = actions.resume, after_terminal = after_terminal, report = report,
     })
     actions.click = links.click
@@ -86,7 +92,7 @@ function M.new(transport, report)
       links.receive(event.data.sequence)
     end })
     vim.api.nvim_create_autocmd('VimResized', { group = group, callback = function()
-      if not closed and vim.api.nvim_win_is_valid(window) then vim.api.nvim_win_set_config(window, bounds(provider, method)); links.refresh() end
+      if terminal_state() ~= 'closed' then vim.api.nvim_win_set_config(window, bounds(provider, method)); links.refresh() end
     end })
     vim.api.nvim_create_autocmd('WinClosed', { group = group, pattern = tostring(window), callback = function()
       local focused = vim.api.nvim_get_current_win() == window
@@ -97,11 +103,11 @@ function M.new(transport, report)
       vim.schedule(function() close(false, focused and vim.api.nvim_get_current_win() == window) end)
     end })
     local function complete(code)
-      if closed or not vim.api.nvim_win_is_valid(window) or not vim.api.nvim_buf_is_valid(buffer) then return end
-      ended = true
-      links.finish()
+      if terminal_state() == 'closed' then return end
+      state = 'ended'
       if code == 0 then
         transport.connect(function(_, err)
+          if terminal_state() == 'closed' then return end
           if err then report(err) end
           close(not err)
         end)

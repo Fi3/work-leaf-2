@@ -36,6 +36,7 @@ while True:
 ]], '\n', { plain = true }), directory .. '/terminal.py')
 local copied, opened, calls, result, messages, copy_failed = nil, nil, 0, nil, {}, false
 local opens, browser_exit, browser_missing = {}, nil, false
+local delay_connect, connected
 vim.g.clipboard = { name = 'test clipboard', copy = { ['+'] = function(lines) if not copy_failed then copied = table.concat(lines, '\n') end end, ['*'] = function() end },
   paste = { ['+'] = function() return { {}, 'v' } end, ['*'] = function() return { {}, 'v' } end } }
 local system = vim.system
@@ -50,8 +51,11 @@ vim.system = function(arguments, options, callback)
 end
 local setup = require('harness.setup').new({
   arguments = function() return { 'python3', '-u', directory .. '/terminal.py', url } end,
-  connect = function(callback) callback(true) end,
+  connect = function(callback) if delay_connect then connected = callback else callback(true) end end,
 }, function(message) messages[#messages + 1] = message end)
+local function start_login(callback)
+  setup.open({ id = 'test', name = 'Test provider' }, { id = 'oauth', name = 'Test account' }, callback)
+end
 local function wait(predicate, message) assert(vim.wait(3000, predicate, 5), message) end
 local function keys(value)
   vim.cmd('stopinsert')
@@ -59,10 +63,13 @@ local function keys(value)
   vim.wait(10)
 end
 local window, buffer, channel
+local function login_link(value)
+  vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. value } })
+end
 local function open()
   calls, result = 0, nil
   local count = #opens
-  setup.open({ id = 'test', name = 'Test provider' }, { id = 'oauth', name = 'Test account' }, function(focused, succeeded)
+  start_login(function(focused, succeeded)
     calls = calls + 1
     result = { focused = focused, succeeded = succeeded }
   end)
@@ -93,14 +100,14 @@ keys('<C-o>')
 assert(opened == url, 'Open passes the complete URL to the client browser handler')
 assert(calls == 0 and vim.fn.jobwait({ channel }, 0)[1] == -1, 'Opening the browser keeps the same login process active')
 local getmousepos = vim.fn.getmousepos
-local function click(row, column)
+local function click(row, column, queued)
   opened = nil
   vim.fn.getmousepos = function() return { winid = window, winrow = row + 2, line = row, column = column } end
-  keys('<LeftRelease>')
+  if queued then vim.fn.maparg('<LeftRelease>', 'n', false, true).callback() else keys('<LeftRelease>') end
   vim.fn.getmousepos = getmousepos
 end
 local count = #opens
-vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. url } })
+login_link(url)
 vim.wait(20)
 assert(#opens == count, 'A repeated terminal hyperlink does not open another browser tab')
 for _, width in ipairs({ 76, 38, 26 }) do
@@ -129,7 +136,7 @@ assert(vim.wo[window].winbar:find('Open browser', 1, true), 'Returning to termin
 keys('<C-l>')
 vim.o.columns, vim.o.lines = 50, 16
 vim.api.nvim_exec_autocmds('VimResized', {})
-setup.open({ id = 'test', name = 'Test provider' }, { id = 'oauth', name = 'Test account' }, function() error('Login was replaced') end)
+start_login(function() error('Login was replaced') end)
 local reopened = vim.api.nvim_eval_statusline(vim.wo[window].winbar, { winid = window, use_winbar = true, maxwidth = 1000 }).str
 assert(setup.window == window and vim.api.nvim_get_current_buf() == buffer and vim.bo[buffer].channel == channel,
   'Opening login again returns to the same private input, window and process')
@@ -188,7 +195,7 @@ assert(vim.fn.getreg() == 'TEST-CODE' and vim.api.nvim_buf_get_lines(0, 0, 1, fa
 keys('<CR>')
 vim.api.nvim_ui_send = function(value) clipboard_request = value end
 clipboard_request = nil
-vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. url } })
+login_link(url)
 keys('<C-y>')
 assert(clipboard_request == nil, 'A new login link clears the previous device code')
 keys('<C-l>')
@@ -252,6 +259,10 @@ keys('<C-o>')
 assert(opened == nil, 'A failed login cannot reopen its expired browser link')
 click(1, 2)
 assert(opened == nil and calls == 0, 'Clicking an expired link keeps the failure visible for acknowledgment')
+keys('<C-l>')
+assert(vim.api.nvim_buf_get_lines(0, 0, 1, false)[1] == url and vim.fn.getreg() == url,
+  'A failed login keeps its complete link available for copying')
+keys('<Esc>')
 keys('<CR>')
 closed()
 assert(result.focused and not result.succeeded and #messages == 3, 'Acknowledging failure reports unsuccessful completion once')
@@ -263,23 +274,54 @@ assert(result.succeeded and not result.focused and vim.api.nvim_get_current_win(
 open()
 vim.v.errmsg = ''
 browser_exit({ code = 1, signal = 0 })
-vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. url } })
+login_link(url)
 vim.api.nvim_win_close(window, true)
 closed()
 assert(not result.succeeded, 'Native window closure cancels without leaking a terminal')
 assert(vim.v.errmsg == '', 'Closing before a queued browser failure does not access an invalid window')
 open()
 local before_close = #opens
-vim.api.nvim_exec_autocmds('TermRequest', { buffer = buffer, data = { sequence = '\027]8;id=harness-login;' .. url .. '&retry=1' } })
+login_link(url .. '&retry=1')
 vim.api.nvim_win_close(window, true)
 closed()
 assert(#opens == before_close and vim.v.errmsg == '', 'Closing before the browser starts prevents a late browser tab')
+open()
+local before_change = #opens
+click(1, 2, true)
+login_link(url .. '&retry=1')
+vim.wait(20)
+assert(#opens == before_change + 1 and opened == url .. '&retry=1',
+  'A queued click for an old link cannot open the replacement link a second time')
+local before_repeat, before_reports = #opens, #messages
+browser_exit({ code = 1, signal = 0 })
+login_link(url)
+login_link(url .. '&retry=1')
+vim.wait(20)
+assert(#messages == before_reports and #opens == before_repeat + 1,
+  'A browser failure cannot apply after the login link changes away and back')
+keys('<C-c>')
+closed()
+open()
+delay_connect = true
+vim.fn.chansend(channel, 's')
+wait(function() return connected ~= nil end, 'Successful login waits for the connection result')
+vim.api.nvim_win_close(window, true)
+closed()
+delay_connect = false
+open()
+local before_connection = #messages
+connected(nil, 'Old connection failed')
+vim.wait(20)
+assert(#messages == before_connection and setup.window == window and calls == 0 and vim.api.nvim_get_current_win() == window,
+  'A connection result after closure cannot report an old error or change the next login')
+keys('<C-c>')
+closed()
 local local_opens = #opens
 for _, name in ipairs({ 'SSH_CONNECTION', 'SSH_TTY' }) do
   vim.env[name] = 'test'
   calls, result, copied, clipboard_request = 0, nil, nil, nil
   local reports = #messages
-  setup.open({ id = 'test', name = 'Test provider' }, { id = 'oauth', name = 'Test account' }, function(focused, succeeded)
+  start_login(function(focused, succeeded)
     calls = calls + 1
     result = { focused = focused, succeeded = succeeded }
   end)
@@ -341,6 +383,21 @@ open()
 assert(#opens == local_opens + 1, 'Empty SSH environment values do not disable the local desktop browser')
 keys('<C-c>')
 closed()
+open()
+local removed_window, removed_buffer = window, buffer
+vim.api.nvim_win_close(window, true)
+local reopened_calls = 0
+start_login(function() reopened_calls = reopened_calls + 1 end)
+window, buffer = setup.window, setup.buffer
+wait(function() return vim.wo[window].winbar:find('Copy', 1, true) end, 'A new login opens while native close cleanup is pending')
+assert(calls == 1 and reopened_calls == 0 and setup.window == window and setup.buffer == buffer
+  and not vim.api.nvim_win_is_valid(removed_window) and not vim.api.nvim_buf_is_valid(removed_buffer),
+  'Cleanup from the old login cannot remove the new terminal or its public handles')
+keys('<C-c>')
+wait(function() return reopened_calls == 1 end, 'The replacement login completes once')
+assert(not vim.api.nvim_win_is_valid(window) and not vim.api.nvim_buf_is_valid(buffer)
+  and vim.api.nvim_get_current_win() == previous and vim.api.nvim_buf_get_changedtick(source) == tick,
+  'The replacement login releases its terminal and restores the unchanged caller')
 for _, name in ipairs({ 'SSH_CONNECTION', 'SSH_TTY' }) do vim.env[name] = saved_environment[name] end
 vim.system = system
 vim.fn.delete(directory, 'rf')
