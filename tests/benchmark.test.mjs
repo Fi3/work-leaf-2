@@ -80,6 +80,7 @@ async function containerResult(settings) {
   const program = `
 import contextlib, importlib.util, io, json, pathlib, subprocess, sys, tempfile
 from unittest.mock import patch
+sys.path.insert(0, 'scripts')
 spec = importlib.util.spec_from_file_location('bench', 'scripts/bench.py')
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
@@ -108,11 +109,13 @@ class Process:
 with tempfile.TemporaryDirectory(prefix='harness-benchmark-runner-') as directory:
     with patch.object(bench, 'docker', docker), patch.object(bench, 'inspect_container', side_effect=[configuration, final]), patch.object(bench.subprocess, 'Popen', Process), contextlib.redirect_stdout(io.StringIO()):
         try:
-            result = bench.run_container('synthetic-image', profile, pathlib.Path(directory), 'source')
+            result = bench.run_container('synthetic-image', profile, pathlib.Path(directory), 'source', settings.get('cpuset'))
         except RuntimeError as error:
             result = {'error': str(error)}
     assert commands[-1] == ('rm', '--force', 'synthetic-container')
     assert any(command[0] == 'kill' for command in commands) == settings.get('timeout', False)
+    if settings.get('cpuset') and not result.get('error'):
+        assert '--cpuset-cpus' in commands[0] and settings['cpuset'] in commands[0]
     print(json.dumps(result))
 `;
   const { stdout } = await execute('python3', ['-c', program, JSON.stringify(settings)], { cwd: root, timeout: 5000 });
@@ -230,4 +233,32 @@ test('benchmark host rejects unapplied resource and network limits', async () =>
     const result = await containerResult({ records: [], configuration });
     assert.match(result.error, /required resource and network limits/);
   }
+});
+
+
+test('benchmark host applies selected CPU affinity and rejects a different Docker selection', async () => {
+  const records = [{ type: 'result', completed: false, measurements: [] }];
+  const result = await containerResult({ records, cpuset: '30,31', configuration: { CpusetCpus: '30,31' } });
+  assert.equal(result.cpu_affinity, '30,31');
+  for (const CpusetCpus of ['', '0,1']) {
+    const rejected = await containerResult({ records, cpuset: '30,31', configuration: { CpusetCpus } });
+    assert.match(rejected.error, /CPU affinity/);
+  }
+  await execute('python3', ['-c', `
+import importlib.util, sys
+from unittest.mock import patch
+sys.path.insert(0, 'scripts')
+spec = importlib.util.spec_from_file_location('bench', 'scripts/bench.py')
+bench = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(bench)
+with patch.object(bench.os, 'sched_getaffinity', return_value={30, 31, 32}):
+    assert bench.cpu_affinity('31,30') == '30,31'
+    for value in ['0,1', '30,30', '30', '30,31,32', '30-31', '30,x', '30,']:
+        try:
+            bench.cpu_affinity(value)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(value)
+`], { cwd: root, timeout: 5000 });
 });

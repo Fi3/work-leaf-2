@@ -13,6 +13,8 @@ import tempfile
 import threading
 import time
 
+from bench_report import capacity_event_delta, evaluate, load_baseline, render, resource_summary
+
 
 def evidence_module():
     path = Path(__file__).with_name('bench-evidence.py')
@@ -52,22 +54,6 @@ def collect(output, path, records):
                 print(f"Capacity: {record['completed_sessions']} completed sessions", flush=True)
 
 
-def capacity_event_delta(samples, event):
-    counts = []
-    for sample in samples:
-        events = sample.get('memory_events')
-        count = events.get(event) if isinstance(events, dict) else None
-        if type(count) is not int or count < 0:
-            return 0
-        counts.append(count)
-    if len(counts) < 2 or any(after < before for before, after in zip(counts, counts[1:])):
-        return 0
-    if any(count != counts[0] and sample.get('phase') != 'capacity'
-           for sample, count in zip(samples, counts)):
-        return 0
-    return counts[-1] - counts[0] if samples[-1].get('phase') == 'capacity' else 0
-
-
 def recover_result(records, state, profile):
     phase = next((item['name'] for item in reversed(records) if item.get('type') == 'phase'), None)
     samples = [item for item in records if item.get('type') == 'sample']
@@ -85,33 +71,23 @@ def recover_result(records, state, profile):
                            'oom_delta': oom_delta, 'oom_kill_delta': kill_delta}}
 
 
-def resource_summary(records):
-    phases = {}
-    for sample in records:
-        phases.setdefault(sample['phase'], []).append(sample)
-    summary = {}
-    for phase, samples in phases.items():
-        if len(samples) < 2:
-            continue
-        first, last = samples[0], samples[-1]
-        seconds = last['elapsed_seconds'] - first['elapsed_seconds']
-        if seconds <= 0:
-            continue
-        summary[phase] = {
-            'sampled_seconds': round(seconds, 3),
-            'mean_cpu_cores': round((last['cpu_usec'] - first['cpu_usec']) / 1_000_000 / seconds, 6),
-            'cpu_throttled_seconds': round((last.get('cpu_throttled_usec', 0) - first.get('cpu_throttled_usec', 0)) / 1_000_000, 6),
-            'peak_sampled_memory_bytes': max(sample['memory_bytes'] for sample in samples),
-        }
-    return summary
+def cpu_affinity(value):
+    parts = value.split(',')
+    if len(parts) != 2 or any(not part.isascii() or not part.isdigit() for part in parts):
+        raise ValueError('CPU affinity needs two distinct logical CPU IDs, for example 30,31')
+    cpus = set(map(int, parts))
+    if len(cpus) != 2 or not cpus.issubset(os.sched_getaffinity(0)):
+        raise ValueError('Both selected CPUs must be distinct and available to this process')
+    return ','.join(map(str, sorted(cpus)))
 
 
-def run_container(image, profile, directory, source):
+def run_container(image, profile, directory, source, cpuset=None):
     resources = profile['resources']
+    affinity_options = ['--cpuset-cpus', cpuset] if cpuset else []
     identifier = docker('create', '--init', '--network', 'none', '--cap-drop', 'ALL',
         '--security-opt', 'no-new-privileges', '--platform', profile['platform'],
         '--cpus', resources['cpus'], '--memory', resources['memory_bytes'],
-        '--memory-swap', resources['memory_swap_bytes'], '--pids-limit', resources['pids_limit'], image)
+        '--memory-swap', resources['memory_swap_bytes'], '--pids-limit', resources['pids_limit'], *affinity_options, image)
     records = []
     timed_out = False
     try:
@@ -119,6 +95,9 @@ def run_container(image, profile, directory, source):
         actual_limits = limits(configuration['HostConfig'])
         if actual_limits != resources or configuration['HostConfig']['NetworkMode'] != 'none':
             raise RuntimeError('Docker did not apply the required resource and network limits')
+        actual_affinity = configuration['HostConfig'].get('CpusetCpus') or None
+        if actual_affinity != cpuset:
+            raise RuntimeError('Docker did not apply the selected CPU affinity')
         with (directory / f'{source}.stderr.log').open('w') as errors:
             process = subprocess.Popen(['docker', 'start', '--attach', identifier], stdout=subprocess.PIPE,
                                        stderr=errors, text=True)
@@ -144,7 +123,7 @@ def run_container(image, profile, directory, source):
             result.update(completed=False, error='Benchmark timed out; exhaustion was not established')
         result.pop('type', None)
         result.update(docker_image_id=configuration['Image'], docker_limits=actual_limits,
-                      docker_state=final['State'], resources_by_phase=resource_summary(result.get('measurements', [])))
+                      docker_state=final['State'], cpu_affinity=actual_affinity, resources_by_phase=resource_summary(result.get('measurements', [])))
         return result
     finally:
         docker('rm', '--force', identifier)
@@ -152,12 +131,16 @@ def run_container(image, profile, directory, source):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--publish', action='store_true', help='Also save accepted evidence in benchmarks/results for review')
+    parser.add_argument('--publish', action='store_true', help='Also save measured evidence in benchmarks/results for review')
+    parser.add_argument('--cpuset-cpus', help='Use two available logical CPU IDs, for example 30,31; the two-core quota stays fixed')
     args = parser.parse_args()
     if platform.system() != 'Linux' or platform.machine() != 'x86_64':
         raise RuntimeError('The capacity-v1 baseline requires a native Linux x86_64 host')
+    cpuset = cpu_affinity(args.cpuset_cpus) if args.cpuset_cpus else None
     evidence = evidence_module()
     root = evidence.project_root()
+    baseline = load_baseline(root)
+    published_harnesses = json.loads((root / 'benchmarks/published-harnesses.json').read_text())
     revision = evidence.git(root, 'rev-parse', 'HEAD').decode().strip()
     directory = root / '.bench-results'
     directory.mkdir(exist_ok=True)
@@ -177,7 +160,7 @@ def main():
         if status.returncode:
             raise RuntimeError(f'Docker build failed. Read {build_log}')
         print('Run with two CPUs, 512 MiB RAM, no swap, and no network.', flush=True)
-        result = run_container(image, profile, directory, source)
+        result = run_container(image, profile, directory, source, cpuset)
     result.update(schema=1, source_fingerprint=source, profile_sha256=profile_hash, profile=profile,
                   source_revision=revision,
                   started_at=time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(started)),
@@ -188,7 +171,8 @@ def main():
     except ValueError as error:
         failed = directory / f'{source}.failed.json'
         failed.write_text(json.dumps(result, indent=2) + '\n')
-        raise RuntimeError(f'No baseline recorded: {error}. Read {failed}') from error
+        raise RuntimeError(f'No complete result recorded: {error}. Read {failed}') from error
+    result['comparison'] = evaluate(result, baseline)
     serialized = json.dumps(result, indent=2) + '\n'
     target = directory / f'{source}.json'
     target.write_text(serialized)
@@ -196,12 +180,13 @@ def main():
         published = root / 'benchmarks/results' / target.name
         published.parent.mkdir(parents=True, exist_ok=True)
         published.write_text(serialized)
-    print(f'Accepted benchmark evidence: {target}', flush=True)
-    print(json.dumps({'capacity_completed_sessions': result.get('capacity_completed_sessions'),
-                      'exhaustion': result['exhaustion'], 'stages': result['stages'],
-                      'resources_by_phase': result['resources_by_phase']}, indent=2))
-    return 0
-
+    report = render(result, baseline, published_harnesses)
+    report_path = directory / f'{source}.report.txt'
+    report_path.write_text(report)
+    print(f'Measured benchmark evidence: {target}', flush=True)
+    print(f'Resource report: {report_path}', flush=True)
+    print(report, end='')
+    return 0 if result['comparison']['status'] == 'PASS' else 1
 
 if __name__ == '__main__':
     try:

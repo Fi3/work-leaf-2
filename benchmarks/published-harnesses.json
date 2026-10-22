@@ -1,0 +1,626 @@
+{
+  "schema_version": 1,
+  "collected_at": "2026-10-22T08:31:32.158912Z",
+  "warning": "Published figures only; not reproduced for this report. These workloads and process memory measures differ from the application container benchmark. They cannot give a fair ranking, a supported session capacity, or a pass/fail verdict for this application.",
+  "limitations": [
+    "These are published results, not measurements made by this application.",
+    "The workload, machine, versions and memory accounting differ from the application container benchmark; do not use these figures to rank it or calculate an efficiency multiple.",
+    "Only observations from the same batch share the reported machine conditions. No cross-machine CPU adjustment is applied.",
+    "No memory limit or memory-exhaustion session capacity is reported. A first-session or per-session figure is not a capacity result.",
+    "Upstream labels binary megabytes as MB; its code divides bytes by 1024 squared. Values below use MiB without changing the numeric value.",
+    "Supported features, persistence, editor integration and authentication are not held equal. No feature-equivalence claim is made."
+  ],
+  "sources": [
+    {
+      "id": "scripted-2026-09",
+      "url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "local_path": "dev-docs/performance/harness-perf-benchmark/README.md",
+      "published_at": "2026-09-28T03:06:43Z",
+      "date_kind": "source revision time; run dates are in each measurement",
+      "method": "Process-tree RSS and sampled process-tree CPU. CPU uses 100 percent for one full core. Three serial runs per harness; the table uses the run with median end-to-end duration. macOS proc_pid_rusage at 100 ms, except the ccode Linux procfs batch at 10 ms.",
+      "method_paths": [
+        "dev-docs/performance/harness-perf-benchmark/scripts/perf/sampler.ts",
+        "dev-docs/performance/harness-perf-benchmark/scripts/perf/score.ts"
+      ],
+      "limitations": [
+        "The runs use several batches and machines. CPU mean and peak describe sampled process-tree CPU; short-lived tools can escape these samples. Their separate child-CPU counters contribute to the upstream integrated score, which is not shown here.",
+        "The author supplies a combined CPU/memory score, but this dataset does not use that score as a cross-machine comparison.",
+        "The report gives one median run, not a median and variation for each individual resource metric."
+      ]
+    },
+    {
+      "id": "headless-scaling-2026-10-22",
+      "url": "https://github.com/1jehuang/jcode/blob/59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f/README.md",
+      "revision": "59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f",
+      "local_path": "dev-docs/performance/jcode/2026-10-22/README.md",
+      "published_at": "2026-10-22T03:33:44Z",
+      "date_kind": "source revision time; benchmark run date is not reported",
+      "method": "Linux process-tree proportional set size (PSS) after real model turns. The linked script defaults to five turns and session counts 1, 5, 10 and 20; the README does not state the exact invocation for its table. jcode and OpenCode each use one daemon for their sessions; other tools launch one process per session.",
+      "method_paths": [
+        "dev-docs/performance/jcode/scripts/bench_headless_memory.py",
+        "dev-docs/performance/jcode/scripts/bench_memory_cli.py"
+      ],
+      "limitations": [
+        "The README omits tested versions, run dates, machine configuration and variation. Do not treat the linked script defaults as confirmed run settings.",
+        "Model calls are real and use different providers or models in the default script. Context content and tool output are not fixed by a common recorded response stream.",
+        "The README values changed from the earlier saved jcode claim of 32.9 MB first session and about 6.4 MB additional. This source reports 71.3 MB and about 3.3 MB. The earlier report is preserved."
+      ]
+    }
+  ],
+  "measurements": [
+    {
+      "harness": "ccode",
+      "version": "c8fb352",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-22",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "Linux; Intel Core Ultra 7 265K",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 3.8,
+        "peak": 4.4,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 47.2,
+        "peak": 99.0
+      },
+      "batch": "265k-linux",
+      "limitations": [
+        "The 99 percent CPU peak is a sampling artifact: one tick occupies the 10 ms sample. It is not a useful peak measurement.",
+        "This static C binary has a different feature set; the run stops at its turn limit before the final completion response."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Pi",
+      "version": "0.85.1",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-19",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 186.2,
+        "peak": 234.4,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 65.5,
+        "peak": 128.8
+      },
+      "batch": "codex-proxy-fix",
+      "limitations": [
+        "Additional script entries allow automatic context compaction. This is the Pi CLI, not this application shared Pi worker."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Codex CLI",
+      "version": "0.155.1",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-19",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 123.4,
+        "peak": 163.7,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 10.5,
+        "peak": 26.0
+      },
+      "batch": "codex-proxy-fix",
+      "limitations": [
+        "A dead HTTPS proxy suppresses an external-service exit wait. The tool call uses JavaScript exec."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "peri",
+      "version": "3.17.0",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-19",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 54.7,
+        "peak": 71.7,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 32.6,
+        "peak": 43.7
+      },
+      "batch": "codex-proxy-fix",
+      "limitations": [],
+      "reproduced": false
+    },
+    {
+      "harness": "Grok Build",
+      "version": "1.0.41",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-26",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple M4 Pro; 12 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 96.7,
+        "peak": 102.6,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 26.9,
+        "peak": 63.8
+      },
+      "batch": "grok-probe",
+      "limitations": [
+        "Separate machine with reported load average about 5.3. The run includes session-title and dashboard requests."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Claude Code",
+      "version": "2.1.277",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-19",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 310.9,
+        "peak": 351.0,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 71.8,
+        "peak": 122.4
+      },
+      "batch": "codex-proxy-fix",
+      "limitations": [],
+      "reproduced": false
+    },
+    {
+      "harness": "DeepSeek Harness",
+      "version": "0.1.5-rc.2",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-19",
+      "workload": "One headless session; nominal 100 scripted tool-use turns, with 99 tool rounds reported; about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 185.6,
+        "peak": 231.2,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 46.3,
+        "peak": 128.0
+      },
+      "batch": "codex-proxy-fix",
+      "limitations": [
+        "The detailed report records 99 executed tool rounds for this nominal 100-turn script."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Cline",
+      "version": "3.0.62",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-20",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 443.5,
+        "peak": 706.1,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 23.3,
+        "peak": 138.4
+      },
+      "batch": "cline-probe",
+      "limitations": [
+        "The sampler misses CPU from short-lived shell grandchildren; the report estimates missing CPU of about 0.2 to 0.3 core-seconds per 100 turns."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Kimi Code",
+      "version": "2.0.0",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-21",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 491.9,
+        "peak": 603.6,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 63.5,
+        "peak": 176.8
+      },
+      "batch": "kimi-probe",
+      "limitations": [],
+      "reproduced": false
+    },
+    {
+      "harness": "Antigravity CLI",
+      "version": "1.2.7",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-20",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 208.6,
+        "peak": 225.1,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 173.4,
+        "peak": 213.0
+      },
+      "batch": "agy-probe",
+      "limitations": [
+        "Uses the Gemini wire protocol and extra script entries for internal requests."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "OpenCode v2",
+      "version": "2.0.10",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-20",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 576.1,
+        "peak": 849.6,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 48.6,
+        "peak": 105.2
+      },
+      "batch": "oc2-probe",
+      "limitations": [
+        "Uses standalone service mode and includes the worker process."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Hermes Agent",
+      "version": "0.21.3",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-20",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 147.3,
+        "peak": 201.1,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 73.1,
+        "peak": 131.8
+      },
+      "batch": "hermes-probe",
+      "limitations": [],
+      "reproduced": false
+    },
+    {
+      "harness": "MiniMax Code",
+      "version": "0.4.12",
+      "group": "scripted_single_session",
+      "source_id": "scripted-2026-09",
+      "source_url": "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/README.md",
+      "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
+      "published_at": "2026-09-28T03:06:43Z",
+      "measured_at": "2026-09-19",
+      "workload": "One headless session; 100 scripted tool-use turns, about 4 KiB response content per turn; local simulated model; no editor.",
+      "os": "macOS; Apple Silicon; 18 CPU cores",
+      "session_count": 1,
+      "memory": {
+        "accounting": "process-tree RSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": 617.6,
+        "peak": 892.0,
+        "first_session": null,
+        "additional_session": null
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": 98.1,
+        "peak": 177.8
+      },
+      "batch": "codex-proxy-fix",
+      "limitations": [],
+      "reproduced": false
+    },
+    {
+      "harness": "jcode",
+      "version": null,
+      "group": "headless_session_scaling",
+      "source_id": "headless-scaling-2026-10-22",
+      "source_url": "https://github.com/1jehuang/jcode/blob/59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f/README.md",
+      "revision": "59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f",
+      "published_at": "2026-10-22T03:33:44Z",
+      "measured_at": null,
+      "workload": "Headless sessions after real model turns; exact tested turn and session counts are not reported.",
+      "os": "Linux; hardware not reported",
+      "session_count": null,
+      "memory": {
+        "accounting": "process-tree PSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": null,
+        "peak": null,
+        "first_session": 71.3,
+        "additional_session": 3.3
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": null,
+        "peak": null
+      },
+      "batch": null,
+      "limitations": [
+        "The additional-session value is approximate; neither memory exhaustion nor a maximum session count is established.",
+        "Tested version, run date, exact session counts and variation are not reported."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "OpenCode",
+      "version": null,
+      "group": "headless_session_scaling",
+      "source_id": "headless-scaling-2026-10-22",
+      "source_url": "https://github.com/1jehuang/jcode/blob/59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f/README.md",
+      "revision": "59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f",
+      "published_at": "2026-10-22T03:33:44Z",
+      "measured_at": null,
+      "workload": "Headless sessions after real model turns; exact tested turn and session counts are not reported.",
+      "os": "Linux; hardware not reported",
+      "session_count": null,
+      "memory": {
+        "accounting": "process-tree PSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": null,
+        "peak": null,
+        "first_session": 637.1,
+        "additional_session": 5.9
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": null,
+        "peak": null
+      },
+      "batch": null,
+      "limitations": [
+        "The additional-session value is approximate; neither memory exhaustion nor a maximum session count is established.",
+        "Tested version, run date, exact session counts and variation are not reported."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Pi",
+      "version": null,
+      "group": "headless_session_scaling",
+      "source_id": "headless-scaling-2026-10-22",
+      "source_url": "https://github.com/1jehuang/jcode/blob/59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f/README.md",
+      "revision": "59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f",
+      "published_at": "2026-10-22T03:33:44Z",
+      "measured_at": null,
+      "workload": "Headless sessions after real model turns; exact tested turn and session counts are not reported.",
+      "os": "Linux; hardware not reported",
+      "session_count": null,
+      "memory": {
+        "accounting": "process-tree PSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": null,
+        "peak": null,
+        "first_session": 84.0,
+        "additional_session": 79.6
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": null,
+        "peak": null
+      },
+      "batch": null,
+      "limitations": [
+        "The additional-session value is approximate; neither memory exhaustion nor a maximum session count is established.",
+        "Tested version, run date, exact session counts and variation are not reported."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Claude Code",
+      "version": null,
+      "group": "headless_session_scaling",
+      "source_id": "headless-scaling-2026-10-22",
+      "source_url": "https://github.com/1jehuang/jcode/blob/59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f/README.md",
+      "revision": "59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f",
+      "published_at": "2026-10-22T03:33:44Z",
+      "measured_at": null,
+      "workload": "Headless sessions after real model turns; exact tested turn and session counts are not reported.",
+      "os": "Linux; hardware not reported",
+      "session_count": null,
+      "memory": {
+        "accounting": "process-tree PSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": null,
+        "peak": null,
+        "first_session": 272.9,
+        "additional_session": 169.3
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": null,
+        "peak": null
+      },
+      "batch": null,
+      "limitations": [
+        "The additional-session value is approximate; neither memory exhaustion nor a maximum session count is established.",
+        "Tested version, run date, exact session counts and variation are not reported."
+      ],
+      "reproduced": false
+    },
+    {
+      "harness": "Codex CLI",
+      "version": null,
+      "group": "headless_session_scaling",
+      "source_id": "headless-scaling-2026-10-22",
+      "source_url": "https://github.com/1jehuang/jcode/blob/59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f/README.md",
+      "revision": "59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f",
+      "published_at": "2026-10-22T03:33:44Z",
+      "measured_at": null,
+      "workload": "Headless sessions after real model turns; exact tested turn and session counts are not reported.",
+      "os": "Linux; hardware not reported",
+      "session_count": null,
+      "memory": {
+        "accounting": "process-tree PSS",
+        "unit": "MiB",
+        "published_unit": "MB",
+        "mean": null,
+        "peak": null,
+        "first_session": 398.6,
+        "additional_session": 194.1
+      },
+      "cpu": {
+        "unit": "percent of one CPU core",
+        "mean": null,
+        "peak": null
+      },
+      "batch": null,
+      "limitations": [
+        "The additional-session value is approximate; neither memory exhaustion nor a maximum session count is established.",
+        "Tested version, run date, exact session counts and variation are not reported."
+      ],
+      "reproduced": false
+    }
+  ],
+  "omitted": "Harness integrations without a published resource row, including Qwen Code and GitHub Copilot CLI in this source, are not assigned invented numbers."
+}

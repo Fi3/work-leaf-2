@@ -1,6 +1,6 @@
 import { invalid, limits } from './protocol.mjs';
 export function preview(text, maximum = limits.preview_bytes) {
-  const bytes = Buffer.from(text); let end = Math.min(bytes.length, maximum);
+  const bytes = Buffer.from(text.slice(0, maximum + 1)); let end = Math.min(bytes.length, maximum);
   while (end < bytes.length && (bytes[end] & 0xc0) === 0x80) end--;
   return { text: bytes.subarray(0, end).toString(), truncated: end < bytes.length };
 }
@@ -72,10 +72,12 @@ export function snapshot(metadata, view, { blocked, stopping, recovering } = {})
     result.truncated = omitted() || result.assistant.truncated || result.entries.some(e => e.truncated) || result.tools.some(t => t.truncated);
   };
   update();
-  while (Buffer.byteLength(JSON.stringify(result)) > limits.snapshot_bytes && result.entries.length) { result.entries.shift(); update(); }
-  while (Buffer.byteLength(JSON.stringify(result)) > limits.snapshot_bytes && result.tools.length) { result.tools.pop(); result.truncated = true; }
-  while (Buffer.byteLength(JSON.stringify(result)) > limits.snapshot_bytes && result.assistant.text.length) { result.assistant = { ...preview(result.assistant.text, Math.floor(Buffer.byteLength(result.assistant.text) / 2)), truncated: true }; result.truncated = true; }
-  if (Buffer.byteLength(JSON.stringify(result)) > limits.snapshot_bytes) throw invalid('Session metadata exceeds snapshot limit');
+  while (Buffer.byteLength(JSON.stringify(result)) > limits.snapshot_bytes) {
+    if (result.entries.length) { result.entries.shift(); update(); }
+    else if (result.tools.length) { result.tools.pop(); result.truncated = true; }
+    else if (result.assistant.text.length) { result.assistant = { ...preview(result.assistant.text, Math.floor(Buffer.byteLength(result.assistant.text) / 2)), truncated: true }; result.truncated = true; }
+    else throw invalid('Session metadata exceeds snapshot limit');
+  }
   return result;
 }
 export function chunk(text, offset = 0, limit = limits.chunk_bytes) {

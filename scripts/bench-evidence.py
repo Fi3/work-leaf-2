@@ -12,10 +12,16 @@ import stat
 import subprocess
 import sys
 
+import bench_report
+
 
 PROFILE_PATH = "benchmarks/profile.json"
 EVIDENCE_PATHS = (".bench-results/", "benchmarks/results/")
 SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+
+
+class RegressionFailure(ValueError):
+    """Valid measurements exceed the permitted change from the first baseline."""
 
 
 def git(root, *arguments):
@@ -165,8 +171,17 @@ def check_evidence(root, reference=None, evidence_dir=None):
     errors = []
     for name, contents in evidence_candidates(root, source, reference, evidence_dir):
         try:
-            validate_result(json.loads(contents), source, profile_hash, profile)
+            result = json.loads(contents)
+            validate_result(result, source, profile_hash, profile)
+            evaluation = bench_report.evaluate(result, bench_report.load_baseline(root))
+            if evaluation["status"] == "FAIL":
+                raise RegressionFailure(f"{name}: benchmark regression limit exceeded.\n"
+                                        + bench_report.render_failures(evaluation))
+            if evaluation["status"] != "PASS":
+                raise ValueError("Benchmark comparison is unavailable: " + "; ".join(evaluation["reasons"]))
             return source, name
+        except RegressionFailure:
+            raise
         except (ValueError, TypeError) as error:
             errors.append(f"{name}: {error}")
     raise ValueError("; ".join(errors) if errors else f"No benchmark evidence for source {source}")
@@ -191,11 +206,44 @@ def snapshot(root, destination):
     return fingerprint(files)
 
 
-def confirm_push(failures):
-    print("WARNING: Resource benchmark evidence is missing or invalid:", file=sys.stderr)
+def print_failures(title, failures):
+    print(title, file=sys.stderr)
     for failure in failures:
         print(f"  {failure}", file=sys.stderr)
-    print("Run the Docker benchmark when a human completes the PR.", file=sys.stderr)
+
+
+def confirm_push(failures):
+    print_failures("WARNING: Resource benchmark evidence is missing or invalid:", failures)
+    print("""
+To record matching evidence before you retry the push:
+  1. Save local changes, then switch to each outgoing branch listed above:
+       git switch OUTGOING_BRANCH
+       git rev-parse HEAD
+     Verify that HEAD is the listed outgoing commit. Evidence for another
+     branch or source tree does not satisfy this check.
+  2. Complete the correctness checks:
+       sh scripts/check.sh
+  3. Stage all source, documentation, and check evidence changes, including
+     new files, so the snapshot and commit contain the same contents:
+       git add PATH...
+     Complete all source and documentation changes before measurement.
+  4. When a human completes the PR or requests a measurement, run:
+       python3 scripts/bench.py --publish
+     To use two available high-numbered CPUs, for example CPUs 30 and 31:
+       python3 scripts/bench.py --publish --cpuset-cpus 30,31
+     Docker on Linux x86_64 with cgroup v2 is required. Measurement uses two
+     CPU cores, 512 MiB RAM, no swap, and no network. It continues to verified
+     memory exhaustion, with a ten-minute timeout. Image preparation can take
+     additional time and use the network. No paid model access is required.
+  5. Commit the measured source and generated evidence on the outgoing branch:
+       git add benchmarks/results/
+       git commit -m "ADD benchmark evidence to record measured resource use"
+     Retry the push. Repeat measurement if source or documentation changes;
+     an evidence-only commit does not change the source fingerprint.
+
+The benchmark is separate from the normal release gate. This hook does not run
+it automatically. Read PERFORMANCE.md for the workload and evidence rules.
+""", file=sys.stderr)
     try:
         with open("/dev/tty", encoding="utf-8") as reader, open("/dev/tty", "w", encoding="utf-8", buffering=1) as writer:
             writer.write("Push these unmeasured changes? Type yes to continue: ")
@@ -212,7 +260,7 @@ def confirm_push(failures):
 
 
 def pre_push(root, lines):
-    failures, checked = [], set()
+    failures, regressions, checked = [], [], set()
     for line in lines:
         fields = line.split()
         if len(fields) != 4:
@@ -224,8 +272,18 @@ def pre_push(root, lines):
         try:
             _, evidence = check_evidence(root, local_id)
             print(f"Benchmark evidence: {local_ref}: {evidence}", file=sys.stderr)
+        except RegressionFailure as error:
+            regressions.append(f"{local_ref} ({local_id[:12]}): {error}")
         except (ValueError, OSError, subprocess.SubprocessError) as error:
             failures.append(f"{local_ref} ({local_id[:12]}): {error}")
+    if regressions:
+        print_failures("Push stopped: measured benchmark regressions exceed the permitted limits.", regressions)
+        if failures:
+            print_failures("Other outgoing sources have missing or invalid evidence:", failures)
+        print("Correct the regression, then repeat the authorized measurement and commit its evidence.\n"
+              "Run: python3 scripts/bench.py --publish\n"
+              "A measured failure has no confirmation override. Read PERFORMANCE.md for the limits.", file=sys.stderr)
+        return 1
     return confirm_push(failures) if failures else 0
 
 

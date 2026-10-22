@@ -76,7 +76,8 @@ export async function openApplication(config, storage) {
   const registry = createRegistry(); registry.install(CodingTools);
   app.harness = await Harness.open(storage ?? await openNodeSqliteStorage(join(config.state_dir, 'agent.sqlite')), {
     models: app.models, registry, env: target => app.environment(target),
-    settings: { compaction: { backgroundTokens: 0 }, progress: { partialIntervalMs: 100, outputIntervalMs: 100 } },
+    settings: { documentRetentionMs: 30000,
+      compaction: { backgroundTokens: 0 }, progress: { partialIntervalMs: 100, outputIntervalMs: 100 } },
     onReport: () => process.stderr.write('Pi reported an internal failure\n'),
   }, context);
   credentials.harness = app.harness;

@@ -700,8 +700,32 @@ CPU and RAM use under the fixed Docker limits, through memory exhaustion.
 This benchmark uses simulated model responses and is separate from the release
 checks below. Install the push warning with `sh scripts/install-hooks.sh`.
 The hook checks each outgoing source tree and asks for explicit confirmation
-when matching benchmark evidence is absent. See [PERFORMANCE.md](PERFORMANCE.md)
-for setup, evidence, and comparison rules.
+when matching benchmark evidence is absent. Its warning gives the measurement
+and evidence commit steps. A measured result outside the 20% resource budget
+stops the push without a confirmation override. See
+[PERFORMANCE.md](PERFORMANCE.md) for setup, evidence, and comparison rules.
+
+Use `--cpuset-cpus 30,31` to select those two CPUs on a host where they are
+available. The benchmark prints CPU, RAM, task, and session tables, with
+pass/fail checks against the first baseline. It also shows separately sourced
+published figures for 14 harness projects. To render saved results without
+running a benchmark, use:
+
+```sh
+python3 scripts/bench_report.py benchmarks/results/RESULT_FINGERPRINT.json
+```
+
+The [resource investigation](PERFORMANCE.md#resource-investigation-2026-10-21)
+records repeated baseline and candidate trials, worker costs, cache tests, and
+common workloads for jcode and peri. Its [trial summary](benchmarks/trials/2026-10-21.json)
+is separate from accepted benchmark results and does not satisfy the push check.
+The [dated archive](benchmarks/trials/2026-10-21.tar.gz) preserves the full report,
+raw results, and experimental tools. Those tools are not part of the active test suite.
+
+The [session growth follow-up](PERFORMANCE.md#session-growth-investigation-2026-10-22)
+uses CPUs 30 and 31 for repeated worker measurements. Its separate
+[summary](benchmarks/trials/2026-10-22.json) and [archive](benchmarks/trials/2026-10-22.tar.gz)
+record session growth, cache expiry, and resume costs. It adds no application change.
 
 Run `sh scripts/check.sh` for the deterministic release checks. Each integration
 test uses temporary workspaces, state directories, and sockets. No test needs
@@ -716,13 +740,18 @@ Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
 `PATH`. These are test tools, not application dependencies. The desktop check
 fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
 
-The release checks passed on **2026-10-21** with the final source files. They passed
+The retained application changes passed the release checks on **2026-10-22**. They passed
 formatting, Clippy with warnings denied, 60 Rust tests, the release build, six
-adapter syntax checks, and 153 Node tests. The Node tests include 73 adapter tests,
+adapter syntax checks, and 163 Node tests. The Node tests include 75 adapter tests,
 35 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
-ten actual server recovery tests, one process exit test, and 16 benchmark and
-push-evidence tests. These 16 tests do not run the Docker capacity benchmark. Independent
+ten actual server recovery tests, one process exit test, and 24 benchmark, report,
+and push-evidence tests. These 24 tests do not run the Docker capacity benchmark. Independent
 Node test files run concurrently with separate temporary directories and sockets.
+The added application tests cover generated Unicode preview limits and saved
+history, receipts, settings, and targeted stops after Pi cache expiry.
+Cancellation also clears queued secret input before terminal echo is restored.
+The existing Rust terminal test checks that interrupted input stays hidden and
+the original terminal settings return.
 
 Neovim passed four headless suites, **67 actual terminal cases with the Rust
 server and Pi**, six desktop login cases, and 43 terminal cases with controlled
@@ -900,10 +929,15 @@ A separate first-use source check started with no npm packages or build output.
 The script installed the locked packages and used its own Rust toolchain, even
 when the caller's project selected another compiler and target. Actual Neovim
 retained the caller's directory and started no server before the first command.
-All 70 saved reference hashes still match the catalog.
+All 83 saved reference hashes match the catalog, including the 13 performance references.
 
-See the [release report](tests/evidence/release.json),
-[complete check output](tests/evidence/release.log),
+The [performance change check report](tests/evidence/performance.json) records
+the full gate after experiment cleanup and the benchmark report changes. It
+includes source hashes, CPU selection, and the
+[compressed gate output](tests/evidence/performance.log.gz).
+The earlier [release report](tests/evidence/release.json) and
+[check output](tests/evidence/release.log) cover the source hashes recorded there.
+Existing interface evidence includes
 [actual terminal results](tests/evidence/nvim-real.json),
 [desktop login results](tests/evidence/nvim-desktop.json),
 [manual SSH login results](tests/evidence/ssh-manual-login.json),
@@ -912,7 +946,7 @@ See the [release report](tests/evidence/release.json),
 [first-use source report](tests/evidence/source-launch.json) with its
 [installation log](tests/evidence/source-launch.log).
 The terminal reports link to compressed recordings and include their byte hashes.
-The release report records hashes of the checked source files.
+Each release report records hashes of the checked source files.
 
 ```sh
 cargo fmt --all -- --check

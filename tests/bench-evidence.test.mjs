@@ -9,7 +9,9 @@ import { join, resolve } from 'node:path';
 import { pty } from './fixtures/terminal.mjs';
 
 const source = resolve('.');
-const profile = { schema: 1, resources: { cpus: 1, memory_bytes: 536870912, memory_swap_bytes: 536870912, pids_limit: 128 } };
+const baselinePath = 'benchmarks/results/1d1ae9a4246cbc06cc54e7c2701309bd30433b3ffb20d54fcc137248177aba87.json';
+const baseline = JSON.parse(await readFile(join(source, baselinePath), 'utf8'));
+const profile = baseline.profile;
 const zero = '0'.repeat(40);
 
 function command(directory, program, args, input = '') {
@@ -30,12 +32,13 @@ async function repository(t) {
   git('init', '-q'); git('config', 'user.name', 'Benchmark test'); git('config', 'user.email', 'benchmark@example.invalid');
   await mkdir(join(directory, 'scripts'));
   await mkdir(join(directory, '.githooks'));
-  await mkdir(join(directory, 'benchmarks'));
-  for (const path of ['scripts/bench-evidence.py', 'scripts/install-hooks.sh', '.githooks/pre-push']) {
+  await mkdir(join(directory, 'benchmarks/results'), { recursive: true });
+  for (const path of ['scripts/bench-evidence.py', 'scripts/bench_report.py', 'scripts/install-hooks.sh', '.githooks/pre-push']) {
     await copyFile(join(source, path), join(directory, path));
     await chmod(join(directory, path), 0o755);
   }
-  await writeFile(join(directory, 'benchmarks/profile.json'), JSON.stringify(profile) + '\n');
+  await copyFile(join(source, 'benchmarks/profile.json'), join(directory, 'benchmarks/profile.json'));
+  await copyFile(join(source, baselinePath), join(directory, baselinePath));
   await writeFile(join(directory, 'README.md'), 'Source version one.\n');
   await writeFile(join(directory, '.gitignore'), '.bench-results/\n');
   git('add', '.'); git('commit', '-qm', 'ADD test source to check benchmark evidence');
@@ -49,12 +52,9 @@ async function repository(t) {
     const file = join(directory, tracked ? 'benchmarks/results' : '.bench-results', `${id}.json`);
     await mkdir(resolve(file, '..'), { recursive: true });
     const body = {
-      schema: 1, source_fingerprint: id,
+      ...structuredClone(baseline), source_fingerprint: id,
       profile_sha256: createHash('sha256').update(git('show', `${ref}:benchmarks/profile.json`) + '\n').digest('hex'),
-      profile, docker_image_id: `sha256:${'a'.repeat(64)}`, completed: true,
-      docker_limits: profile.resources,
-      exhaustion: { observed: true, reason: 'memory_limit', phase: 'capacity', oom_delta: 1, oom_kill_delta: 1 },
-      measurements: [{ cpu_usec: 100000, memory_bytes: 32000000 }], ...change,
+      ...change,
     };
     await writeFile(file, JSON.stringify(body));
     return file;
@@ -116,6 +116,22 @@ test('missing, malformed, incomplete, and stale benchmark evidence fail without 
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /WARNING.*benchmark/s);
   assert.match(result.stderr, /no terminal/);
+  assert.match(result.stderr, /refs\/heads\/HEAD/);
+  assert.match(result.stderr, /git switch OUTGOING_BRANCH/);
+  assert.match(result.stderr, /git rev-parse HEAD/);
+  assert.match(result.stderr, /Verify that HEAD is the listed outgoing commit/);
+  assert.match(result.stderr, /sh scripts\/check\.sh/);
+  assert.match(result.stderr, /git add PATH/);
+  assert.match(result.stderr, /python3 scripts\/bench\.py --publish\n/);
+  assert.match(result.stderr, /--publish --cpuset-cpus 30,31/);
+  assert.match(result.stderr, /Linux x86_64 with cgroup v2/);
+  assert.match(result.stderr, /512 MiB RAM, no swap, and no network/);
+  assert.match(result.stderr, /memory exhaustion, with a ten-minute timeout/);
+  assert.match(result.stderr, /Image preparation can take\n\s+additional time/);
+  assert.match(result.stderr, /git add benchmarks\/results\//);
+  assert.match(result.stderr, /git commit -m "ADD benchmark evidence/);
+  assert.match(result.stderr, /Retry the push/);
+  assert.match(result.stderr, /This hook does not run\n+it automatically/);
   for (const invalid of [
     { schema: 2 }, { schema: true }, { completed: false }, { source_fingerprint: '0'.repeat(64) },
     { profile_sha256: '0'.repeat(64) }, { docker_image_id: 'harness:latest' },
@@ -140,6 +156,15 @@ test('missing, malformed, incomplete, and stale benchmark evidence fail without 
   const file = await repo.evidence();
   await writeFile(file, '{malformed');
   assert.notEqual(repo.run('validate', '--ref', 'HEAD').status, 0);
+  result = repo.push(repo.record());
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /python3 scripts\/bench\.py --publish/);
+  assert.match(result.stderr, /no terminal/);
+  await repo.evidence('HEAD', { measurements: baseline.measurements.filter(sample => sample.phase !== 'load-4') });
+  result = repo.push(repo.record());
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /comparison is unavailable/);
+  assert.match(result.stderr, /no terminal/);
   await repo.evidence();
   assert.equal(repo.run('validate', '--ref', 'HEAD').status, 0);
   await writeFile(join(repo.directory, 'README.md'), 'Next committed patch.\n');
@@ -159,6 +184,31 @@ test('pre-push checks each outgoing tip instead of HEAD and skips deleted refs',
   assert.notEqual(repo.push(repo.record('measured') + repo.record()).status, 0);
   assert.equal(repo.push(`(delete) ${zero} refs/heads/old ${repo.git('rev-parse', 'HEAD')}\n`).status, 0);
   assert.notEqual(repo.push('invalid\n').status, 0);
+});
+
+test('measured regressions stop outgoing refs without confirmation and ignore saved pass claims', async t => {
+  const repo = await repository(t);
+  repo.git('branch', 'regressed');
+  const measurements = baseline.measurements.map(sample => ({
+    ...sample, memory_bytes: sample.phase === 'load-4' ? Math.ceil(sample.memory_bytes * 1.21) : sample.memory_bytes,
+  }));
+  await repo.evidence('regressed', { measurements, comparison: { status: 'PASS' }, regression: { status: 'PASS' } });
+  let result = repo.run('validate', '--ref', 'regressed');
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /benchmark regression limit exceeded/);
+  assert.match(result.stderr, /load-4/);
+  assert.match(result.stderr, /\+21\.0%/);
+  assert.match(result.stderr, /FAIL/);
+  await writeFile(join(repo.directory, 'README.md'), 'Another outgoing source with no evidence.\n');
+  repo.git('add', 'README.md'); repo.git('commit', '-qm', 'UPDATE source to test mixed outgoing evidence');
+  await writeFile(join(repo.directory, 'README.md'), 'An unrelated dirty worktree.\n');
+  result = repo.push(repo.record() + repo.record('regressed'));
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Push stopped: measured benchmark regressions/);
+  assert.match(result.stderr, /refs\/heads\/regressed/);
+  assert.match(result.stderr, /Other outgoing sources have missing or invalid evidence/);
+  assert.match(result.stderr, /no confirmation override/);
+  assert.doesNotMatch(result.stderr, /no terminal|Type yes to continue|Push these unmeasured/);
 });
 
 test('hook installation is idempotent and preserves existing user hooks', async t => {
