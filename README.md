@@ -733,6 +733,12 @@ test uses temporary workspaces, state directories, and sockets. No test needs
 paid provider access. The faux provider controls responses and actual coding
 tools execute local test commands.
 
+Successful routine terminal and desktop checks delete their temporary workspaces,
+browser profiles, caches, and reports. Failed checks retain their files and print
+the directory for diagnosis. To keep a successful run, pass `--evidence DIRECTORY`
+to its Python test script. `HARNESS_GUI_VIDEO=1` also keeps desktop evidence.
+These checks do not delete directories from earlier runs.
+
 The desktop checks require [Kitty 0.49.2](https://github.com/kovidgoyal/kitty/releases/tag/v0.49.2),
 [Firefox 157.0.1](https://archive.mozilla.org/pub/firefox/releases/157.0.1/),
 Xvfb, FFmpeg, and the X11 test extension library (`libXtst`).
@@ -740,6 +746,9 @@ CI checks the published Kitty and Firefox archive hashes before extraction.
 Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
 `PATH`. These are test tools, not application dependencies. The desktop check
 fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
+The Neovim observation command uses headless mode so results stay on standard
+output when the check runs from a terminal. Five Python support tests check all
+four terminal input/error combinations and test-file cleanup and retention.
 
 The retained application changes passed the release checks on **2026-10-22**. They passed
 formatting, Clippy with warnings denied, 60 Rust tests, the release build, six

@@ -13,7 +13,7 @@ import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from interactive import Editor, EVIDENCE, REPO, RESULTS, ARGS
+from interactive import Editor, EVIDENCE, REPO, RESULTS, ARGS, run_tests
 
 sys.path.insert(0, str(REPO / 'tests/fixtures'))
 from rpc import Rpc
@@ -197,7 +197,7 @@ class RealEditor(Editor):
             self.editor_socket = self.root / 'editor.sock'
             self.command('call serverstart(' + json.dumps(str(self.editor_socket)) + ')')
         encoded = 'luaeval(' + json.dumps('vim.json.encode(' + expression + ')') + ')'
-        return json.loads(subprocess.check_output(['nvim', '--server', str(self.editor_socket), '--remote-expr', encoded], text=True, timeout=5))
+        return json.loads(subprocess.check_output(['nvim', '--headless', '--server', str(self.editor_socket), '--remote-expr', encoded], text=True, timeout=5))
 
     def windows(self):
         return self.observe('(function() local result={} for _,w in ipairs(vim.api.nvim_tabpage_list_wins(0)) do local b=vim.api.nvim_win_get_buf(w); local pos=vim.fn.win_screenpos(w); result[#result+1]={id=w,name=vim.api.nvim_buf_get_name(b),row=pos[1],col=pos[2],width=vim.api.nvim_win_get_width(w),height=vim.api.nvim_win_get_height(w),current=w==vim.api.nvim_get_current_win(),top=vim.api.nvim_win_call(w,function() return vim.fn.line("w0") end),cursor=vim.api.nvim_win_get_cursor(w)[1],lines=vim.api.nvim_buf_get_lines(b,0,-1,false)} end return result end)()')
@@ -1320,9 +1320,7 @@ def main():
     if ARGS.group == 'legacy' or ARGS.legacy_root:
         assert ARGS.legacy_root, '--group legacy requires --legacy-root'
         legacy_case(ARGS.legacy_root)
-    evidence = {'nvim': subprocess.check_output(['nvim', '--version'], text=True).splitlines()[0], 'mode': 'real terminal, actual Rust server and Pi; faux provider and fail-closed OpenAI SDK fixtures', 'cases': RESULTS}
-    (EVIDENCE / 'results.json').write_text(json.dumps(evidence, indent=2))
-    print(json.dumps({'passed': len(RESULTS), 'evidence': str(EVIDENCE / 'results.json')}))
+    return {'nvim': subprocess.check_output(['nvim', '--version'], text=True).splitlines()[0], 'mode': 'real terminal, actual Rust server and Pi; faux provider and fail-closed OpenAI SDK fixtures', 'cases': RESULTS}
 
 if __name__ == '__main__':
-    main()
+    run_tests(main)

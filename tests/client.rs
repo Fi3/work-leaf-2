@@ -378,7 +378,11 @@ fn chat_revision_is_checked_before_any_operation() {
                 reply(stream, &input, hello);
                 disconnected(stream);
             });
-            let output = fixture.run(&command, b"Preserve this draft\n");
+            // Supply input before the client can reject the handshake and close stdin.
+            let (input, mut writer) = std::io::pipe().unwrap();
+            writer.write_all(b"Preserve this draft\n").unwrap();
+            drop(writer);
+            let output = fixture.command(&command).stdin(input).output().unwrap();
             assert_eq!(output.status.code(), Some(3));
             assert!(output.stdout.is_empty());
             assert!(

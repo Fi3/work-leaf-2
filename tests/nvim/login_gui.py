@@ -15,6 +15,7 @@ import urllib.request
 from pathlib import Path
 
 from real import RealEditor, EVIDENCE, RESULTS
+from interactive import run_tests
 from desktop import Desktop
 
 DESKTOP = {}
@@ -736,9 +737,8 @@ def main():
         case['checks'] = json.loads((directory/'observed.json').read_text())
         case['screenshots'] = {path.name:hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(directory.glob('*.png'))}
         if (directory/'screen.mkv').exists(): case['video_sha256'] = hashlib.sha256((directory/'screen.mkv').read_bytes()).hexdigest()
-    (EVIDENCE/'results.json').write_text(json.dumps(report,indent=2)+'\n')
-    print(json.dumps({'passed':len(RESULTS),'evidence':str(EVIDENCE/'results.json')}))
+    return report
 
 
 if __name__=='__main__':
-    main()
+    run_tests(main, keep=bool(os.environ.get('HARNESS_GUI_VIDEO')))

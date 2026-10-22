@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Drive actual Neovim in a terminal and retain terminal output as evidence."""
+"""Drive actual Neovim in a terminal and retain evidence when requested or failed."""
 import argparse
 import json
 import os
 import pty
 import select
+import shutil
 import struct
 import subprocess
+import sys
 import tempfile
 import termios
 import time
@@ -23,6 +25,22 @@ ARGS = PARSER.parse_args()
 EVIDENCE = ARGS.evidence or Path(tempfile.mkdtemp(prefix='harness-nvim-ui-evidence-'))
 EVIDENCE.mkdir(parents=True, exist_ok=True)
 RESULTS = []
+
+def run_tests(main, keep=False):
+    try:
+        report = main()
+        path = EVIDENCE / 'results.json'
+        path.write_text(json.dumps(report, indent=2) + '\n')
+        summary = {'passed': len(report['cases'])}
+        if ARGS.evidence or keep:
+            summary['evidence'] = str(path)
+        else:
+            shutil.rmtree(EVIDENCE)
+            summary['temporary_files_removed'] = True
+    except BaseException:
+        print(f'Test files retained at {EVIDENCE}', file=sys.stderr)
+        raise
+    print(json.dumps(summary))
 
 class Editor:
     def __init__(self, name):
@@ -261,8 +279,7 @@ def main():
     assert not editor.calls('run.stop')
     editor.finish()
 
-    (EVIDENCE / 'results.json').write_text(json.dumps({'nvim': subprocess.check_output(['nvim', '--version'], text=True).splitlines()[0], 'mode': 'real terminal; fixture client', 'cases': RESULTS}, indent=2))
-    print(json.dumps({'passed': len(RESULTS), 'evidence': str(EVIDENCE / 'results.json')}))
+    return {'nvim': subprocess.check_output(['nvim', '--version'], text=True).splitlines()[0], 'mode': 'real terminal; fixture client', 'cases': RESULTS}
 
 if __name__ == "__main__":
-    main()
+    run_tests(main)
