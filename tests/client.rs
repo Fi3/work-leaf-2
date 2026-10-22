@@ -225,6 +225,7 @@ fn standard_output_preserves_file_offsets_and_flags_on_failure() {
             let input = request(stream);
             reply(stream, &input, json!({"items":[]}));
         }
+        disconnected(stream);
     });
     let path = fixture.dir.join("output");
     let mut file = fs::File::create(&path).unwrap();
