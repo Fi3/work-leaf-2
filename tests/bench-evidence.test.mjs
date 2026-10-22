@@ -110,6 +110,57 @@ test('valid evidence follows source contents across the evidence commit and igno
   assert.equal(repo.push(repo.record()).status, 0);
 });
 
+for (const committedFails of [false, true]) {
+  test(`outgoing committed ${committedFails ? 'FAIL' : 'PASS'} takes priority over conflicting local and HEAD results`, async t => {
+    const repo = await repository(t);
+    const passing = {}, failing = { capacity_completed_sessions: 284 };
+    const committed = committedFails ? failing : passing;
+    const local = committedFails ? passing : failing;
+    const file = await repo.evidence('HEAD', committed, true);
+    repo.git('add', file); repo.git('commit', '-qm', 'ADD outgoing evidence to check result priority');
+    repo.git('branch', 'outgoing');
+    await repo.evidence('HEAD', local, true);
+    repo.git('add', file); repo.git('commit', '-qm', 'UPDATE evidence to test a different committed result');
+    assert.equal(repo.fingerprint('HEAD'), repo.fingerprint('outgoing'), 'Evidence-only commits keep the same source');
+    const localFile = await repo.evidence('outgoing', local);
+    const localContents = await readFile(localFile, 'utf8');
+    const committedPath = `benchmarks/results/${repo.fingerprint('outgoing')}.json`;
+    const outgoing = repo.git('rev-parse', 'outgoing');
+    for (const workingCopy of [localContents, '{malformed', null]) {
+      if (workingCopy === null) await rm(file);
+      else await writeFile(file, workingCopy);
+      const validated = repo.run('validate', '--ref', 'outgoing');
+      const pushed = repo.push(repo.record('outgoing'));
+      for (const [result, reference] of [[validated, 'outgoing'], [pushed, outgoing]]) {
+        assert.equal(result.status, committedFails ? 1 : 0, result.stderr);
+        assert.ok((result.stdout + result.stderr).includes(`${reference}:${committedPath}`), 'Select the exact outgoing commit');
+        assert.doesNotMatch(result.stderr, /no terminal|Type yes to continue|Push these unmeasured/);
+      }
+      if (committedFails) assert.match(pushed.stderr, /Push stopped: measured benchmark regressions/);
+    }
+    assert.equal(repo.run('validate').status, committedFails ? 0 : 1, 'Working-source validation keeps local selection');
+    assert.equal(repo.run('validate', '--ref', 'outgoing', '--evidence-dir', '.bench-results').status,
+      committedFails ? 0 : 1, 'An explicit validation directory selects that directory');
+  });
+}
+
+test('invalid committed evidence cannot be hidden by a passing local result', async t => {
+  const repo = await repository(t);
+  const file = await repo.evidence('HEAD', {}, true);
+  await writeFile(file, '{malformed');
+  repo.git('add', file); repo.git('commit', '-qm', 'ADD invalid evidence to test authoritative selection');
+  await repo.evidence();
+  await repo.evidence('HEAD', {}, true);
+  const result = repo.run('validate', '--ref', 'HEAD');
+  assert.equal(result.status, 1, result.stdout);
+  assert.match(result.stderr, /HEAD:benchmarks\/results/);
+  const pushed = repo.push(repo.record());
+  assert.equal(pushed.status, 1, pushed.stdout);
+  assert.match(pushed.stderr, /missing or invalid/);
+  assert.match(pushed.stderr, /no terminal/);
+  assert.doesNotMatch(pushed.stderr, /measured benchmark regressions/);
+});
+
 test('missing, malformed, incomplete, and stale benchmark evidence fail without human confirmation', async t => {
   const repo = await repository(t);
   let result = repo.push(repo.record());

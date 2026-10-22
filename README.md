@@ -701,8 +701,9 @@ This benchmark uses simulated model responses and is separate from the release
 checks below. Install the push warning with `sh scripts/install-hooks.sh`.
 The hook checks each outgoing source tree and asks for explicit confirmation
 when matching benchmark evidence is absent. Its warning gives the measurement
-and evidence commit steps. A measured result outside the 20% resource budget
-stops the push without a confirmation override. See
+and evidence commit steps. A result saved in the outgoing commit takes priority
+over local files, including a failed or invalid result. A measured result outside
+the 20% resource budget stops the push without a confirmation override. See
 [PERFORMANCE.md](PERFORMANCE.md) for setup, evidence, and comparison rules.
 
 Use `--cpuset-cpus 30,31` to select those two CPUs on a host where they are
@@ -742,10 +743,10 @@ fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks
 
 The retained application changes passed the release checks on **2026-10-22**. They passed
 formatting, Clippy with warnings denied, 60 Rust tests, the release build, six
-adapter syntax checks, and 163 Node tests. The Node tests include 75 adapter tests,
+adapter syntax checks, and 166 Node tests. The Node tests include 75 adapter tests,
 35 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
-ten actual server recovery tests, one process exit test, and 24 benchmark, report,
-and push-evidence tests. These 24 tests do not run the Docker capacity benchmark. Independent
+ten actual server recovery tests, one process exit test, and 27 benchmark, report,
+and push-evidence tests. These 27 tests do not run the Docker capacity benchmark. Independent
 Node test files run concurrently with separate temporary directories and sockets.
 The added application tests cover generated Unicode preview limits and saved
 history, receipts, settings, and targeted stops after Pi cache expiry.

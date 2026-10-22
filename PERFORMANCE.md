@@ -128,6 +128,10 @@ hook exists, it explains how to call `.githooks/pre-push` from that hook.
 
 Before a push, the hook checks each outgoing ref tip against its benchmark
 evidence. It checks the pushed commit, not an unrelated working tree or `HEAD`.
+If that commit contains a matching result, the hook uses only that committed
+result, including a failure or invalid data. A local file cannot replace it.
+The hook does not select by timestamp or pass/fail status. Existing local
+fallback applies only when the outgoing commit has no matching result.
 A missing or invalid result prints a warning and asks through the terminal:
 
 ```text
@@ -153,6 +157,12 @@ python3 scripts/bench-evidence.py fingerprint
 python3 scripts/bench-evidence.py validate
 python3 scripts/bench-evidence.py validate --ref COMMIT
 ```
+
+`validate --ref COMMIT` uses the same committed-result priority as the hook.
+Without `--ref`, validation keeps the local search order: `.bench-results/`,
+then the working copy of `benchmarks/results/`. `validate --evidence-dir PATH`
+explicitly selects one evidence directory, even with `--ref`. The push hook
+does not use this override.
 
 ## Compare results
 

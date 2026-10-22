@@ -152,16 +152,18 @@ def validate_result(result, source, profile_hash, profile):
 
 
 def evidence_candidates(root, source, reference=None, evidence_dir=None):
-    directories = [Path(evidence_dir)] if evidence_dir else [root / item for item in EVIDENCE_PATHS]
-    for directory in directories:
-        path = directory / f"{source}.json"
-        if path.is_file():
-            yield str(path), path.read_bytes()
     if reference and not evidence_dir:
         path = f"benchmarks/results/{source}.json"
         result = subprocess.run(["git", "-C", str(root), "show", f"{reference}:{path}"], capture_output=True)
         if result.returncode == 0:
             yield f"{reference}:{path}", result.stdout
+            # The outgoing commit owns its result, including failures or invalid data.
+            return
+    directories = [Path(evidence_dir)] if evidence_dir else [root / item for item in EVIDENCE_PATHS]
+    for directory in directories:
+        path = directory / f"{source}.json"
+        if path.is_file():
+            yield str(path), path.read_bytes()
 
 
 def check_evidence(root, reference=None, evidence_dir=None):
