@@ -697,6 +697,10 @@ values, duplicate versions, and scripts:
 
 When a human completes a PR, run `python3 scripts/bench.py --publish` to record
 CPU and RAM use under the fixed Docker limits, through memory exhaustion.
+Commit source, documentation, and check evidence before measurement. On PASS,
+`--publish` automatically commits only the benchmark result and validates that
+commit. A failed run keeps its report without an automatic commit. Unrelated
+staged benchmark evidence is preserved. Omit `--publish` for a local trial.
 This benchmark uses simulated model responses and is separate from the release
 checks below. Install the push warning with `sh scripts/install-hooks.sh`.
 The hook checks each outgoing source tree and asks for explicit confirmation
@@ -755,8 +759,12 @@ formatting, Clippy with warnings denied, 60 Rust tests, the release build, six
 adapter syntax checks, and 166 Node tests. The Node tests include 75 adapter tests,
 35 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
 ten actual server recovery tests, one process exit test, and 27 benchmark, report,
-and push-evidence tests. These 27 tests do not run the Docker capacity benchmark. Independent
-Node test files run concurrently with separate temporary directories and sockets.
+and push-evidence tests. These 27 tests do not run the Docker capacity benchmark.
+Automatic publication adds 19 checks with temporary Git repositories and
+controlled measurement data. They cover passing and failed results, changes
+during measurement, normal commit hooks, and preservation of staged evidence.
+Independent Node test files run concurrently with separate temporary directories
+and sockets.
 The added application tests cover generated Unicode preview limits and saved
 history, receipts, settings, and targeted stops after Pi cache expiry.
 Cancellation also clears queued secret input before terminal echo is restored.

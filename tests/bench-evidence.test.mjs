@@ -179,8 +179,11 @@ test('missing, malformed, incomplete, and stale benchmark evidence fail without 
   assert.match(result.stderr, /512 MiB RAM, no swap, and no network/);
   assert.match(result.stderr, /memory exhaustion, with a ten-minute timeout/);
   assert.match(result.stderr, /Image preparation can take\n\s+additional time/);
-  assert.match(result.stderr, /git add benchmarks\/results\//);
-  assert.match(result.stderr, /git commit -m "ADD benchmark evidence/);
+  assert.match(result.stderr, /git commit\n/);
+  assert.match(result.stderr, /--publish requires a checked-out branch with no uncommitted source/);
+  assert.match(result.stderr, /On PASS, --publish automatically commits only the generated benchmark/);
+  assert.match(result.stderr, /No manual evidence commit is needed/);
+  assert.match(result.stderr, /A failed measurement does not create a commit/);
   assert.match(result.stderr, /Retry the push/);
   assert.match(result.stderr, /This hook does not run\n+it automatically/);
   for (const invalid of [

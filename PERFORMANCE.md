@@ -39,12 +39,22 @@ when the user explicitly requests a measurement. Do not add it to the normal
 release gate or run it after every change. The first baseline for this work is
 explicitly authorized.
 
-Complete normal correctness checks first. Stage each new source or documentation
-file, or use `git add -N PATH`, so the benchmark can include it. Then run:
+Complete normal correctness checks first. Commit source, documentation, and
+check evidence on the branch to measure. Then run:
 
 ```sh
 python3 scripts/bench.py --publish
 ```
+
+On PASS, `--publish` automatically commits only the matching result and validates
+the new commit. It requires an attached branch and no uncommitted source changes.
+It checks the source and branch again before the commit. Unrelated staged
+benchmark evidence stays staged. Normal Git commit hooks run; a rejected commit
+leaves the result available and makes the command fail. No push is automatic.
+
+To measure uncommitted work as a local trial, omit `--publish`. Stage new source
+files or use `git add -N PATH` so the snapshot includes them. Local trials do not
+create commits.
 
 To select two available logical CPUs, add `--cpuset-cpus`. For example, this
 host uses the higher-numbered CPUs 30 and 31:
@@ -112,6 +122,10 @@ option for a local trial. Each result uses its source fingerprint as
 the file name and records the profile hash, complete profile, Docker image ID,
 actual limits, measurements, and exhaustion evidence. Source or profile changes
 require a new result; an evidence-only commit does not.
+Only passing published results are committed automatically. Complete failed
+results remain saved for review. If source or branch state changes during the
+run, automatic publication stops and keeps the result. An identical result
+already present in the commit is validated without an empty commit.
 The runner prints resource and comparison tables and saves the text report in
 `.bench-results/`. A complete run remains recorded if it exceeds the resource
 budget, but the command returns a failure status. A recorded run is not by
@@ -140,8 +154,8 @@ Push these unmeasured changes? Type yes to continue:
 
 Only the exact answer `yes` permits that unmeasured push. Without a terminal,
 the hook refuses the push. The warning gives the outgoing branch and commit,
-correctness checks, staging steps, Docker requirements, measurement command,
-optional CPU selection, and evidence commit steps. The hook does not run the
+correctness checks, source commit steps, Docker requirements, measurement command,
+optional CPU selection, and automatic evidence commit behavior. The hook does not run the
 benchmark itself. An agent must not provide the human confirmation or bypass
 the hook.
 

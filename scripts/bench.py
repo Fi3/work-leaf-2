@@ -81,6 +81,47 @@ def cpu_affinity(value):
     return ','.join(map(str, sorted(cpus)))
 
 
+def publication_context(evidence, root):
+    try:
+        branch = evidence.git(root, 'symbolic-ref', '--quiet', 'HEAD').decode().strip()
+    except ValueError as error:
+        raise RuntimeError('--publish requires a checked-out branch, not a detached HEAD') from error
+    changes = evidence.git(root, 'status', '--porcelain', '-z', '--untracked-files=all', '--',
+                           '.', ':(exclude).bench-results', ':(exclude)benchmarks/results')
+    if changes:
+        raise RuntimeError('--publish requires committed source and documentation. Commit those changes first, '
+                           'or omit --publish for a local trial')
+    return branch, evidence.git(root, 'rev-parse', 'HEAD').decode().strip()
+
+
+def commit_result(evidence, root, context, source, path, serialized):
+    if publication_context(evidence, root) != context:
+        raise RuntimeError('The branch or HEAD changed during measurement; result remains saved but uncommitted')
+    if evidence.fingerprint(evidence.source_files(root)) != source:
+        raise RuntimeError('The source changed during measurement; result remains saved but uncommitted')
+    name = path.relative_to(root).as_posix()
+    existing = subprocess.run(['git', '-C', str(root), 'show', f'{context[1]}:{name}'], capture_output=True)
+    if existing.returncode == 0 and existing.stdout == serialized.encode():
+        evidence.check_evidence(root, context[1])
+        return context[1]
+    evidence.git(root, 'add', '--', name)
+    committed = subprocess.run(['git', '-C', str(root), 'commit', '--only', '-m',
+        'ADD benchmark evidence to record measured resource use', '--', name], capture_output=True, text=True)
+    if committed.returncode:
+        detail = committed.stderr.strip() or committed.stdout.strip() or f'exit status {committed.returncode}'
+        raise RuntimeError(f'Git did not commit benchmark evidence: {detail}')
+    branch, revision = publication_context(evidence, root)
+    parents = evidence.git(root, 'rev-list', '--parents', '-n', '1', revision).decode().split()
+    if branch != context[0] or parents != [revision, context[1]]:
+        raise RuntimeError('The branch or commit history changed while committing benchmark evidence')
+    if evidence.fingerprint(evidence.source_files(root, revision)) != source:
+        raise RuntimeError('The committed source does not match the measurement')
+    if evidence.git(root, 'show', f'{revision}:{name}') != serialized.encode():
+        raise RuntimeError('The committed result does not match the measurement')
+    evidence.check_evidence(root, revision)
+    return revision
+
+
 def run_container(image, profile, directory, source, cpuset=None):
     resources = profile['resources']
     affinity_options = ['--cpuset-cpus', cpuset] if cpuset else []
@@ -131,7 +172,7 @@ def run_container(image, profile, directory, source, cpuset=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--publish', action='store_true', help='Also save measured evidence in benchmarks/results for review')
+    parser.add_argument('--publish', action='store_true', help='Save reviewable evidence and automatically commit a passing result; source must be committed')
     parser.add_argument('--cpuset-cpus', help='Use two available logical CPU IDs, for example 30,31; the two-core quota stays fixed')
     args = parser.parse_args()
     if platform.system() != 'Linux' or platform.machine() != 'x86_64':
@@ -141,13 +182,16 @@ def main():
     root = evidence.project_root()
     baseline = load_baseline(root)
     published_harnesses = json.loads((root / 'benchmarks/published-harnesses.json').read_text())
-    revision = evidence.git(root, 'rev-parse', 'HEAD').decode().strip()
+    publication = publication_context(evidence, root) if args.publish else None
+    revision = publication[1] if publication else evidence.git(root, 'rev-parse', 'HEAD').decode().strip()
     directory = root / '.bench-results'
     directory.mkdir(exist_ok=True)
     started = time.time()
     with tempfile.TemporaryDirectory(prefix='harness-bench-source-') as temporary:
         snapshot = Path(temporary) / 'source'
         source = evidence.snapshot(root, snapshot)
+        if publication and evidence.fingerprint(evidence.source_files(root, revision)) != source:
+            raise RuntimeError('The source changed while preparing the benchmark; commit changes before --publish')
         profile_bytes = (snapshot / evidence.PROFILE_PATH).read_bytes()
         profile = json.loads(profile_bytes)
         profile_hash = hashlib.sha256(profile_bytes).hexdigest()
@@ -186,6 +230,13 @@ def main():
     print(f'Measured benchmark evidence: {target}', flush=True)
     print(f'Resource report: {report_path}', flush=True)
     print(report, end='')
+    if publication and result['comparison']['status'] == 'PASS':
+        try:
+            committed = commit_result(evidence, root, publication, source, published, serialized)
+        except (OSError, ValueError, subprocess.SubprocessError, RuntimeError) as error:
+            raise RuntimeError(f'Measurement passed, but automatic evidence publication failed: {error}. '
+                               f'Saved result: {target}') from error
+        print(f'Benchmark evidence is committed at {committed}; its push check passed.', flush=True)
     return 0 if result['comparison']['status'] == 'PASS' else 1
 
 if __name__ == '__main__':
