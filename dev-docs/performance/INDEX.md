@@ -1,6 +1,7 @@
 # Resource measurement references
 
-These files preserve upstream measurement descriptions and source code.
+These files preserve external measurement descriptions. Links to measurement
+code name fixed revisions in the external repositories.
 Use them as reference material, not as application requirements.
 
 - [jcode, saved on 2026-10-21](jcode/README.md).

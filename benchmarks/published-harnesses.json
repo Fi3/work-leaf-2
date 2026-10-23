@@ -19,14 +19,14 @@
       "published_at": "2026-09-28T03:06:43Z",
       "date_kind": "source revision time; run dates are in each measurement",
       "method": "Process-tree RSS and sampled process-tree CPU. CPU uses 100 percent for one full core. Three serial runs per harness; the table uses the run with median end-to-end duration. macOS proc_pid_rusage at 100 ms, except the ccode Linux procfs batch at 10 ms.",
-      "method_paths": [
-        "dev-docs/performance/harness-perf-benchmark/scripts/perf/sampler.ts",
-        "dev-docs/performance/harness-perf-benchmark/scripts/perf/score.ts"
-      ],
       "limitations": [
         "The runs use several batches and machines. CPU mean and peak describe sampled process-tree CPU; short-lived tools can escape these samples. Their separate child-CPU counters contribute to the upstream integrated score, which is not shown here.",
         "The author supplies a combined CPU/memory score, but this dataset does not use that score as a cross-machine comparison.",
         "The report gives one median run, not a median and variation for each individual resource metric."
+      ],
+      "method_urls": [
+        "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/scripts/perf/sampler.ts",
+        "https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/scripts/perf/score.ts"
       ]
     },
     {
@@ -37,14 +37,14 @@
       "published_at": "2026-10-22T03:33:44Z",
       "date_kind": "source revision time; benchmark run date is not reported",
       "method": "Linux process-tree proportional set size (PSS) after real model turns. The linked script defaults to five turns and session counts 1, 5, 10 and 20; the README does not state the exact invocation for its table. jcode and OpenCode each use one daemon for their sessions; other tools launch one process per session.",
-      "method_paths": [
-        "dev-docs/performance/jcode/scripts/bench_headless_memory.py",
-        "dev-docs/performance/jcode/scripts/bench_memory_cli.py"
-      ],
       "limitations": [
         "The README omits tested versions, run dates, machine configuration and variation. Do not treat the linked script defaults as confirmed run settings.",
         "Model calls are real and use different providers or models in the default script. Context content and tool output are not fixed by a common recorded response stream.",
         "The README values changed from the earlier saved jcode claim of 32.9 MB first session and about 6.4 MB additional. This source reports 71.3 MB and about 3.3 MB. The earlier report is preserved."
+      ],
+      "method_urls": [
+        "https://github.com/1jehuang/jcode/blob/28d51019f7fdd30bbde69d40c87d59536314bd46/scripts/bench_headless_memory.py",
+        "https://github.com/1jehuang/jcode/blob/28d51019f7fdd30bbde69d40c87d59536314bd46/scripts/bench_memory_cli.py"
       ]
     }
   ],

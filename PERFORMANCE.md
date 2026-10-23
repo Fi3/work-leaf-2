@@ -494,7 +494,7 @@ Its [website](https://jcode.sh/) gives a separate 3.5 MiB claim for v0.92.14.
 The published peri 54.7 MiB mean/71.7 MiB peak uses RSS on macOS, different mocked
 output, and no stream delay; see the [benchmark](https://github.com/KonghaYao/harness-perf-benchmark)
 and [pinned method](https://github.com/KonghaYao/harness-perf-benchmark/blob/e89a895a27a6634bded08f93c886b1a70bb15d63/docs/perf-compare.md).
-These claims were checked, not reproduced. Preserved [upstream sources](dev-docs/performance/)
+These claims were checked, not reproduced. Saved [measurement descriptions](dev-docs/performance/)
 and the [catalog](dev-docs/catalog.json) record revisions, licenses, and hashes.
 Both published sources label values divided by 1024 squared as MB; these are MiB.
 

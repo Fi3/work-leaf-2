@@ -8,9 +8,9 @@ references. They are not implementation instructions.
 English is the repository language. Saved benchmark references use English
 translations. The [reference catalog](dev-docs/catalog.json) records the translations,
 original checksums, and Git revision that preserves the original text.
-Translated sample text changes the saved generator's workload. Use the recorded
-original revision to reproduce published measurements. These reference files are
-not part of the application or its resource benchmark.
+Measurement scripts stay in the external repositories. Links name fixed source
+revisions for review and reproduction. The saved descriptions are not part of
+the application or its resource benchmark.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains process ownership, state, and the design
 choices. [PERFORMANCE.md](PERFORMANCE.md) explains resource limits, display memory,
@@ -977,7 +977,7 @@ A separate first-use source check started with no npm packages or build output.
 The script installed the locked packages and used its own Rust toolchain, even
 when the caller's project selected another compiler and target. Actual Neovim
 retained the caller's directory and started no server before the first command.
-All 83 saved reference hashes match the catalog, including the 13 performance references.
+All 77 saved reference hashes match the catalog, including the 7 performance references.
 
 The [performance change check report](tests/evidence/performance.json) records
 the full gate after experiment cleanup and the benchmark report changes. It
