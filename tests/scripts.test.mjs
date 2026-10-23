@@ -96,7 +96,7 @@ async function fixture(t, messages, tokens = 100000) {
 }
 
 test('standalone scripts use actual Pi tools, full answer text, and idle startup without a generation call', { timeout: 30000 }, async t => {
-  const answer = 'é世界🙂\n'.repeat(12000);
+  const answer = '\u00e9\u4e16\u754c🙂\n'.repeat(12000);
   const app = await fixture(t, [
     fauxAssistantMessage(fauxToolCall('write', { path: 'result.txt', content: 'Tool result\n' }), { stopReason: 'toolUse' }),
     fauxAssistantMessage(answer),

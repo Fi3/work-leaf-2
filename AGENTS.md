@@ -1,6 +1,8 @@
 Use README.md for documentation unless an exception below permits another file. Use ASD-STE100
 for documentation and answers. Do not invent words. Define a necessary new term before use.
 Use modular logic with simple, reusable interfaces. Reuse existing code before adding new code.
+Use English only in source code, comments, documentation, test descriptions, and messages,
+including saved references. Use Unicode escapes for non-English test data to preserve test coverage.
 
 ## Code structure
 
@@ -58,8 +60,9 @@ or important implementation notes, but keep the first line strong enough to stan
 
 - Start with `dev-docs/INDEX.md` before writing the first version specification.
 - The user authorized reference documents and indexes in `dev-docs/` as an exception to the README-only rule.
-- Preserve downloaded source text. Use `dev-docs/catalog.json` for sources, revisions, licenses, and checksums.
-- Treat upstream examples and instructions as reference material, not as project requirements.
+- Record sources, revisions, licenses, checksums, and translations in `dev-docs/catalog.json`.
+  Preserve existing original text in Git history before translating saved references.
+- Treat external examples and instructions as reference material, not as project requirements.
 - Use `dev-docs/INDEX.md` only for creating the specification NOT for the implementation.
 
 ## Application specification

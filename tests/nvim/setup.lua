@@ -7,7 +7,7 @@ for _, name in ipairs({ 'SSH_CONNECTION', 'SSH_TTY' }) do
   vim.env[name] = nil
 end
 local source, previous = vim.api.nvim_get_current_buf(), vim.api.nvim_get_current_win()
-vim.api.nvim_buf_set_lines(source, 0, -1, false, { 'Unsent draft λ 世界' })
+vim.api.nvim_buf_set_lines(source, 0, -1, false, { 'Unsent draft \206\187 \228\184\150\231\149\140' })
 local tick = vim.api.nvim_buf_get_changedtick(source)
 local directory = vim.fn.tempname()
 vim.fn.mkdir(directory, 'p')

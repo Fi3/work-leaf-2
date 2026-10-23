@@ -54,12 +54,12 @@
       "params": {
         "session_id": "work",
         "request_id": "task_001",
-        "text": "Read this λ\n世界",
+        "text": "Read this \u03bb\n\u4e16\u754c",
         "context": [
           {
             "kind": "selection",
             "path": "source.rs",
-            "text": "unsaved α\n",
+            "text": "unsaved \u03b1\n",
             "modified": true,
             "changedtick": 3,
             "start_line": 1,
@@ -162,7 +162,7 @@
       "method": "session.configure",
       "params": {
         "session_id": "work",
-        "name": "Review λ"
+        "name": "Review \u03bb"
       }
     },
     {
@@ -518,7 +518,7 @@
     "state": "idle",
     "active_submission_id": null,
     "assistant": {
-      "text": "Hello λ\n世界",
+      "text": "Hello \u03bb\n\u4e16\u754c",
       "truncated": false
     },
     "tools": [],
@@ -526,7 +526,7 @@
       {
         "entry_id": "opaque-entry",
         "kind": "assistant",
-        "text": "Hello λ\n世界",
+        "text": "Hello \u03bb\n\u4e16\u754c",
         "truncated": false
       }
     ],
@@ -581,7 +581,7 @@
       "state": "idle",
       "active_submission_id": null,
       "assistant": {
-        "text": "Hello λ\n世界",
+        "text": "Hello \u03bb\n\u4e16\u754c",
         "truncated": false
       },
       "tools": [],
@@ -589,7 +589,7 @@
         {
           "entry_id": "opaque-entry",
           "kind": "assistant",
-          "text": "Hello λ\n世界",
+          "text": "Hello \u03bb\n\u4e16\u754c",
           "truncated": false
         }
       ],
@@ -626,7 +626,7 @@
         "state": "idle",
         "active_submission_id": null,
         "assistant": {
-          "text": "Hello λ\n世界",
+          "text": "Hello \u03bb\n\u4e16\u754c",
           "truncated": false
         },
         "tools": [],
@@ -634,7 +634,7 @@
           {
             "entry_id": "opaque-entry",
             "kind": "assistant",
-            "text": "Hello λ\n世界",
+            "text": "Hello \u03bb\n\u4e16\u754c",
             "truncated": false
           }
         ],
@@ -647,7 +647,7 @@
     }
   },
   "entry_chunk": {
-    "text": "Hello λ\n世界",
+    "text": "Hello \u03bb\n\u4e16\u754c",
     "next_offset": 15,
     "end": true
   },

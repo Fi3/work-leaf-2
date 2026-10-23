@@ -4,7 +4,7 @@ import { installOAuthMock, secret as oauthSecret } from './oauth.mjs';
 
 export const apiKey = 'sk-generation-test-NOT-FOR-OUTPUT';
 export const accountToken = 'generation-account-token-NOT-FOR-OUTPUT';
-export const answer = 'OpenAI streamed λ 世界 and completed the task.';
+export const answer = 'OpenAI streamed \u03bb \u4e16\u754c and completed the task.';
 
 function events(scenario, index) {
   const id = `resp_fixture_${index}`;
@@ -27,7 +27,7 @@ function events(scenario, index) {
   if (scenario.kind === 'tool') {
     result.push({ type: 'response.function_call_arguments.delta', output_index: 0, delta: item.arguments });
   } else {
-    result.push({ type: 'response.output_text.delta', output_index: 0, content_index: 0, delta: 'OpenAI streamed λ 世界' });
+    result.push({ type: 'response.output_text.delta', output_index: 0, content_index: 0, delta: 'OpenAI streamed \u03bb \u4e16\u754c' });
     result.push({ type: 'response.output_text.delta', output_index: 0, content_index: 0, delta: ' and completed the task.' });
   }
   if (scenario.kind !== 'incomplete') result.push(

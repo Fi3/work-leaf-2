@@ -19,7 +19,7 @@ sys.path.insert(0, str(REPO / 'tests/fixtures'))
 from rpc import Rpc
 
 BINARY = REPO / 'target/debug/harness'
-MESSAGE = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import {fauxAssistantMessage} from '@earendil-works/pi-ai/providers/faux'; console.log(JSON.stringify(fauxAssistantMessage('Streamed answer λ 世界. '.repeat(400))));"], cwd=REPO, text=True))
+MESSAGE = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import {fauxAssistantMessage} from '@earendil-works/pi-ai/providers/faux'; console.log(JSON.stringify(fauxAssistantMessage('Streamed answer \u03bb \u4e16\u754c. '.repeat(400))));"], cwd=REPO, text=True))
 
 class RealEditor(Editor):
     def __init__(self, name, active=True, message=None, rate=25, foreground=False, startup=False, responses=None, drop_receipt=False, launcher=None, first_run=False, oauth_mock=False, generation=None):
@@ -370,11 +370,11 @@ def launcher_cases():
         observed = json.loads((editor.root / 'launcher.json').read_text())
         assert observed == {'init': True, 'cwd': str(editor.root), 'windows': 3, 'prompt': True, 'transcript': False, 'listed': True, 'width': 87, 'chat_width': 87, 'height': 5 if launcher == 'configured' else 3, 'content_window': editor.content_window, 'source_loaded': True, 'source_hidden': True, 'prompt_wrap': True, 'transcript_wrap': True, 'cleared': True}, observed
         assert editor.snapshot(editor.session_id)['session']['workspace'] == str(editor.root)
-        editor.chat('Launcher task λ 世界')
+        editor.chat('Launcher task \u03bb \u4e16\u754c')
         editor.wait(lambda: editor.snapshot(editor.session_id)['active_submission_id'], 'launcher input admission')
         editor.wait(lambda: 'assistant progress' in editor.panel_text(), 'launcher streamed output', timeout=10)
         editor.wait(lambda: editor.snapshot(editor.session_id)['state'] == 'idle', 'launcher stored final result', timeout=15)
-        assert any(item['kind'] == 'user' and item['text'] == 'Launcher task λ 世界' for item in editor.snapshot(editor.session_id)['entries'])
+        assert any(item['kind'] == 'user' and item['text'] == 'Launcher task \u03bb \u4e16\u754c' for item in editor.snapshot(editor.session_id)['entries'])
         assert (editor.root / 'config/nvim/init.lua').read_text() == initial
         editor.source()
         editor.command('lua vim.fn.writefile({vim.json.encode({window=vim.api.nvim_get_current_win(), wrap=vim.wo.wrap, number=vim.wo.number, windows=#vim.api.nvim_tabpage_list_wins(0), text=vim.api.nvim_get_current_line()})}, vim.env.HARNESS_WORKSPACE .. "/restored-file.json")')
@@ -389,7 +389,7 @@ def buffer_switch_case():
     editor = RealEditor('files-and-chat-buffers', active=False, startup=True, launcher='configured', rate=25)
     first = editor.session_id
     editor.source()
-    editor.command('set nohidden | call setline(1, "Unsaved source λ 世界")')
+    editor.command('set nohidden | call setline(1, "Unsaved source \u03bb \u4e16\u754c")')
     editor.command('Harness attach ' + first)
     editor.wait(lambda: 'Session: New chat' in editor.panel_text(), 'open chat over a modified file with nohidden')
     editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]); vim.cmd("startinsert!")')
@@ -397,7 +397,7 @@ def buffer_switch_case():
     editor.command('buffer ' + str(editor.root / 'one'))
     editor.command('lua vim.fn.writefile({vim.json.encode({name=vim.api.nvim_buf_get_name(0), window=vim.api.nvim_get_current_win(), text=vim.api.nvim_buf_get_lines(0,0,-1,false), modified=vim.bo.modified, wrap=vim.wo.wrap, number=vim.wo.number, windows=#vim.api.nvim_tabpage_list_wins(0)})}, vim.env.HARNESS_WORKSPACE .. "/file-switch.json")')
     editor.wait(lambda: (editor.root / 'file-switch.json').exists(), 'native buffer command restores the source file')
-    assert json.loads((editor.root / 'file-switch.json').read_text()) == {'name': str(editor.root / 'one'), 'window': editor.content_window, 'text': ['Unsaved source λ 世界'], 'modified': True, 'wrap': False, 'number': True, 'windows': 2}
+    assert json.loads((editor.root / 'file-switch.json').read_text()) == {'name': str(editor.root / 'one'), 'window': editor.content_window, 'text': ['Unsaved source \u03bb \u4e16\u754c'], 'modified': True, 'wrap': False, 'number': True, 'windows': 2}
     assert editor.panel_text('prompt') == 'Original draft\nSecond draft line\n'
     editor.command('set hidden')
     editor.keys('\x1e')
@@ -412,7 +412,7 @@ def buffer_switch_case():
     editor.pump(.3)
     editor.command('lua vim.fn.writefile({vim.json.encode({name=vim.api.nvim_buf_get_name(0), window=vim.api.nvim_get_current_win(), text=vim.api.nvim_get_current_line(), windows=#vim.api.nvim_tabpage_list_wins(0)})}, vim.env.HARNESS_WORKSPACE .. "/stream-focus.json")')
     editor.wait(lambda: (editor.root / 'stream-focus.json').exists(), 'streaming leaves file focus unchanged')
-    assert json.loads((editor.root / 'stream-focus.json').read_text()) == {'name': str(editor.root / 'one'), 'window': editor.content_window, 'text': 'Unsaved source λ 世界', 'windows': 2}
+    assert json.loads((editor.root / 'stream-focus.json').read_text()) == {'name': str(editor.root / 'one'), 'window': editor.content_window, 'text': 'Unsaved source \u03bb \u4e16\u754c', 'windows': 2}
     editor.command('Harness new')
     editor.wait(lambda: len(editor.rpc.request('session.list')['items']) == 2, 'second chat opens over the unsaved file')
     second = next(item['session_id'] for item in editor.rpc.request('session.list')['items'] if item['session_id'] != first)
@@ -631,17 +631,17 @@ def provider_generation_case():
         editor.wait(lambda: draft()==[''], 'accepted Ctrl-S submission clears the sent draft')
         editor.keys('Next draft stays intact.')
         editor.wait(lambda: editor.snapshot()['active_submission_id'] is not None
-                    and 'λ 世界' in editor.snapshot()['assistant']['text'], 'actual OpenAI SDK streams Unicode into the same chat')
-        editor.wait(lambda: editor.snapshot()['state']=='idle' and editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.',
+                    and '\u03bb \u4e16\u754c' in editor.snapshot()['assistant']['text'], 'actual OpenAI SDK streams Unicode into the same chat')
+        editor.wait(lambda: editor.snapshot()['state']=='idle' and editor.snapshot()['assistant']['text']=='OpenAI streamed \u03bb \u4e16\u754c and completed the task.',
                     'actual OpenAI SDK receives the tool result and completes the reply')
-        editor.wait(lambda: 'OpenAI streamed λ 世界 and completed the task.' in transcript(), 'successful reply is displayed')
+        editor.wait(lambda: 'OpenAI streamed \u03bb \u4e16\u754c and completed the task.' in transcript(), 'successful reply is displayed')
         current = editor.snapshot()
         assert current['error'] is None
         assert [entry['text'] for entry in current['entries'] if entry['kind']=='user']==['Run the provider test.','Unsent draft stays here.']
         assert sum(entry['kind']=='error' and entry['entry_id']==failure['entry_id'] for entry in current['entries'])==1
         assert transcript().count('[error] Run failed')==1
         assert transcript().count('[assistant] Agent')==2, 'The tool request and final reply each have a nonempty assistant entry'
-        assert transcript().count('OpenAI streamed λ 世界 and completed the task.')==1
+        assert transcript().count('OpenAI streamed \u03bb \u4e16\u754c and completed the task.')==1
         assert draft()==['Next draft stays intact.'], draft()
         assert (editor.root/'provider-result.txt').read_text()=='provider tool ran\n'
         requests = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
@@ -932,10 +932,10 @@ def first_run_setup_case():
         editor.chat('\\unknown')
         editor.wait(lambda: 'Unknown command' in editor.panel_text(), 'unknown commands stay local')
         assert not editor.snapshot()['entries']
-        editor.chat('First chat task λ 世界\x1b[13;2uSecond line')
+        editor.chat('First chat task \u03bb \u4e16\u754c\x1b[13;2uSecond line')
         editor.wait(lambda: any(item['kind'] == 'user' for item in editor.snapshot()['entries']), 'Enter sends the chat message')
         editor.wait(lambda: editor.snapshot()['state'] == 'idle', 'first chat completes', timeout=15)
-        assert any(item['kind'] == 'user' and item['text'] == 'First chat task λ 世界\nSecond line' for item in editor.snapshot()['entries'])
+        assert any(item['kind'] == 'user' and item['text'] == 'First chat task \u03bb \u4e16\u754c\nSecond line' for item in editor.snapshot()['entries'])
         assert not editor.config.exists(), 'Chat settings are stored in Pi, not a second settings file'
         editor.command('qa')
         editor.exits()
@@ -943,7 +943,7 @@ def first_run_setup_case():
 def narrow_screen_controls_case():
     with RealEditor('narrow-screen-controls', active=False, startup=True, launcher='configured', rate=400) as editor:
         editor.command('lua vim.api.nvim_set_current_win(vim.fn.win_findbuf(' + editor.panel('prompt') + ')[1]); vim.cmd("startinsert")')
-        editor.keys('Draft λ 世界 across sizes\x1b')
+        editor.keys('Draft \u03bb \u4e16\u754c across sizes\x1b')
         for columns, lines in ((80, 24), (60, 20), (120, 40)):
             editor.resize(columns, lines)
             path = editor.root / 'layout.json'
@@ -956,7 +956,7 @@ def narrow_screen_controls_case():
             assert layout['prompt_width'] >= 35 and layout['transcript_width'] >= 35, layout
             assert layout['transcript_row'] < layout['prompt_row'] and layout['windows'] == 2, layout
             assert layout['prompt_width'] == columns and layout['transcript_width'] == columns, layout
-            assert editor.panel_text('prompt') == 'Draft λ 世界 across sizes\n'
+            assert editor.panel_text('prompt') == 'Draft \u03bb \u4e16\u754c across sizes\n'
 
 def sidebar_controls_case():
     with RealEditor('sidebar-controls', active=False, startup=True, launcher='configured') as editor:
@@ -1135,7 +1135,7 @@ def hidden_unsent_draft_case():
 def explicit_editor_context_and_streaming_case():
     with RealEditor('explicit-editor-context-and-streaming', active=False) as editor:
         editor.source()
-        editor.command('lua vim.api.nvim_buf_set_lines(0, 0, -1, false, {"unsaved λ 世界", "selection line", "last line"}); vim.g.context_tick = vim.api.nvim_buf_get_changedtick(0)')
+        editor.command('lua vim.api.nvim_buf_set_lines(0, 0, -1, false, {"unsaved \u03bb \u4e16\u754c", "selection line", "last line"}); vim.g.context_tick = vim.api.nvim_buf_get_changedtick(0)')
         editor.command('Harness context buffer')
         editor.source()
         editor.command('2,2Harness context selection')
@@ -1143,7 +1143,7 @@ def explicit_editor_context_and_streaming_case():
         editor.command('Harness send')
         editor.wait(lambda: editor.snapshot()['active_submission_id'], 'actual input admission')
         entries = editor.snapshot()['entries']
-        assert any('unsaved λ 世界' in item['text'] and 'Explicit selection snapshot: one lines 2-2' in item['text'] for item in entries), entries
+        assert any('unsaved \u03bb \u4e16\u754c' in item['text'] and 'Explicit selection snapshot: one lines 2-2' in item['text'] for item in entries), entries
         editor.wait(lambda: editor.snapshot()['assistant']['text'], 'actual streamed assistant text')
         assert editor.panel_text().strip() == '', 'A hidden transcript releases generated text during streaming'
         editor.command('Harness')

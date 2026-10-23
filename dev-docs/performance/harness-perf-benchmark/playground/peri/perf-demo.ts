@@ -28,10 +28,10 @@ const given = (name: string): boolean =>
 
 if (argv.includes("-h") || argv.includes("--help")) {
     console.log(USAGE);
-    console.log(`提示: 本 demo 与 run.ts 参数一致，相对路径按仓库根（${REPO_ROOT}）解析，`);
-    console.log("      产物落在 data/runs/<harness>/<runId>/（run.json 是机器接口）。");
-    console.log("      默认剧本是 data/scenarios/long-run.json（长剧本，Bash 工具调用，");
-    console.log("      peri / opencode / Claude Code 共用这一份），--exhausted 默认 stop。");
+    console.log(`Note: This demo accepts the same arguments as run.ts. Relative paths use the repository root (${REPO_ROOT}).`);
+    console.log("      Output is in data/runs/<harness>/<runId>/ (run.json is the machine-readable interface).");
+    console.log("      The default script is data/scenarios/long-run.json: a long script with Bash tool calls,");
+    console.log("      shared by peri, opencode, and Claude Code. --exhausted defaults to stop.");
     process.exit(EXIT_OK);
 }
 
@@ -87,7 +87,7 @@ try {
     }
     process.exitCode = await runPerf(config);
 } catch (error) {
-    console.error(`[perf] 启动失败: ${(error as Error).message}`);
-    console.error("用法见 bun perf-demo.ts --help");
+    console.error(`[perf] Startup failed: ${(error as Error).message}`);
+    console.error("For usage, run bun perf-demo.ts --help");
     process.exitCode = EXIT_SETUP;
 }

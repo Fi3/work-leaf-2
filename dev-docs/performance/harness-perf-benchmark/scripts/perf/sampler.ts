@@ -206,7 +206,7 @@ export function parseSamplesCsv(text: string): ProcessSample[] {
     );
     if (missing.length > 0) {
         throw new Error(
-            `采样 CSV 缺必需列 ${missing.join(", ")}（表头: ${header.join(",")}）`,
+            `Sample CSV is missing required columns ${missing.join(", ")} (header: ${header.join(",")})`,
         );
     }
     const cell = (cells: string[], name: CsvColumn): string =>
@@ -346,7 +346,7 @@ export function createRusageBackend(): SamplerBackend | null {
     return {
         kind: "rusage",
         describe: () =>
-            `proc_pid_rusage（1 tick = ${(timebase.numer / timebase.denom).toFixed(2)} ns，单次约 0.8µs）`,
+            `proc_pid_rusage (1 tick = ${(timebase.numer / timebase.denom).toFixed(2)} ns, about 0.8µs per call)`,
         read(pid: number): CumulativeReading | null {
             if (symbols.proc_pid_rusage(pid, RUSAGE_INFO_V4, ptr(buffer)) !== 0) return null;
             const ticks = Number(
@@ -370,7 +370,7 @@ export function createRusageBackend(): SamplerBackend | null {
 export function createPsBackend(): SamplerBackend {
     return {
         kind: "ps",
-        describe: () => "ps -p <pid> -o time=,rss= 差分（兜底：单次约 1.2ms、分辨率约 50ms）",
+        describe: () => "ps -p <pid> -o time=,rss= differences (fallback: about 1.2ms per call, about 50ms resolution)",
         read(pid: number): CumulativeReading | null {
             const result = Bun.spawnSync(["ps", "-p", String(pid), "-o", "time=,rss="]);
             if (result.exitCode !== 0) return null;

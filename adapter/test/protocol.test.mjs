@@ -12,12 +12,12 @@ test('shared requests use the same contract in Node and Rust', async () => {
   assert.throws(() => parseRequest(Buffer.from('{}')), { code: -32600 });
   assert.throws(() => parseRequest(Buffer.from(JSON.stringify({jsonrpc:'2.0',id:'x',method:'session.list',params:null}))), {code:-32602});
   assert.throws(() => parseRequest(Buffer.from(JSON.stringify({jsonrpc:'2.0',id:'x',method:4,params:{}}))), {code:-32600});
-  assert.throws(() => validate('input.submit', { session_id: 's', request_id: 'r', text: 'λ'.repeat(limits.input_bytes), context: [] }), { data: { kind: 'resource_limit' } });
+  assert.throws(() => validate('input.submit', { session_id: 's', request_id: 'r', text: '\u03bb'.repeat(limits.input_bytes), context: [] }), { data: { kind: 'resource_limit' } });
   assert.throws(() => validate('session.list', { ['x'.repeat(1000000)]: true }), error => error.code === -32602 && Buffer.byteLength(JSON.stringify(publicError(error))) < 1024);
 });
 
 test('Unicode previews and chunks preserve original text for varied byte limits', () => {
-  for (const text of ['', 'plain', 'λ世界😀\n'.repeat(100), '\"\\\t\n'.repeat(100)]) {
+  for (const text of ['', 'plain', '\u03bb\u4e16\u754c😀\n'.repeat(100), '\"\\\t\n'.repeat(100)]) {
     for (const limit of [4, 5, 7, 19, 64, 10000]) {
       const first = preview(text, limit); assert.ok(Buffer.byteLength(first.text) <= limit); assert.ok(text.startsWith(first.text));
       let position = 0, recovered = '';
@@ -31,8 +31,8 @@ test('Unicode previews and chunks preserve original text for varied byte limits'
 });
 
 test('previews keep the longest complete UTF-8 prefix for generated text', () => {
-  const texts = ['', 'x'.repeat(1048576), 'λ世界😀'.repeat(16384)];
-  const units = ['a', '\0', '\\', '\n', 'λ', '世', '😀', '\ud800', '\udc00'];
+  const texts = ['', 'x'.repeat(1048576), '\u03bb\u4e16\u754c😀'.repeat(16384)];
+  const units = ['a', '\0', '\\', '\n', '\u03bb', '\u4e16', '😀', '\ud800', '\udc00'];
   let seed = 104729;
   for (let count = 0; count < 300; count++) {
     let text = '';

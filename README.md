@@ -5,9 +5,12 @@ one Pi worker. Neovim and scripts use the same private Unix socket. Pi Durable
 stores conversations, inputs, tool results, and final answers in SQLite.
 [SPEC.md](SPEC.md) is the requirements source. The files in `dev-docs/` are saved
 references. They are not implementation instructions.
-Comments in the four saved TypeScript benchmark references are translated into
-English. The [reference catalog](dev-docs/catalog.json) records the translations,
+English is the repository language. Saved benchmark references use English
+translations. The [reference catalog](dev-docs/catalog.json) records the translations,
 original checksums, and Git revision that preserves the original text.
+Translated sample text changes the saved generator's workload. Use the recorded
+original revision to reproduce published measurements. These reference files are
+not part of the application or its resource benchmark.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains process ownership, state, and the design
 choices. [PERFORMANCE.md](PERFORMANCE.md) explains resource limits, display memory,

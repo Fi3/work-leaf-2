@@ -98,7 +98,7 @@ import json, os
 from types import SimpleNamespace
 from real import RealEditor
 editor = SimpleNamespace(editor_socket=os.environ['HARNESS_OBSERVE_SOCKET'])
-print(json.dumps(RealEditor.observe(editor, '({flag=true,text="λ 世界",items={1,2,3}})')))
+print(json.dumps(RealEditor.observe(editor, '({flag=true,text="\u03bb \u4e16\u754c",items={1,2,3}})')))
 '''
                 env = dict(os.environ, PYTHONPATH=str(SUPPORT), TMPDIR=str(root), HARNESS_OBSERVE_SOCKET=str(socket))
                 for terminal_stdin in (False, True):
@@ -113,7 +113,7 @@ print(json.dumps(RealEditor.observe(editor, '({flag=true,text="λ 世界",items=
                                 try: terminal_output.extend(os.read(master, 65536))
                                 except BlockingIOError: break
                             self.assertEqual(result.returncode, 0, result.stderr or terminal_output.decode())
-                            self.assertEqual(json.loads(result.stdout), {'flag': True, 'text': 'λ 世界', 'items': [1, 2, 3]})
+                            self.assertEqual(json.loads(result.stdout), {'flag': True, 'text': '\u03bb \u4e16\u754c', 'items': [1, 2, 3]})
                             self.assertFalse(result.stderr)
                             self.assertFalse(terminal_output)
             finally:

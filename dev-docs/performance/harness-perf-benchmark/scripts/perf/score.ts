@@ -1,5 +1,5 @@
 /**
- * English translation of comments from the external harness-perf-benchmark reference.
+ * English translation of the external harness-perf-benchmark reference.
  * Combined score: express CPU and memory as one number to compare the total resource cost
  * of running the same script.
  *
@@ -189,7 +189,7 @@ export function resourceCost(
     const tailMs = Math.min(Math.max(0, options.tailMs ?? 0), maxTailMs);
     const cpuScale = options.cpuScale ?? 1;
     if (!Number.isFinite(cpuScale) || cpuScale <= 0) {
-        throw new Error(`cpuScale 必须是有限正数（1 = 未校准），收到 ${JSON.stringify(options.cpuScale)}`);
+        throw new Error(`cpuScale must be a finite positive number (1 = no calibration); received ${JSON.stringify(options.cpuScale)}`);
     }
 
     const empty: ResourceCost = {
@@ -475,13 +475,13 @@ export interface ScoreFormula {
 export function scoreFormula(calibration: ScoreFormulaCalibration | null = null): ScoreFormula {
     const scale = calibration === null ? 1 : calibration.cpuScale;
     if (calibration !== null && (!Number.isFinite(scale) || scale <= 0)) {
-        throw new Error(`cpuScale 必须是有限正数，收到 ${JSON.stringify(calibration.cpuScale)}`);
+        throw new Error(`cpuScale must be a finite positive number; received ${JSON.stringify(calibration.cpuScale)}`);
     }
     const expression =
         scale === 1
             ? "CU = 1.0 × core·s + 1.0 × GB·s"
             : `CU = 1.0 × core·s × cpuScale + 1.0 × GB·s     (cpuScale = ${formatCpuScale(scale)}, ` +
-              "项目标准 CPU 单位)";
+              "project standard CPU units)";
     const calibrationLines =
         calibration === null
             ? []
@@ -521,8 +521,8 @@ export function scoreFormula(calibration: ScoreFormulaCalibration | null = null)
             ...calibrationLines,
             calibration === null
                 ? "100 × smallest CU in the batch / this run's CU (best = 100)"
-                : "100 × smallest CU in the batch / this run's CU (best = 100)  — 注意：只有 CPU 项被折算、" +
-                  "内存项不变，**名次与未折算时可能不同**（不是等比例缩放，别读成「只是换了个单位」）",
+                : "100 × smallest CU in the batch / this run's CU (best = 100)  — Note: only the CPU term is rescaled; " +
+                  "memory is unchanged. **Rankings can differ from those without rescaling** (this is not uniform scaling or just a change of units).",
             "scope: process tree (the harness plus everything it spawns)",
         ],
         coefficients: { ...CU_COEFFICIENTS },

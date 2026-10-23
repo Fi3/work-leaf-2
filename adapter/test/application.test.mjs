@@ -154,7 +154,7 @@ test('an empty chat persists without a model and accepts settings before credent
   await assert.rejects(call('submission.get', { session_id: 'empty', request_id: 'first' }), isKind('not_found'));
   assert.deepEqual((await call('transcript.list', { session_id: 'empty' })).items, []);
   const auth = t.mock.method(app.models, 'getAuth', () => assert.fail('Choosing a model must not read credentials'));
-  await call('session.configure', { session_id: 'empty', provider: 'anthropic', model: 'claude-sonnet-4-6', name: 'Review λ' });
+  await call('session.configure', { session_id: 'empty', provider: 'anthropic', model: 'claude-sonnet-4-6', name: 'Review \u03bb' });
   auth.mock.restore();
   assert.equal((await call('configuration.get', { session_id: 'empty' })).model, 'claude-sonnet-4-6');
   await assert.rejects(call('session.configure', { session_id: 'empty', provider: 'anthropic', model: 'missing' }), { code: -32602 });
@@ -381,7 +381,7 @@ test('session admission permits concurrent input, creation, and consistent dupli
 });
 
 test('watches start with complete state and converge; full answer is available as byte chunks', async t => {
-  const answer = 'λ世界😀'.repeat(2000);
+  const answer = '\u03bb\u4e16\u754c😀'.repeat(2000);
   const { app, call, create } = await setup(t, [fauxAssistantMessage(answer)], 10000000);
   await create('work'); const records = [];
   const watch = await app.dispatch('session.watch', { session_id: 'work' }, 'watch', record => records.push(record));
@@ -530,7 +530,7 @@ test('failed entries and exact stored outcomes keep safe diagnostics across late
   const { app, call, create, config } = await setup(t, [
     fauxAssistantMessage('', { stopReason: 'error', errorMessage: `OpenAI API error (401): ${secret}` }),
     fauxAssistantMessage(' \n', { stopReason: 'error', errorMessage: `OpenAI API error (404): ${secret}` }),
-    fauxAssistantMessage('Partial answer λ', { stopReason: 'error', errorMessage: `OpenAI API error (403): ${secret}` }),
+    fauxAssistantMessage('Partial answer \u03bb', { stopReason: 'error', errorMessage: `OpenAI API error (403): ${secret}` }),
     fauxAssistantMessage('Complete answer'),
   ]);
   await create('work'); const outcomes = [];
@@ -545,8 +545,8 @@ test('failed entries and exact stored outcomes keep safe diagnostics across late
       assert.deepEqual(await call('entry.read', { session_id: 'work', entry_id: entry.entry_id }),
         { text: entry.text, next_offset: Buffer.byteLength(entry.text), end: true });
     } else if (request_id === 'partial') {
-      assert.equal(entry.kind, 'assistant'); assert.equal(entry.text, 'Partial answer λ');
-      assert.equal(view.assistant.text, 'Partial answer λ'); assert.match(view.error.message, /denied access/);
+      assert.equal(entry.kind, 'assistant'); assert.equal(entry.text, 'Partial answer \u03bb');
+      assert.equal(view.assistant.text, 'Partial answer \u03bb'); assert.match(view.error.message, /denied access/);
     } else {
       assert.equal(view.error, null); assert.equal(entry.text, 'Complete answer');
     }

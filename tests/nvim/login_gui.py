@@ -597,7 +597,7 @@ def browser_case(display):
     editor.screenshot('browser-return-draft')
     editor.mark('Send the retained task. The saved account replaces the environment API key.')
     editor.keys('\r')
-    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.'
+    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed \u03bb \u4e16\u754c and completed the task.'
                 and editor.snapshot()['state']=='idle','a task succeeds with the saved account and the selected model')
     generations = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
     assert len(generations)==1 and generations[0]['credential_kind']=='oauth'
@@ -698,7 +698,7 @@ def ssh_copy_case(display):
     editor.screenshot('ssh-return-draft')
     editor.mark('Send the retained task. Pi uses the saved account and returns the controlled model response.')
     editor.keys('\r')
-    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.' and editor.snapshot()['state']=='idle','a task succeeds after manual SSH login')
+    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed \u03bb \u4e16\u754c and completed the task.' and editor.snapshot()['state']=='idle','a task succeeds after manual SSH login')
     generations = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
     assert len(generations)==1 and generations[0]['credential_kind']=='oauth' and generations[0]['model']=='gpt-5.6-luna'
     editor.screenshot('ssh-account-reply')

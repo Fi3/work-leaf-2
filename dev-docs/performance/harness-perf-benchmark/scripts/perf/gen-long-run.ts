@@ -39,132 +39,149 @@ import { STOP_MESSAGE } from "../../src/script";
 import { REPO_ROOT } from "./config";
 import { largeMarkdown } from "./markdown";
 
-const USAGE = `生成长剧本（多轮工具调用，跑到自然结束）
+const USAGE = `Generate a long script with multiple tool-call turns that ends naturally
 
-用法:
-  bun run scripts/perf/gen-long-run.ts [选项]
+Usage:
+  bun run scripts/perf/gen-long-run.ts [options]
 
-选项:
-  --turns <n>           轮数：每轮 = 一段正文 + 一次工具调用（默认 50；实际条目数 = 轮数 + 2 条收尾）
-  --body-kb <n>         每轮正文目标大小，单位 KB（默认 4；0 = 只留一行标题）
-  --chunk-size <n>      流式 chunk 字符数（默认 64）
-  --chunk-delay-ms <n>  chunk 间隔毫秒（默认 0）
-  --delay-ms <n>        首包前延迟毫秒（默认 0）
-  --tool <name>         工具名（默认 Bash；--args exec / commandline 时各有各的默认，见下）
-  --args <shape>        工具参数形状（默认 command）:
+Options:
+  --turns <n>           Turn count: each turn has text and one tool call (default 50; entries = turns + 2 final entries)
+  --body-kb <n>         Target text size per turn in KB (default 4; 0 = only a one-line heading)
+  --chunk-size <n>      Characters per streamed chunk (default 64)
+  --chunk-delay-ms <n>  Delay between chunks in milliseconds (default 0)
+  --delay-ms <n>        Delay before the first packet in milliseconds (default 0)
+  --tool <name>         Tool name (default Bash; --args exec / commandline have separate defaults below)
+  --args <shape>        Tool argument format (default command):
                           command              {command}                peri / opencode / Claude Code / MiniMax Code / opencode2 / hermes
                           command+description  {command, description}   dsh / Grok Build
-                          exec                 裸 JavaScript 源码        codex（custom 工具）
-                          commandline          {CommandLine, Cwd, …}    agy（Antigravity CLI）
-                          commands             {commands: [command]}    cline（Cline CLI）
-  --cwd <path>          commandline 形状里 Cwd 的值（默认 playground/antigravity，相对仓库根）
-  --out <path>          输出路径（默认 data/scenarios/long-run.json，相对仓库根）
-  -h, --help            显示本帮助
+                          exec                 raw JavaScript source    codex (custom tool)
+                          commandline          {CommandLine, Cwd, …}    agy (Antigravity CLI)
+                          commands             {commands: [command]}    cline (Cline CLI)
+  --cwd <path>          Cwd for the commandline format (default playground/antigravity, relative to the repository root)
+  --out <path>          Output path (default data/scenarios/long-run.json, relative to the repository root)
+  -h, --help            Show this help
 
-各家的生成命令（统一 100 轮主循环；正文大小用 --body-kb 调，默认 4KB）:
+Generation commands for each harness (100 main-loop turns; use --body-kb for text size, default 4KB):
   bun run scripts/perf/gen-long-run.ts --turns 100 --out data/scenarios/long-run.json
-    # peri / opencode / Claude Code：工具名 Bash，参数 {command}，三家共用这一份
+    # peri / opencode / Claude Code: all three share this script, with Bash and {command}.
   bun run scripts/perf/gen-long-run.ts --turns 100 --args exec \\
     --out data/scenarios/long-run-codex.json
   bun run scripts/perf/gen-long-run.ts --turns 133 --tool bash \\
     --out data/scenarios/long-run-pi.json
-    # pi 要 133 轮（落成剧本 135 条 = 133 + 2 条收尾）：它从约 140 条消息起自动压缩，压缩期每轮
-    # 追加一条 messages=2 的总结请求，同样取号。实测 135 个请求 = 1 条初始 + 100 轮工具调用 +
-    # 34 条压缩总结；131 轮只有 99 个工具轮、128 轮只有 98 个（轮数要往上加，不是往下减）。
+    # pi needs 133 turns (135 script entries = 133 + 2 final entries). Automatic compaction starts
+    # at about 140 messages. During compaction, each turn adds a messages=2 summary request that
+    # consumes an entry. Measured: 135 requests = 1 initial + 100 tool turns + 34 summaries.
+    # With 131 turns, only 99 tool turns complete; with 128, only 98. Increase the count; do not reduce it.
   bun run scripts/perf/gen-long-run.ts --turns 100 --tool bash \\
     --out data/scenarios/long-run-copilot.json
-    # GitHub Copilot CLI：OpenAI Chat Completions，shell 工具是 bash + {command}。
-    # 标准 100×4KB 长剧本会插入上下文摘要请求，但返回的 bash 调用仍会执行：
-    # 实测 102 个请求、100 个成功工具轮，不需要像 pi 那样补工具条目。
+    # GitHub Copilot CLI: OpenAI Chat Completions, with bash + {command} as its shell tool.
+    # The standard 100×4KB script adds context-summary requests but still executes returned bash calls.
+    # Measured: 102 requests and 100 successful tool turns. It does not need pi's extra tool entries.
   bun run scripts/perf/gen-long-run.ts --turns 100 --tool bash --args command+description \\
     --out data/scenarios/long-run-dsh.json
   bun run scripts/perf/gen-long-run.ts --turns 100 --tool bash \\
     --out data/scenarios/long-run-minimax-code.json
-    # MiniMax Code CLI（mcode）的 shell 工具也叫 bash + {command}；消费最干净：
-    # 100 轮剧本实收 101 条（100 轮 + 尾部那条收尾），没有标题生成也没有压缩请求
+    # MiniMax Code CLI (mcode) also uses bash + {command}. It consumes entries with no extra requests:
+    # a 100-turn script produced 101 requests (100 turns + the final response), with no title or compaction requests.
   bun run scripts/perf/gen-long-run.ts --turns 104 --args commandline \\
     --out data/scenarios/long-run-antigravity.json
-    # Antigravity CLI（agy）的工具名是 run_command、参数五项全必填（--args commandline）。
-    # 要 104 条才跑满 100 轮，两处原因（都实测）：
-    #   1. 序列第一条是**会话标题生成**请求（gemini-3.1-flash-lite-preview，同一个端点），
-    #      它在**最前面**——与 peri 的预测（在最后）正好相反；
-    #   2. 上下文压缩：每约 32 个请求插一条「续写摘要」请求
-    #      （last=user:"Your main task now is to generate a continuation summary of …"），
-    #      同样取号。104 轮实测 3 次压缩，正好 100 个工具轮；103 轮只有 99 个。
+    # Antigravity CLI (agy) uses run_command with five required arguments (--args commandline).
+    # It needs 104 entries for 100 tool turns for two measured reasons:
+    #   1. The first entry is a session-title request (gemini-3.1-flash-lite-preview, same endpoint).
+    #      It occurs first, whereas peri's prediction occurs last.
+    #   2. Context compaction adds a continuation-summary request about every 32 requests
+    #      (last=user:"Your main task now is to generate a continuation summary of …").
+    #      These also consume entries. Measured: 104 turns give 3 compactions and exactly 100 tool turns;
+    #      103 turns give only 99 tool turns.
   bun run scripts/perf/gen-long-run.ts --turns 101 --tool shell \\
     --out data/scenarios/long-run-opencode2.json
-    # opencode v2（npm 包 @opencode/cli，bin 名 opencode2）：shell 工具改名叫 **shell**
-    # （v1 的 bash 没了）、参数只要 {command}。它开局先发一条会话标题生成请求
-    # （messages=2、无 tools，system 写着 "You are a title generator"），比主流程还早，
-    # 同样吃条目，所以 +1：101 轮实测 102 条请求 = 标题 1 + 工具轮 100 + 收尾 1。
+    # opencode v2 (npm package @opencode/cli, binary opencode2) renamed its shell tool to shell
+    # (v1's bash is gone). Its arguments are {command}. It first sends a session-title request
+    # (messages=2, no tools, system="You are a title generator"), before the main process.
+    # This consumes an entry, so add 1: measured 101 turns give 102 requests = 1 title + 100 tool turns + 1 final response.
   bun run scripts/perf/gen-long-run.ts --turns 102 --tool terminal \\
     --out data/scenarios/long-run-hermes.json
-    # Hermes Agent（Nous Research）：shell 工具叫 **terminal**、参数 {command}（与其余各家同形）。
-    # 它有两笔自己的开销，都要算进条数，所以 +2：
-    #   1. **会话标题生成**（stream=false、messages=2、无 tools，system 是 "You name chat
-    #      sessions."）与主请求几乎同时发出、谁先不定（5 次实测 3 次标题在前、2 次主请求在前），
-    #      合计吃掉开头那一条；
-    #   2. 途中一次**上下文压缩**：上下文涨到约 170 条消息时插一条 messages=1、
-    #      last=user:"You are a summarization agent creating a context checkpoint."，
-    #      随后历史被压到 21 条、紧接着一条把原任务重述的主请求——**前后两条都取号**。
-    # 102 轮实测 103 条请求 = 主请求 1 + 标题 1 + 压缩摘要 1 + 压缩后重述 1 + 带工具结果的续跑 99
-    # = **100 个工具轮**（少一条只有 99 轮）。带工具结果的续跑比轮数少 1，是因为压缩前那一轮的
-    # 工具结果被折进了摘要、没有单独回传：想数轮数要看剧本被执行到第几条，别数 last=tool。
-    # 主流程收尾之后它**还可能**再发一条技能库复盘（"Review the conversation above and update
-    # the skill library."，同一剧本 4 次里发了 1 次），落在尾部那条空白上——与 peri 的预测请求
-    # 同一个位置，所以那条空白对 hermes 也有用；发不发都不影响工具轮数。
+    # Hermes Agent (Nous Research) uses terminal with {command}, the same argument format as the others.
+    # Include its two extra requests in the count, so add 2:
+    #   1. Session-title generation (stream=false, messages=2, no tools, system="You name chat
+    #      sessions.") runs almost simultaneously with the main request. Either can be first:
+    #      in 5 measurements, the title was first 3 times and the main request first 2 times.
+    #      Together they consume one additional initial entry.
+    #   2. One context compaction during the run: at about 170 messages, it adds a messages=1 request,
+    #      last=user:"You are a summarization agent creating a context checkpoint.".
+    #      It then reduces history to 21 messages and sends a main request that repeats the task.
+    #      Both the summary and the repeated-task request consume entries.
+    # Measured: 102 turns give 103 requests = 1 main + 1 title + 1 summary + 1 repeated task +
+    # 99 continuations with tool results = 100 tool turns. One fewer entry gives only 99 turns.
+    # Continuations with tool results are one fewer than tool turns because the tool result before
+    # compaction is included in the summary instead of sent separately. Count executed script entries, not last=tool.
+    # After the main process ends, it can also request a skill-library review: "Review the conversation above and update
+    # the skill library." This occurred in 1 of 4 runs of the same script. It consumes the final blank entry,
+    # like peri's prediction, so that entry also helps hermes. It does not change the tool-turn count.
   bun run scripts/perf/gen-long-run.ts --turns 101 --args commands \\
     --out data/scenarios/long-run-cline.json
-    # Cline（npm cline@3.0.62，官方仓库 cline/cline 的 apps/cli）：shell 工具叫 **run_commands**、
-    # 参数是**字符串数组** {commands: [...]}（十家里唯一的数组形状），所以必须 --args commands。
-    # 它没有标题生成，但**上下文压缩会吃掉一条剧本**（默认 --compaction agentic）：上下文长到阈值
-    # 时把当轮换成一条「续写摘要」请求（messages=2、
-    # last=user:"Summarize this session for continuation. Be concise and fact…"），响应被当摘要
-    # 用掉、当轮工具调用不再执行，随后带着压缩后的上下文继续。标准剧本（每轮 4KB）实测每约 90 轮
-    # 触发一次：101 轮（103 条）实测 102 条请求 = 1 条初始 + 99 条带工具结果的续跑 + 1 条压缩 +
-    # 1 条压缩后续跑 = **100 个工具轮**。200 轮实测压缩 2 次，所以按「每 100 轮 +1、向上取整」留。
+    # Cline (npm cline@3.0.62, apps/cli in the official cline/cline repository) uses run_commands.
+    # Its arguments contain a string array, {commands: [...]}, the only array format among the ten harnesses.
+    # It therefore needs --args commands. It has no title generation, but context compaction consumes
+    # one script entry (default --compaction agentic). At the context limit, it replaces that turn with
+    # a continuation-summary request (messages=2,
+    # last=user:"Summarize this session for continuation. Be concise and fact…"). The response becomes
+    # the summary; that turn's tool call is not executed. It then continues with the compacted context.
+    # In the standard 4KB-per-turn script this occurred about every 90 turns. Measured: 101 turns
+    # (103 entries) give 102 requests = 1 initial + 99 continuations with tool results + 1 compaction +
+    # 1 continuation after compaction = 100 tool turns. A 200-turn run compacted twice, so add 1 per
+    # 100 turns, rounding up.
   bun run scripts/perf/gen-long-run.ts --turns 100 --out data/scenarios/long-run-kimi.json
-    # Kimi Code CLI（kimi，官方单文件二进制，实测 2.0.0）：Bash + {command}，与 peri /
-    # Claude Code 同形。100 轮实测 101 条请求（1 条初始 + 100 个工具轮 + 1 条收尾）：
-    # 没有标题生成、没有上下文压缩（max_context_size 262144 下末次请求 messages=204 也没触顶）、
-    # 没有 peri 那样的预测请求——与 mcode 同一档，轮数不用加。
+    # Kimi Code CLI (kimi, official single-file binary, measured version 2.0.0) uses Bash + {command},
+    # like peri and Claude Code. Measured: 100 turns give 101 requests (1 initial + 100 tool turns + 1 final response).
+    # There is no title generation or context compaction: messages=204 in the final request stayed below
+    # max_context_size 262144. There are no peri-style prediction requests. Like mcode, it needs no extra turns.
   bun run scripts/perf/gen-long-run.ts --turns 100 --tool run_shell_command \
     --out data/scenarios/long-run-qwen-code.json
-    # Qwen Code（qwen，npm 包 @qwen-code/qwen-code）：工具叫 run_shell_command、参数 {command}。
-    # 100 轮实测 101 条请求（1 条初始 + 100 个工具轮 + 1 条收尾），没有标题生成、上下文压缩或预测请求。
+    # Qwen Code (qwen, npm package @qwen-code/qwen-code) uses run_shell_command with {command}.
+    # Measured: 100 turns give 101 requests (1 initial + 100 tool turns + 1 final response), with no title,
+    # context-compaction, or prediction requests.
   bun run scripts/perf/gen-long-run.ts --turns 101 --tool run_terminal_command --args command+description \
     --out data/scenarios/long-run-grok.json
-    # Grok Build（grok，官方 install.sh）：模型侧 shell 工具叫 run_terminal_command，
-    # 参数 {command, description} 都必填（与 dsh 同形）。开局先发一条 session_title 请求，
-    # 所以 +1：101 轮覆盖 100 个工具轮。context_window 拉到 100 万后 100×4KB 不触发压缩。
+    # Grok Build (grok, official install.sh) exposes run_terminal_command to the model.
+    # Both {command, description} arguments are required, as with dsh. It first sends a session_title request,
+    # so add 1: 101 turns cover 100 tool turns. With context_window set to 1,000,000, 100×4KB causes no compaction.
   bun run scripts/perf/gen-long-run.ts --turns 100 --tool bash \
     --out data/scenarios/long-run-ccode.json
-    # ccode（本仓库构建的 ccode-cli，纯 C / 单二进制）：shell 工具叫 **bash**、参数 {command}
-    # （timeout_ms 可选），与 pi / mcode 同形。它的单次 prompt 有轮数上限 --max-turns（ccode 自己
-    # 不传时默认 50，0 = 不限），所以 playground 永远显式给这个 flag：调用方给了 --turns 就用它，
-    # 没给就传 0（不限，跑完整份剧本）。撞到上限时它**到顶即止**：实测 --max-turns 100 配 100 轮剧本
-    # 正好 100 条请求（一个工具轮一条，没有收尾请求）；不设上限时会吃掉尾部那条「任务结束」
-    # （50 轮剧本配 --max-turns 100 收到 51 条，同一规律）。
-    # 没有标题生成、没有上下文压缩（默认 context-tokens 1000000 未触顶），轮数不用加。
+    # ccode (ccode-cli built in this reference repository, pure C, single binary) uses bash + {command}
+    # with optional timeout_ms, as do pi and mcode. Its --max-turns limits turns for one prompt
+    # (ccode defaults to 50; 0 means unlimited). The playground always supplies this flag: use the
+    # caller's --turns value, or 0 if absent, to run the whole script. It stops immediately at the limit.
+    # Measured: --max-turns 100 with a 100-turn script gives exactly 100 requests, one per tool turn,
+    # with no final request. Without a limit, it consumes the task-end response. A 50-turn script
+    # with --max-turns 100 gives 51 requests, following the same rule.
+    # There are no title or compaction requests (the default context-tokens 1000000 limit is not reached),
+    # so no extra turns are needed.
 
-  各家自己的辅助请求都会消费条目（opencode / dsh / agy / opencode2 / hermes / grok 的标题生成、
-  pi · agy · hermes · **cline** 的压缩摘要），所以「脚本轮数」≥「主循环实际轮数」是常态；脚本不够用时看
-  mock.log 里是谁在取号。各家要跑到 100 轮的实际轮数：peri 100 · opencode 100 ·
-  Claude Code 100 · codex 100 · dsh 100 · mcode 100 · kimi 100 · qwen-code 100 · ccode 100 · **pi 133**（压缩从约 140 条消息起
-  每轮多吃一条）· **agy 104** · **opencode2 101**（标题请求吃第一条）· **hermes 102**
-  （标题与主请求抢开头那一条 + 压缩前后各一条）· **cline 101**（压缩吃掉一条）· **grok 101**
-  （标题请求吃第一条；收尾后的 dashboard 短句落在尾部空白上）。
-  剧本尾部固定两条收尾（轮数之外）：主流程的「任务结束」文本 + 给 peri 预测请求的空白
-  响应（后者消掉 peri 固定 5.0s 的收尾等待，机制见 docs/perf-compare.md）。
-  注：agy / opencode2 / grok 的标题请求在**主流程之前**（序列第一条），尾部那两条收尾
-  它们只用到第一条；hermes 的标题与主请求几乎同时发出（谁先不定），同样只用到第一条；
-  cline 也没有预测请求，同样只用到第一条；
-  peri 的预测、hermes 的技能库复盘，以及 grok 收尾后的 dashboard 短句，都在**主流程之后**，
-  正好落在第二条空白上——多出来的一条不会被浪费，留着只在各家共用同一份
-  生成器时无害。
+  Each harness consumes entries for auxiliary requests: titles in opencode / dsh / agy / opencode2 /
+  hermes / grok, and compaction summaries in pi / agy / hermes / cline. The script turn count is
+  therefore usually at least the actual main-loop turn count. If the script runs out, inspect
+  mock.log to see which requests consume entries. Required script turns for 100 tool turns:
+  peri 100 · opencode 100 · Claude Code 100 · codex 100 · dsh 100 · mcode 100 · kimi 100 ·
+  qwen-code 100 · ccode 100 · pi 133 (one extra entry per turn after compaction starts at about
+  140 messages) · agy 104 · opencode2 101 (title consumes the first entry) · hermes 102
+  (title and main request compete for the first entry, plus requests before and after compaction) ·
+  cline 101 (compaction consumes one entry) · grok 101 (title consumes the first entry; the
+  dashboard text after completion consumes the final blank entry).
+  The script always adds two final entries beyond the turn count: the main task-end text and
+  a blank response for peri's prediction. The blank removes peri's fixed 5.0s shutdown wait;
+  see docs/perf-compare.md for the mechanism.
+  The agy / opencode2 / grok title requests precede the main process and consume the first entry.
+  These harnesses use only the first final entry. Hermes sends the title and main requests
+  almost simultaneously, in either order, and likewise uses the first final entry.
+  Cline also has no prediction request and uses only the first final entry.
+  Peri's prediction, hermes's skill-library review, and grok's dashboard text occur after the
+  main process and consume the second, blank final entry. That extra entry serves these requests
+  and causes no harm when the harnesses share this generator.
 
-配套运行（各 playground 的 perf-demo.ts 默认剧本已指向自家那份；timeout 只作兜底，
-正常应看到 harness 自行退出。--script 的相对路径按**进程 cwd** 解析，别照抄仓库根的写法）:
+Run commands (each playground's perf-demo.ts defaults to its own script; timeout is a fallback,
+and the harness should exit on its own. Relative --script paths use the process cwd, so adjust
+paths shown relative to the repository root):
   cd playground/peri  && bun perf-demo.ts --script ../../data/scenarios/long-run.json \\
     --exhausted stop --timeout-ms 1800000 --turns 100
   cd playground/pi    && bun perf-demo.ts --script ../../data/scenarios/long-run-pi.json \\
@@ -172,13 +189,13 @@ const USAGE = `生成长剧本（多轮工具调用，跑到自然结束）
   cd playground/codex && bun perf-demo.ts --script ../../data/scenarios/long-run-codex.json \\
     --exhausted stop --timeout-ms 1800000
   cd playground/minimax-code && bun perf-demo.ts --exhausted stop --timeout-ms 1800000
-    # 默认剧本 data/scenarios/long-run-minimax-code.json；沙盒 MINIMAX_DATA_DIR=playground/minimax-code/.minimax
+    # Default script: data/scenarios/long-run-minimax-code.json; sandbox MINIMAX_DATA_DIR=playground/minimax-code/.minimax.
   cd playground/opencode2 && bun perf-demo.ts --exhausted stop --timeout-ms 1800000
-    # 默认剧本 data/scenarios/long-run-opencode2.json；沙盒是 XDG_* 指到 .data/.state/.cache/.config，
-    # 命令固定带 --standalone（不加会留一个常驻 serve --service，三次读数就冷热不均）
+    # Default script: data/scenarios/long-run-opencode2.json; sandbox XDG_* points to .data/.state/.cache/.config.
+    # Always pass --standalone. Otherwise serve --service stays running, causing unequal cold/warm conditions across three readings.
   cd playground/cline && bun perf-demo.ts --exhausted stop --timeout-ms 1800000
-    # 默认剧本 data/scenarios/long-run-cline.json；沙盒是 --config/--data-dir/--hooks-dir 指到 .cline/，
-    # provider 按本次端口写进 <沙盒>/data/settings/providers.json（不吃环境变量插值）
+    # Default script: data/scenarios/long-run-cline.json; sandbox --config/--data-dir/--hooks-dir points to .cline/.
+    # Write the provider with this run's port to <sandbox>/data/settings/providers.json; it does not expand environment variables.
 `;
 
 const { values } = parseArgs({
@@ -208,13 +225,13 @@ function positiveInt(raw: string | undefined, label: string, fallback: number): 
     if (raw === undefined || raw === "") return fallback;
     const parsed = Number(raw);
     if (!Number.isInteger(parsed) || parsed < 0) {
-        throw new Error(`${label} 必须是非负整数，收到 ${JSON.stringify(raw)}`);
+        throw new Error(`${label} must be a nonnegative integer; received ${JSON.stringify(raw)}`);
     }
     return parsed;
 }
 
 const turns = positiveInt(values.turns, "--turns", 50);
-if (turns < 1) throw new Error("--turns 至少为 1：剧本没有轮次就无从跑起");
+if (turns < 1) throw new Error("--turns must be at least 1: a script needs at least one turn to run");
 const bodyKb = positiveInt(values["body-kb"], "--body-kb", 4);
 const chunkSize = positiveInt(values["chunk-size"], "--chunk-size", 64);
 const chunkDelayMs = positiveInt(values["chunk-delay-ms"], "--chunk-delay-ms", 0);
@@ -263,7 +280,7 @@ function argShapeOf(raw: string | undefined, tool: string): ArgShape {
     // Keep the old codex usage: `--tool exec` selects the exec format when --args is absent.
     if (raw === undefined || raw === "") return tool === "exec" ? "exec" : "command";
     if ((ARG_SHAPES as readonly string[]).includes(raw)) return raw as ArgShape;
-    throw new Error(`--args 必须是 ${ARG_SHAPES.join(" | ")}，收到 ${JSON.stringify(raw)}`);
+    throw new Error(`--args must be ${ARG_SHAPES.join(" | ")}; received ${JSON.stringify(raw)}`);
 }
 
 const argShape = argShapeOf(values.args, values.tool ?? "Bash");
@@ -291,7 +308,7 @@ const toolCwd = resolve(REPO_ROOT, values.cwd ?? "playground/antigravity");
  * of the measurement. A fixed string lets two scripts be compared exactly except for
  * the turn numbers, without unrelated changes from generated descriptions.
  */
-const TOOL_DESCRIPTION = "长剧本压测：只读检查当前目录（llm-mock perf）";
+const TOOL_DESCRIPTION = "Long-script load test: inspect the current directory without changes (llm-mock perf)";
 
 /**
  * Cycle through four small read-only commands. Include the turn number where applicable
@@ -383,7 +400,7 @@ const roundEntries = Array.from({ length: turns }, (_, i) => {
         message: {
             role: "assistant",
             content: largeMarkdown(
-                `## 第 ${round} 轮工作记录`,
+                `## Work record for turn ${round}`,
                 targetBytes,
                 round * 1000,
             ),
@@ -409,10 +426,10 @@ const responses = [...roundEntries, ...tailEntries];
 
 const script = {
     note:
-        `由 scripts/perf/gen-long-run.ts 生成：${turns} 轮，每轮约 ${bodyKb}KB 正文 + 一个 ` +
-        `${toolName} 工具调用（参数形状 ${argShape}）；尾部另有两条收尾——「任务结束」纯文本` +
-        "（主流程吃到即收敛）+ 空白响应（给 peri 的预测请求，消掉它固定 5.0s 的收尾等待）。" +
-        "注：每轮把历史随 messages 回传，第 N 轮的请求体里含前 N-1 轮正文，上下文逐轮累积。",
+        `Generated by scripts/perf/gen-long-run.ts: ${turns} turns, each with about ${bodyKb}KB of text and one ` +
+        `${toolName} tool call (argument format ${argShape}); two final entries follow: plain task-end text ` +
+        "(ends the main process) and a blank response (for peri's prediction request, removing its fixed 5.0s shutdown wait). " +
+        "Each turn sends history in messages; request N contains text from the preceding N-1 turns, so context grows with each turn.",
     defaults: { delayMs, chunkDelayMs, chunkSize },
     responses,
 };
@@ -425,18 +442,18 @@ const bodyBytes = roundEntries.reduce(
     (total, entry) => total + Buffer.byteLength(entry.message.content, "utf8"),
     0,
 );
-console.log(`[gen-long-run] 已写入 ${outPath}`);
+console.log(`[gen-long-run] Wrote ${outPath}`);
 console.log(
-    `[gen-long-run] ${turns} 轮 × 约 ${bodyKb}KB 正文（正文合计 ${(bodyBytes / 1024).toFixed(0)}KB，` +
-        `文件 ${(Buffer.byteLength(json, "utf8") / 1024).toFixed(0)}KB，共 ${responses.length} 条 = ${turns} 轮 + 2 条收尾）；` +
-        `工具 ${toolName}（${argShape}）；节奏 chunkSize=${chunkSize} chunkDelayMs=${chunkDelayMs} delayMs=${delayMs}`,
+    `[gen-long-run] ${turns} turns × about ${bodyKb}KB of text (total text ${(bodyBytes / 1024).toFixed(0)}KB, ` +
+        `file ${(Buffer.byteLength(json, "utf8") / 1024).toFixed(0)}KB, ${responses.length} entries = ${turns} turns + 2 final entries); ` +
+        `tool ${toolName} (${argShape}); timing chunkSize=${chunkSize} chunkDelayMs=${chunkDelayMs} delayMs=${delayMs}`,
 );
 console.log(
-    `[gen-long-run] 上下文累积估算：最后一轮请求体 ≈ ${((bodyBytes * (turns - 1)) / turns / 1024).toFixed(0)}KB` +
-        "（前 N-1 轮正文）+ 工具结果",
+    `[gen-long-run] Context growth estimate: final request body ≈ ${((bodyBytes * (turns - 1)) / turns / 1024).toFixed(0)}KB` +
+        " (text from the preceding N-1 turns) + tool results",
 );
 console.log(
-    "[gen-long-run] 跑法：cd playground/peri && bun perf-demo.ts --script " +
+    "[gen-long-run] Run: cd playground/peri && bun perf-demo.ts --script " +
         outPath.replace(`${REPO_ROOT}/`, "") +
         " --exhausted stop --timeout-ms 1200000",
 );

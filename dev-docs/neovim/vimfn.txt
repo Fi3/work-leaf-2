@@ -961,7 +961,7 @@ charcol({expr} [, {winid}])                                          *charcol()*
 		position given with {expr} instead of the byte position.
 
 		Example:
-		With the cursor on '세' in line 5 with text "여보세요": >vim
+		With the cursor on U+C138 in line 5 with text represented by "\uC5EC\uBCF4\uC138\uC694": >vim
 			echo charcol('.')	" returns 3
 			echo col('.')		" returns 7
 <
@@ -1723,8 +1723,8 @@ digraph_get({chars})                                       *digraph_get()* *E121
 		echo digraph_get('00')		" Returns '∞'
 
 		" Get a user-defined digraph
-		call digraph_set('aa', 'あ')
-		echo digraph_get('aa')		" Returns 'あ'
+		call digraph_set('aa', "\u3042")
+		echo digraph_get('aa')		" Returns U+3042
 <
 
                 Parameters: ~
@@ -1769,7 +1769,7 @@ digraph_set({chars}, {digraph})                                  *digraph_set()*
 		|digraph_setlist()|.
 
 		Example: >vim
-			call digraph_set('  ', 'あ')
+			call digraph_set('  ', "\u3042")
 <
 
                 Parameters: ~
@@ -1785,10 +1785,10 @@ digraph_setlist({digraphlist})                               *digraph_setlist()*
 		where each list contains two strings with {chars} and
 		{digraph} as in |digraph_set()|. *E1216*
 		Example: >vim
-		    call digraph_setlist([['aa', 'あ'], ['ii', 'い']])
+		    call digraph_setlist([['aa', "\u3042"], ['ii', "\u3044"]])
 <
 		It is similar to the following: >vim
-		    for [chars, digraph] in [['aa', 'あ'], ['ii', 'い']]
+		    for [chars, digraph] in [['aa', "\u3042"], ['ii', "\u3044"]]
 			  call digraph_set(chars, digraph)
 		    endfor
 <		Except that the function returns after the first error,
@@ -3271,7 +3271,7 @@ getcharpos({expr})                                                *getcharpos()*
 		of the last character.
 
 		Example:
-		With the cursor on '세' in line 5 with text "여보세요": >vim
+		With the cursor on U+C138 in line 5 with text represented by "\uC5EC\uBCF4\uC138\uC694": >vim
 			getcharpos('.')		returns [0, 5, 3, 0]
 			getpos('.')		returns [0, 5, 7, 0]
 <
@@ -3548,7 +3548,7 @@ getcursorcharpos([{winid}])                                 *getcursorcharpos()*
 		List is a character index instead of a byte index.
 
 		Example:
-		With the cursor on '보' in line 3 with text "여보세요": >vim
+		With the cursor on U+BCF4 in line 3 with text represented by "\uC5EC\uBCF4\uC138\uC694": >vim
 			getcursorcharpos()	" returns [0, 3, 2, 0, 3]
 			getcurpos()		" returns [0, 3, 4, 0, 3]
 <
@@ -8943,11 +8943,11 @@ setcharpos({expr}, {list})                                        *setcharpos()*
 		character index instead of the byte index in the line.
 
 		Example:
-		With the text "여보세요" in line 8: >vim
+		With the text represented by "\uC5EC\uBCF4\uC138\uC694" in line 8: >vim
 			call setcharpos('.', [0, 8, 4, 0])
-<		positions the cursor on the fourth character '요'. >vim
+<		positions the cursor on the fourth character U+C694. >vim
 			call setpos('.', [0, 8, 4, 0])
-<		positions the cursor on the second character '보'.
+<		positions the cursor on the second character U+BCF4.
 
                 Parameters: ~
                   • {expr} (`string`)
@@ -9023,11 +9023,11 @@ setcursorcharpos({list})
 		character index instead of the byte index in the line.
 
 		Example:
-		With the text "여보세요" in line 4: >vim
+		With the text represented by "\uC5EC\uBCF4\uC138\uC694" in line 4: >vim
 			call setcursorcharpos(4, 3)
-<		positions the cursor on the third character '세'. >vim
+<		positions the cursor on the third character U+C138. >vim
 			call cursor(4, 3)
-<		positions the cursor on the first character '여'.
+<		positions the cursor on the first character U+C5EC.
 
 		Returns 0 when the position could be set, -1 otherwise.
 

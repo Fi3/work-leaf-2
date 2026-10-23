@@ -48,7 +48,7 @@ test('actual worker parses split UTF-8, handles concurrent wait and stop, and pr
   const data = await fixture(t); let worker = start(t, data);
   assert.equal((await worker.request('system.hello', { api_version: 1 }, true)).result.node_version, process.version);
   await worker.request('session.create', { session_id: 'work', workspace: data.workspace });
-  const receipt = (await worker.request('input.submit', { session_id: 'work', request_id: 'task', text: 'λ世界😀', context: [] }, true)).result;
+  const receipt = (await worker.request('input.submit', { session_id: 'work', request_id: 'task', text: '\u03bb\u4e16\u754c😀', context: [] }, true)).result;
   const waiting = worker.request('submission.wait', { session_id: 'work', request_id: 'task', timeout_ms: 4000 });
   const result = (await worker.request('run.stop', { session_id: 'work', submission_id: receipt.submission_id })).result;
   assert.equal(result.reason, 'cancelled'); assert.deepEqual((await waiting).result, result);

@@ -1,94 +1,112 @@
-# 压测对比：六种 harness（opencode v1 已退出排名；Antigravity CLI、opencode v2、Hermes Agent 与 Cline 已接入、尚未并入批次）
+# Load-test comparison: six harnesses (opencode v1 removed from rankings; Antigravity CLI, opencode v2, Hermes Agent, and Cline integrated but not yet included in the batch)
 
-> **opencode v1 已退出排名（2026-09-19 起）**
+> **opencode v1 was removed from the rankings on 2026-09-19.**
 >
-> 它是唯一**各项指标都远落后**的一家（退出排名时的实测：端到端 **38.6s**，同一批其余五家
-> 1.5~19.9s；进程树 **CPU 均值 69.9% / 峰值 229.3%**，两项都最高；进程树 **RSS 均值 798.9MB /
-> 峰值 943.0MB**，第二高的 Claude Code 才 274.9 / 321.9MB，差 2.9 倍）。按「端到端 × CPU 均值」
-> 粗估整段消耗约 **27 核·秒**，其余五家在 1.0~5.0 核·秒——同跑一份 100 轮剧本，它烧掉的是别人的
-> 5 倍以上。
+> It was the only harness **far behind on every metric**. Measurements when it was removed:
+> elapsed time **38.6s**, versus 1.5~19.9s for the other five in that batch; process-tree
+> **mean CPU 69.9% / peak 229.3%**, both the highest; process-tree **mean RSS 798.9MB /
+> peak 943.0MB**, versus just 274.9 / 321.9MB for the next highest, Claude Code: a factor of 2.9.
+> A rough estimate using elapsed time × mean CPU gives about **27 core·s**, versus 1.0~5.0 core·s
+> for the other five. For the same 100-round script, it used more than 5 times their resources.
 >
-> 继续把它放进榜单只会拉长横轴、把其余各家压成一堆，它也已不构成有意义的对照，因此**后续批次
-> 不再跑 opencode v1、不计入排名**，下面的表格里也没有它（各家读数都出自同一批次，混进一份隔了
-> 几小时的旧产物就破坏了「批内可比」）。`playground/opencode/` 的沙盒与接入代码保留（想复测随时
-> 可按下面的命令单跑，`scripts/perf/harness-id.ts` 里的别名也还在，demo 会先读版本号、不是 v1
-> 就报错），它的历史产物仍在 `data/runs/opencode/`——图表要显示它，生成数据时不加
-> `--exclude opencode` 即可。**它的下一代 v2（`opencode2`）是另一家、在排名里**，读数见下面
-> 单独一节：同名不同代，两边的读数不能互相代替。
+> Keeping it in the rankings would extend the horizontal axis and crowd the others together.
+> It no longer provides a useful comparison, so **later batches do not run or rank opencode v1**.
+> It is also absent from the tables below: all readings are from one batch, and adding an old
+> result from hours earlier would break comparability within that batch. The `playground/opencode/`
+> sandbox and integration code remain. To test it again, use the commands below. Its aliases
+> remain in `scripts/perf/harness-id.ts`; the demo checks the version first and rejects versions
+> other than v1. Historical results remain in `data/runs/opencode/`. To show it on charts, omit
+> `--exclude opencode` when generating data. **Its successor v2 (`opencode2`) is a separate
+> entry and is in the rankings**; see its section below. The same name covers different
+> generations, and their readings cannot replace each other.
 
-用 llm-mock 以受控负载测量各 harness 自身的资源开销。测量时间 **2026-09-19 20:39~20:43**（第五批；
-机器 macOS / Apple Silicon 18 核），采样间隔 100ms（`proc_pid_rusage`，CPU 为**单核 100%** 口径，
-不采 GPU）。本文读数全部出自这一批——跑批统一带 `--label codex-proxy-fix`，六家 × 3 次串行，
-共 18 次运行、**2 分 50 秒**跑完。
+Use llm-mock with a controlled load to measure each harness's own resource overhead. Measurement
+period: **2026-09-19 20:39~20:43** (fifth batch; macOS / Apple Silicon, 18 cores). Samples are taken
+every 100ms with `proc_pid_rusage`; CPU uses **100% per core**, and GPU use is not sampled.
+All readings in this document come from that batch. Every run uses `--label codex-proxy-fix`:
+six harnesses × 3 serial runs, 18 runs total, completed in **2 minutes 50 seconds**.
 
-**这一批是为了让 Codex 的修复落地成读数才重跑的**：Codex demo 消掉了「退出时等 `chatgpt.com`
-超时」那笔固定开销（只给 harness 及其子进程注入指向死端口的 HTTPS 代理，根因与验证见「逐家的
-收尾与辅助请求」），它的端到端与 CU 都会变，只能整批重来。与上一批（19:50~19:54，`cu-1to1`）
-对照：**Codex 端到端 16.4s → 6.1s、收尾 10.06s → 0.04s、CU 3.294 → 1.383、名次从第四升到第二**。
-这一批的机器也明显更空（`load average` 全程 **2.9~3.8**，上一批是 4~17），所以**各家的绝对时长
-与 CU 普遍低于上一批**（pi 1.6 → 1.3s、peri 2.8 → 2.2s、Claude Code 2.6 → 2.2s、MiniMax Code
-21.1 → 19.9s）——跨批次**只比结构与名次，别把两批的秒数直接相减**。
+**This batch was repeated to measure the Codex fix.** The Codex demo removed the fixed shutdown
+wait for a `chatgpt.com` timeout by injecting an HTTPS proxy pointed at an unused port only into
+the harness and its children. See “Shutdown and auxiliary requests by harness” for the cause and
+verification. Both elapsed time and CU change, so the entire batch had to be repeated.
+Compared with the previous batch (19:50~19:54, `cu-1to1`): **Codex elapsed time 16.4s → 6.1s,
+shutdown 10.06s → 0.04s, CU 3.294 → 1.383, and rank fourth → second**.
+The machine was also much less busy: `load average` stayed at **2.9~3.8**, versus 4~17 previously.
+Thus **absolute durations and CU generally fell for all harnesses**: pi 1.6 → 1.3s, peri 2.8 → 2.2s,
+Claude Code 2.6 → 2.2s, and MiniMax Code 21.1 → 19.9s. Across batches, **compare structure and
+rankings only; do not directly subtract durations from different batches**.
 
-口径是**长剧本端到端**：一份有限长的剧本（100 轮 × 约 4KB 正文 + 一次工具调用，`--exhausted stop`），
-harness 走完剧本、收到收尾响应后**自行退出**——回答的是「跑完同一个任务要多久、整段消耗多少、
-启动 / 运转 / 收尾各占多少」。用固定时间窗去比「谁烧的 CPU 多」没有意义（各家在同一个窗口里做的
-活量本来就不同）。
+The method measures **a complete long script from start to exit**: a finite script with
+100 rounds × about 4KB of text plus one tool call (`--exhausted stop`). After completing the script
+and receiving the final response, the harness **exits by itself**. This answers how long the same
+task takes, how many resources the full run uses, and how startup, execution, and shutdown
+contribute. Comparing CPU burned within a fixed time window is not meaningful: each harness
+completes a different amount of work in that window.
 
-被测对象与接入方式：
+Harnesses and integration methods:
 
-| harness | 版本 | 线协议 | 接入点 | 沙盒隔离 |
+| Harness | Version | Wire protocol | Integration point | Sandbox isolation |
 | --- | --- | --- | --- | --- |
-| peri | 3.17.0（PATH） | OpenAI Chat Completions | `--settings <JSON>` | `--db-path` 会话库 |
-| opencode v1（**已退出排名**） | 1.17.12 | OpenAI Chat Completions | 随 cwd 的 `opencode.json` + `{env:LLM_MOCK_BASE_URL}` | `XDG_*` |
-| Claude Code | 2.1.277 | Anthropic Messages | `ANTHROPIC_BASE_URL` 等环境变量 | `HOME` + `CLAUDE_CONFIG_DIR` |
-| Codex | 0.155.1 | OpenAI Responses | `CODEX_HOME/config.toml` 的 provider | `CODEX_HOME` |
-| pi | 0.85.1 | OpenAI Chat Completions | 沙盒 `models.json` 换 baseUrl + `--model llm-mock/llm-mock` | `PI_CODING_AGENT_DIR` |
-| dsh | 0.1.5-rc.2 | OpenAI Chat Completions | `$DEEPSEEK_BASE_URL` / `$DEEPSEEK_API_KEY` 环境变量 | `DSH_HOME` |
-| MiniMax Code（`mcode`） | 0.4.12 | OpenAI Chat Completions | 沙盒 `config.yaml` 的 `custom_provider.*.options.baseURL` + `--model custom_provider:llm-mock/llm-mock` | `MINIMAX_DATA_DIR` |
-| Antigravity CLI（`agy`）（**新接入，本批未跑**） | 1.2.7（PATH） | **Google Gemini API** | `GOOGLE_GEMINI_BASE_URL` + 沙盒 `settings.json` 的 `modelProvider: "gemini"` | `HOME` |
-| opencode v2（`opencode2`）（**新接入，本批未跑**） | 2.0.10 | OpenAI Chat Completions | 随 cwd 的 `opencode.json` + `{env:LLM_MOCK_BASE_URL}`，命令带 `--standalone` | `XDG_*` + 死代理 |
-| Hermes Agent（`hermes`）（**新接入，本批未跑**） | 0.21.3（2026.9.14，官方脚本装到 `~/.local/bin`） | OpenAI Chat Completions | 沙盒 `config.yaml` 的 `model.provider: custom` + `base_url`（不吃环境变量插值） | `HERMES_HOME` |
-| Cline（`cline`）（**新接入，本批未跑**） | 3.0.62 | OpenAI Chat Completions | 沙盒 `settings/providers.json` 里的 `openai-compatible` provider + `-P` / `-m` 显式点名（配置不吃环境变量插值） | `--config` / `--data-dir` / `--hooks-dir`（**不用换 HOME**） |
-| Kimi Code（`kimi`）（**新接入，本批未跑**） | 2.0.0（官方 install.sh 装到 `~/.kimi-code/bin`） | OpenAI Chat Completions | 沙盒 `config.toml` 的 `[providers.llm-mock]`（`type = "openai"` + `base_url`，假 key）+ `-m llm-mock`（配置不吃环境变量插值） | `KIMI_CODE_HOME`（**不用换 HOME**） |
+| peri | 3.17.0 (PATH) | OpenAI Chat Completions | `--settings <JSON>` | `--db-path` session database |
+| opencode v1 (**removed from rankings**) | 1.17.12 | OpenAI Chat Completions | `opencode.json` in cwd + `{env:LLM_MOCK_BASE_URL}` | `XDG_*` |
+| Claude Code | 2.1.277 | Anthropic Messages | `ANTHROPIC_BASE_URL` and other environment variables | `HOME` + `CLAUDE_CONFIG_DIR` |
+| Codex | 0.155.1 | OpenAI Responses | Provider in `CODEX_HOME/config.toml` | `CODEX_HOME` |
+| pi | 0.85.1 | OpenAI Chat Completions | Set baseUrl in sandbox `models.json` + `--model llm-mock/llm-mock` | `PI_CODING_AGENT_DIR` |
+| dsh | 0.1.5-rc.2 | OpenAI Chat Completions | `$DEEPSEEK_BASE_URL` / `$DEEPSEEK_API_KEY` environment variables | `DSH_HOME` |
+| MiniMax Code (`mcode`) | 0.4.12 | OpenAI Chat Completions | `custom_provider.*.options.baseURL` in sandbox `config.yaml` + `--model custom_provider:llm-mock/llm-mock` | `MINIMAX_DATA_DIR` |
+| Antigravity CLI (`agy`) (**new integration, not run in this batch**) | 1.2.7 (PATH) | **Google Gemini API** | `GOOGLE_GEMINI_BASE_URL` + `modelProvider: "gemini"` in sandbox `settings.json` | `HOME` |
+| opencode v2 (`opencode2`) (**new integration, not run in this batch**) | 2.0.10 | OpenAI Chat Completions | `opencode.json` in cwd + `{env:LLM_MOCK_BASE_URL}`, with `--standalone` | `XDG_*` + proxy to an unused port |
+| Hermes Agent (`hermes`) (**new integration, not run in this batch**) | 0.21.3 (2026.9.14, official script installs into `~/.local/bin`) | OpenAI Chat Completions | `model.provider: custom` + `base_url` in sandbox `config.yaml` (no environment-variable interpolation) | `HERMES_HOME` |
+| Cline (`cline`) (**new integration, not run in this batch**) | 3.0.62 | OpenAI Chat Completions | `openai-compatible` provider in sandbox `settings/providers.json` + explicit `-P` / `-m` (no environment-variable interpolation) | `--config` / `--data-dir` / `--hooks-dir` (**no HOME change**) |
+| Kimi Code (`kimi`) (**new integration, not run in this batch**) | 2.0.0 (official install.sh installs into `~/.kimi-code/bin`) | OpenAI Chat Completions | `[providers.llm-mock]` in sandbox `config.toml` (`type = "openai"` + `base_url`, fake key) + `-m llm-mock` (no environment-variable interpolation) | `KIMI_CODE_HOME` (**no HOME change**) |
 
-约定：每个 harness 都在自己的 playground 沙盒里、用同一份剧本跑
-（`cd playground/<名> && bun perf-demo.ts …`），剧本由同一个生成器现造、工具形状按各家实测；
-节奏取生成器默认（`chunkSize=64 / chunkDelayMs=0`，mock 尽快吐完），mock 不是瓶颈；
-测的是 harness 主进程 + 进程树。**六家串行跑**（不同时占用机器），每家跑 **3 次**，
-取端到端时长居中的那一次（`gen-chart-data.ts --window 3` 是同一口径）——下面所有读数都是那一次。
-**跨批次别比绝对时长**：更早那批是在 load 10~16 下测的，同样一台机器、同一份剧本，端到端能差
-2~4 倍（本批 load 2.9~3.8，peri 2.2s、dsh 3.8s；而 CPU 满载的 MiniMax Code 对负载最敏感）。
+Each harness runs the same script in its own playground sandbox
+(`cd playground/<name> && bun perf-demo.ts …`). The same generator creates each script, with tool
+formats based on measurements of each harness. Generator timing defaults are
+`chunkSize=64 / chunkDelayMs=0`: the mock emits output as quickly as possible and is not the
+bottleneck. Measurements cover the main harness process and its process tree.
+**The six harnesses run serially**, without competing for the machine. Each runs **3 times**.
+Select the run with the median elapsed time (`gen-chart-data.ts --window 3` uses this rule);
+all readings below come from that selected run. **Do not compare absolute times across batches**:
+an earlier batch ran at load 10~16, and the same machine and script can differ by a factor of
+2~4 in elapsed time. This batch had load 2.9~3.8, peri 2.2s, and dsh 3.8s; CPU-saturated
+MiniMax Code is the most sensitive to load.
 
-## 复现
+## Reproduction
 
-### 长剧本端到端（100 轮 × 4KB，跑到自然结束）
+### Complete long script (100 rounds × 4KB, through normal exit)
 
-剧本由生成器造：100 轮「约 4KB 正文 + 一次工具调用」，**尾部另带两条收尾条**——一条「任务结束」纯文本
-（`finish_reason=stop`，harness 收到即自行收尾退出）+ 一条空白响应（给 peri 的「预测下一步输入」，
-消掉它固定 5.0s 的收尾等待，机制见「逐家的收尾与辅助请求」）。本批读数就是带着这两条取的
-（peri 的收尾因此只剩 0.07s）；不带时靠 mock 的 `--exhausted stop` 兜最后一条，
-peri 会吃到非空预测文本、白等 5s。
-于是端到端时长就是「启动 → 跑完 100 轮 → 退出」，`--timeout-ms` 只是兜底（正常不该触发）。
+The generator creates 100 rounds of about 4KB of text plus one tool call, **followed by two final
+entries**: a plain-text “task complete” response (`finish_reason=stop`, which causes the harness
+to finish and exit), then a blank response for peri's “predict the next input” request. The blank
+response removes peri's fixed 5.0s shutdown wait; see “Shutdown and auxiliary requests by harness”.
+This batch includes both entries, leaving peri's shutdown at 0.07s. Without them, the mock's
+`--exhausted stop` supplies the last response, but peri receives nonempty prediction text and
+waits 5s unnecessarily. Elapsed time therefore covers startup → 100 rounds → exit.
+`--timeout-ms` is only a fallback and should not trigger in normal operation.
 
-摘要里会把这段时长**拆成三段**（靠 mock 侧记的请求时刻，与 harness 起止同机同时钟）：
+The summary **splits this duration into three segments**, using request timestamps recorded by
+the mock on the same machine and clock as harness startup and exit:
 
 ```
-时长分段: 启动 → 首个请求 X ｜ 首个请求 → 末次请求 Y ｜ 末次请求 → 退出 Z（收尾零请求：…）
+Time segments: startup → first request X | first request → last request Y | last request → exit Z (shutdown without requests: …)
 ```
 
-第三段是「harness 已经不发请求、但进程还没退」的**收尾等待**——实测这条极有信息量：
-Codex 的「固定开销」原来几乎全在这里（10.06s），本批已由 demo 的代理注入消到 0.04s（见下节）；
-peri 那笔 5.0s 的收尾等待则早被剧本尾部的空白收尾条消掉，本批 0.07s。
+The third segment is the **shutdown wait** after requests stop but before the process exits.
+Measurements show that this is useful information: almost all of Codex's previous fixed overhead
+was here (10.06s). The demo's proxy injection reduced it to 0.04s in this batch; see below.
+Peri's 5.0s wait had already been removed by the final blank script entry; this batch measured 0.07s.
 
 ```sh
-# 生成剧本（工具形状按各家实测；**pi 那份要 133 轮**，理由见下）
-bun run scripts/perf/gen-long-run.ts --turns 100 --out data/scenarios/long-run.json   # peri / Claude Code 共用
+# Generate scripts using each harness's measured tool format; **pi needs 133 rounds**, explained below.
+bun run scripts/perf/gen-long-run.ts --turns 100 --out data/scenarios/long-run.json   # Shared by peri / Claude Code
 bun run scripts/perf/gen-long-run.ts --turns 100 --args exec --out data/scenarios/long-run-codex.json
 bun run scripts/perf/gen-long-run.ts --turns 133 --tool bash --out data/scenarios/long-run-pi.json
 bun run scripts/perf/gen-long-run.ts --turns 100 --tool bash --args command+description \
   --out data/scenarios/long-run-dsh.json
 bun run scripts/perf/gen-long-run.ts --turns 100 --tool bash \
-  --out data/scenarios/long-run-minimax-code.json   # mcode：bash + {command}，100 条够跑满 100 轮
+  --out data/scenarios/long-run-minimax-code.json   # mcode: bash + {command}; 100 entries complete 100 rounds
 
 cd playground/peri        && bun perf-demo.ts --script data/scenarios/long-run.json \
   --exhausted stop --timeout-ms 1800000 --turns 100 --label codex-proxy-fix
@@ -103,82 +121,99 @@ cd playground/pi          && bun perf-demo.ts --script data/scenarios/long-run-p
 cd playground/deepseek    && bun perf-demo.ts --script data/scenarios/long-run-dsh.json \
   --exhausted stop --timeout-ms 1800000 --label codex-proxy-fix
 cd playground/minimax-code && bun perf-demo.ts \
-  --exhausted stop --timeout-ms 1800000 --label codex-proxy-fix   # 默认剧本就是 long-run-minimax-code.json
+  --exhausted stop --timeout-ms 1800000 --label codex-proxy-fix   # Default script: long-run-minimax-code.json
 ```
 
-- 上面的 `--script` 是各家的默认剧本（demo 自己带的那份），写出来只为显式；路径按仓库根解析，
-  所以在 `playground/<名>/` 里跑也没问题。
-- **每家的 3 次**：同一条命令连跑 3 次（本批六家 × 3 轮串行共 2 分 50 秒），跑批时统一带
-  `--label <批次名>` 便于按批筛产物；读数取**端到端时长居中的那一次**（`gen-chart-data.ts --window 3`
-  是同一口径），别把不同批次的运行混进同一张表。
-- `--turns 100` 是防呆：peri 3.17 在 `-p` 模式下虽然忽略 `--max-turns`，但真生效时默认值 25
-  会把剧本拦腰截断（其余各家没有等价的轮数参数，靠剧本耗尽收尾）。它与生成器的同名参数不同义：
-  生成器的 `--turns` 是剧本轮数，这里传给 demo 的是 harness 的 `--max-turns`。
-- **pi 那份为什么要 133 轮**：pi 从上下文约 140 条消息起开始**自动压缩**（`compaction.enabled`
-  默认 true，`reserveTokens` 16384 / `keepRecentTokens` 20000），压缩期每轮追加一条
-  `messages=2` 的总结请求，同样消费剧本条目。100 条剧本下它只跑到第 84 轮就耗尽了（第 70 轮起
-  「总结 + 主请求」交替取号）。生成器给尾部那两条收尾（见上）会再占掉一条，**实测 132 条
-  （`--turns 130`）只跑到 99 轮、133 条仍是 99 轮、135 条（`--turns 133`）才正好 100 轮**
-  （那些多出来的条目全被压缩请求吃掉）——所以这份剧本是 133 轮 = 135 条。
+- The `--script` values above are each demo's default scripts, shown for clarity. Paths are
+  resolved from the repository root, so they also work from `playground/<name>/`.
+- **Three runs per harness**: repeat the same command 3 times. This batch completed six harnesses
+  × 3 serial runs in 2 minutes 50 seconds. Give every run `--label <batch-name>` to filter results
+  by batch. Select **the run with the median elapsed time**, as `gen-chart-data.ts --window 3`
+  does. Do not mix runs from different batches in one table.
+- `--turns 100` guards against mistakes. Although peri 3.17 ignores `--max-turns` in `-p` mode,
+  its default of 25 would truncate the script if it took effect. The other harnesses have no
+  equivalent round-limit parameter and finish when the script is exhausted. This differs from
+  the generator's same-named option: generator `--turns` sets script rounds; the demo option
+  sets the harness's `--max-turns`.
+- **Why pi needs 133 rounds**: pi starts **automatic compaction** at about 140 context messages.
+  `compaction.enabled` defaults to true, with `reserveTokens` 16384 / `keepRecentTokens` 20000.
+  During compaction it adds a `messages=2` summary request each round, consuming script entries.
+  A 100-entry script reaches only round 84; from round 70, summary and main requests alternate
+  in consuming entries. The generator's two final entries use one more entry in this sequence.
+  **Measurements found that 132 entries (`--turns 130`) reach only 99 rounds, 133 entries still
+  reach 99 rounds, and only 135 entries (`--turns 133`) complete exactly 100 rounds.**
+  Compaction requests consume all extra entries. Thus this script has 133 rounds = 135 entries.
 
-产物落在 `data/runs/<harness>/<runId>/`：`run.json`（机器接口：身份 / 时间线 / 分段 / 摘要 /
-**统一计分 `cost` 与峰值 `peaks`** / 退出码）+ `perf.log`（人读时间线）+ `samples.csv`
-（逐拍采样，含 `child_cpu_pct`）+ `harness.log` / `mock.log`。本批六家各跑 **3 次**
-（`--label codex-proxy-fix`，共 18 次运行），下面所有读数取自**端到端时长居中的那一次**：
+Outputs are written to `data/runs/<harness>/<runId>/`: `run.json` provides the machine interface
+(identity / timeline / segments / summary / **combined score `cost` and peaks `peaks`** / exit code);
+`perf.log` is a readable timeline; `samples.csv` contains individual samples, including
+`child_cpu_pct`; and `harness.log` / `mock.log` contain logs. Each of the six harnesses ran
+**3 times** with `--label codex-proxy-fix`, 18 runs total. All readings below are from
+**the run with the median elapsed time**:
 
 ```
 peri 20260919-204152 · dsh 20260919-204208        · minimax-code 20260919-204129
 claude-code 20260919-204027 · codex 20260919-204120 · pi 20260919-204157
 ```
 
-看逐拍曲线：`bun run scripts/perf/gen-chart-data.ts --exclude opencode`（不给 `--pick` 时每个
-harness 自动取最近 3 次里时长居中的那一次，也就是上表这 6 个 runId）生成
-`data/perf-chart.json`，再用静态服务器打开 `docs/perf-chart.html`（见文末「图表页」）。
+To view sample curves, run `bun run scripts/perf/gen-chart-data.ts --exclude opencode`.
+Without `--pick`, it selects each harness's median-duration run from its latest 3 runs, which gives
+the 6 runIds above. It generates `data/perf-chart.json`. Serve and open `docs/perf-chart.html`;
+see “Chart page” at the end.
 
-## 结论速览
+## Findings at a glance
 
-- **端到端：pi 1.3s ≈ Claude Code 2.2s ≈ peri 2.2s < dsh 3.8s < Codex 6.1s ≪ MiniMax Code 19.9s**。
-  它与「谁轻」不是一回事：Codex 每轮要 59.8ms（六家里只有 MiniMax Code 比它慢），端到端也排第二慢，
-  但整段 CU 只比 pi 贵一点。
-- **统一计分（CPU 与内存 1:1，**Beta**）：pi 1.271 CU（100 分）＜ Codex 1.383（91.9）＜ peri 2.102（60.5）
-  ＜ Claude Code 2.828（45.0）＜ dsh 3.101（41.0）≪ MiniMax Code 31.995（4.0）**。
-  **Codex 升到第二是这一批修复的直接结果**：上一批它的 CU 里 53% 是退出时那 10s 空等（收尾段
-  1.760 CU，全程顶着约 160MB 内存）；消掉后只剩 1.383 CU，与 pi 差 0.11。
-- **pi 的 1.3s 是真跑满 100 轮**（135 条请求 = 100 轮工具调用 + 34 条压缩总结 + 1 条初始），
-  11.2ms/轮是六家里最便宜的；代价是**自动压缩**：多发了 34 条总结请求（见下）。
-- **本批的固定成本已经很小**：六家启动 0.10~1.22s、收尾 0.02~0.23s（Codex 修完 0.04s、peri 0.07s），
-  **时间几乎全花在运转段**——最慢的 MiniMax Code 启动 1.22s 是它在启动期刷模型目录。
-- **单看 CPU 均值 / RSS 峰值会读歪**：MiniMax Code 全程占满一个核（CPU 均值 98.1%、RSS 峰值
-  892.0MB），peri 只要 32.6% / 71.7MB，Codex 10.5% / 163.7MB——可 Codex 的「低 CPU」是因为真干活的
-  是它 spawn 的原生二进制（0.618 核·秒记在「采样到的后代」上），peri 的「低 CPU」是因为它每轮拉起的
-  shell 会被回收（1.261 核·秒记在子进程计数器上）。**这两个数都答不了「跑完烧掉多少资源」**。
-- **peri 第三，是被它自己拉起的 100 个 shell 顶上来的**：它主进程 CPU 均值只有 32.6%，可每轮工具调用
-  都要 spawn 一个进程，**1.261 核·秒（占总 CPU 的 64%，≈ 100 轮 × 13ms CPU/轮）记在「已回收子进程
-  计数器」上**——2.2s 墙钟里它几乎一直有近一个核在干活（1.983 ÷ 2.2 ≈ 0.9 核）。旧采样器看不见这笔，
-  peri 的 CU 会从 2.102 虚低到 ~0.84（0.722 + 0.119），**比 pi 还低、直接升到第一**。
-  这是本项目把「进程树」定为计分口径的直接理由；反过来说，谁的工具调用把活甩给子进程、
-  谁自己扛，CU 分得清清楚楚。
-- **内存随轮次上涨是预期**：每轮都把历史（上一轮的正文 + 工具结果）随请求回传，RSS 里既有渲染
-  缓冲也有会话累积（100 轮剧本正文合计约 450KB，末轮请求体与它同量级；pi 因为压缩过所以短得多）。
-  本批首拍 → 末拍（进程树）的涨幅：peri +49MB、pi +106MB、Codex +119MB、dsh +173MB、
-  Claude Code +206MB、MiniMax Code +696MB。
-- **别把「请求数」当「轮数」**：mock 请求数里混着各家自己的辅助请求——本批次实测 peri 1 条
-  （「预测下一步输入」，吃的是剧本尾部那条空白、不占轮次）、dsh 1 条（会话标题生成，吃掉第 2 条剧本）、
-  pi 34 条（压缩总结）；Claude Code / Codex / MiniMax Code 本次没有。
-  **辅助请求会吃掉剧本条目**，所以 dsh 实收 99 轮工具调用；pi 那份剧本按 133 轮生成（135 条），
-  才换来正好 100 轮（见「复现」）。
-- **MiniMax Code 是唯一的「不省，只是快」**：19.9s 里 18.5s 在运转、全程 CPU 98.1%，
-  CU 31.995 是第二贵的 dsh 的 10.3 倍、最省的 pi 的 25.2 倍。
-- **peri 在「轻」这一点上没有争议**：内存面积 122 MB·秒、峰值 71.7MB 都是六家里最小的，
-  CPU 峰值 43.7% 是唯一没超过单核的（它贵在 CPU 积分——100 轮工具 shell 的账）。
-- 本次测量机器负载 2.9~3.8（比上一批的 4~17 干净），六家在相近条件下测得，横向比较可用，
-  要更干净的数字请在空闲机器上按上节重跑。
+- **Elapsed time: pi 1.3s ≈ Claude Code 2.2s ≈ peri 2.2s < dsh 3.8s < Codex 6.1s ≪ MiniMax Code 19.9s**.
+  This differs from resource efficiency. Codex takes 59.8ms per round, slower than all except
+  MiniMax Code, and has the second-longest elapsed time, but its total CU is only slightly above pi.
+- **Combined score (CPU and memory 1:1, Beta): pi 1.271 CU (100 points) < Codex 1.383 (91.9)
+  < peri 2.102 (60.5) < Claude Code 2.828 (45.0) < dsh 3.101 (41.0) ≪ MiniMax Code 31.995 (4.0)**.
+  **Codex moved to second directly because of this batch's fix.** Previously, 53% of its CU came
+  from the 10s idle shutdown wait: 1.760 CU while retaining about 160MB of memory. Removing that
+  wait leaves 1.383 CU, just 0.11 above pi.
+- **Pi's 1.3s includes all 100 rounds**: 135 requests = 100 tool-call rounds + 34 compaction
+  summaries + 1 initial request. Its 11.2ms/round is the lowest of the six. The cost is
+  **automatic compaction**, with 34 extra summary requests; see below.
+- **Fixed costs are already small in this batch**: startup 0.10~1.22s and shutdown 0.02~0.23s
+  across the six. Codex shutdown is 0.04s after the fix; peri is 0.07s. **Almost all time is in
+  execution.** MiniMax Code's slowest startup, 1.22s, includes a model-catalog refresh.
+- **Mean CPU / peak RSS alone can mislead**: MiniMax Code keeps one core busy throughout
+  (mean CPU 98.1%, peak RSS 892.0MB), versus peri at 32.6% / 71.7MB and Codex at 10.5% / 163.7MB.
+  Codex's low CPU reflects work done by its spawned native binary: 0.618 core·s in sampled
+  descendants. Peri's low CPU reflects shells reaped each round: 1.261 core·s in child counters.
+  **Neither number alone answers how many resources the full run uses.**
+- **Peri ranks third because of its 100 spawned shells**. Its main-process mean CPU is only
+  32.6%, but every tool call spawns a process. **1.261 core·s, 64% of total CPU, or approximately
+  100 rounds × 13ms CPU/round, appears in the reaped-child counters.** Across 2.2s of wall time,
+  it nearly keeps one core busy: 1.983 ÷ 2.2 ≈ 0.9 cores. The old sampler missed this cost,
+  understating peri's CU as ~0.84 (0.722 + 0.119) instead of 2.102: **below pi, falsely putting
+  it first**. This directly motivates the project's process-tree scoring scope. CU distinguishes
+  work assigned to children from work performed in the main process.
+- **Memory growth with rounds is expected**: each request sends the history, including the
+  previous text and tool results. RSS includes rendering buffers and accumulated session data.
+  The 100-round script contains about 450KB of text, similar to the last request body; pi's body
+  is much shorter after compaction. Process-tree growth from first to last sample: peri +49MB,
+  pi +106MB, Codex +119MB, dsh +173MB, Claude Code +206MB, MiniMax Code +696MB.
+- **Request count is not round count**: mock requests include auxiliary requests. This batch
+  had peri 1 prediction request, consuming the final blank entry without taking a round;
+  dsh 1 session-title request, consuming script entry 2; and pi 34 compaction summaries.
+  Claude Code / Codex / MiniMax Code had none. **Auxiliary requests consume script entries**,
+  so dsh completes 99 tool rounds. Pi needs a 133-round script, 135 entries, for exactly
+  100 tool rounds; see “Reproduction”.
+- **MiniMax Code alone is “not efficient, just fast”**: 18.5s of its 19.9s is execution,
+  with CPU at 98.1% throughout. Its 31.995 CU is 10.3 times the next most expensive, dsh,
+  and 25.2 times the most efficient, pi.
+- **Peri's low memory use is clear**: memory integral 122 MB·s and peak 71.7MB are the lowest
+  of the six. Its CPU peak of 43.7% is the only one below a full core. Its cost comes from
+  integrated CPU use for 100 tool shells.
+- Machine load was 2.9~3.8, lower than the previous batch's 4~17. The six ran under similar
+  conditions and can be compared. For cleaner measurements, repeat the procedure on an idle machine.
 
-## 结果
+## Results
 
-### 长剧本：100 轮 × 4KB，跑到自然结束（各家 3 次取中位数）
+### Long script: 100 rounds × 4KB, through normal exit (median of 3 runs per harness)
 
-| harness | 端到端 | 启动 → 首个请求 | 首个请求 → 末次请求 | 末次请求 → 退出 | 运转段每轮 | 请求数 | 执行轮数 | CPU 均值 | CPU 峰值 | RSS 均值 | RSS 峰值 |
+| Harness | Elapsed time | Startup → first request | First → last request | Last request → exit | Execution per round | Requests | Completed rounds | Mean CPU | Peak CPU | Mean RSS | Peak RSS |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | pi 0.85.1 | **1.3s** | 0.18s | 1.12s | 0.02s | **11.2ms** | 135 | 100 | 65.5% | 128.8% | 186.2MB | 234.4MB |
 | Claude Code 2.1.277 | 2.2s | 0.19s | 1.96s | 0.06s | 19.6ms | 101 | 100 | 71.8% | 122.4% | 310.9MB | 351.0MB |
@@ -187,674 +222,863 @@ harness 自动取最近 3 次里时长居中的那一次，也就是上表这 6 
 | Codex 0.155.1 | 6.1s | 0.10s | 5.98s | **0.04s** | 59.8ms | 101 | 100 | **10.5%** | **26.0%** | 123.4MB | 163.7MB |
 | MiniMax Code 0.4.12 | 19.9s | 1.22s | 18.47s | 0.23s | 184.7ms | 101 | 100 | **98.1%** | 177.8% | 617.6MB | 892.0MB |
 
-口径：
+Definitions:
 
-- **端到端时长**＝harness 启动到退出（`run.json` 的 `duration.endToEndMs`），比采样窗口多出
-  prime 与最后一次采样的间隔；100 轮剧本正文合计约 450KB。Claude Code 与 peri 都记作 2.2s，
-  实为 2219 / 2221ms（同一档，表里不刻意分先后）。
-- **三段**＝`run.json` 的 `segments`（`startupMs / spanMs / tailMs`），由 mock 侧记的请求时刻算出。
-- **运转段每轮** = `spanMs ÷ 执行轮数`，是对「每轮处理链路」的估计，**不含启动与收尾**。
-- **执行轮数**＝真正被执行并回传结果的工具调用次数（从 `mock.log` 逐条数的：`消费第 N 条` 的
-  请求里带工具结果的那些：chat 协议是 `last=tool`、Codex 是 `last=custom_tool_call_output`、
-  Claude Code 末条总缀一条 system（token 余额）所以按「请求数 − 1」算）。
-  dsh 被自家标题请求吃掉 1 条（99 轮），pi 用的 133 轮剧本正好跑满 100 轮。
-- **CPU / RSS 为进程树口径**，均值与峰值都取自 `samples.csv`（100ms 一拍）；Codex 主进程只是
-  Node 启动器（CPU 均值 0.1%、RSS 均值 41.7MB，末拍也是 41.7MB），看进程树才有意义。
-- RSS 涨幅（首拍 → 末拍，进程树）：MiniMax Code +696MB、Claude Code +206MB、dsh +173MB、
-  Codex +119MB、pi +106MB、peri +49MB。其中 Codex 的一大截来自每轮工具子进程（`zsh -lc` + 本机
-  `.zshrc` 的 emsdk 初始化，本批 `procs` 列峰值 **3**），不全等于上下文累积。
+- **Elapsed time** runs from harness startup to exit (`duration.endToEndMs` in `run.json`).
+  It exceeds the sampling window by the priming interval and the gap after the final sample.
+  The 100-round script text totals about 450KB. Claude Code and peri both display 2.2s; their actual values
+  are 2219 / 2221ms, the same range, so the table does not force an ordering.
+- **Three segments** are `segments` in `run.json` (`startupMs / spanMs / tailMs`), calculated
+  from request timestamps recorded by the mock.
+- **Execution per round** = `spanMs ÷ completed rounds`, an estimate of processing per round
+  **excluding startup and shutdown**.
+- **Completed rounds** count tool calls actually executed and returned. They are counted in
+  `mock.log` from “consume entry N” requests that contain tool results: `last=tool` for chat,
+  `last=custom_tool_call_output` for Codex. Claude Code always appends a final system message
+  for the token balance, so its count is requests − 1. Dsh's title request consumes one entry,
+  leaving 99 rounds; pi's 133-round script completes exactly 100 rounds.
+- **CPU / RSS cover the process tree**. Means and peaks come from `samples.csv`, sampled every
+  100ms. Codex's main process is only a Node launcher: mean CPU 0.1%, mean RSS 41.7MB, and final
+  RSS also 41.7MB. Only process-tree measurements are meaningful for it.
+- RSS growth from first to last process-tree sample: MiniMax Code +696MB, Claude Code +206MB,
+  dsh +173MB, Codex +119MB, pi +106MB, peri +49MB. Much of Codex's increase comes from tool
+  subprocesses each round (`zsh -lc` plus emsdk initialization in the local `.zshrc`;
+  peak `procs` **3** in this batch). It is not all accumulated context.
 
-读法：
+Interpretation:
 
-- **pi 的 1.3s 不是漏跑**：mock 侧主循环 100 轮工具调用，末条消息里工具结果确实在；它快在链路短
-  （11.2ms/轮）与历史被自己压过（34 条 `messages=2` 的总结请求）。要比较「长会话」形态的话，
-  pi 的这份读数偏乐观——它自己把历史压掉了。
-- **Codex 的 6.1s 是实打实的运转**：修复后收尾只剩 0.04s，5.98s 全在运转段（59.8ms/轮，六家里
-  仅次于 MiniMax Code）——它慢在每轮都要新起 `/bin/zsh -lc`（本机 `.zshrc` 还带 emsdk 初始化），
-  不是慢在收尾。修复前的 10.06s 收尾等待属本机 DNS 污染，见「逐家的收尾与辅助请求」。
-- **MiniMax Code 的贵在每轮**：184.7ms/轮的运转成本是 Claude Code（19.6ms/轮）的 9.4 倍、
-  pi（11.2ms/轮）的 16.5 倍，CPU 均值 98.1%（全程占满一个核）、RSS 峰值 892.0MB；它的瓶颈不在
-  启动（1.22s，六家里最慢），而在每轮的处理链路。本批它的三次很稳（19.1 / 19.9 / 20.0s），
-  不再有上一批那种负载尖峰下的散点。
-- **dsh 的启动 0.76s** 在六家里排第二（仅次于 MiniMax Code 1.22s），端到端 3.8s——运转段
-  30.2ms/轮 比 Claude Code 的 19.6ms/轮 贵约五成。
+- **Pi's 1.3s does not omit rounds**: the mock main loop completes 100 tool calls, and the
+  final message contains the tool result. It is fast because the processing path is short,
+  11.2ms/round, and it compacts its history through 34 `messages=2` summary requests.
+  For comparison of long sessions, this reading is optimistic because pi removed history itself.
+- **Codex's 6.1s is actual execution**: shutdown is only 0.04s after the fix. Execution takes
+  5.98s, or 59.8ms/round, slower than all except MiniMax Code. Each round starts a new
+  `/bin/zsh -lc`, with emsdk initialization in the local `.zshrc`. The delay is per round,
+  not shutdown. The previous 10.06s shutdown delay came from local DNS pollution; see
+  “Shutdown and auxiliary requests by harness”.
+- **MiniMax Code is expensive per round**: 184.7ms/round is 9.4 times Claude Code's 19.6ms/round
+  and 16.5 times pi's 11.2ms/round. Mean CPU is 98.1%, nearly one core throughout, and peak RSS
+  is 892.0MB. Startup, 1.22s and slowest of the six, is not the bottleneck; processing each round
+  is. Its three runs are stable at 19.1 / 19.9 / 20.0s, without the previous batch's outliers
+  during load spikes.
+- **Dsh startup at 0.76s** is second-longest, after MiniMax Code's 1.22s; total elapsed time is
+  3.8s. Its execution cost of 30.2ms/round is about 50% above Claude Code's 19.6ms/round.
 
-## MiniMax Code（`mcode`）：常规批次的一员
+## MiniMax Code (`mcode`): a member of the regular batch
 
-`mcode exec`（`@minimax-ai/code` 0.4.12 的无头模式，走 OpenAI Chat Completions）从上一批起与其余五家
-同批串跑，接入细节见 `CLAUDE.md` 的「与 harness 集成」。本批三次读数（19.1s / 19.9s / 20.0s，
-CU 30.42 / 31.99 / 32.15），下面取中位那次（19.9s）：
+`mcode exec`, the headless mode of `@minimax-ai/code` 0.4.12 over OpenAI Chat Completions, has run
+serially in the same batch as the other five since the previous batch. See “Harness integration”
+in `CLAUDE.md` for details. This batch measured 19.1s / 19.9s / 20.0s and CU 30.42 / 31.99 / 32.15.
+The median run, 19.9s, gives:
 
-- **端到端 19.9s（启动 1.22s · 运转 18.47s · 收尾 0.23s）**：没有 Codex 那种固定收尾等待，
-  慢在「每一轮都在满速吞吐」而不是启动或收尾；
-- **消费规律是六家里最干净的**：100 轮剧本实收 **101 条 = 100 轮 + 尾部那条收尾**，没有标题生成、
-  没有上下文压缩、没有预测请求（对比：pi 要 135 条剧本，dsh 的标题请求吃掉第 2 条）；
-- **它是这份名单里最费资源的**：进程树 CPU 均值 **98.1%**（几乎全程占满一个核）、RSS 峰值
-  **892.0MB**、CU **31.995**——第二贵的 dsh 才 3.101、最省的 pi 是 1.271，
-  **它不省，只是快**；
-- 启动时会刷新模型目录（`models.dev/api.json` → `filecdn.minimax.chat`，落沙盒 `cache/` 下 4.7MB），
-  不经过 mock，但给启动段带了 1.22s（六家里最慢）——跨机器比启动时长时要留意。
+- **Elapsed time 19.9s: startup 1.22s · execution 18.47s · shutdown 0.23s**. There is no fixed
+  shutdown wait like Codex's. The cost is full-speed processing each round, not startup or shutdown.
+- **The clearest request pattern of the six**: a 100-round script yields **101 requests =
+  100 rounds + the final completion entry**, with no title generation, compaction, or prediction.
+  In comparison, pi needs 135 script entries, and dsh's title request consumes entry 2.
+- **It uses the most resources in this list**: process-tree mean CPU **98.1%**, nearly one core
+  throughout; peak RSS **892.0MB**; **31.995 CU**. The next highest, dsh, uses 3.101 CU;
+  the lowest, pi, uses 1.271. **It is not efficient, just fast.**
+- Startup refreshes the model catalog (`models.dev/api.json` → `filecdn.minimax.chat`, saving
+  4.7MB in sandbox `cache/`). This bypasses the mock but adds 1.22s to startup, the slowest of
+  the six. Account for this when comparing startup across machines.
 
-## Antigravity CLI（`agy`）：已接入，**尚未并入批次**
+## Antigravity CLI (`agy`): integrated, **not yet included in the batch**
 
-> **它不在上面那批里，下面的读数不能与批次表格并列。** 差的不是剧本（同一个生成器、同一份
-> 100 轮 × 4KB 口径，工具形状按它自己的 `run_command` 生成），而是**运行批次**：3 次读数跑于
-> 2026-09-20 11:47（`--label agy-probe`，本机 load 3.3），与第五批隔了一夜。跨批次**只能比 CU**，
-> 百分制分数与其余指标都不可比（分数是批内相对值）。
+> **It is absent from the batch above; these readings must not be placed beside the batch table.**
+> The difference is not the script: the same generator creates 100 rounds × 4KB, with its
+> `run_command` tool format. The difference is the **run batch**. Three runs took place on
+> 2026-09-20 11:47 (`--label agy-probe`, local load 3.3), one night after the fifth batch.
+> Across batches, **only CU is comparable**. Percentage scores and other metrics are not;
+> scores are relative within a batch.
 
-`agy -p`（1.2.7 的无头模式）是 2026-09-20 接入的第 7 家，走**第四种线协议 Google Gemini API**
-（`POST /v1beta/models/{model}:streamGenerateContent?alt=sse`，mock 侧 `src/gemini.ts`）——线协议、
-沙盒与消费规律的完整说明在 `CLAUDE.md` 的「与 harness 集成」。三次读数：
+`agy -p`, the headless mode in 1.2.7, was integrated on 2026-09-20 as the seventh harness.
+It uses the **fourth wire protocol, Google Gemini API**:
+`POST /v1beta/models/{model}:streamGenerateContent?alt=sse`, implemented by the mock in
+`src/gemini.ts`. See “Harness integration” in `CLAUDE.md` for the protocol, sandbox, and request
+pattern. The three readings are:
 
-| 次 | runId | 端到端 | 启动 · 运转 · 收尾 | CU | 峰值 RSS · CPU |
+| Run | runId | Elapsed time | Startup · execution · shutdown | CU | Peak RSS · CPU |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `20260920-114712` | 2.4s | 0.1 · 2.2 · 0.1 | 4.866 | 229.2MB · 221.8% |
-| 2 | `20260920-114718`（中位） | 2.2s | 0.1 · 2.0 · 0.1 | 4.593 | 225.1MB · 213.0% |
+| 2 | `20260920-114718` (median) | 2.2s | 0.1 · 2.0 · 0.1 | 4.593 | 225.1MB · 213.0% |
 | 3 | `20260920-114723` | 2.1s | 0.1 · 2.0 · 0.0 | 4.508 | 225.8MB · 239.8% |
 
-- **端到端 2.1~2.4s，与 peri 同一档**（上一批 peri 2.2s）；三次都**自行退出**（退出码 0、
-  不用强杀），启动 **0.1s**、收尾 **0.0~0.1s**——两笔固定成本都近乎为零，时间几乎全在运转段；
-- **消费规律：标题在最前、压缩途中插队**。实测 105 个请求 = **1 条会话标题生成**
-  （`gemini-3.1-flash-lite-preview`，`tools=0`，落在**序列第一条**——与 peri 的预测请求在最后正好
-  相反）+ 1 条初始主请求 + **100 轮工具调用** + **3 条上下文压缩摘要**（每约 32 个请求一条，
-  `last=user:"Your main task now is to generate a continuation summary of …"`）。所以 100 轮要
-  **104 条剧本**（`gen-long-run.ts --turns 104`）；`--turns 100` 只能跑到 96 轮、`103` 跑到 99 轮。
-  它没有 peri 那样的预测请求，尾部那条空白收尾用不到；
-- **CU 4.5~4.9**（同剧本三次读数 4.508 / 4.593 / 4.866，**±4%**，重复性比端到端还好）：按跨批次口径比，
-  比上一批的 dsh（3.101）贵一档、比 Claude Code（2.828）也贵，远离 MiniMax Code（31.995）那一端。
-  内存项只占它的 CU 的 9%~10%（RSS 均值约 207MB，与 pi 的 186MB 同档）；
-- **进程树口径与 dsh 同类**：`samples.csv` 的 `procs` 列**恒为 1**（执行 shell 命令时拉起的子进程
-  太短命、采样打不到），它的 shell 开销是靠**已回收子进程计数器**（`child_cpu_pct`）捞回来的
-  ——实测 0.32 核·秒，占整段 CPU 的 8%；
-- 要把它并入榜单，得**整批重跑**（带同一个 `--label`，含它共 7 家 × 3 次）：CU 之外的指标都只在
-  批内可比。CI 的 workflow 已经带上它（装 agy + 跑批两处），下一次 CI 批次就是这个形态。图表页现在
-  **会画出它**——`gen-chart-data.ts` 默认收 `data/runs` 下最近的运行，它那 3 条
-  就落在里面。跨批混画这件事由页面自己兜着：payload 里每次运行都带 `--label`，只要图上出现两个
-  以上的批次，页尾的告警行就会点名是哪几家、哪个 label，并说明分数只在批内可比（并入批次后这行
-  自动消失）。只想看批次内排名就照旧用 `--exclude antigravity` 生成数据（与 `--exclude opencode`
-  同一个用法）。
+- **Elapsed time 2.1~2.4s, in peri's range** (peri was 2.2s in the previous batch). All three
+  **exit by themselves**, with exit code 0 and no forced termination. Startup is **0.1s** and
+  shutdown **0.0~0.1s**. Both fixed costs are nearly zero; almost all time is execution.
+- **Request pattern: title first, compaction inserted during execution.** The measured
+  105 requests comprise **1 session-title request** (`gemini-3.1-flash-lite-preview`, `tools=0`,
+  **first in sequence**, unlike peri's final prediction request), 1 initial main request,
+  **100 tool-call rounds**, and **3 context-compaction summaries**, about one every 32 requests,
+  with `last=user:"Your main task now is to generate a continuation summary of …"`.
+  Thus 100 rounds need **104 script entries** (`gen-long-run.ts --turns 104`): `--turns 100`
+  reaches only 96 rounds, and `103` reaches 99. There is no peri-style prediction request,
+  so the final blank entry is unused.
+- **CU 4.5~4.9**: the same script measured 4.508 / 4.593 / 4.866, **±4%**, more repeatable than
+  elapsed time. Under the cross-batch method, it costs more than the previous batch's dsh
+  (3.101) and Claude Code (2.828), but remains far below MiniMax Code (31.995).
+  Memory is only 9%~10% of its CU; mean RSS is about 207MB, similar to pi's 186MB.
+- **Process-tree accounting resembles dsh**: `procs` in `samples.csv` is **always 1** because
+  tool shells are too short-lived to be sampled. Their CPU cost is recovered through
+  **reaped-child counters** (`child_cpu_pct`): measured 0.32 core·s, 8% of total CPU.
+- To add it to the rankings, **repeat the complete batch** with the same `--label`, now
+  7 harnesses × 3 runs. Metrics other than CU are comparable only within a batch. The CI workflow
+  already installs agy and includes it in batch runs; the next CI batch will use this set.
+  The chart page **already shows it**, because `gen-chart-data.ts` selects recent runs under
+  `data/runs`, including these three. The page handles mixed batches: each run's payload includes
+  its `--label`. If the chart contains two or more batches, a warning at the bottom lists the
+  harnesses and labels and states that scores are comparable only within a batch. It disappears
+  once the harness joins the batch. To show only batch rankings, generate data with
+  `--exclude antigravity`, just like `--exclude opencode`.
 
-## opencode v2（`opencode2`）：已接入，**尚未并入批次**
+## opencode v2 (`opencode2`): integrated, **not yet included in the batch**
 
-> **它不在上面那批里，下面的读数不能与批次表格并列**——理由与上一节相同：3 次读数跑于
-> 2026-09-20 14:19（`--label oc2-probe`），与第五批不是同一时段、同一负载。跨批次**只能比 CU**，
-> 百分制分数与其余指标都不可比（分数是批内相对值）。
+> **It is absent from the batch above; these readings must not be placed beside the batch table.**
+> As above, three runs took place on 2026-09-20 14:19 (`--label oc2-probe`), at a different time
+> and load from the fifth batch. Across batches, **only CU is comparable**. Percentage scores
+> and other metrics are not; scores are relative within a batch.
 
-`opencode2 run --standalone`（npm `@opencode/cli` 2.0.10）是 2026-09-20 接入的第 8 家，走
-**OpenAI Chat Completions**（与 peri / opencode v1 同协议）。它是 **opencode v1 的下一代**：
-同一个项目（`github.com/sst/opencode` 现在 308 跳到 `anomalyco/opencode`）、同一个维护者，包里
-`opencode` 与 `opencode2` 两个 bin 名指的是同一个 v2 二进制；**但 v1 与 v2 是两个被测对象**，
-v1 已退出排名（见开头那个框），这条是新的一项。产品细节、沙盒与工具形状在 `CLAUDE.md` 的
-「与 harness 集成」，这里只放读数：
+`opencode2 run --standalone` (npm `@opencode/cli` 2.0.10) was integrated on 2026-09-20 as the
+eighth harness. It uses **OpenAI Chat Completions**, like peri / opencode v1. It is
+**the successor to opencode v1**, from the same project (`github.com/sst/opencode` now redirects
+with status 308 to `anomalyco/opencode`) and the same maintainer. Package bins `opencode` and
+`opencode2` point to the same v2 binary. **V1 and v2 are separate test subjects**: v1 was removed
+from rankings, as noted at the start, and this is a new entry. See “Harness integration” in
+`CLAUDE.md` for product details, sandbox, and tool format. Readings:
 
-| 次 | runId | 端到端 | 启动 · 运转 · 收尾 | CU | 峰值 RSS · CPU |
+| Run | runId | Elapsed time | Startup · execution · shutdown | CU | Peak RSS · CPU |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `20260920-141913` | 9.7s | 0.7 · 8.9 · 0.1 | 9.426 | 695.0MB · 106.2% |
 | 2 | `20260920-141926` | 8.9s | 0.4 · 8.4 · 0.1 | 8.440 | 645.7MB · 96.5% |
-| 3 | `20260920-141938`（中位） | 9.1s | 0.4 · 8.6 · 0.1 | 9.595 | 849.6MB · 105.2% |
+| 3 | `20260920-141938` (median) | 9.1s | 0.4 · 8.6 · 0.1 | 9.595 | 849.6MB · 105.2% |
 
-- **三次都自行退出**（退出码 0、不用强杀），启动 **0.4~0.7s**、收尾 **0.1s**——时间几乎全在运转段；
-- **它是「一个启动器 + 一个真干活的 worker」**：主 CLI 进程整段只烧 **0.20~0.26 核·秒**，
-  **95% 的 CPU 在它 spawn 的子进程** `opencode.exe serve --stdio --port 0` 里（4.0~4.5 核·秒，
-  走进程树采样而不是已回收子进程计数器）——与 Codex 同类（真干活的是 spawn 出来的二进制），
-  这正是计分口径固定用**进程树**的原因。峰值 RSS 645~850MB 也几乎全是那个子进程的（采样到 2 个进程）；
-- **消费规律：标题在最前，没有压缩**。102 条请求 = **1 条会话标题生成**（`messages=2`、无 tools，
-  system 写着 "You are a title generator"，落在**序列第一条**）+ **100 轮工具调用** + 1 条收尾，
-  所以 100 轮要 **101 条剧本**（`--turns 101`；`--turns 100` 只跑得到 99 轮）。它不像 pi / agy
-  那样在途中插上下文压缩请求；
-- **CU 8.4~9.6**：跨批次口径比，是同批最小的 pi（1.271）的约 7 倍、Codex（1.383）的约 6 倍，
-  离 MiniMax Code（31.995）那一端还远。拆开看 **内存项就占 50%~54%**（RSS 均值 484~576MB，
-  是 CLI 里最高的一档：pi 186MB、agy 207MB 同段位，Codex 约 100MB），CPU 项 4.2~4.7 核·秒；
-- **三次的离散度不小**（端到端 8.9~9.7s、CU 8.440~9.595，±7%），比 agy 的 ±4% 差一档——
-  它顶着几百 MB 的内存跑 9 秒，读数对机器负载更敏感。不过三次的 1 分钟 load（2.8 / 3.8 / 3.8）
-  与 CU 并不同向：最便宜的那次（`…141926`，8.440）恰在中间，最先跑、机器最空的那次反而贵
-  （`…141913`，9.426）——**这 ±7% 更像它自身的抖动，别全推给负载**；跨机器引用时留意；
-- 与 v1 的对照只能看量级：v1 退出排名时的读数是端到端 **38.6s**（那是另一批次、负载更重），
-  v2 在这一批是 9.1s——**别把两批的秒数相减**。要把 v2 并入榜单得整批重跑（含它共 8 家 × 3 次）；
-  CI 的 workflow 已经带上它（装包与跑批两处），下一次 CI 批次就是这个形态。
+- **All three exit by themselves**, with exit code 0 and no forced termination. Startup
+  **0.4~0.7s**, shutdown **0.1s**: almost all time is execution.
+- **One launcher plus a worker doing the work**: the main CLI uses only **0.20~0.26 core·s**
+  over the full run. **95% of CPU is in its spawned child**, `opencode.exe serve --stdio --port 0`,
+  at 4.0~4.5 core·s, captured by process-tree sampling rather than reaped-child counters.
+  Like Codex, the spawned binary does the work, which is why scoring uses the **process tree**.
+  Peak RSS of 645~850MB also comes almost entirely from that child; 2 processes are sampled.
+- **Request pattern: title first, no compaction.** There are 102 requests: **1 session title**
+  (`messages=2`, no tools, system text "You are a title generator", **first in sequence**),
+  **100 tool-call rounds**, and 1 completion response. Therefore 100 rounds require
+  **101 script entries** (`--turns 101`); `--turns 100` reaches only 99 rounds.
+  It does not insert compaction requests like pi / agy.
+- **CU 8.4~9.6**: under the cross-batch method, about 7 times the batch's lowest, pi (1.271),
+  and about 6 times Codex (1.383), still far below MiniMax Code (31.995).
+  **Memory alone is 50%~54%** of CU. Mean RSS 484~576MB is in the highest CLI range;
+  pi 186MB and agy 207MB form one range, while Codex is about 100MB. CPU contributes
+  4.2~4.7 core·s.
+- **Variation across the three runs is substantial**: elapsed time 8.9~9.7s, CU 8.440~9.595,
+  ±7%, worse than agy's ±4%. Running for 9 seconds with hundreds of MB makes readings more
+  sensitive to load. However, the three 1-minute load values, 2.8 / 3.8 / 3.8, do not track CU.
+  The cheapest run, `…141926` at 8.440, was in the middle; the first run on the least busy
+  machine, `…141913`, cost 9.426. **This ±7% looks more like its own variation; do not attribute
+  it all to load.** Account for it when citing results across machines.
+- Compare only scale with v1: v1 measured **38.6s** when removed, in another, more heavily
+  loaded batch; v2 is 9.1s here. **Do not subtract durations across batches.** Ranking v2
+  requires repeating the complete batch, now 8 harnesses × 3 runs. CI already installs the
+  package and includes it in batch runs; the next CI batch will use this set.
 
-## Hermes Agent（`hermes`）：已接入，**尚未并入批次**
+## Hermes Agent (`hermes`): integrated, **not yet included in the batch**
 
-> **它不在上面那批里，下面的读数不能与批次表格并列**——理由与上两节相同：3 次读数跑于
-> 2026-09-20 14:45~14:46（`--label hermes-probe`），与第五批隔了一天，本机 1 分钟 load
-> **4.1~4.3**（第五批是 2.9~3.8）。跨批次**只能比 CU**，百分制分数与其余指标都不可比
-> （分数是批内相对值）。
+> **It is absent from the batch above; these readings must not be placed beside the batch table.**
+> As in the previous two sections, three runs took place on 2026-09-20 14:45~14:46
+> (`--label hermes-probe`), one day after the fifth batch. Local 1-minute load was **4.1~4.3**,
+> versus 2.9~3.8 in the fifth batch. Across batches, **only CU is comparable**. Percentage scores
+> and other metrics are not; scores are relative within a batch.
 
-`hermes -z`（Nous Research 的 Hermes Agent，v0.21.3 / 2026.9.14，官方 `install.sh` 装到
-`~/.local/bin/hermes`）是 2026-09-20 接入的第 9 家，走 **OpenAI Chat Completions**
-（与 peri / pi / dsh / mcode / opencode2 同协议）。沙盒、provider 注入与工具形状在 `CLAUDE.md`
-的「与 harness 集成」，这里只放读数（同一份剧本、三次串行）：
+`hermes -z` (Nous Research's Hermes Agent, v0.21.3 / 2026.9.14, installed by official `install.sh`
+at `~/.local/bin/hermes`) was integrated on 2026-09-20 as the ninth harness. It uses
+**OpenAI Chat Completions**, like peri / pi / dsh / mcode / opencode2. See “Harness integration”
+in `CLAUDE.md` for sandbox, provider injection, and tool format. Three serial runs of the same script:
 
-| 次 | runId | 端到端 | 启动 · 运转 · 收尾 | CU | 峰值 RSS · CPU |
+| Run | runId | Elapsed time | Startup · execution · shutdown | CU | Peak RSS · CPU |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `20260920-144542` | 10.7s | 5.9 · 4.8 · 0.1 | 10.587 | 203.3MB · 134.2% |
-| 2 | `20260920-144556`（中位） | 10.8s | 6.0 · 4.7 · 0.1 | 10.706 | 201.1MB · 131.8% |
+| 2 | `20260920-144556` (median) | 10.8s | 6.0 · 4.7 · 0.1 | 10.706 | 201.1MB · 131.8% |
 | 3 | `20260920-144610` | 11.0s | 6.2 · 4.7 · 0.1 | 10.918 | 203.3MB · 133.0% |
 
-- **三次都自行退出**（退出码 0、不用强杀），收尾 **0.06~0.11s**：主流程吃到尾部那条「任务结束」
-  纯文本即收，没有 peri 的 5s 等待、也没有 Codex 那种退出期网络超时；
-  **重复性很好**（端到端 ±1.4%、CU ±2%，比 agy 的 ±4%、opencode2 的 ±7% 都稳）；
-- **它的钱花在启动段，而且启动段在「跑满一个核」**：首个请求前固定 **5.9~6.2s**，
-  逐拍采样在这段里是**从首次采样（t≈0.3s）起 CPU 就贴着 100%**（99.7~104.4%，不是空等）、
-  RSS 前 3 秒恒定在 102~110MB（第 5 秒才涨到 135~174MB）。整段 5.43~5.67 核·秒 ≈ **0.93 核 × 6s**，
-  按 1:1 折 **6.10~6.38 CU——占整段 CU 的 58%**（运转段 100 轮只占 40%：4.25~4.44 CU）。
-  这是本项目测过的最大的启动段（此前最贵的是 MiniMax Code 1.22s / 1.69 CU），三次完全一致；
-  它自己的 `logs/agent.log` 在这段里只在起进程后约 0.3s 记了三行「注册 browser 插件」，
-  之后到首个请求之间没有任何输出——**这 5.7s 既不是 mock 的（还没有请求）、也不是解释器冷启动**
-  （`hermes --version` 0.25s）；死代理与否也不改变它（CLAUDE.md 里 7.87s vs 7.83s 的对照）。
-  根因没定位到底，照实记成「Hermes 的固定成本」；
-- **口径上它与 dsh 同类**：`samples.csv` 的 `procs` 列**恒为 1**（执行工具命令时拉起的 shell
-  太短命、采样打不到），RSS 均值 147~148MB / 峰值 201~203MB 都是主进程自己的；
-  那 100 个工具 shell 的账记在**已回收子进程计数器**上——1.26~1.35 核·秒（占整段 CPU 的 14%）；
-- **消费规律：104 条剧本 = 100 个工具轮**，两笔手续费都要算进条数——
-  1. **会话标题生成**（`stream=false`、`messages=2`、无 tools，system 是 "You name chat sessions."）
-     与主请求几乎同时发出，**顺序不定**（5 次实测 3 次标题在前、2 次主请求在前），合计吃掉开头一条；
-  2. 途中**一次上下文压缩**：上下文涨到约 170 条消息时插一条 `messages=1`、
-     `last=user:"You are a summarization agent creating a context checkpoint."`，随后历史被压到
-     21 条，紧接着是一条把原任务重述一遍的主请求（`messages=21`）——**前后两条都取号**。
-  所以 `--turns 102`（102 轮 + 2 条收尾 = 104 条）正好 100 个工具轮，`--turns 101`（103 条）只有 99 轮。
-  本轮 103 个请求的构成：1 条主请求 + 1 条标题 + 1 条压缩摘要 + 1 条压缩后的重述 +
-  **99 条带工具结果的续跑请求**——比轮数少 1，是因为压缩前那一轮的工具结果被折进了摘要、
-  没有再单独回传（所以**数轮数别看 `last=tool` 的条数**，要看剧本被执行到第几条）；
-  另外主流程收尾**之后**它还可能再发一条技能库复盘（`last=user:"Review the conversation above and
-  update the skill library."`），落在尾部那条**空白**收尾上（与 peri 的预测请求同一个位置）——
-  实测 4 次里发了 1 次（那次请求数 104），发不发都不占轮次，所以那个空白条对它也有用；
-- **CU 10.6~10.9**：跨批次口径比，是第五批最省的 pi（1.271）的约 **8 倍**、Codex（1.383）的约
-  **7.7 倍**，比同一天测的 opencode2（8.4~9.6）还贵一档，离 MiniMax Code（31.995）那一端仍远。
-  拆开看 **CPU 项 9.03~9.32 核·秒**（整段均值 72.6~73.1%、峰值 131.8~134.2%，它有短暂的
-  多线程并发）、**内存项只占 15%**（1.56~1.60 GB·秒 = 1595~1635 MB·秒，RSS 均值 148MB 与
-  pi 的 186MB 同档）——**它贵在「CPU × 时间」，不是贵在内存**；
-- 要把它并入榜单，得**整批重跑**（带同一个 `--label`，含它共 9 家 × 3 次）：CU 之外的指标都只在
-  批内可比。CI 的 workflow 已经带上它（装 hermes + 生成自家剧本 + 跑批三处），下一次 CI 批次就是
-  这个形态。图表页现在**会画出它**——`gen-chart-data.ts` 默认收 `data/runs` 下最近的运行；跨批混画
-  由页面自己兜着：payload 里每次运行都带 `--label`，只要图上出现两个以上的批次，页尾的告警行就会
-  点名是哪几家、哪个 label，并说明分数只在批内可比（并入批次后这行自动消失）。只想看批次内排名
-  就照旧用 `--exclude hermes` 生成数据（与 `--exclude antigravity` 同一个用法）。
+- **All three exit by themselves**, with exit code 0 and no forced termination. Shutdown takes
+  **0.06~0.11s**: the main flow stops after the final plain-text completion response, without
+  peri's 5s wait or Codex's shutdown network timeout. **Repeatability is good**: elapsed time
+  ±1.4%, CU ±2%, more stable than agy's ±4% and opencode2's ±7%.
+- **Most cost is startup, which saturates one core**: a fixed **5.9~6.2s** before the first
+  request. From the first sample at t≈0.3s, **CPU stays near 100%**, 99.7~104.4%, rather than
+  waiting idle. RSS remains 102~110MB for the first 3 seconds and reaches 135~174MB only in
+  second 5. The segment consumes 5.43~5.67 core·s ≈ **0.93 cores × 6s**, or **6.10~6.38 CU**
+  at 1:1, **58% of total CU**. The 100-round execution segment is only 40%, at 4.25~4.44 CU.
+  This is the largest startup cost measured in this project, consistent across all three runs;
+  the previous highest was MiniMax Code at 1.22s / 1.69 CU. Its `logs/agent.log` records only
+  three browser-plugin registration lines about 0.3s after process start, then nothing until
+  the first request. **These 5.7s are neither mock cost**, since no request exists yet,
+  **nor interpreter cold startup**, since `hermes --version` takes 0.25s. An unused-port proxy
+  makes no difference either: 7.87s versus 7.83s in `CLAUDE.md`. The root cause remains unknown;
+  record it as Hermes's fixed cost.
+- **Accounting resembles dsh**: `procs` in `samples.csv` is **always 1** because tool shells
+  are too short-lived to sample. Mean RSS 147~148MB / peak 201~203MB belong to the main process.
+  The 100 tool shells appear in **reaped-child counters**, at 1.26~1.35 core·s, 14% of total CPU.
+- **Request pattern: 104 script entries = 100 tool rounds.** Include both additional costs:
+  1. **Session-title generation** (`stream=false`, `messages=2`, no tools, system text
+     "You name chat sessions.") starts almost simultaneously with the main request.
+     **Order varies**: in 5 measurements, the title came first 3 times and the main request
+     first 2 times. Together they consume one extra initial entry.
+  2. **One compaction during execution**: at about 170 context messages, it inserts a
+     `messages=1` request with
+     `last=user:"You are a summarization agent creating a context checkpoint."`.
+     History then falls to 21 messages, followed immediately by a main request that restates
+     the original task (`messages=21`). **Both requests consume entries.**
+  Thus `--turns 102`, meaning 102 rounds + 2 final entries = 104 entries, gives exactly
+  100 tool rounds; `--turns 101`, 103 entries, gives only 99. The 103 requests in this run are:
+  1 main request + 1 title + 1 compaction summary + 1 post-compaction restatement +
+  **99 continuation requests carrying tool results**. This is one fewer than the round count
+  because the tool result immediately before compaction is included in the summary instead
+  of being sent separately. **Do not count rounds by `last=tool` requests**; check which
+  script entry was executed. **After** the main flow finishes, it may also request a skill-library
+  review (`last=user:"Review the conversation above and update the skill library."`).
+  This consumes the final **blank** entry, the same position as peri's prediction request.
+  It occurred once in 4 measurements, producing 104 requests that time. It never uses a tool
+  round, so the blank entry is useful here too.
+- **CU 10.6~10.9**: under the cross-batch method, about **8 times** the fifth batch's most
+  efficient pi (1.271), **7.7 times** Codex (1.383), and above opencode2's 8.4~9.6 measured
+  the same day, though still far below MiniMax Code's 31.995. **CPU contributes 9.03~9.32 core·s**:
+  mean 72.6~73.1%, peak 131.8~134.2%, with brief multithreaded concurrency. **Memory is only
+  15%**, at 1.56~1.60 GB·s = 1595~1635 MB·s. Mean RSS 148MB is in pi's 186MB range.
+  **The cost is CPU × time, not memory.**
+- Ranking requires **repeating the whole batch**, under one `--label`, now 9 harnesses × 3 runs.
+  Metrics other than CU are comparable only within a batch. CI already installs hermes,
+  generates its script, and runs it in the batch; the next CI batch will use this set.
+  The chart page **already shows it** because `gen-chart-data.ts` selects recent runs from
+  `data/runs`. The page handles mixed batches: every run includes its `--label` in the payload.
+  If two or more batches appear, a warning names the harnesses and labels and says scores
+  are comparable only within a batch; it disappears after batch integration. To show only
+  batch rankings, use `--exclude hermes`, like `--exclude antigravity`.
 
-## Cline（`cline`）：已接入，**尚未并入批次**
+## Cline (`cline`): integrated, **not yet included in the batch**
 
-> **它不在上面那批里，下面的读数不能与批次表格并列**——理由与上三节相同：3 次读数跑于
-> 2026-09-20 15:15（`--label cline-probe`，本机 1 分钟 load 2.5 左右），与第五批隔了一天。
-> 跨批次**只能比 CU**，百分制分数与其余指标都不可比（分数是批内相对值）。
+> **It is absent from the batch above; these readings must not be placed beside the batch table.**
+> As in the previous three sections, three runs took place on 2026-09-20 15:15
+> (`--label cline-probe`, local 1-minute load about 2.5), one day after the fifth batch.
+> Across batches, **only CU is comparable**. Percentage scores and other metrics are not;
+> scores are relative within a batch.
 
-`cline`（npm `cline@3.0.62`，官方仓库 `cline/cline` 的 `apps/cli`）是 2026-09-20 接入的第 10 家，
-走 **OpenAI Chat Completions**（与 peri / pi / dsh / mcode / hermes 同协议）。沙盒、provider 注入、
-工具形状与消费规律在 `CLAUDE.md` 的「与 harness 集成」，这里只放读数（同一份剧本、三次串行）：
+`cline` (npm `cline@3.0.62`, `apps/cli` in the official `cline/cline` repository) was integrated
+on 2026-09-20 as the tenth harness. It uses **OpenAI Chat Completions**, like peri / pi / dsh /
+mcode / hermes. See “Harness integration” in `CLAUDE.md` for sandbox, provider injection,
+tool format, and request pattern. Three serial runs of the same script:
 
-| 次 | runId | 端到端 | 启动 · 运转 · 收尾 | CU | 峰值 RSS · CPU |
+| Run | runId | Elapsed time | Startup · execution · shutdown | CU | Peak RSS · CPU |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `20260920-151500`（中位） | 5.1s | 0.9 · 2.3 · 1.9 | 3.397 | 706.1MB · 138.4% |
+| 1 | `20260920-151500` (median) | 5.1s | 0.9 · 2.3 · 1.9 | 3.397 | 706.1MB · 138.4% |
 | 2 | `20260920-151508` | 4.8s | 0.8 · 2.4 · 1.6 | 3.381 | 707.7MB · 124.5% |
 | 3 | `20260920-151516` | 5.2s | 0.9 · 2.5 · 1.8 | 3.814 | 704.3MB · 142.3% |
 
-- **三次都自行退出**（退出码 0、不用强杀），端到端 **4.8~5.2s**：启动 **0.8~0.9s**、运转
-  **2.3~2.5s**、收尾 **1.6~1.9s**——**收尾段是零请求的固定等待**（`idleTail`，约占总时长三分之一），
-  与 peri 的 5.0s、Codex 的 10.1s 同类、量级小得多：主流程吃到尾部那条纯文本就收工了，但那之后
-  还有约 1.8s 不发任何请求。根因没查到底，照实记成它的固定成本（换 load 重跑也在同一量级，
-  三次 1.6 / 1.8 / 1.9s）；
-- **这笔空等很贵：它占整段 CU 的 33%~43%**（分段积分：启动 0.08 CU / 2% · 运转 1.78~2.26 CU /
-  52%~62% · **收尾 1.12~1.47 CU / 33%~43%**）。收尾段几乎全是内存面积——那 1.8s 里 CPU 已经熄了
-  （0.08~0.16 核·秒），但 RSS 还留着约 700MB 常驻，1:1 口径下就是 1.0~1.3 GB·秒。这与 Codex
-  修复前那笔 10s 空等是同一个教训：**零 CPU 的空等照样花钱**，而且这笔钱记在内存项上（它的内存项
-  占整段 CU 的 62%~66%，大半来自这里）；
-- **它是「Node 启动壳 + 真干活的子进程」**：npm 的 bin 是个解析器脚本（整段 RSS 60MB、CPU 近 0），
-  真干活的是它 spawn 出来的单文件二进制（`samples.csv` 的 `procs` 列在 1~2 之间，30/50 拍是 2）。
-  拆开看 CPU：**根进程 0.035 核·秒、子进程 1.13~1.43 核·秒——97% 在子进程里**，与 Codex / opencode2
-  同类，也正是计分口径固定用**进程树**的原因；
-- **它的 CU 是下界（口径缺口，读的时候要上修）**：工具命令由那个子进程再拉一个短命 shell
-  （拿 `sleep 2` 当命令做探针，`procs` 能顶到 3，可见形状），这些 shell 活不过进程树的 2s 刷新窗口，
-  其 CPU 又记在**子进程**（不是根进程）的 `ri_child_*` 计数器上——而采样器只读**根进程**的计数器，
-  于是这一笔既没进 `tree_cpu_pct` 也没进 `child_cpu_pct`。按本机 `sh -c` 的单价粗估
-  （实测 2~3ms/次 × 100 轮 ≈ 0.2~0.3 核·秒，约占它整段 CPU 的两成），真实值应略高于表中 CU。
-  这与 dsh / agy / hermes 的「记在计数器上」正好相反——那几家的 shell 是**根进程**的子进程、
-  所以兜得住；
-- **消费规律：一次上下文压缩吃掉一条剧本**（默认 `--compaction agentic`）。102 条请求的构成：
-  1 条初始（`messages=2`，system + user）、99 条带工具结果的续跑、**1 条压缩摘要**
-  （`messages=2`、`last=user:"Summarize this session for continuation. Be concise and fact…"`，
-  响应被当摘要用掉、当轮工具调用不再执行）、1 条压缩后带着最后一个工具结果的续跑（`messages=40`）
-  ——**100 个工具轮 + 1 条压缩 + 1 条收尾**，没有标题生成那一步（与 opencode2 / dsh / agy / hermes
-  都不同）。所以 100 轮要 **103 条剧本**（`--turns 101`，`101 + 2 条收尾`）；200 轮实测压缩 2 次，
-  条数按「每 100 轮 +1、向上取整」留；
-- **CU 3.38~3.81**（±8%）：跨批次口径比，与第五批的 dsh（3.101）同一档、比 Claude Code（2.828）
-  略贵，离 MiniMax Code（31.995）那一端还远。拆开看**内存项占 62%~66%**（RSS 均值 440~458MB、
-  峰值约 706MB）——比 pi（186MB）、agy（207MB）、hermes（147MB）都重，落在 opencode2
-  （484~576MB）那一档；**CPU 项只有 1.16~1.47 核·秒**，所以它的账主要是「几百 MB 常驻 × 5 秒」；
-- 峰值 CPU **124.5%~142.3%**：它有多线程并发（主进程某一拍 35%，其余在子进程），所以进程树的
-  瞬时值会越过单核；三次的 1 分钟 load 都在 2.5 上下，重复性端到端 ±4%、CU ±8%（与 opencode2
-  的 ±7% 同档，比 agy 的 ±4% 散一点）；
-- 要把它并入榜单，得**整批重跑**（带同一个 `--label`，含它共 10 家 × 3 次）：CU 之外的指标都只在
-  批内可比。CI 的 workflow 已经带上它（装 cline + 生成自家剧本 + 跑批三处），下一次 CI 批次就是
-  这个形态。图表页现在**会画出它**——`gen-chart-data.ts` 默认收 `data/runs` 下最近的运行；跨批混画
-  由页面自己兜着（机制见上一节）。只想看批次内排名就照旧用 `--exclude cline` 生成数据。
+- **All three exit by themselves**, with exit code 0 and no forced termination.
+  Elapsed time **4.8~5.2s**: startup **0.8~0.9s**, execution **2.3~2.5s**, shutdown **1.6~1.9s**.
+  **Shutdown is a fixed wait without requests** (`idleTail`), about one-third of total duration.
+  It resembles peri's 5.0s and Codex's 10.1s, at a smaller scale. The main flow finishes on
+  receiving the final text, but then makes no requests for about 1.8s. The cause is unknown;
+  record it as a fixed cost. Runs at different loads remain in the same range: 1.6 / 1.8 / 1.9s.
+- **This idle wait costs 33%~43% of total CU**. Segment integrals: startup 0.08 CU / 2%,
+  execution 1.78~2.26 CU / 52%~62%, **shutdown 1.12~1.47 CU / 33%~43%**.
+  Shutdown is almost entirely memory integral. CPU is nearly idle, at 0.08~0.16 core·s,
+  but about 700MB stays resident for 1.8s, giving 1.0~1.3 GB·s under the 1:1 method.
+  Like Codex's former 10s wait, **idle waiting with zero CPU still costs resources**, recorded
+  in the memory term. Memory is 62%~66% of total CU, mostly from this wait.
+- **A Node launcher plus a working child process**: the npm bin is a resolver script,
+  at 60MB RSS and nearly zero CPU throughout. Its spawned single-file binary does the work.
+  `procs` in `samples.csv` varies between 1~2, with 2 in 30/50 samples. **Root CPU is
+  0.035 core·s, child CPU 1.13~1.43 core·s: 97% is in the child.** Like Codex / opencode2,
+  this supports using the **process tree** for scoring.
+- **Its CU is a lower bound because of an accounting gap; adjust expectations upward**.
+  Tool commands create a short-lived shell under that child. A `sleep 2` probe makes `procs`
+  reach 3 and shows this structure. Normal shells do not survive the 2s process-tree refresh
+  window, while their CPU enters the **child's**, not the root's, `ri_child_*` counters.
+  The sampler reads only the **root's** counters, so this cost reaches neither `tree_cpu_pct`
+  nor `child_cpu_pct`. Local `sh -c` measurements suggest 2~3ms each × 100 rounds ≈
+  0.2~0.3 core·s, roughly one-fifth of total CPU, so true CU should be slightly higher.
+  This differs from dsh / agy / hermes, whose shells are direct children of the **root**
+  and are therefore captured by its counters.
+- **Request pattern: one compaction consumes one script entry**, with default
+  `--compaction agentic`. The 102 requests comprise 1 initial request (`messages=2`, system + user),
+  99 continuations with tool results, **1 compaction summary** (`messages=2`,
+  `last=user:"Summarize this session for continuation. Be concise and fact…"`; the response
+  becomes a summary and its tool call is not executed), and 1 post-compaction continuation
+  carrying the final tool result (`messages=40`). This is **100 tool rounds + 1 compaction +
+  1 completion response**, with no title-generation step, unlike opencode2 / dsh / agy / hermes.
+  Thus 100 rounds need **103 script entries** (`--turns 101`, or `101 + 2 final entries`).
+  A 200-round measurement compacted twice; allow one extra entry per 100 rounds, rounded up.
+- **CU 3.38~3.81**, ±8%: under the cross-batch method, similar to the fifth batch's dsh (3.101),
+  slightly above Claude Code (2.828), and far below MiniMax Code (31.995). **Memory is 62%~66%**,
+  with mean RSS 440~458MB and peak about 706MB. This exceeds pi (186MB), agy (207MB), and hermes
+  (147MB), and is in opencode2's 484~576MB range. **CPU is only 1.16~1.47 core·s**, so most
+  cost is hundreds of MB resident × 5 seconds.
+- Peak CPU **124.5%~142.3%** shows multithreaded concurrency: one main-process sample is 35%,
+  with the rest in the child, so the process tree can temporarily exceed one core.
+  The three 1-minute load values are all about 2.5. Variation is ±4% elapsed time and ±8% CU,
+  similar to opencode2's ±7% and greater than agy's ±4%.
+- Ranking requires **repeating the whole batch** under one `--label`, now 10 harnesses × 3 runs.
+  Metrics other than CU are comparable only within a batch. CI already installs cline,
+  generates its script, and includes it in the batch; the next CI batch will use this set.
+  The chart page **already shows it**, because `gen-chart-data.ts` selects recent runs under
+  `data/runs`; the page handles mixed batches as described above. To show only batch rankings,
+  generate data with `--exclude cline`.
 
-## Kimi Code（`kimi`）：已接入，**尚未并入批次**
+## Kimi Code (`kimi`): integrated, **not yet included in the batch**
 
-> **它不在上面那批里，下面的读数不能与批次表格并列**——理由与上四节相同：3 次读数跑于
-> 2026-09-21（`--label kimi-probe`，本机 1 分钟 load 2.5 左右），与第五批隔了两天。
-> 跨批次**只能比 CU**，百分制分数与其余指标都不可比（分数是批内相对值）。
+> **It is absent from the batch above; these readings must not be placed beside the batch table.**
+> As in the previous four sections, three runs took place on 2026-09-21 (`--label kimi-probe`,
+> local 1-minute load about 2.5), two days after the fifth batch. Across batches,
+> **only CU is comparable**. Percentage scores and other metrics are not; scores are relative
+> within a batch.
 
-`kimi`（Kimi Code CLI，Moonshot 官方单文件原生二进制，实测 **2.0.0**；`curl -fsSL
-https://code.kimi.com/kimi-code/install.sh | bash` 装到 `~/.kimi-code/bin`）是 2026-09-21 接入的
-第 11 家，走 **OpenAI Chat Completions**（与 peri / pi / dsh / mcode / hermes / cline 同协议）。
-沙盒、provider 注入、工具形状与消费规律在 `CLAUDE.md` 的「与 harness 集成」，这里只放读数
-（同一份剧本、三次串行）：
+`kimi` (Kimi Code CLI, Moonshot's official single-file native binary, measured version **2.0.0**;
+`curl -fsSL https://code.kimi.com/kimi-code/install.sh | bash` installs into `~/.kimi-code/bin`)
+was integrated on 2026-09-21 as the eleventh harness. It uses **OpenAI Chat Completions**, like
+peri / pi / dsh / mcode / hermes / cline. See “Harness integration” in `CLAUDE.md` for sandbox,
+provider injection, tool format, and request pattern. Three serial runs of the same script:
 
-| 次 | runId | 端到端 | 启动 · 运转 · 收尾 | CU | 峰值 RSS · CPU |
+| Run | runId | Elapsed time | Startup · execution · shutdown | CU | Peak RSS · CPU |
 | --- | --- | --- | --- | --- | --- |
-| 1 | `20260921-153625`（中位） | 3.7s | 1.0 · 2.6 · 0.1 | 4.364 | 603.6MB · 176.8% |
+| 1 | `20260921-153625` (median) | 3.7s | 1.0 · 2.6 · 0.1 | 4.364 | 603.6MB · 176.8% |
 | 2 | `20260921-153540` | 3.8s | 1.1 · 2.5 · 0.2 | 4.490 | 561.0MB · 182.4% |
 | 3 | `20260921-153640` | 3.5s | 0.9 · 2.5 · 0.1 | 4.206 | 604.8MB · 181.8% |
 
-- **三次都自行退出**（退出码 0、不用强杀），端到端 **3.5~3.8s**：启动 **0.9~1.1s**、运转
-  **2.5~2.6s**、收尾 **0.1~0.2s**。运转段 2.5s 出头的 100 个工具轮是全场最快（其余各家同口径
-  在 2.3~18.2s，见批次表格）；收尾段**没有空等**（`idleTail=false`）——与 peri 的 5.0s、
-  Codex 的 10.1s、cline 的 1.8s 那几笔固定成本完全不同，主流程吃到收尾文本后立刻退；
-- **CU 4.206~4.490**（三次 ±7%，与 opencode2 的 ±7% 同档）：跨批次口径比，与 cline-probe
-  （3.38~3.81）相邻、略低于 agy-probe（4.59）。拆开看**内存项占 39%~41%**（RSS 均值 476~494MB、
-  峰值 561~605MB）——比 pi（186MB）、agy（209MB）、hermes（147MB）重，落在 cline（均值 444MB）
-  那一档；**CPU 项 2.51~2.73 核·秒**，其中约 0.23 是已回收子进程计数器记的工具 shell 开销。
-  它 CU 不低的根因是「只跑了 3.5~3.8s，却全程顶着 ~490MB」——**快不等于省**；
-- 峰值 CPU **176.8%~182.4%**（均值 63.5%~65.6%）：多线程、瞬时越过单核，但没有 agy 那样
-  mean 就超过一个核（173.4%）——它是「短时间多核 burst」，不是「持续吃满」；
-- 进程树 `procs` 列**恒为 1**：单进程原生二进制（launcher / worker 那套形状它没有）。工具命令
-  拉起的短命 shell 是**根进程**的子进程，活不过 2s 刷新窗口，但 CPU 记在根进程的 `ri_child_*`
-  计数器上，`child_cpu_pct` 兜得住（0.230~0.238 核·秒/100 轮）——与 dsh / agy / hermes 同类，
-  **不像 cline 的孙进程两头漏**，所以它的 CU 不是下界；
-- **消费规律与 mcode 并列最干净**：101 条请求 = 1 条初始（`messages=4`：system + 带 auto 权限
-  system-reminder 的 user）+ 100 个工具轮 + 1 条收尾。**没有标题生成**（与 opencode2 / dsh /
-  agy / hermes 都不同）、**没有上下文压缩**（`max_context_size = 262144` 下末次请求
-  `messages=204` 也没触顶）、没有 peri 那样的预测请求。所以 100 轮只要默认的 **102 条剧本**
-  （`--turns 100`），正好跑满；
-- 要把它并入榜单，得**整批重跑**（带同一个 `--label`，含它共 12 家 × 3 次）：CU 之外的指标都只在
-  批内可比。CI 的 workflow 已经带上它（装 kimi + 生成自家剧本 + 跑批三处），下一次 CI 批次就是
-  这个形态。图表页现在**会画出它**（`gen-chart-data.ts` 默认收 `data/runs` 下最近的运行），跨批混画
-  由页面自己兜着。只想看批次内排名就照旧用 `--exclude kimi` 生成数据。
+- **All three exit by themselves**, with exit code 0 and no forced termination.
+  Elapsed time **3.5~3.8s**: startup **0.9~1.1s**, execution **2.5~2.6s**, shutdown **0.1~0.2s**.
+  Its 100 tool rounds in just over 2.5s are the fastest in the field; the others take
+  2.3~18.2s by the same method, as shown in the batch table. There is **no idle shutdown wait**
+  (`idleTail=false`), unlike peri's 5.0s, Codex's 10.1s, and cline's 1.8s fixed costs.
+  The main flow exits immediately after receiving the completion text.
+- **CU 4.206~4.490**, ±7% across three runs, similar to opencode2's ±7%. Under the cross-batch
+  method, this is adjacent to cline-probe (3.38~3.81) and slightly below agy-probe (4.59).
+  **Memory is 39%~41%**: mean RSS 476~494MB, peak 561~605MB, higher than pi (186MB), agy (209MB),
+  and hermes (147MB), in cline's mean 444MB range. **CPU contributes 2.51~2.73 core·s**, including
+  about 0.23 core·s of tool-shell cost captured by reaped-child counters. Its CU is substantial
+  because it retains ~490MB throughout its 3.5~3.8s run: **fast does not mean efficient**.
+- Peak CPU **176.8%~182.4%**, mean **63.5%~65.6%**: multithreaded use briefly exceeds one core,
+  but the mean does not exceed one core as agy's does (173.4%). These are brief multicore
+  bursts, not sustained saturation.
+- Process-tree `procs` is **always 1**: one native process, without a launcher / worker structure.
+  Tool shells are direct children of the **root**. They do not survive the 2s refresh window,
+  but their CPU enters root `ri_child_*` counters and is captured by `child_cpu_pct`,
+  at 0.230~0.238 core·s/100 rounds. This resembles dsh / agy / hermes,
+  **without cline's missing grandchild CPU**, so its CU is not a lower bound.
+- **Request pattern is tied with mcode for the clearest**: 101 requests = 1 initial request
+  (`messages=4`: system + user with an auto-permission system-reminder) + 100 tool rounds +
+  1 completion response. **No title generation**, unlike opencode2 / dsh / agy / hermes;
+  **no compaction**, since the final `messages=204` request remains below
+  `max_context_size = 262144`; and no peri-style prediction. Thus the default
+  **102 script entries** (`--turns 100`) complete exactly 100 rounds.
+- Ranking requires **repeating the whole batch** under one `--label`, now 12 harnesses × 3 runs.
+  Metrics other than CU are comparable only within a batch. CI already installs kimi,
+  generates its script, and includes it in the batch; the next CI batch will use this set.
+  The chart page **already shows it**, since `gen-chart-data.ts` selects recent runs under
+  `data/runs`; the page handles mixed batches. Use `--exclude kimi` to show only batch rankings.
 
-## ccode（`ccode-cli`）：已接入，Linux 批次读数
+## ccode (`ccode-cli`): integrated, Linux batch readings
 
-`ccode-cli --write --auto-approve -p '<prompt>'` 走 OpenAI Chat Completions：provider 全走环境变量
-（`CCODE_API_BASE` 带 `/v1`、`CCODE_API_KEY` 假值、`CCODE_MODEL`），隔离靠 `CCODE_SESSION_DIR` 指向
-沙盒（默认落 `~/.ccode/sessions`）。`--write` 必给（默认工具集是只读的），`--auto-approve` 免掉
-headless 下无人可批的确认。工具是 `bash` + `{command}`，与 pi / mcode 同形。
+`ccode-cli --write --auto-approve -p '<prompt>'` uses OpenAI Chat Completions. Provider settings
+come entirely from environment variables: `CCODE_API_BASE` includes `/v1`, `CCODE_API_KEY` is
+fake, and `CCODE_MODEL` sets the model. Isolation uses `CCODE_SESSION_DIR` pointing to the
+sandbox, instead of its default `~/.ccode/sessions`. `--write` is required because the default
+tool set is read-only. `--auto-approve` avoids confirmations that cannot be answered in headless
+mode. The tool format is `bash` + `{command}`, like pi / mcode.
 
-**消费规律：撞上限就停。** `--turns N` 映射成 ccode 的 `--max-turns N`；**demo 永远显式给这个
-flag**，调用方没给 `--turns` 时传 0（ccode 的「不限轮」）——省掉它会落回 ccode 自己的默认 50，100 轮
-的剧本只跑一半，而柱子照画、读 CU 看不出来（上游 CI 跑批不带 `--turns`，所以这条是必须的）。
-`--max-turns N` 配 N 轮剧本实测正好 N 条请求，尾部那条「任务结束」不发（3 轮冒烟 3 条、100 轮长剧本
-100 条）；不设上限时它跑到剧本尾部再退（= 轮数 + 1 条）；上限大于剧本轮数时同理（实测 50 轮剧本配
-`--max-turns 100` 收到 51 条）。
+**Request pattern: stop at the limit.** `--turns N` maps to ccode's `--max-turns N`.
+**The demo always sets this flag explicitly.** Without caller `--turns`, it passes 0, ccode's
+unlimited setting. Omitting it would restore ccode's default 50, completing only half a 100-round
+script while still drawing a bar; CU alone would not reveal this. The original project's CI
+batch does not set `--turns`, so this rule is required. Measurements with `--max-turns N` and
+an N-round script produce exactly N requests and omit the final completion response:
+3 requests for a 3-round smoke check, 100 for a 100-round long script. With no limit, it runs to
+the final script entry, giving rounds + 1 requests. A limit above the script length behaves
+the same: a measured 50-round script with `--max-turns 100` produced 51 requests.
 
-**它是这一批里唯一快到采样分辨率边界的 harness。** 100 轮端到端 0.26s，10ms 采样只拿到 24 拍，
-启动段与收尾段都测不出来（分段 0.000 / 0.111 / 0.000 CU）。**所以这一行只看 CU，别看 CPU 峰值**：
-10ms 间隔下单个 tick 就是整格 100%，任何在采样窗口里干了活的运行都会顶到 99%，那是量化不是负载。
-CU 不受这个影响——它按累计 CPU 的差分积分（macOS 的 rusage 与 Linux 的 procfs 两条后端都是差分，
-不是「百分比 × 一次另测的间隔」），与峰值怎么取无关。
+**It is the only harness in this batch near the sampler's resolution limit.**
+100 rounds take 0.26s, yielding only 24 samples at 10ms. Startup and shutdown cannot be measured;
+segment CU is 0.000 / 0.111 / 0.000. **Use CU for this row, not peak CPU**: at 10ms, one tick
+represents a full 100%, so any run that does work in the sample window reaches 99%.
+This is quantization, not load. CU is unaffected because it integrates differences in cumulative
+CPU; both macOS rusage and Linux procfs backends use differences, not a percentage multiplied
+by a separately measured interval. It does not depend on peak selection.
 
-读数（`--label 265k-linux`，3 次串行，Linux / Intel Core Ultra 7 265K / 10ms procfs / 进程树；
-表里是中位那次，3 次端到端都在 0.2~0.3s；CPU 峰值那一列对这个量级的运行没有意义，故不列）：
+Readings: `--label 265k-linux`, 3 serial runs, Linux / Intel Core Ultra 7 265K / 10ms procfs /
+process tree. The table shows the median run; all three elapsed times are 0.2~0.3s.
+Peak CPU is not meaningful at this duration and is omitted:
 
-| 运行 | 端到端 | 请求数 | CU | 核·秒 | GB·秒 | CPU 均值 | RSS 均值 / 峰值 |
+| Run | Elapsed time | Requests | CU | Core·s | GB·s | Mean CPU | Mean / peak RSS |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | `20260922-003430` | 0.26s | 100 | **0.114** | 0.1132 | 0.0009 | 47.2% | 3.8MB / 4.4MB |
 
-同批 14 家里最低（第二名 peri 0.606、第三名 pi 1.417）。在这个量级上它更像「启动 + 100 次 HTTP
-往返 + 100 次 `sh -c`」的裸成本，而不是一个运行时的开销。
+This is the lowest of 14 harnesses in the same batch; peri is second at 0.606, pi third at 1.417.
+At this scale, it resembles the bare cost of startup + 100 HTTP round trips + 100 `sh -c` calls,
+rather than runtime overhead.
 
-## 统一计分（**Beta**）：CPU 与内存 1:1
+## Combined score (**Beta**): CPU and memory 1:1
 
-> **状态：Beta（2026-09-19 起试行）**。系数是本项目定的、实现（逐拍积分 / 后代取大 / 尾部补齐）
-> 都有验证，但**这套口径本身还没定稿**：「后代 CPU 算不算 harness 的开销」「时长该按端到端还是按
-> 可控执行时长」仍在讨论。所以下面的排名是**候选口径下的读数**，不是对 harness 的裁决——看趋势、
-> 拆账可以，别把名次当结论。口径与系数只在 `scripts/perf/score.ts` 一处（文件头也标了 Beta），
-> 本节只是读数；要改口径就改那处 + 重跑一个完整批次。
+> **Status: Beta, on trial since 2026-09-19.** This project sets the coefficients. The
+> implementation is verified: integration at each sample, selection of the larger descendant
+> CPU value, and estimation of the final unsampled interval. However, **the method itself is
+> not final**. Whether descendant CPU counts as harness overhead, and whether duration should
+> cover elapsed time or controlled execution time, remain under discussion. The rankings below
+> are therefore **readings under a candidate method**, not a verdict on a harness. Use them to
+> inspect trends and cost components; do not treat rank as the conclusion. The method and
+> coefficients are defined only in `scripts/perf/score.ts`, whose header also marks them Beta.
+> This section only reports readings. To change the method, change that definition and repeat
+> a complete batch.
 
-比时长、比内存都回答不了「谁更省」：pi 跑得最快（1.3s）却平均常驻 186.2MB，peri 多花 0.9s 却只用
-54.7MB；Codex 每轮最贵（59.8ms）却因为只跑 6 秒而挤进第二。要一个标量，公式结构借阿里云函数计算
-（FC）的「CU使用量 = ∑(资源使用量 × CU转换系数)」——它把 CPU、内存按系数折成同一个单位再加总，
-正好对应我们要问的问题。FC 弹性实例（活跃）的系数表（2026-09-19 核对官方计费页）是：
+Neither duration nor memory alone answers which harness uses fewer resources. Pi is fastest at
+1.3s but retains an average 186.2MB; peri takes 0.9s longer but uses only 54.7MB. Codex is most
+expensive per round at 59.8ms, yet ranks second because it runs for only 6 seconds. To obtain
+one scalar, the formula structure comes from Alibaba Cloud Function Compute (FC):
+“CU usage = ∑(resource usage × CU conversion coefficient)”. CPU and memory are converted to
+one unit and added, matching the question here. FC's coefficients for active elastic instances,
+checked against its official pricing page on 2026-09-19, are:
 
 ```
-CU使用量 = ∑(资源使用量 × CU转换系数)
-弹性实例（活跃）：vCPU 1.0 CU/(vCPU·秒) · 内存 0.15 CU/(GB·秒)
-                  调用次数 75 CU/万次（= 0.0075 CU/次） · 磁盘 0.05 CU/(GB·秒)
+CU usage = ∑(resource usage × CU conversion coefficient)
+Elastic instances (active): vCPU 1.0 CU/(vCPU·s) · memory 0.15 CU/(GB·s)
+                            invocations 75 CU/10,000 (= 0.0075 CU/invocation) · disk 0.05 CU/(GB·s)
 ```
 
-**本项目只借它的公式结构，系数自己定：CPU 与内存逐秒同价（1:1）**——
+**This project borrows only the formula structure and sets its own coefficients:
+CPU and memory have the same cost per second, 1:1.**
 
 ```
-CU    = 1.0 × 核·秒 + 1.0 × GB·秒
-核·秒 = ∫(tree_cpu_pct / 100) dt      GB·秒 = ∫(tree_rss_kb / 2^20) dt
-分数  = 100 × 本批次最小 CU / 本次 CU        （最优 100 分，越贵越低）
+CU     = 1.0 × core·s + 1.0 × GB·s
+core·s = ∫(tree_cpu_pct / 100) dt      GB·s = ∫(tree_rss_kb / 2^20) dt
+score  = 100 × smallest CU in this batch / this run's CU   (best = 100; higher cost gives a lower score)
 ```
 
-映射到采样数据时那个 `∫` 是**逐拍累加**（100ms 一拍，间隔按实际时间戳差分），不是「均值 × 时长」
-的估法；内存面积在下面按 **MB·秒** 显示（`GB·秒 × 1024`）——换显示单位不改口径。与 FC 的**四处
-刻意偏差**（都在 `score.ts` 的文件头写着）：
+For sampled data, the integral is **accumulated sample by sample**, every 100ms with intervals
+from actual timestamp differences, not estimated as mean × duration. Memory integral is shown
+below in **MB·s** (`GB·s × 1024`). Changing display units does not change the method.
+There are **four deliberate differences from FC**, also documented in the `score.ts` header:
 
-1. **系数不是 FC 的 0.15**：本项目按「资源负担」读，CPU 与内存同价（理由见下）；
-2. **内存用实测 RSS**，不是 FC 的「申报规格 × 时长」——我们只有实测值，实测也更公平；
-3. **不含磁盘项**（无数据）与 **GPU 项**（本项目不采 GPU）；时长取**自然结束的端到端时长**，
-   不是 FC 那种「可控执行时长」；
-4. **调用次数项不折算**：请求数由剧本决定，不是 harness 的开销（本批 pi 135 次 vs 其余 101~102 次，
-   若按 FC 折 0.0075 CU/次，pi 会因为「自己多发了 34 条压缩请求」被额外罚分，而那是它的策略选择）。
+1. **The coefficient is not FC's 0.15**: this project measures resource burden, with equal CPU
+   and memory cost; see the rationale below.
+2. **Memory is measured RSS**, not FC's declared capacity × duration. Only measured data is
+   available, and measurement also makes comparison fairer.
+3. **Disk is excluded** because there is no data, and **GPU is excluded** because this project
+   does not sample GPUs. Duration covers **elapsed time through normal exit**, rather than
+   FC's controlled execution time.
+4. **Invocation counts are not converted**: the script determines request count, which is not
+   harness overhead. This batch has pi at 135 requests versus the others at 101~102.
+   Applying FC's 0.0075 CU/request would penalize pi's 34 extra compaction requests,
+   which are a strategy choice.
 
-| harness | CU | 分数 | 核·秒 | MB·秒 | 内存项占 CU | 后代 CPU | 启动 / 运转 / 收尾 CU（各自积分） |
+| Harness | CU | Score | Core·s | MB·s | Memory share of CU | Descendant CPU | Startup / execution / shutdown CU (separate integrals) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| pi 0.85.1 | **1.271** | **100.0** | 1.031 | 246 | 19% | 0.183（计数） | 0.140 / 1.037 / 0.000 |
-| Codex 0.155.1 | 1.383 | 91.9 | 0.644 | 757 | 53% | 0.618（采样） | 0.000 / 1.352 / 0.000 |
-| peri 3.17.0 | 2.102 | 60.5 | 1.983 | 122 | 6% | 1.261（计数） | 0.190 / 1.816 / 0.000 |
-| Claude Code 2.1.277 | 2.828 | 45.0 | 2.156 | 688 | 24% | 0.592（计数） | 0.134 / 2.586 / 0.000 |
-| dsh 0.1.5-rc.2 | 3.101 | 41.0 | 2.408 | 710 | 22% | 0.665（计数） | 0.688 / 2.342 / 0.000 |
-| MiniMax Code 0.4.12 | 31.995 | 4.0 | 19.967 | 12316 | 38% | 0.414（计数） | 1.685 / 29.641 / 0.444 |
+| pi 0.85.1 | **1.271** | **100.0** | 1.031 | 246 | 19% | 0.183 (counter) | 0.140 / 1.037 / 0.000 |
+| Codex 0.155.1 | 1.383 | 91.9 | 0.644 | 757 | 53% | 0.618 (sampled) | 0.000 / 1.352 / 0.000 |
+| peri 3.17.0 | 2.102 | 60.5 | 1.983 | 122 | 6% | 1.261 (counter) | 0.190 / 1.816 / 0.000 |
+| Claude Code 2.1.277 | 2.828 | 45.0 | 2.156 | 688 | 24% | 0.592 (counter) | 0.134 / 2.586 / 0.000 |
+| dsh 0.1.5-rc.2 | 3.101 | 41.0 | 2.408 | 710 | 22% | 0.665 (counter) | 0.688 / 2.342 / 0.000 |
+| MiniMax Code 0.4.12 | 31.995 | 4.0 | 19.967 | 12316 | 38% | 0.414 (counter) | 1.685 / 29.641 / 0.444 |
 
-怎么读：
+Interpretation:
 
-- **它答的是「跑完同一部剧本烧掉多少资源」，不是「谁先跑完」**：Codex 端到端第二慢（6.1s）、
-  CU 却是第二省（1.383）——因为它只跑 6 秒；反例是 peri：端到端并列第二快（2.2s），CU 却排第三，
-  贵在那 100 个工具 shell 的 CPU 积分上。要「响应快」看端到端，要「成本低」看 CU，两者不是一回事。
-- **Codex 的名次是这次修复的直接读数**：上一批它 CU 3.294（47.2 分，第四），其中收尾段 1.760 CU
-  是零 CPU 的空等顶着约 160MB 内存；修复后 1.383（91.9 分，第二），收尾段的积分归零。
-- **内存项在新口径下是实打实的一项**：本批内存项占 CU 的 6%~53%（极值是 Codex：CPU 只有
-  0.644 核·秒，其中 0.618 还是子进程干的；绝对量最大的是 MiniMax Code 的 12316 MB·秒，
-  是 peri 的 101 倍）。**这也是 1:1 的意义**：内存不再是总账里的尾数，「谁更省内存」真的参与计分。
-- **peri 第三靠的是「轻」**：内存面积 122 MB·秒是六家里最小的（Codex 的 1/6.2），CPU 项则几乎
-  全是那 100 个工具 shell 的账；它 CPU 峰值 43.7% 是唯一没超过单核的。
-- **分数是批内相对值**：`100 × 最小 CU / 本次 CU`，换一批运行（机器负载、剧本、被比较的对手
-  不同）分数就会变。**跨批次只比 CU**，别比分数。
+- **This measures resources used to complete the same script, not who finishes first.**
+  Codex is second-slowest at 6.1s but second-lowest in CU at 1.383, because it runs for only
+  6 seconds. Conversely, peri is tied for second-fastest at 2.2s but third in CU, because of
+  the CPU integral for its 100 tool shells. For response speed, use elapsed time; for resource
+  cost, use CU. They answer different questions.
+- **Codex's rank directly reflects the fix**: previously 3.294 CU, 47.2 points, fourth place,
+  including a 1.760 CU shutdown segment waiting with zero CPU and about 160MB resident.
+  After the fix: 1.383 CU, 91.9 points, second place, and a zero shutdown integral.
+- **Memory is a substantial term under the new method**: it contributes 6%~53% of CU here.
+  Codex is the extreme, with only 0.644 core·s, of which 0.618 belongs to a child.
+  MiniMax Code has the largest absolute memory integral, 12316 MB·s, 101 times peri's.
+  **This is the point of 1:1**: memory is no longer a minor remainder in the total;
+  memory efficiency affects the score.
+- **Peri ranks third through low memory use**: its 122 MB·s memory integral is the smallest,
+  1/6.2 of Codex's. Its CPU term is almost entirely the cost of those 100 tool shells.
+  Its 43.7% CPU peak is the only one below a full core.
+- **Scores are relative within a batch**: `100 × minimum CU / this run's CU`.
+  A different batch, with different load, script, or competitors, changes the scores.
+  **Across batches compare only CU**, not scores.
 
-### 为什么是 1:1，而不是照抄 FC 的 0.15
+### Why 1:1 instead of copying FC's 0.15
 
-FC 的 `0.15 CU/(GB·秒)` 等于说「1 个核 ≈ 6.67 GB 内存」，那是云厂商的出价——行业里 AWS Lambda
-新版 vCPU 价折算 **≈7.6**、Cloud Run **≈9.0**，都在这条线上。照它算，内存项在总账里只占
-**1%~8%**，「谁更省内存」几乎不参与计分。
+FC's `0.15 CU/(GB·s)` means 1 core ≈ 6.67 GB of memory. That is a cloud provider's price.
+The newer AWS Lambda vCPU rates imply **≈7.6**, and Cloud Run **≈9.0**, in the same direction.
+At these rates, memory contributes only **1%~8%** of the total, so memory efficiency hardly
+influences the score.
 
-本项目问的是**资源负担**：跑同一部剧本，一个核烧一秒与一 GB 常驻一秒，对机器的占用没有谁更「便宜」。
-所以把这件事明说一次——**1 核·秒 = 1 GB·秒**，系数写在 `score.ts` 的 `CU_COEFFICIENTS` 里，
-改它等于换一套口径（改系数要显式、要重跑整批）。这个选择不是无关紧要的：同一批数据，按 FC 的 0.15
-排是 **Codex 0.755 ＜ pi 1.067 ＜ peri 2.001 ＜ Claude Code 2.257 ＜ dsh 2.512 ≪ MiniMax Code 21.771**
-（Codex 第一），按 1:1 排则是 **pi 1.271 ＜ Codex 1.383 ＜ peri 2.102 ＜ Claude Code 2.828 ＜
-dsh 3.101 ≪ MiniMax Code 31.995**——冠军换人：Codex 的 CPU 积分只有 pi 的六成（0.644 对 1.031），
-可它的内存面积是 pi 的 3.1 倍（757 对 246 MB·秒），内存权重一抬就被 pi 反超。
-名次在什么权重下翻转，本身就是读数；把系数显式写出来，比藏在「借来的数」后面更诚实。
+This project asks about **resource burden**. For the same script, using one core for a second
+and retaining one GB for a second both occupy machine resources; neither is intrinsically
+cheaper. State the choice explicitly: **1 core·s = 1 GB·s**, with coefficients in
+`CU_COEFFICIENTS` in `score.ts`. Changing them changes the method and must be explicit,
+with a complete batch repeated. This choice matters. With the same data, FC's 0.15 gives:
+**Codex 0.755 < pi 1.067 < peri 2.001 < Claude Code 2.257 < dsh 2.512 ≪ MiniMax Code 21.771**,
+putting Codex first. At 1:1, the order is **pi 1.271 < Codex 1.383 < peri 2.102 < Claude Code 2.828
+< dsh 3.101 ≪ MiniMax Code 31.995**. The winner changes: Codex's CPU integral is only 60% of pi's,
+0.644 versus 1.031, but its memory integral is 3.1 times larger, 757 versus 246 MB·s.
+Increasing memory weight puts pi ahead. The weight at which rankings change is itself useful
+data. Explicit coefficients are more honest than hiding behind borrowed numbers.
 
-### 峰值（压力口径，不折算）
+### Peaks (resource pressure, without conversion)
 
-CU 看**面积**，峰值看**最坏一刻**——机器的内存水位与规格是照峰值配的，两个问题都真实。
-峰值不折算成分数：MB 与 % 是绝对量，本来就能横比，再套一层批内相对分只会多一个「我们拍的」数字。
+CU measures **the integral**; peaks measure **the worst moment**. Machine memory capacity is
+selected for the peak, so both questions matter. Peaks are not converted to scores:
+MB and % are absolute quantities and can be compared directly. A relative score within the
+batch would only add another arbitrary number.
 
-| harness | 峰值 RSS（进程树） | 峰值出现在 | 当时进程数 | 峰值 CPU |
+| Harness | Peak RSS (process tree) | Peak time | Process count then | Peak CPU |
 | --- | --- | --- | --- | --- |
-| peri 3.17.0 | **71.7MB** | 2.10s（末拍） | 1 | **43.7%** |
-| Codex 0.155.1 | 163.7MB | 3.00s（运转段） | 3 | 26.0% |
-| dsh 0.1.5-rc.2 | 231.2MB | 3.70s（末拍） | 1 | 128.0% |
-| pi 0.85.1 | 234.4MB | 1.00s（运转段） | 1 | 128.8% |
-| Claude Code 2.1.277 | 351.0MB | 2.10s（末拍） | 1 | 122.4% |
-| MiniMax Code 0.4.12 | 892.0MB | 19.60s（运转段） | 2 | 177.8% |
+| peri 3.17.0 | **71.7MB** | 2.10s (final sample) | 1 | **43.7%** |
+| Codex 0.155.1 | 163.7MB | 3.00s (execution) | 3 | 26.0% |
+| dsh 0.1.5-rc.2 | 231.2MB | 3.70s (final sample) | 1 | 128.0% |
+| pi 0.85.1 | 234.4MB | 1.00s (execution) | 1 | 128.8% |
+| Claude Code 2.1.277 | 351.0MB | 2.10s (final sample) | 1 | 122.4% |
+| MiniMax Code 0.4.12 | 892.0MB | 19.60s (execution) | 2 | 177.8% |
 
-怎么读：
+Interpretation:
 
-- **peri 在两个口径上都是最轻的**：内存面积最小（122 MB·秒）、峰值也最小（71.7MB）、CPU 峰值
-  43.7% 是六家里唯一没超过单核的——它贵在 CPU 积分（100 轮工具 shell 的账），不贵在「要多少资源
-  才跑得起来」。
-- **峰值与面积会指向不同的家**：Codex 峰值 163.7MB 不算大，面积却是 peri 的 6.2 倍（757 对
-  122 MB·秒）；MiniMax Code 的 892.0MB 出现在 19.6s——是**一路涨上去**（首拍 170MB → 末拍
-  866MB），不是某一瞬的尖峰。
-- **峰值那一拍的进程数要一起看**：Codex 峰值落在 3.00s、当时 3 个进程，说明那 163.7MB 里含着
-  工具 shell（`zsh -lc` + 本机 `.zshrc` 的 emsdk 初始化），不全等于它自己的常驻内存（主进程峰值
-  41.7MB）。
-- peri / dsh / Claude Code 的峰值落在**末拍**：RSS 到退出前还在涨，峰值就是最后一拍——这也是
-  为什么「峰值」要跟「面积」分开看。
+- **Peri is smallest under both memory measures**: integral 122 MB·s and peak 71.7MB.
+  Its 43.7% CPU peak is the only one of the six below a full core. Its cost is integrated
+  CPU use for 100 tool shells, rather than the resources required at any one moment.
+- **Peaks and integrals can point to different harnesses**: Codex's 163.7MB peak is modest,
+  but its integral is 6.2 times peri's, 757 versus 122 MB·s. MiniMax Code reaches 892.0MB
+  at 19.6s through **continuous growth**, from 170MB at the first sample to 866MB at the last,
+  rather than a brief spike.
+- **Read the process count at the peak too**: Codex peaks at 3.00s with 3 processes.
+  Its 163.7MB includes tool shells, `zsh -lc` and emsdk initialization in local `.zshrc`,
+  rather than only its own resident memory. Main-process peak is 41.7MB.
+- Peri / dsh / Claude Code peak in the **final sample**. RSS is still growing before exit,
+  so the last sample is the maximum. This is another reason to separate peak and integral.
 
-### 口径细节（面积与峰值共用）
+### Method details shared by integrals and peaks
 
-- **后代 CPU 取「已回收子进程计数器」与「采样到的后代」的较大者**（`child_cpu_from` 写明取自
-  哪一路），不求和：两条路都是真值的下界且可能重叠（被看见过的子进程之后被回收，同一段 CPU
-  会在计数器里再出现一次，实测相加会多算 136%）。本批六家都记到了后代（peri 1.261 核·秒最大，
-  占它自己总 CPU 的 64%——每轮工具调用拉起的 shell；Codex 的 0.618 取自「采样到的后代」，
-  它的活确实是原生二进制干的）。
-- **末拍 → 退出的空档要补**：采样循环读到「进程不在了」就停，最后一拍到真正退出还差约一个
-  采样间隔（实测 ≈100ms），不补的话 pi 这种 1.3s 的快 harness 会漏计约 8%。本批六次都是当前
-  采样器的产物，`score.tailGapKnown` 与 `childColumnPresent` 全为 true（每笔都按末尾三拍的
-  速率外推补了 100~101ms），所以**这一节的 CU 不是下界**——更早那批老产物才是（那时两列都缺）。
-  峰值不受它影响（峰值是最大值，与空档无关）。
-- **CU 是「逐拍累加」出来的**（见上），表里那列「启动 / 运转 / 收尾 CU」是**同一口径的分段积分**
-  （三段各自逐拍算），与总分的差只有一笔：**尾部补齐只进总分**（本批 0.03~0.23 CU，占各家
-  0.7%~7.4%）——采样点在三段之间首尾相接、不重不漏，六家实测「三段之和 + 尾部补齐 = 总分」逐笔
-  成立。后代 CPU 的「取较大者」同理在整段上取一次、不逐段取（逐段取会在段边界上把同一段子进程
-  CPU 重复计）。分段是拿来看「钱花在哪一段」的，**不是三段相加**。
-- 采样侧的两个口径（`scripts/perf/sampler.ts`）：`child_cpu_pct` 是父进程 rusage 里
-  `ri_child_user_time` / `ri_child_system_time` 的差分（**已回收子进程**的累计 CPU，实测钉死了
-  偏移 96/104 与「单位是 Mach tick 不是纳秒」）；它与 `tree_cpu_pct`（进程表里看得见的后代）
-  是两套互补的下界，**不能相加**，计分时取较大者。
+- **Descendant CPU uses the larger of reaped-child counters and sampled descendants**.
+  `child_cpu_from` identifies the source. Do not add them: both are lower bounds and may
+  overlap when a sampled child is later reaped and its CPU appears again in counters.
+  Measurements found that adding them overcounts by 136%. All six recorded descendant CPU
+  in this batch. Peri is highest at 1.261 core·s, 64% of its CPU, from shells created for
+  each tool call. Codex's 0.618 comes from sampled descendants; the native binary does its work.
+- **Estimate the gap from final sample to exit**. Sampling stops when the process disappears,
+  leaving about one sampling interval, measured ≈100ms, between the last sample and exit.
+  Without an estimate, a fast 1.3s harness such as pi loses about 8% of its cost.
+  All six selected runs use the current sampler: `score.tailGapKnown` and `childColumnPresent`
+  are true for every run. Each estimate extends the mean rate of the final three samples
+  across 100~101ms. Thus **CU in this section is not a lower bound**; older results lacking
+  both fields are lower bounds. Peaks are unaffected because they are maxima, independent
+  of the unsampled gap.
+- **CU accumulates individual samples**, as above. “Startup / execution / shutdown CU” uses
+  **segment integrals under the same method**, calculated sample by sample in each segment.
+  The only difference from the total is that **the final-gap estimate enters only the total**:
+  0.03~0.23 CU in this batch, 0.7%~7.4% per harness. Sample intervals join across segment
+  boundaries without overlap or omission. All six measured runs satisfy segment sum + final-gap
+  estimate = total. Likewise, select the larger descendant CPU measurement once over the
+  whole run, not per segment; per-segment selection can count the same child CPU twice at
+  boundaries. Segments show where cost occurs; **do not simply add the three segments**.
+- The two sampler measurements in `scripts/perf/sampler.ts` are complementary lower bounds.
+  `child_cpu_pct` is the difference in parent rusage `ri_child_user_time` /
+  `ri_child_system_time`, cumulative CPU for **reaped children**. Measurements verified offsets
+  96/104 and that units are Mach ticks, not nanoseconds. `tree_cpu_pct` covers descendants
+  visible in the process table. **Do not add these measurements**; scoring selects the larger.
 
-### CPU 校准：把「本机秒」折成「项目标准 CPU 单位秒」（2026-09-22 起可选启用）
+### CPU calibration: convert local seconds to project standard CPU unit seconds (optional since 2026-09-22)
 
-**为什么要有它**：CU 是 `1.0 × 核·秒 + 1.0 × GB·秒`，而「核·秒」记的是**本机的秒**。同一部剧本
-同一个 harness，在一台快机器上 0.6 核·秒、在慢机器上 4 核·秒——这个差额不是 harness 省或费，
-是机器快慢。上半年的所有批次都出自同一台机器（Apple Silicon 18 核），所以表里的 CU 只在
-**同机**可比，跨机器只能比结构与名次。这一条把那个缺口补上：**用固定版本的 7-Zip 内置基准量
-一把本机的尺子**，把核·秒折成**项目标准 CPU 单位**秒。
+**Why calibration is needed**: CU is `1.0 × core·s + 1.0 × GB·s`, and core·s uses
+**local machine seconds**. The same harness and script might use 0.6 core·s on a fast machine
+and 4 core·s on a slow one. That difference reflects machine speed, not harness efficiency.
+All batches in the first half of the year came from the same Apple Silicon machine with
+18 cores, so the table's CU is comparable only **on the same machine**; across machines,
+only structure and rankings can be compared. Calibration addresses this gap: **measure local
+speed with a fixed version of the 7-Zip built-in benchmark**, then convert core·s to
+**project standard CPU units** of time.
 
-> **这个单位是本项目自定的，没有一台真实参考机器被测量过。** baseline = 1000 是「1 标准单位·秒
-> = 1000 个 7-Zip normalized benchmark MIPS」这条**定义**，不是某台机器的实测值；所有文字都不说
-> 「本机一秒等于某台参考机器的几秒」，只说「等于多少个项目标准 CPU 单位秒」。7-Zip 的 Rating 本身
-> 是相对速度的估算，不是指令数。
+> **This unit is defined by this project; no real reference machine was measured.**
+> Baseline = 1000 is the **definition** “1 standard unit·s = 1000 7-Zip normalized benchmark MIPS”,
+> not a measurement of a machine. Wording must not say that one local second equals a number
+> of seconds on a reference machine. It says how many project standard CPU unit seconds it
+> represents. 7-Zip Rating itself estimates relative speed; it is not an instruction count.
 
 ```
-cpuScale = mean(单线程 R/U) / 1000        ← 乘进 core·s，只乘 CPU 项
-标准 CPU 单位·秒 = 本机核·秒 × cpuScale
-CU（折算后）    = 1.0 × 标准 CPU 单位·秒 + 1.0 × GB·秒      内存项不折算（本机实测）
+cpuScale = mean(single-thread R/U) / 1000     ← multiply core·s; CPU term only
+standard CPU unit·s = local core·s × cpuScale
+CU (rescaled)       = 1.0 × standard CPU unit·s + 1.0 × GB·s     memory is not rescaled (measured locally)
 ```
 
-**折算会改变名次，别读成「只是换了个单位」**：只有 CPU 项乘了系数，内存项仍是本机 GB·秒——两项
-量纲不同，所以 `cu` 的排序与 `rawCu` 的排序**可能不同**（实测能翻转：CPU 重的 harness 会被顶下去，
-内存重、CPU 轻的会升上来）。页面上的 `score`（百分制）也是按折算后的 `cu` 算的，它只在同一口径的
-批次内可比。
+**Rescaling can change rankings; it is not merely a unit change.** Only CPU receives the
+coefficient; memory remains local GB·s. The terms have different dimensions, so `cu` and
+`rawCu` rankings **can differ**. Measurements can reverse ranks: CPU-heavy harnesses move down,
+while those using more memory but little CPU move up. The page's percentage `score` also uses
+rescaled `cu` and is comparable only within a batch using the same method.
 
-口径（写在 `scripts/perf/calibrate.ts` 的文件头，CLI 在 `scripts/perf/calibrate-cli.ts`，这里只是复述）：
+The method is defined in the header of `scripts/perf/calibrate.ts`; its CLI is
+`scripts/perf/calibrate-cli.ts`. This section restates it:
 
-- **固定 7-Zip 26.01 + 固定参数 `b 1 -mmt1 -md25`**，只取输出里 `25:`（2^25 = 32MiB 字典）那一行
-  的四列（压缩 / 解压各一次 `Speed / Usage / R/U / Rating`）。换版本或换参数就是换了尺子，
-  校准 JSON 与读取端都认这两个字段（`tool.version` / `tool.args`），不认「差不多」。
-- **单线程那一路取 `R/U` 的算术平均**（`R/U` 是 7-Zip 按处理器频率归一化后的每秒百万指令数），
-  baseline 固定 **1000 benchmark MIPS per CPU-second**——**7-Zip 历史 normalized rating 的项目单位
-  （本项目自定，无真实参考机器），不是真实机器指令数，也不是 SPEC / 云商的 vCPU 数**。
-  浮点尾巴只影响显示：`cpuScale` 在日志与页面上按 4 位小数格式化（`9.386899999999999` → `9.3869`），
-  计算仍用全精度。
-- **重复 ≥3 次（默认 5），前 1 轮 warmup 不计入**，逐轮记均值 / 样本标准差 / CV；CV 超阈值
-  （单线程 5%、整机 10%）就出 warning——那一份 `cpuScale` 只是「量的时候那台机器」，不是稳定口径。
-- **另有 `-mmt<threads>` 一路的原始 Rating 均值 / 1000**，作为**整机吞吐标准单位**（默认线程数
-  =`availableParallelism()`）。它是**本次观察吞吐**，**不是**「单线程读数 × 逻辑核数」——后者是
-  假装的实测，工具里没有这条路径。
-- **方向是乘**：机器越快，同样的核·秒折出的标准单位秒越**多**。写成除法会让快机器显得更便宜，
-  恰好是反的（`scripts/perf/calibrate.test.ts` 有一条用例专门钉这个方向）。
-- 校准**不改 CU 的 1:1 系数**：CPU 与内存仍然逐秒同价，变的只是核·秒的单位
-  （本机秒 → 项目标准 CPU 单位秒）。
+- **Fixed 7-Zip 26.01 with fixed arguments `b 1 -mmt1 -md25`**. Read only the `25:` row,
+  corresponding to a 2^25 = 32MiB dictionary, with four columns for compression and decompression:
+  `Speed / Usage / R/U / Rating`. Changing version or arguments changes the measuring standard.
+  Calibration JSON and consumers check both `tool.version` and `tool.args`; approximate matches
+  are not accepted.
+- **Use the arithmetic mean of single-thread `R/U`**, 7-Zip's processor-frequency-normalized
+  millions of instructions per second. Baseline is fixed at **1000 benchmark MIPS per
+  CPU-second**: **a project unit based on 7-Zip's historical normalized rating, defined here
+  without a real reference machine**, not actual machine instructions or SPEC / cloud vCPUs.
+  Floating-point tails affect only display: logs and pages format `cpuScale` to 4 decimal
+  places, `9.386899999999999` → `9.3869`; calculations retain full precision.
+- **Repeat at least 3 times, default 5, excluding the first warmup run**. Record mean,
+  sample standard deviation, and CV for the runs. Warn if CV exceeds the threshold,
+  5% single-thread or 10% whole-machine. Such a `cpuScale` represents the machine only as
+  observed at measurement time, not a stable standard.
+- **A separate `-mmt<threads>` measurement uses mean raw Rating / 1000** as **standard units
+  of whole-machine throughput**. Default threads = `availableParallelism()`.
+  This is **observed throughput in this measurement**, **not** single-thread reading × logical
+  core count. That would be a fabricated measurement; the tool has no such path.
+- **Multiply**: on a faster machine, the same core·s becomes **more** standard unit seconds.
+  Division would make the faster machine appear cheaper, reversing the intended direction.
+  `scripts/perf/calibrate.test.ts` has a specific test for this direction.
+- Calibration **does not change CU's 1:1 coefficients**: CPU and memory retain equal cost
+  per second. Only the CPU time unit changes, from local seconds to project standard
+  CPU unit seconds.
 
-**怎么用**：
+**Usage**:
 
 ```sh
 bun run cpu:calibrate                                  # → data/calibration/<timestamp>/{calibration.json,*.log}
 bun run scripts/perf/run.ts --script … --cpu-calibration data/calibration/<timestamp>/calibration.json
 bun run scripts/perf/gen-chart-data.ts --cpu-calibration data/calibration/<timestamp>/calibration.json \
-    --out data/perf-chart-calibrated.json              # 另存新文件，不动已发布的 data/perf-chart.json
-# 预览：http://localhost:8080/docs/perf-chart.html?data=../data/perf-chart-calibrated.json
+    --out data/perf-chart-calibrated.json              # Save a new file; leave published data/perf-chart.json unchanged
+# Preview: http://localhost:8080/docs/perf-chart.html?data=../data/perf-chart-calibrated.json
 ```
 
-- **宿主核对是硬门槛**：校准值只在那台机器上成立，`run.ts`（开跑前）与 `gen-chart-data.ts`
-  （折算前）都会拿校准 JSON 里的宿主快照与产物的 `host` **逐项比对**（hostname / platform /
-  arch / cpuModel / cpus / totalMemBytes），对不上直接报错，**不静默换 scale**。老布局的产物没有
-  `host`，因此不能与显式校准一起用。
-- **口径必须一致**：有校准的那些运行，其 `method` / 工具版本 / 参数 / baseline / 重复数必须一致；
-  **不同机器各自的 scale 是允许的**（那正是折算的意义），但混了「有校准 / 无校准」或口径不一致时，
-  `gen-chart-data.ts` 默认**拒绝出图**（百分制分数只在同一单位里有意义），要看得显式加
-  `--allow-mixed-calibration`，payload 里会挂 `calibration.blocked`，页面据此不再给名次。
-- **产物里记的是摘要**：`run.json.cpuCalibration` 存 `cpuScale` / baseline / 原始值 / 重复数 /
-  二进制 hash 与口径口令；逐轮原始读数、日志 sha256、宿主全字段在**校准 JSON 本身**里
-  （`data/calibration/<ts>/`，含 warmup/single/machine 各轮原始输出），两者互相可复核。
+- **Host matching is mandatory**: a calibration is valid only for that machine. Both `run.ts`
+  before measurement and `gen-chart-data.ts` before rescaling **compare every field** of the
+  calibration JSON host snapshot against the result's `host`: hostname / platform / arch /
+  cpuModel / cpus / totalMemBytes. A mismatch fails; **the scale is never silently replaced**.
+  Older layouts lack `host` and cannot be used with explicit calibration.
+- **Methods must match**: calibrated runs must share `method`, tool version, arguments,
+  baseline, and repeat count. **Different machines may have their own scale**, which is the
+  purpose of conversion. However, `gen-chart-data.ts` **refuses to generate charts by default**
+  when calibrated and uncalibrated runs are mixed, or methods differ. Percentage scores only
+  make sense in the same units. Explicit `--allow-mixed-calibration` permits viewing;
+  the payload includes `calibration.blocked`, and the page suppresses ranks accordingly.
+- **Run results store a summary**: `run.json.cpuCalibration` contains `cpuScale`, baseline,
+  raw value, repeat count, binary hash, and method identifier. Raw readings for each run,
+  log sha256 values, and all host fields remain in **the calibration JSON itself**, under
+  `data/calibration/<ts>/`, with raw warmup/single/machine outputs. The two can be checked
+  against each other.
 
-**这一节的历史读数是未计校准时的**（表里的 CU 都是本机秒）：上表那批运行产于 2026-09-19~21，
-那时还没有校准字段，页面与 `data/perf-chart.json` 里的 `cu` 就是 `rawCu`。把校准套到历史产物上
-（`gen-chart-data.ts --cpu-calibration`）得到的是**本地重算预览**，payload 里会标
-`calibration.retrospective = true` / `mode: "local-preview"`，页面上也写着「历史重算」——
-**原始 `run.json` / `samples.csv` 一概不动**，这是审计要求。
+**Historical readings in this section are uncalibrated**: table CU uses local seconds.
+The runs above were produced on 2026-09-19~21, before calibration fields existed, so page and
+`data/perf-chart.json` values of `cu` equal `rawCu`. Applying calibration to historical results
+with `gen-chart-data.ts --cpu-calibration` creates a **local recalculated preview**.
+The payload marks `calibration.retrospective = true` / `mode: "local-preview"`, and the page
+labels it “historical recalculation”. **Original `run.json` / `samples.csv` remain unchanged**
+as an audit requirement.
 
-**要正式发榜必须整批重跑**（用户已明确允许目前只看历史预览）：理由不是「数据脏」，而是三条口径
-事实上都变了——① `run.ts` 现在会把校准记进 `run.json`，产物自带口径；② **只有 CPU 项被折算、
-内存项不变，两项量纲不同，名次会变**（CPU 重的那家在折算后被顶到后面、内存重 CPU 轻的升上来）；
-③ 跨批次混画本来就被禁止（`--label`）。所以「按新口径发榜」= 同一台机器、同一个 `--label`、
-同一份校准，**整批重跑**，不能把历史产物与新产物拼在一张榜上。
+**Official rankings require a complete new batch**. The user has explicitly permitted only
+historical previews for now. This is not because the data is dirty, but because three aspects
+of the method have changed: (1) `run.ts` now records calibration in `run.json`, so each result
+carries its method; (2) **only CPU is rescaled, while memory remains unchanged, giving different
+dimensions and potentially different ranks**, with CPU-heavy harnesses moving down and
+memory-heavy, low-CPU harnesses moving up; (3) mixing batches was already prohibited through
+`--label`. Thus publication under the new method requires **repeating the complete batch**
+on the same machine, with the same `--label` and calibration. Do not combine historical and
+new results in one ranking.
 
-## 逐家的收尾与辅助请求（本批次实测）
+## Shutdown and auxiliary requests by harness (measured in this batch)
 
-| harness | 收尾段 | 收尾段里有请求吗 | 辅助请求（本批次实测） |
+| Harness | Shutdown segment | Requests during shutdown? | Auxiliary requests measured in this batch |
 | --- | --- | --- | --- |
-| peri | 0.07s | 无 | 1 条「预测下一步输入」（主流程收尾**之后**才发，吃的是尾部那条空白、不占轮次） |
-| Codex | 0.04s（修复前 10.06s） | 无 | 无 |
-| Claude Code | 0.06s | — | 无 |
-| dsh | 0.07s | — | 1 条「会话标题生成」（`messages=2`，吃掉第 2 条剧本） |
-| pi | 0.02s | — | 34 条压缩总结（第 70 轮起每轮一条，吃掉 34 条剧本） |
-| MiniMax Code | 0.23s | — | 无 |
+| peri | 0.07s | None | 1 next-input prediction request, sent **after** the main process finishes; it consumes the final blank entry, not a tool round |
+| Codex | 0.04s (10.06s before the fix) | None | None |
+| Claude Code | 0.06s | — | None |
+| dsh | 0.07s | — | 1 session-title request (`messages=2`, consumes script entry 2) |
+| pi | 0.02s | — | 34 compaction summaries, one per round from round 70, consuming 34 script entries |
+| MiniMax Code | 0.23s | — | None |
 
-- **peri 的 5s 是等一个 Prediction 后台任务的收尾宽限期（根因已查明，默认剧本已消掉）**：
-  收尾段此前多次实测都是 5.0~5.1s，与轮数无关（1 轮探针同样是 5.0s）；静默期 CPU 0%、无子进程、
-  主线程停在 `pthread_cond_wait`、没有任何对外 socket，`--bare` 不消、**把 mock 杀掉也不消**。
-  后续读 peri 源码 + 抓栈定位到：`-p` 退出时 host 用硬编码 5s 的 cooperative_grace 等
-  host-owned 任务，卡住的是 `HostTaskKind::Prediction`——「预测下一步输入」拿到**非空**文本后
-  回落成 Placeholder 动作、一路走到写 session 标题那步就停住，直到超时被 abort：日志里
-  `aborting host-owned task owner=Session kind=Prediction` 与预测完成的间隔正好 5.0015s。
-  **peri 侧一度说这是 langfuse 环境变量导致的等待，实测不成立**：本机没有任何 `LANGFUSE_*`，
-  代码也要求 `LANGFUSE_PUBLIC_KEY` + `LANGFUSE_SECRET_KEY` 双 key 同时存在才启用
-  （`from_env()`，唯一初始化点在 `peri-acp/src/host/assemble.rs`），退出期的 `lsof` 更是一条
-  对外连接都没有；推测那个说法来自 langfuse 客户端里恰好也是 5s 的 `connect_timeout`。
-  **消掉的办法**：给预测请求一条**空白**响应——`execute_prediction` 见文本 trim 后为空，在拿锁
-  之前就返回空动作，5s 直接归零（对照实测：空白 2150 / 2110 / 2149ms vs 非空收尾文本 7096ms，
-  差 4.95s、完全可复现）。长剧本生成器已把「收尾文本 + 空白」两条固定写进尾部（顺序不可反），
-  当批对照实测端到端 7.7s → 2.2s；本批 peri 的收尾只剩 0.07s。要复现旧读数就把尾部那条空白删掉。
-  根治仍得靠 peri 侧（给那把锁加超时，或关闭时拒绝 prediction 写 session）。
-- **Codex 的 10s 是退出时在等一个网络请求超时**：`RUST_LOG=debug` 显示 turn 结束（`shutdown`）后
-  10.0s 整，日志才打出
+- **Peri's 5s was the shutdown grace period for a background Prediction task. The cause is
+  known, and the default script removes the wait.** Earlier measurements repeatedly showed
+  5.0~5.1s of shutdown, regardless of round count: a 1-round probe also took 5.0s. During this
+  quiet interval, CPU was 0%, there were no children or external sockets, and the main thread
+  waited in `pthread_cond_wait`. Neither `--bare` nor **killing the mock** removed it.
+  Inspection of peri's source and captured stacks located the cause: when `-p` exits, the host
+  uses a hard-coded 5s cooperative_grace to wait for tasks it owns. The blocked task is
+  `HostTaskKind::Prediction`. After the next-input prediction receives **nonempty** text, it
+  falls back to a Placeholder action, continues to write the session title, and stops there
+  until the timeout aborts it. The logged interval between prediction completion and
+  `aborting host-owned task owner=Session kind=Prediction` is exactly 5.0015s.
+  **A claim from the peri side that langfuse environment variables caused the wait did not
+  hold in measurements.** This machine has no `LANGFUSE_*` variables, and the code requires
+  both `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` to enable it (`from_env()`, with its only
+  initialization in `peri-acp/src/host/assemble.rs`). During shutdown, `lsof` showed no external
+  connections. The claim may have come from the langfuse client's coincidental 5s `connect_timeout`.
+  **The workaround is a blank response to the prediction request.** When trimmed text is empty,
+  `execute_prediction` returns an empty action before acquiring the lock, removing the 5s wait.
+  Controlled measurements were 2150 / 2110 / 2149ms with a blank response versus 7096ms with
+  nonempty final text: a repeatable 4.95s difference. The long-script generator now always adds
+  final text followed by a blank response, in that order. The controlled comparison in that
+  batch reduced elapsed time from 7.7s → 2.2s; peri's shutdown in this batch is only 0.07s.
+  Remove the final blank entry to reproduce the old readings. A permanent correction still
+  requires a peri change: add a timeout to that lock, or reject prediction writes to the session
+  during shutdown.
+- **Codex's 10s was a network request timeout during shutdown.** With `RUST_LOG=debug`, the log
+  appeared exactly 10.0s after the turn ended (`shutdown`):
   `WARN codex_core_plugins::manager: failed to warm featured plugin ids cache error=failed to send
-  remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex`；
-  同期还有 `https://ab.chatgpt.com/otlp/v1/metrics` 的导出超时。本机 `chatgpt.com` 被 DNS 污染
-  （解析到 108.160.165.189 / 107.181.166.244 这类黑洞 IP），TCP 停在 `SYN_SENT` 直到 reqwest 10s
-  超时。**这是本机网络环境的产物，不是 Codex 的固有成本**：把 HTTPS 出口指到死端口
-  （`HTTPS_PROXY=http://127.0.0.1:9`，mock 走 HTTP 不受影响）后，同一套 1 轮流程从 10.5s 掉到
-  **0.40s**。另外每次启动它都会起一条 `git fetch https://github.com/openai/plugins.git`
-  （curated 插件仓库同步），本机传不完、Codex 退出后**变成孤儿进程继续挂着**（跑完记得看一眼
-  `ps | grep plugins-clone`，会攒垃圾目录在 `$CODEX_HOME/.tmp/`）。
-  试过但**没用**的开关：`-c features.plugins=false`（确实不再 clone，仍等 10s）、
-  `-c otel.enabled=false`、`-c chatgpt_base_url=<死端口>`、播种 `models_cache.json`。
-  **2026-09-19 修复落地**：Codex demo 现在仅给 harness 及其子进程注入大小写 HTTPS 代理变量，
-  指向 `http://127.0.0.1:9`，同时覆盖大小写 `NO_PROXY` 为本地地址，保证 HTTP mock 直连。
-  不改系统或用户全局配置；代价是该沙盒不再适用于依赖外部 HTTPS 的剧本（本机 9 端口须未监听）。
-  Codex 0.155.1 用 `playground/codex/script.json` 三轮只读工具调用复核：修复前端到端 11.1s /
-  收尾 10.2s，修复后端到端 1.0s / 收尾 0.1s；两次均 4 个请求、退出码 0、三次工具执行成功。
-  诊断产物在 `data/diagnostics/codex-shutdown/codex/`，不参与排名。**本文这一批就是按新配置
-  重跑的完整批次**：长剧本下 Codex 端到端 **16.4s → 6.1s**、收尾 **10.06s → 0.04s**、
-  CU **3.294 → 1.383**（名次第四 → 第二）——它的 CU 从此只在运转段产生。
-- **pi 的压缩**：上下文到阈值 → 发一条总结请求 → 用摘要开新对话，每轮一条（渐进式，本批 34 条）。
-  **它同样消费剧本条目**，编排剧本时要按「主循环轮数 + 压缩请求数」留足余量，
-  否则主循环跑不满预期轮数。
+  remote featured plugin request to https://chatgpt.com/backend-api/plugins/featured?platform=codex`.
+  An export to `https://ab.chatgpt.com/otlp/v1/metrics` also timed out. DNS for `chatgpt.com` on
+  this machine was poisoned, returning unreachable addresses such as 108.160.165.189 /
+  107.181.166.244. TCP stayed in `SYN_SENT` until reqwest's 10s timeout.
+  **This came from the local network environment, not an inherent Codex cost.** Pointing HTTPS
+  traffic at an unused port (`HTTPS_PROXY=http://127.0.0.1:9`, leaving the HTTP mock unaffected)
+  reduced the same 1-round run from 10.5s to **0.40s**. Each startup also runs
+  `git fetch https://github.com/openai/plugins.git` to sync the curated plugin repository.
+  This machine cannot complete the transfer; after Codex exits, **the orphan process remains**.
+  Check `ps | grep plugins-clone` after a run; abandoned directories accumulate in `$CODEX_HOME/.tmp/`.
+  Attempts that **did not help**: `-c features.plugins=false` stops cloning but still waits 10s;
+  `-c otel.enabled=false`, `-c chatgpt_base_url=<unused-port>`, and prepopulating `models_cache.json`
+  also failed to remove the wait.
+  **The fix was applied on 2026-09-19.** The Codex demo now injects uppercase and lowercase HTTPS
+  proxy variables only into the harness and its children, pointing to `http://127.0.0.1:9`.
+  It also replaces uppercase and lowercase `NO_PROXY` with local addresses to keep the HTTP
+  mock connection direct. It does not change system or user global settings. The tradeoff is
+  that this sandbox no longer supports scripts that need external HTTPS, and local port 9
+  must have no listener. Verification with Codex 0.155.1 and three read-only tool rounds in
+  `playground/codex/script.json` showed elapsed time 11.1s / shutdown 10.2s before the fix,
+  versus elapsed time 1.0s / shutdown 0.1s after it. Both runs made 4 requests, exited with code 0,
+  and successfully executed all three tools. Diagnostic outputs are in
+  `data/diagnostics/codex-shutdown/codex/` and are excluded from rankings.
+  **The batch in this document is a complete repeat with the new configuration.** For the long
+  script, Codex elapsed time changed **16.4s → 6.1s**, shutdown **10.06s → 0.04s**, and
+  CU **3.294 → 1.383**, moving from fourth to second. Its CU now arises only during execution.
+- **Pi's compaction** proceeds as follows: context reaches its limit, a summary is requested,
+  and a new conversation starts with the summary. This occurs progressively, once per round,
+  with 34 requests in this batch. **These requests also consume script entries.** Allow for
+  main-loop rounds plus compaction requests when preparing the script, or the main loop will
+  not complete the expected number of rounds.
 
-## 读数怎么读（别踩的坑）
+## How to interpret the readings
 
-- **长剧本的「时长」含启动与收尾**，这是刻意的：端到端就该含。但要拆开看——`run.json` 的
-  `segments` 把 启动 / 运转 / 收尾 三段分开，**本批的时间几乎全在运转段**（Codex 修复后收尾
-  0.04s，MiniMax Code 的 0.23s 已是最大的一笔），别按总时长除以 100 去算「每轮成本」。
-- **收尾段读数的两个坑**：一是它可能包含 harness 自己的固定等待（peri 曾有 5.0s，默认剧本已消掉；
-  Codex 曾有 10.0s，本批已由 demo 代理注入消掉），二是其中可能有**本机网络环境的成分**（Codex
-  那 10s 就是在等 `chatgpt.com` 超时，换台干净网络会掉到 0.4s 量级——验证见上节）。
-  跨机器比较时长前先确认这两件事。
-- **收尾必须靠 `--exhausted stop`**：harness 不会因为剧本耗尽就自己退出——`hold` 会卡到兜底超时
-  （时长读数全是超时值，白测），`error` 会让它看到 500 而不是「任务完成」。stop 让 mock 在剧本
-  走完后返回一条纯文本结束语，各 harness 收尾路径与真实任务结束一致（生成器现在把这条直接写进
-  剧本尾部，stop 仍是更后面的兜底）；peri 多发的「预测下一步输入」由尾部那条空白兜住——**别让它
-  吃到非空文本**，否则白等 5s。
-- **请求数 ≠ 轮数**：先数「带工具结果的请求」再看 `消费第 N 条` 取到几号，能分辨是主循环在跑
-  还是辅助请求在取号（`mock.log` 每行都写了 `messages=` / `input=` 与最后一条消息的角色）。
-  脚本不够用时症状是「harness 明明在正常工作，却提前收到收尾文本」。
-- **不要拿 CPU 均值去除以请求数当「单次请求开销」**：各 harness 每轮做的事不一样（Codex 每轮
-  工具调用都要新起一个 `/bin/zsh -lc`，而这台机器的 `.zshrc` 里还有 emsdk 初始化；MiniMax Code
-  每轮自己的处理链就要 ~185ms）。要比单位成本就用「运转段每轮」那一列。
-- **进程树包含工具调用的子进程**：`samples.csv` 的 `procs` 列能看到进程数波动（本批次峰值：
-  Codex 3、MiniMax Code 2，其余 1）；RSS 的涨幅里混着工具子进程的固定占用，别全记到上下文累积上。
-- **peri 被强杀时 `harness.log` 是空的**（`-p` 模式只在自行退出时 flush），属已知限制；
-  长剧本下它自行退出，所以日志完整。pi 同理。
-- **首次运行与后续运行的温差**：本批次跑在各家沙盒状态已预热的情况下（会话库、缓存都在），
-  冷启动读数会比这里更高；轮次之间没有清沙盒缓存，六家一视同仁。
-- 想看逐拍曲线直接读 `data/runs/<harness>/<runId>/samples.csv`
-  （`ts,elapsed_ms,cpu_pct,rss_kb,tree_cpu_pct,tree_rss_kb,procs,child_cpu_pct`），或看下一节的
-  图表页；采样口径的验证实验见 `bun run scripts/perf/verify.ts`。
-  同一目录的 `run.json` 里还有 `cost` / `peaks`（面积与峰值各一整笔账，逐项摊开）。
+- **Long-script duration includes startup and shutdown deliberately.** A full-run measurement
+  should include them, but inspect the segments separately. The `segments` field in `run.json`
+  separates startup, execution, and shutdown. **Almost all time in this batch is execution**:
+  Codex shutdown is 0.04s after the fix, and MiniMax Code's 0.23s is the largest shutdown cost.
+  Do not divide total duration by 100 to calculate cost per round.
+- **Shutdown readings have two traps.** They can include a fixed harness wait: peri previously
+  had 5.0s, removed by the default script, and Codex had 10.0s, removed by the demo's proxy
+  injection in this batch. They can also reflect **the local network environment**: Codex's
+  10s was a `chatgpt.com` timeout, which fell to about 0.4s with a working network arrangement;
+  see the preceding verification. Check both before comparing durations across machines.
+- **Shutdown requires `--exhausted stop`.** A harness does not exit simply because the script
+  runs out. `hold` blocks until the fallback timeout, making all duration readings timeout
+  values and the measurement useless. `error` returns HTTP 500 instead of task completion.
+  With stop, the mock returns plain final text after the script ends, so each harness follows
+  its real task-completion path. The generator now writes this response directly into the
+  script; stop remains a later fallback. The final blank entry handles peri's extra next-input
+  prediction request. **Do not give it nonempty text**, which causes an unnecessary 5s wait.
+- **Request count is not round count.** Count requests that include tool results, then inspect
+  the number in “consume entry N” to distinguish the main loop from auxiliary requests.
+  Each `mock.log` line records `messages=` / `input=` and the final message's role. A script
+  that is too short causes a normally working harness to receive the final response too early.
+- **Do not divide mean CPU by request count to calculate request overhead.** Harnesses do
+  different work each round. Codex starts a new `/bin/zsh -lc` for each tool call, and this
+  machine's `.zshrc` also initializes emsdk. MiniMax Code's own processing takes about 185ms
+  per round. Use the “Execution per round” column to compare unit costs.
+- **The process tree includes tool-call children.** The `procs` column in `samples.csv` shows
+  process-count changes: peaks in this batch were Codex 3, MiniMax Code 2, and 1 for the others.
+  RSS growth includes the fixed memory of tool children; do not attribute it all to context growth.
+- **Peri's `harness.log` is empty after forced termination.** Its `-p` mode flushes only on normal
+  exit. This is a known limitation. It exits normally with the long script, so logs are complete.
+  The same applies to pi.
+- **First and later runs have different initial state.** This batch used already prepared
+  sandbox state, including session databases and caches. Cold starts would read higher.
+  Sandbox caches were not cleared between rounds; the same rule applied to all six harnesses.
+- For individual sample curves, read `data/runs/<harness>/<runId>/samples.csv`
+  (`ts,elapsed_ms,cpu_pct,rss_kb,tree_cpu_pct,tree_rss_kb,procs,child_cpu_pct`), or use the chart
+  page below. Sampling-method verification experiments are in `bun run scripts/perf/verify.ts`.
+  The same directory's `run.json` includes `cost` / `peaks`, with separate detailed totals for
+  integrated use and peak use.
 
-## 图表页
+## Chart page
 
-`docs/perf-chart.html` 是个静态页，**打开先看到统一计分表**（标着 **Beta** 的候选口径，
-按**口径**分组的表头：统一计分（面积：`CU` / 分数）、构成（积分出来：核·秒 / MB·秒 /
-内存项占 CU / 后代 CPU）、压力口径（峰值 · 进程树：峰值 RSS / 峰值 CPU）、
-启动 / 运转 / 收尾 CU（各自积分）；公式直接印在页面上，按 CU 升序排）；
-往下才是折线图——画各家的逐拍曲线（X = 时间，Y 可切 RSS / CPU、主进程 / 进程树），
-图上带请求分界线（首个与末次请求）。
-数据来自仓库根的 `data/perf-chart.json`（页面按 `../data/perf-chart.json` 取；由 `gen-chart-data.ts`
-从 `data/runs/` 里挑一次运行导出的精简载荷；计分是**现算**的，所以新老产物同口径可比）。
-**opencode 的线默认收起、不参与 X 轴定标**（已退出排名，见开头）：在图例里点一下可展开看它的
-历史读数，展开时是一条虚线、横轴会自动延伸到 38.6s。
+`docs/perf-chart.html` is a static page. **The combined-score table appears first**, marked
+**Beta** because its method is provisional. Its headers group measures by method: combined
+score (integrated `CU` / score), components (integrated core·s / MB·s / memory share of CU /
+descendant CPU), peak process-tree load (peak RSS / peak CPU), and startup / execution /
+shutdown CU, each integrated separately. The formula appears on the page, and rows are sorted
+by increasing CU. Below it, line charts show each harness's samples: X is time, and Y can switch
+between RSS / CPU and main process / process tree. Lines mark the first and last request times.
+Data comes from the repository's `data/perf-chart.json`, fetched as `../data/perf-chart.json`.
+`gen-chart-data.ts` selects one run from `data/runs/` and exports a reduced payload.
+Scores are **calculated at export time**, so old and new outputs can be compared under the same method.
+**Opencode's line is hidden by default and excluded from X-axis scaling**, because it was removed
+from the rankings; see the opening note. Click its legend entry to show historical readings.
+Its line is dashed, and the horizontal axis extends automatically to 38.6s.
 
-曲线默认按 **1s 窗口做滑动平均**（页面上可切原始 / 0.5s / 1s / 2s）：100ms 采样下多线程
-harness 的 CPU 是真实的锯齿（几拍突发、几拍归零），不平滑就只剩毛刺——本批数据里相邻两拍
-跳 30 个百分点以上的有 MiniMax Code 21 处、Claude Code 3 处、dsh 3 处、pi 1 处
-（peri / Codex 各 0 处），1s 窗口后全部降到 0 处。
-平滑只改画法，`samples.csv` 与页面汇总表里的均值 / 峰值始终是原始读数。
+Curves default to a **1s moving-average window**; the page also offers raw / 0.5s / 1s / 2s.
+With 100ms sampling, multithreaded harnesses have real CPU spikes: bursts in some samples and
+zero in others. Without smoothing, these dominate the chart. In this batch, adjacent samples
+differed by more than 30 percentage points at 21 points for MiniMax Code, 3 for Claude Code,
+3 for dsh, and 1 for pi, with 0 for peri and Codex. A 1s window reduced all these counts to 0.
+Smoothing affects only presentation. Means and peaks in `samples.csv` and the page's summary
+table always use raw readings.
 
-图上另有两条读图约定：**每条线的峰值标出 harness 名**（CPU 与内存都标，标的是画出来的那条线，
-所以峰值跟着平滑窗口走），以及**内存的纵轴是反的**（0 在顶、占用越大越靠下，方向与「内存变重」
-一致）；CPU 轴仍是正常方向。
+Two more chart conventions apply. **Each curve's peak is labelled with its harness name**, for
+both CPU and memory. Labels identify the displayed curve, so the indicated peak changes with
+the smoothing window. **The memory Y-axis is reversed**, with 0 at the top and greater use lower
+down, matching the sense of increasing memory burden. The CPU axis keeps its usual direction.
 
 ```sh
-bun run scripts/perf/gen-chart-data.ts --exclude opencode   # 本批：每个 harness 取最近 3 次里居中的一次
-bun run scripts/perf/gen-chart-data.ts --pick 20260919-204152 --pick 20260919-204208 …   # 或显式点名
+bun run scripts/perf/gen-chart-data.ts --exclude opencode   # This batch: select the median of each harness's latest 3 runs.
+bun run scripts/perf/gen-chart-data.ts --pick 20260919-204152 --pick 20260919-204208 …   # Or select runs explicitly.
 bun run scripts/perf/gen-chart-data.ts --cpu-calibration data/calibration/<ts>/calibration.json \
-    --out data/perf-chart-calibrated.json --allow-mixed-calibration   # 套校准的历史预览（另存新文件）
-cd <仓库根> && python3 -m http.server 8080        # 页面用 fetch 读 JSON，file:// 会被 CORS 挡
+    --out data/perf-chart-calibrated.json --allow-mixed-calibration   # Calibrated historical preview, saved separately.
+cd <repository-root> && python3 -m http.server 8080        # The page fetches JSON; CORS blocks file://.
 # → http://localhost:8080/docs/perf-chart.html
-# → http://localhost:8080/docs/perf-chart.html?data=../data/perf-chart-calibrated.json   # 预览另一份载荷
+# → http://localhost:8080/docs/perf-chart.html?data=../data/perf-chart-calibrated.json   # Preview another payload.
 ```
 
-**校准**（见上一节）：页面上主 CU 图用的就是 payload 里已折算的 `score.cu`，另外在口径区多印一张
-**原始 / 折算对照表**（`raw CU` / `standard core·s` / `GB·s` / `cpuScale` / 折算后 `CU`），以及工具
-版本、测量时间、宿主、单线程 CV、整机 `-mmt<n>` 的实测等效吞吐；公式本身仍**只从 payload 的
-`scoreFormula.lines` 印**（页面不自己记公式）。`?data=` **只接受同源相对路径**（绝对 URL、`//host`
-与 `data:` 一律拒绝），所以预览另一份载荷不会碰到已发布的 `data/perf-chart.json`（它里面那些
-生成器不再输出的历史字段——例如 `cu2`——一个字节都不动）。
+**Calibration**, described above: the main CU chart uses the payload's rescaled `score.cu`.
+The method section also shows an **original / rescaled comparison table** with `raw CU` /
+`standard core·s` / `GB·s` / `cpuScale` / rescaled `CU`, plus the tool version, measurement time,
+host, single-thread CV, and measured equivalent whole-machine throughput for `-mmt<n>`.
+The formula is still displayed **only from the payload's `scoreFormula.lines`**; the page does
+not maintain its own formula. `?data=` **accepts only relative paths from the same origin**.
+Absolute URLs, `//host`, and `data:` are rejected. Previewing another payload therefore does
+not modify the published `data/perf-chart.json`, including historical fields such as `cu2`
+that the generator no longer emits: every byte stays unchanged.
 
-Chart.js 先试 unpkg 的 CDN（`chart.js@4`）**2s 超时**，拿不到就换仓库里的
-`docs/vendor/chart.umd.min.js`（该目录已 gitignore，换机器可能没有）：本机浏览器走 PAC 代理
-实测公共 CDN 不是报错而是挂着不动，所以超时是必需的、页面也不能用静态 script 标签去取它
-（实测无头加载时卡在 CDN 上，页面根本不渲染）。**兜底才是常态路径**。页面不需要构建，
-改 JSON 刷新即可。
+Chart.js first tries the unpkg CDN (`chart.js@4`) with a **2s timeout**, then falls back to
+`docs/vendor/chart.umd.min.js` in the repository. That directory is ignored by Git and may
+not exist on another machine. With this machine's PAC browser proxy, measurements showed that
+the public CDN hung instead of returning an error. The timeout is necessary, and the page
+cannot load it with a static script tag: headless loading stalled at the CDN and never rendered
+the page. **The fallback is the usual path.** No page build is needed; edit the JSON and refresh.
 
-## Grok Build（`grok`）：已接入，**尚未并入批次**
+## Grok Build (`grok`): integrated, **not yet included in the batch**
 
-> **它不在上面那批里，下面的读数不能与批次表格并列。** 3 次读数跑于 2026-09-26
-> （`--label grok-probe`，Apple M4 Pro / 12 核，1 分钟 load 约 5.3）。跨批次**只能比 CU**。
+> **It is not in the batch above, so these readings must not be placed alongside that batch's
+> table.** 3 readings were taken on 2026-09-26 with `--label grok-probe`, on an Apple M4 Pro
+> with 12 cores and a 1-minute load of about 5.3. **Only CU can be compared across batches.**
 
-`grok`（Grok Build 1.0.41，官方 `install.sh` 装到 `~/.grok/bin`）走 **OpenAI Chat Completions**。
-沙盒、`config.toml` 与工具形状在 `CLAUDE.md` 的「Grok Build」一节。同一份 100×4KB 剧本、三次串行、
-都自行退出（退出码 0）。时长居中的一次是第一行：
+`grok` (Grok Build 1.0.41, installed by the official `install.sh` into `~/.grok/bin`) uses
+**OpenAI Chat Completions**. The sandbox, `config.toml`, and tool format are described in
+the “Grok Build” section of `CLAUDE.md`. The same 100×4KB script ran three times serially;
+all runs exited normally with code 0. The first row is the run with median elapsed time:
 
-| 次 | runId | 端到端 | 启动 · 运转 · 收尾 | 请求数 | CU | 峰值 RSS · CPU |
+| Run | runId | Elapsed time | Startup · execution · shutdown | Requests | CU | Peak RSS · CPU |
 | --- | --- | --- | --- | ---: | ---: | --- |
-| 1 | `20260926-125311`（中位） | 5.1s | 0.35 · 4.68 · 0.09 | 103 | **2.357** | 102.6MB · 63.8% |
+| 1 | `20260926-125311` (median) | 5.1s | 0.35 · 4.68 · 0.09 | 103 | **2.357** | 102.6MB · 63.8% |
 | 2 | `20260926-125319` | 5.0s | 0.36 · 4.60 · 0.06 | 103 | 2.381 | 104.5MB · 74.5% |
 | 3 | `20260926-125327` | 5.1s | 0.35 · 4.62 · 0.15 | 103 | 2.411 | 105.1MB · 75.5% |
 
-中位那次的拆账：1.875 核·秒 + 0.482 GB·秒。RSS 均值 96.7MB，CPU 均值 26.9%。`procs` 恒为 1；
-短命 shell 的 0.502 核·秒记在根进程的子进程计数器上，CU 不是下界。
+The median run used 1.875 core·s + 0.482 GB·s. Mean RSS was 96.7MB and mean CPU was 26.9%.
+`procs` stayed at 1. The 0.502 core·s from short-lived shells is included in the root process's
+child counters, so CU is not a lower bound.
 
-消费规律三次一致：**103 条请求 = 1 条会话标题 + 100 个工具轮 + 1 条收尾 + 1 条 dashboard 短句**。
-标题请求 `messages=2`，吃掉第一条工具条目且那次调用不执行。dashboard 请求落在尾部空白上
-（`last=user:"Write an ultra-short dashboard line…"`）。`context_window = 1000000` 下末次工具请求
-`messages=204`，没有压缩。所以剧本是 `--turns 101`（103 条）。
+All three runs consumed entries the same way: **103 requests = 1 session title + 100 tool rounds
++ 1 final response + 1 dashboard line**. The title request has `messages=2`, consumes the first
+tool entry, and does not execute that tool call. The dashboard request consumes the final blank
+entry (`last=user:"Write an ultra-short dashboard line…"`). With `context_window = 1000000`,
+the last tool request has `messages=204` and no compaction occurs. The script therefore uses
+`--turns 101`, giving 103 entries.
 
-要并入榜单得整批重跑。CI 已经会装 `grok` 1.0.41、生成 `long-run-grok.json` 并把它算进十六家里。
+Including Grok in the rankings requires a complete batch repeat. CI already installs `grok`
+1.0.41, generates `long-run-grok.json`, and counts it among the sixteen harnesses.

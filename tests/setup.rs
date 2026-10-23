@@ -319,7 +319,7 @@ fn first_setup_is_explicit_cancellable_and_usable_without_credentials() {
 #[test]
 fn setup_preserves_raw_fields_and_rejects_concurrent_or_changed_files() {
     let fixture = Fixture::new();
-    let original = fixture.write(&json!({"provider":"anthropic","model":"old", "instructions":"Keep λ unchanged", "worker_path":"../../worker.mjs", "node_path":"../../node", "state_dir":"../../data", "socket_path":"../../socket"}));
+    let original = fixture.write(&json!({"provider":"anthropic","model":"old", "instructions":"Keep \u{3bb} unchanged", "worker_path":"../../worker.mjs", "node_path":"../../node", "state_dir":"../../data", "socket_path":"../../socket"}));
     let parent = fixture.path.parent().unwrap();
     fs::set_permissions(parent, fs::Permissions::from_mode(0o755)).unwrap();
     let config = fixture.config();
@@ -809,7 +809,7 @@ fn chat_configuration_and_parent_links_survive_restart_without_stopping_other_wo
             "--session",
             "parent",
             "--name",
-            "Review λ",
+            "Review \u{3bb}",
             "--instructions",
             "Keep my changes",
             "--provider",
@@ -834,7 +834,7 @@ fn chat_configuration_and_parent_links_survive_restart_without_stopping_other_wo
             "--workspace",
             workspace,
             "--name",
-            "Child λ",
+            "Child \u{3bb}",
         ])
         .env("HARNESS_SESSION_ID", "parent")
         .output()
