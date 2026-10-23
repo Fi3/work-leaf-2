@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """Check terminal observation and test-file cleanup with real child processes."""
 import json
+import ctypes
 import os
 import pty
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
 from pathlib import Path
+
+from desktop import Desktop
 
 SUPPORT = Path(__file__).resolve().parent
 PROGRAM = '''
@@ -125,6 +129,97 @@ print(json.dumps(RealEditor.observe(editor, '({flag=true,text="\u03bb \u4e16\u75
                     server.kill()
                     server.wait(timeout=5)
                 server.stderr.close()
+
+
+class DesktopTests(unittest.TestCase):
+    def setUp(self):
+        executable = os.environ.get('HARNESS_TEST_XVFB') or shutil.which('Xvfb')
+        self.assertTrue(executable, 'Desktop support tests require Xvfb')
+        read_fd, write_fd = os.pipe()
+        try:
+            self.server = subprocess.Popen([executable, '-displayfd', str(write_fd), '-screen', '0', '320x240x24', '-nolisten', 'tcp'],
+                                           pass_fds=(write_fd,), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        finally:
+            os.close(write_fd)
+        self.addCleanup(self.stop_server)
+        with os.fdopen(read_fd) as selected:
+            self.display = ':' + selected.readline().strip()
+        self.assertNotEqual(self.display, ':', 'The test X server did not start')
+        self.desktop = Desktop(self.display)
+        self.addCleanup(self.desktop.close)
+        pointer, window = ctypes.c_void_p, ctypes.c_ulong
+        signatures = {
+            'XCreateSimpleWindow': ([pointer, window, ctypes.c_int, ctypes.c_int, *[ctypes.c_uint] * 3, window, window], window),
+            'XStoreName': ([pointer, window, ctypes.c_char_p], ctypes.c_int),
+            'XDestroyWindow': ([pointer, window], ctypes.c_int),
+        }
+        for name, (arguments, result) in signatures.items():
+            function = getattr(self.desktop.x11, name)
+            function.argtypes, function.restype = arguments, result
+
+    def stop_server(self):
+        if self.server.poll() is None: self.server.terminate()
+        try: self.server.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            self.server.kill()
+            self.server.wait(timeout=5)
+        self.server.stderr.close()
+
+    def window(self, title):
+        desktop = self.desktop
+        root = desktop.x11.XDefaultRootWindow(desktop.connection)
+        window = desktop.x11.XCreateSimpleWindow(desktop.connection, root, 0, 0, 100, 100, 0, 0, 0)
+        desktop.x11.XStoreName(desktop.connection, window, title.encode())
+        desktop.x11.XSync(desktop.connection, 0)
+        return window
+
+    def test_closed_windows_do_not_stop_window_discovery(self):
+        closed = self.window('Closed test window')
+        existing = self.window('Existing test window')
+        self.assertEqual(self.desktop.title(closed), 'Closed test window')
+        self.desktop.x11.XDestroyWindow(self.desktop.connection, closed)
+        self.desktop.x11.XSync(self.desktop.connection, 0)
+        self.assertEqual(self.desktop.title(closed), '')
+        self.assertIsNone(self.desktop.find('Closed test window', closed, exact=True))
+        self.assertEqual(self.desktop.find('Existing test window', exact=True), existing)
+
+    def test_focus_and_input_errors_restore_the_previous_handler(self):
+        window = self.window('Unmapped test window')
+        errors = []
+        handler = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)(lambda *_: errors.append(True) or 0)
+        previous = self.desktop.x11.XSetErrorHandler(ctypes.cast(handler, ctypes.c_void_p))
+        try:
+            # Focusing an existing but unmapped window must still reject BadMatch.
+            with self.assertRaisesRegex(RuntimeError, 'X11 error 8, request 42'):
+                self.desktop.focus(window)
+            self.desktop.x11.XDestroyWindow(self.desktop.connection, window)
+            self.desktop.x11.XSync(self.desktop.connection, 0)
+            with self.assertRaisesRegex(RuntimeError, 'X11 error 3'):
+                self.desktop.key(window, ord('a'))
+            with self.assertRaisesRegex(RuntimeError, 'X11 error 9'):
+                self.desktop.click(window, 1, 1, 80, 24)
+            self.assertFalse(errors, 'The checked operations must raise through Python')
+            self.desktop.x11.XRaiseWindow(self.desktop.connection, window)
+            self.desktop.x11.XSync(self.desktop.connection, 0)
+            self.assertEqual(len(errors), 1, 'The preceding handler must be restored after an error')
+        finally:
+            self.desktop.x11.XSetErrorHandler(previous)
+
+    def test_pending_errors_are_not_hidden_by_discovery_with_two_connections(self):
+        window = self.window('Closed test window')
+        self.desktop.x11.XDestroyWindow(self.desktop.connection, window)
+        self.desktop.x11.XSync(self.desktop.connection, 0)
+        other = Desktop(self.display)
+        try:
+            # This error belongs to focus, not to the following optional title read.
+            self.desktop.x11.XRaiseWindow(self.desktop.connection, window)
+            with self.assertRaisesRegex(RuntimeError, 'X11 error 3, request 12'):
+                self.desktop.title(window)
+            self.assertEqual(self.desktop.title(window), '')
+            self.desktop.close()
+            self.assertIsNone(other.find('No matching window', exact=True))
+        finally:
+            other.close()
 
 
 if __name__ == '__main__':

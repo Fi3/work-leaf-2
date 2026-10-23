@@ -52,7 +52,7 @@ class Browser:
                             'button{font:inherit;padding:16px 30px}</style><h1>Connect the test account</h1>'
                             '<p>This local page uses a synthetic account. No real sign-in is sent.</p>'
                             '<p>Keep the login window open in Neovim. Continue when ready.</p>'
-                            f'<form action="/approve/{number}"><button autofocus>Continue to Neovim</button></form>').encode()
+                            f'<form action="/approve/{number}"><button accesskey="c">Continue to Neovim (Alt+Shift+C)</button></form>').encode()
                     self.send_response(200); self.send_header('Content-Type','text/html'); self.end_headers(); self.wfile.write(body)
                 elif self.path.startswith('/approve/') or self.path.startswith(owner.address+'/approve/'):
                     number = int(self.path.rsplit('/',1)[1].split('?')[0])
@@ -104,7 +104,7 @@ class Browser:
         self.desktop.focus(window)
 
     def approve(self, window):
-        self.key(window, 0xff0d)
+        self.key(window, ord('c'), modifiers=(0xffe9, 0xffe1))
 
     def key(self, window, symbol, modifiers=()):
         self.desktop.key(window, symbol, modifiers)

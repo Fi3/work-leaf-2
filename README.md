@@ -773,8 +773,10 @@ Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
 `PATH`. These are test tools, not application dependencies. The desktop check
 fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
 The Neovim observation command uses headless mode so results stay on standard
-output when the check runs from a terminal. Five Python support tests check all
-four terminal input/error combinations and test-file cleanup and retention.
+output when the check runs from a terminal. Eight Python support tests check all
+four terminal input/error combinations, test-file cleanup and retention, and
+X11 window errors. Window discovery skips windows that close during a search.
+Other X11 errors raise Python failures so the test can clean up its processes.
 
 The retained application changes passed the release checks on **2026-10-22**. They passed
 formatting, Clippy with warnings denied, 60 Rust tests, the release build, six
