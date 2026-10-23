@@ -225,6 +225,7 @@ fn standard_output_preserves_file_offsets_and_flags_on_failure() {
             let input = request(stream);
             reply(stream, &input, json!({"items":[]}));
         }
+        disconnected(stream);
     });
     let path = fixture.dir.join("output");
     let mut file = fs::File::create(&path).unwrap();
@@ -286,7 +287,7 @@ fn fragments_and_unicode_preserve_response_values() {
             assert_eq!(input["method"], "session.list");
             let bytes = encode(&response(
                 input["id"].clone(),
-                Ok(json!({"items":["é中🙂\ntext"],"next_cursor":null})),
+                Ok(json!({"items":["\u{e9}\u{4e2d}🙂\ntext"],"next_cursor":null})),
             ))
             .unwrap();
             for part in bytes.chunks(width) {
@@ -296,7 +297,7 @@ fn fragments_and_unicode_preserve_response_values() {
         let mut client = Client::connect(&fixture.socket, None).unwrap();
         assert_eq!(
             client.request("session.list", json!({})).unwrap()["items"][0],
-            "é中🙂\ntext"
+            "\u{e9}\u{4e2d}🙂\ntext"
         );
     }
 }
@@ -377,7 +378,11 @@ fn chat_revision_is_checked_before_any_operation() {
                 reply(stream, &input, hello);
                 disconnected(stream);
             });
-            let output = fixture.run(&command, b"Preserve this draft\n");
+            // Supply input before the client can reject the handshake and close stdin.
+            let (input, mut writer) = std::io::pipe().unwrap();
+            writer.write_all(b"Preserve this draft\n").unwrap();
+            drop(writer);
+            let output = fixture.command(&command).stdin(input).output().unwrap();
             assert_eq!(output.status.code(), Some(3));
             assert!(output.stdout.is_empty());
             assert!(
@@ -412,8 +417,8 @@ fn scripts_create_send_and_stop_without_terminal() {
                 "--stdin",
             ],
             "input.submit",
-            json!({"session_id":"work","request_id":"request_1","text":"é中🙂\nTask\n","context":[]}),
-            "é中🙂\nTask\n",
+            json!({"session_id":"work","request_id":"request_1","text":"\u{e9}\u{4e2d}🙂\nTask\n","context":[]}),
+            "\u{e9}\u{4e2d}🙂\nTask\n",
         ),
         (
             vec!["stop", "--session", "work", "--submission-id", "opaque"],
@@ -455,11 +460,11 @@ fn chat_commands_preserve_settings_and_parent_precedence() {
                 "--workspace",
                 "/tmp",
                 "--name",
-                "Review λ",
+                "Review \u{3bb}",
             ],
             "parent",
             "session.create",
-            json!({"session_id":"child","workspace":"/tmp","parent_session_id":"parent","name":"Review λ"}),
+            json!({"session_id":"child","workspace":"/tmp","parent_session_id":"parent","name":"Review \u{3bb}"}),
         ),
         (
             vec![
@@ -487,13 +492,13 @@ fn chat_commands_preserve_settings_and_parent_precedence() {
                 "--model",
                 "test",
                 "--instructions",
-                "Keep λ\nTwo lines",
+                "Keep \u{3bb}\nTwo lines",
                 "--name",
                 "Review",
             ],
             "not/a/valid/id",
             "session.configure",
-            json!({"session_id":"chat","provider":"faux","model":"test","instructions":"Keep λ\nTwo lines","name":"Review"}),
+            json!({"session_id":"chat","provider":"faux","model":"test","instructions":"Keep \u{3bb}\nTwo lines","name":"Review"}),
         ),
         (
             vec![
@@ -583,7 +588,7 @@ fn incomplete_chat_settings_and_key_arguments_fail_before_connecting() {
 
 #[test]
 fn wait_text_reads_complete_utf8_chunks() {
-    let expected = "é🙂".repeat(20_000);
+    let expected = "\u{e9}🙂".repeat(20_000);
     let answer = expected.clone();
     let fixture = Fixture::new(move |stream| {
         hello(stream);
@@ -682,13 +687,13 @@ fn proxy_preserves_ids_values_out_of_order_and_drains_eof() {
         hello(stream);
         let wait = request(stream);
         let stop = request(stream);
-        assert_eq!(wait["id"], "wait/é");
+        assert_eq!(wait["id"], "wait/\u{e9}");
         assert_eq!(stop["id"], "stop");
         assert_eq!(wait["params"]["timeout_ms"], 1234);
         reply(
             stream,
             &stop,
-            json!({"status":"unanswered","reason":"cancelled","text":"é中🙂"}),
+            json!({"status":"unanswered","reason":"cancelled","text":"\u{e9}\u{4e2d}🙂"}),
         );
         thread::sleep(Duration::from_millis(100));
         reply(
@@ -698,7 +703,7 @@ fn proxy_preserves_ids_values_out_of_order_and_drains_eof() {
         );
         disconnected(stream);
     });
-    let input = "{\"jsonrpc\":\"2.0\",\"id\":\"wait/é\",\"method\":\"submission.wait\",\"params\":{\"session_id\":\"s\",\"request_id\":\"r\",\"timeout_ms\":1234}}\n{\"jsonrpc\":\"2.0\",\"id\":\"stop\",\"method\":\"run.stop\",\"params\":{\"session_id\":\"s\",\"submission_id\":\"opaque\"}}\n";
+    let input = "{\"jsonrpc\":\"2.0\",\"id\":\"wait/\u{e9}\",\"method\":\"submission.wait\",\"params\":{\"session_id\":\"s\",\"request_id\":\"r\",\"timeout_ms\":1234}}\n{\"jsonrpc\":\"2.0\",\"id\":\"stop\",\"method\":\"run.stop\",\"params\":{\"session_id\":\"s\",\"submission_id\":\"opaque\"}}\n";
     let output = fixture.run(&["rpc"], input.as_bytes());
     success(&output);
     let values: Vec<Value> = String::from_utf8(output.stdout)
@@ -708,8 +713,8 @@ fn proxy_preserves_ids_values_out_of_order_and_drains_eof() {
         .collect();
     assert_eq!(values.len(), 2);
     assert_eq!(values[0]["id"], "stop");
-    assert_eq!(values[1]["id"], "wait/é");
-    assert_eq!(values[0]["result"]["text"], "é中🙂");
+    assert_eq!(values[1]["id"], "wait/\u{e9}");
+    assert_eq!(values[0]["result"]["text"], "\u{e9}\u{4e2d}🙂");
 }
 
 #[test]

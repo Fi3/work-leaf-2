@@ -5,6 +5,12 @@ one Pi worker. Neovim and scripts use the same private Unix socket. Pi Durable
 stores conversations, inputs, tool results, and final answers in SQLite.
 [SPEC.md](SPEC.md) is the requirements source. The files in `dev-docs/` are saved
 references. They are not implementation instructions.
+English is the repository language. Saved benchmark references use English
+translations. The [reference catalog](dev-docs/catalog.json) records the translations,
+original checksums, and Git revision that preserves the original text.
+Translated sample text changes the saved generator's workload. Use the recorded
+original revision to reproduce published measurements. These reference files are
+not part of the application or its resource benchmark.
 
 [ARCHITECTURE.md](ARCHITECTURE.md) explains process ownership, state, and the design
 choices. [PERFORMANCE.md](PERFORMANCE.md) explains resource limits, display memory,
@@ -695,18 +701,69 @@ values, duplicate versions, and scripts:
 
 ## Verification
 
-When a human completes a PR, run `python3 scripts/bench.py --publish` to record
+When a human completes a PR, run `python3 scripts/bench.py` to record
 CPU and RAM use under the fixed Docker limits, through memory exhaustion.
+Commit source, documentation, and check evidence before measurement. On PASS,
+the command automatically commits only the benchmark result and validates that
+commit. A failed run keeps its report without an automatic commit. Unrelated
+staged benchmark evidence is preserved. Use `--no-publish` for a local trial.
+The explicit `--publish` option remains supported.
 This benchmark uses simulated model responses and is separate from the release
 checks below. Install the push warning with `sh scripts/install-hooks.sh`.
 The hook checks each outgoing source tree and asks for explicit confirmation
-when matching benchmark evidence is absent. See [PERFORMANCE.md](PERFORMANCE.md)
-for setup, evidence, and comparison rules.
+when matching benchmark evidence is absent. Its warning gives the measurement
+and evidence commit steps. A result saved in the outgoing commit takes priority
+over local files, including a failed or invalid result. A measured result outside
+the 20% resource budget stops the push without a confirmation override. See
+[PERFORMANCE.md](PERFORMANCE.md) for setup, evidence, and comparison rules.
+
+The benchmark uses CPUs 30 and 31 by default. Use `--cpuset-cpus CPU1,CPU2` to
+select a different pair. If either CPU is unavailable, the command stops before
+the Docker build and tells you how to select another pair.
+The benchmark prints CPU, RAM, task, and session tables, with
+pass/fail checks against the first baseline. It also shows separately sourced
+published figures for 14 harness projects. To render saved results without
+running a benchmark, use:
+
+```sh
+python3 scripts/bench_report.py benchmarks/results/RESULT_FINGERPRINT.json
+```
+
+The memory gate uses peak total process proportional set size (PSS). PSS divides
+shared mapped pages among processes. It compares the same measure from the first
+baseline, with the same 20% limit. Full container RAM and its change remain
+visible, but they are not the PSS gate. Container charges include file cache and
+kernel memory; PSS does not include all of those costs. The 512 MiB capacity test
+and its session-count limit remain enforced. The
+[accounting correction](PERFORMANCE.md#memory-accounting-correction-2026-10-23)
+explains why the unchanged original image also failed the former container-memory
+gate. This is a correction to the comparison method, not a memory reduction.
+
+The [resource investigation](PERFORMANCE.md#resource-investigation-2026-10-21)
+records repeated baseline and candidate trials, worker costs, cache tests, and
+common workloads for jcode and peri. Its [trial summary](benchmarks/trials/2026-10-21.json)
+is separate from accepted benchmark results and does not satisfy the push check.
+The [dated archive](benchmarks/trials/2026-10-21.tar.gz) preserves the full report,
+raw results, and experimental tools. Those tools are not part of the active test suite.
+
+The [session growth follow-up](PERFORMANCE.md#session-growth-investigation-2026-10-22)
+uses CPUs 30 and 31 for repeated worker measurements. Its separate
+[summary](benchmarks/trials/2026-10-22.json) and [archive](benchmarks/trials/2026-10-22.tar.gz)
+record session growth, cache expiry, and resume costs. It adds no application change.
 
 Run `sh scripts/check.sh` for the deterministic release checks. Each integration
 test uses temporary workspaces, state directories, and sockets. No test needs
 paid provider access. The faux provider controls responses and actual coding
 tools execute local test commands.
+The benchmark control tests require `choom` from util-linux on the Linux host.
+They use it to check that application processes remain eligible for memory-limit
+kills when the test driver is protected.
+
+Successful routine terminal and desktop checks delete their temporary workspaces,
+browser profiles, caches, and reports. Failed checks retain their files and print
+the directory for diagnosis. To keep a successful run, pass `--evidence DIRECTORY`
+to its Python test script. `HARNESS_GUI_VIDEO=1` also keeps desktop evidence.
+These checks do not delete directories from earlier runs.
 
 The desktop checks require [Kitty 0.49.2](https://github.com/kovidgoyal/kitty/releases/tag/v0.49.2),
 [Firefox 157.0.1](https://archive.mozilla.org/pub/firefox/releases/157.0.1/),
@@ -715,14 +772,34 @@ CI checks the published Kitty and Firefox archive hashes before extraction.
 Set `HARNESS_TEST_XVFB` or `HARNESS_TEST_FIREFOX` to select executables outside
 `PATH`. These are test tools, not application dependencies. The desktop check
 fails if they are absent. Set `HARNESS_GUI_VIDEO=1` to record the desktop checks.
+The Neovim observation command uses headless mode so results stay on standard
+output when the check runs from a terminal. Eight Python support tests check all
+four terminal input/error combinations, test-file cleanup and retention, and
+X11 window errors. Window discovery skips windows that close during a search.
+Other X11 errors raise Python failures so the test can clean up its processes.
 
-The release checks passed on **2026-10-21** with the final source files. They passed
+The retained application changes passed the release checks on **2026-10-22**. They passed
 formatting, Clippy with warnings denied, 60 Rust tests, the release build, six
-adapter syntax checks, and 153 Node tests. The Node tests include 73 adapter tests,
+adapter syntax checks, and 166 Node tests. The Node tests include 75 adapter tests,
 35 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
-ten actual server recovery tests, one process exit test, and 16 benchmark and
-push-evidence tests. These 16 tests do not run the Docker capacity benchmark. Independent
-Node test files run concurrently with separate temporary directories and sockets.
+ten actual server recovery tests, one process exit test, and 27 benchmark, report,
+and push-evidence tests. These 27 tests do not run the Docker capacity benchmark.
+Automatic publication adds 21 checks with temporary Git repositories and
+controlled measurement data. They cover passing and failed results, changes
+during measurement, normal commit hooks, preservation of staged evidence,
+default publication and CPU selection, explicit overrides, and unavailable CPUs.
+The accounting correction adds five checks for complete process samples,
+simultaneous PSS totals, visible container charges, memory counters, and obsolete
+comparison policies. These checks use saved or controlled data, not Docker load.
+The memory-exhaustion evidence fix adds three checks for Docker settings, driver
+protection, and application child processes. These checks do not run Docker load.
+Independent Node test files run concurrently with separate temporary directories
+and sockets.
+The added application tests cover generated Unicode preview limits and saved
+history, receipts, settings, and targeted stops after Pi cache expiry.
+Cancellation also clears queued secret input before terminal echo is restored.
+The existing Rust terminal test checks that interrupted input stays hidden and
+the original terminal settings return.
 
 Neovim passed four headless suites, **67 actual terminal cases with the Rust
 server and Pi**, six desktop login cases, and 43 terminal cases with controlled
@@ -900,10 +977,15 @@ A separate first-use source check started with no npm packages or build output.
 The script installed the locked packages and used its own Rust toolchain, even
 when the caller's project selected another compiler and target. Actual Neovim
 retained the caller's directory and started no server before the first command.
-All 70 saved reference hashes still match the catalog.
+All 83 saved reference hashes match the catalog, including the 13 performance references.
 
-See the [release report](tests/evidence/release.json),
-[complete check output](tests/evidence/release.log),
+The [performance change check report](tests/evidence/performance.json) records
+the full gate after experiment cleanup and the benchmark report changes. It
+includes source hashes, CPU selection, and the
+[compressed gate output](tests/evidence/performance.log.gz).
+The earlier [release report](tests/evidence/release.json) and
+[check output](tests/evidence/release.log) cover the source hashes recorded there.
+Existing interface evidence includes
 [actual terminal results](tests/evidence/nvim-real.json),
 [desktop login results](tests/evidence/nvim-desktop.json),
 [manual SSH login results](tests/evidence/ssh-manual-login.json),
@@ -912,7 +994,7 @@ See the [release report](tests/evidence/release.json),
 [first-use source report](tests/evidence/source-launch.json) with its
 [installation log](tests/evidence/source-launch.log).
 The terminal reports link to compressed recordings and include their byte hashes.
-The release report records hashes of the checked source files.
+Each release report records hashes of the checked source files.
 
 ```sh
 cargo fmt --all -- --check

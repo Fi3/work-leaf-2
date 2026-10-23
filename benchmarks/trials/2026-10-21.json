@@ -1,0 +1,1267 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "accepted_capacity_evidence": false,
+  "archive": {
+    "path": "benchmarks/trials/2026-10-21.tar.gz",
+    "bytes": 2853404,
+    "sha256": "5fb31efed450a5d334cf2e4689ac18dc9702bf0a66d5f311eb37013585a04b41",
+    "manifest": "archive-manifest.json",
+    "manifest_sha256": "88f4f3fc00a19229fdf92f26c6416ec14ff329f28fc94f0b3b7fa3b7b17f7239",
+    "file_count": 350,
+    "original_evidence_manifest": "benchmarks/trials/2026-10-21/manifest.json"
+  },
+  "images": {
+    "snapshot": {
+      "docker_image_id": "sha256:be054893ac9b8feddccf3cb4e86d6abee0a568b76af6fee50cd9a0ae5a1010bd",
+      "base_image_id": "sha256:fd2664e956323758f5728dc500eab564c3c6026ee132b7c673af9289ab277e2a",
+      "base_source_fingerprint": "ca5e93d3064cf97e124338a9c7038f4d73b0d9f4a936388bc625ab4a5aa57292",
+      "application_files": {
+        "adapter/view.mjs": "1dfe9dd602e98640c5a4bf84d2ea9314c32e76cb20ce0eeb763ef44e90b09848"
+      },
+      "change": "Use one loop to enforce snapshot size with the existing removal order."
+    },
+    "preview": {
+      "docker_image_id": "sha256:f73e9b099b5e1a1ad61c9542354caa0839e91500aabac319f5b0fd983c075044",
+      "base_image_id": "sha256:fd2664e956323758f5728dc500eab564c3c6026ee132b7c673af9289ab277e2a",
+      "base_source_fingerprint": "ca5e93d3064cf97e124338a9c7038f4d73b0d9f4a936388bc625ab4a5aa57292",
+      "application_files": {
+        "adapter/view.mjs": "267e1e9686b0356ea297601effa4442391cedca49f7ba5e40122f8f20dcd2c47"
+      },
+      "change": "Use one snapshot size loop and convert only the required UTF-8 preview prefix."
+    },
+    "documents": {
+      "docker_image_id": "sha256:d18f5189cc16c9b119a543ea24c1574a22c3b26e6a1ae069389a042975c108ca",
+      "base_image_id": "sha256:fd2664e956323758f5728dc500eab564c3c6026ee132b7c673af9289ab277e2a",
+      "base_source_fingerprint": "ca5e93d3064cf97e124338a9c7038f4d73b0d9f4a936388bc625ab4a5aa57292",
+      "application_files": {
+        "adapter/view.mjs": "267e1e9686b0356ea297601effa4442391cedca49f7ba5e40122f8f20dcd2c47",
+        "adapter/pi.mjs": "c73640d3ca9ffdc03deea62d9452a9e485e7c0c50c9de2e852cc0c3aadaccfd1"
+      },
+      "change": "Remove repeated snapshot size checks, bound preview encoding, and expire unused Pi documents after 30 seconds while preserving the default ten-minute context retention."
+    }
+  },
+  "profile_sha256": "a21de9d3a4140908ef156fa79b8619eb334e52d7c4edf1b51b84a9aa7d94e1ce",
+  "standard": {
+    "accounting": "Sampled container peak and mean container CPU; includes application, tools, editor, driver, and file cache.",
+    "profile": {
+      "schema": 1,
+      "name": "capacity-v1",
+      "platform": "linux/amd64",
+      "resources": {
+        "cpus": 2,
+        "memory_bytes": 536870912,
+        "memory_swap_bytes": 536870912,
+        "pids_limit": 256
+      },
+      "sample_interval_ms": 500,
+      "idle_seconds": 5,
+      "load_seconds": 10,
+      "concurrent_sessions": [
+        1,
+        2,
+        4
+      ],
+      "capacity_input_bytes": 65536,
+      "capacity_instructions_bytes": 262144,
+      "capacity_batch_size": 4,
+      "max_capacity_sessions": 10000,
+      "timeout_seconds": 600,
+      "provider": "openai",
+      "model": "gpt-5.6-luna",
+      "simulated_output_bytes": 2048,
+      "simulated_chunk_delay_ms": 3,
+      "node_max_old_space_mib": 1024
+    },
+    "groups": {
+      "paired-before": {
+        "phases": {
+          "idle": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 57.6953125,
+              "min": 56.2265625,
+              "max": 57.84375
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.005517,
+              "min": 0.00514,
+              "max": 0.00561
+            }
+          },
+          "load-1": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 121.9765625,
+              "min": 120.265625,
+              "max": 134.6953125
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.293321,
+              "min": 0.252512,
+              "max": 0.354657
+            },
+            "completed_tasks": {
+              "n": 3,
+              "median": 62.0,
+              "min": 58.0,
+              "max": 64.0
+            },
+            "p95_ms": {
+              "n": 3,
+              "median": 181.796,
+              "min": 164.798,
+              "max": 206.491
+            }
+          },
+          "load-2": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 133.16015625,
+              "min": 131.328125,
+              "max": 140.1953125
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.383344,
+              "min": 0.376339,
+              "max": 0.409715
+            },
+            "completed_tasks": {
+              "n": 3,
+              "median": 120.0,
+              "min": 119.0,
+              "max": 125.0
+            },
+            "p95_ms": {
+              "n": 3,
+              "median": 198.755,
+              "min": 172.644,
+              "max": 199.264
+            }
+          },
+          "load-4": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 158.796875,
+              "min": 154.671875,
+              "max": 171.6953125
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.643411,
+              "min": 0.643086,
+              "max": 0.708434
+            },
+            "completed_tasks": {
+              "n": 3,
+              "median": 216.0,
+              "min": 212.0,
+              "max": 222.0
+            },
+            "p95_ms": {
+              "n": 3,
+              "median": 216.411,
+              "min": 204.349,
+              "max": 233.829
+            }
+          },
+          "hidden-editor": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 161.76953125,
+              "min": 160.85546875,
+              "max": 168.86328125
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.223815,
+              "min": 0.203679,
+              "max": 0.339607
+            },
+            "completed_tasks": {
+              "n": 3,
+              "median": 63.0,
+              "min": 56.0,
+              "max": 63.0
+            },
+            "p95_ms": {
+              "n": 3,
+              "median": 185.039,
+              "min": 171.251,
+              "max": 200.392
+            }
+          }
+        },
+        "verified_capacity_sessions": {
+          "n": 2,
+          "median": 328.0,
+          "min": 312.0,
+          "max": 344.0
+        },
+        "capacity_excluded_trials": [
+          "paired-before-2"
+        ]
+      },
+      "paired-after": {
+        "phases": {
+          "idle": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 54.74609375,
+              "min": 53.765625,
+              "max": 56.0859375
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.007394,
+              "min": 0.005385,
+              "max": 0.010582
+            }
+          },
+          "load-1": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 121.21875,
+              "min": 120.2109375,
+              "max": 122.67578125
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.292352,
+              "min": 0.253639,
+              "max": 0.380594
+            },
+            "completed_tasks": {
+              "n": 3,
+              "median": 63.0,
+              "min": 57.0,
+              "max": 64.0
+            },
+            "p95_ms": {
+              "n": 3,
+              "median": 170.41,
+              "min": 169.068,
+              "max": 225.779
+            }
+          },
+          "load-2": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 135.78515625,
+              "min": 126.203125,
+              "max": 137.8203125
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.405915,
+              "min": 0.369953,
+              "max": 0.490852
+            },
+            "completed_tasks": {
+              "n": 3,
+              "median": 121.0,
+              "min": 111.0,
+              "max": 124.0
+            },
+            "p95_ms": {
+              "n": 3,
+              "median": 180.472,
+              "min": 178.329,
+              "max": 205.567
+            }
+          },
+          "load-4": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 157.96875,
+              "min": 151.953125,
+              "max": 165.50390625
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.640654,
+              "min": 0.625021,
+              "max": 0.736168
+            },
+            "completed_tasks": {
+              "n": 3,
+              "median": 224.0,
+              "min": 201.0,
+              "max": 228.0
+            },
+            "p95_ms": {
+              "n": 3,
+              "median": 195.889,
+              "min": 191.814,
+              "max": 226.788
+            }
+          },
+          "hidden-editor": {
+            "peak_sampled_memory_mib": {
+              "n": 3,
+              "median": 161.9765625,
+              "min": 157.0703125,
+              "max": 164.1484375
+            },
+            "mean_cpu_cores": {
+              "n": 3,
+              "median": 0.260928,
+              "min": 0.203166,
+              "max": 0.336428
+            },
+            "completed_tasks": {
+              "n": 3,
+              "median": 60.0,
+              "min": 57.0,
+              "max": 64.0
+            },
+            "p95_ms": {
+              "n": 3,
+              "median": 198.487,
+              "min": 163.935,
+              "max": 216.271
+            }
+          }
+        },
+        "verified_capacity_sessions": {
+          "n": 3,
+          "median": 340.0,
+          "min": 324.0,
+          "max": 352.0
+        },
+        "capacity_excluded_trials": []
+      }
+    }
+  },
+  "formatting": [
+    {
+      "before": "Original view",
+      "after": "One snapshot size loop",
+      "cpu_microseconds_per_snapshot": {
+        "fifty_tasks": {
+          "baseline": {
+            "n": 7,
+            "median": 281.98,
+            "min": 259.632,
+            "max": 394.434
+          },
+          "candidate": {
+            "n": 7,
+            "median": 182.402,
+            "min": 175.718,
+            "max": 238.396
+          }
+        },
+        "large_configuration": {
+          "baseline": {
+            "n": 7,
+            "median": 639.096,
+            "min": 629.502,
+            "max": 652.446
+          },
+          "candidate": {
+            "n": 7,
+            "median": 182.622,
+            "min": 167.374,
+            "max": 197.402
+          }
+        },
+        "one_task": {
+          "baseline": {
+            "n": 7,
+            "median": 36.074,
+            "min": 30.16,
+            "max": 42.29
+          },
+          "candidate": {
+            "n": 7,
+            "median": 24.912,
+            "min": 19.928,
+            "max": 30.484
+          }
+        }
+      },
+      "note": "Separate local experiments with seven repetitions; percentages must not be added or applied to whole-application CPU."
+    },
+    {
+      "before": "One snapshot size loop",
+      "after": "One size loop and bounded UTF-8 encoding",
+      "cpu_microseconds_per_snapshot": {
+        "fifty_tasks": {
+          "baseline": {
+            "n": 7,
+            "median": 218.102,
+            "min": 174.922,
+            "max": 311.024
+          },
+          "candidate": {
+            "n": 7,
+            "median": 149.088,
+            "min": 129.178,
+            "max": 186.672
+          }
+        },
+        "large_configuration": {
+          "baseline": {
+            "n": 7,
+            "median": 200.58,
+            "min": 187.982,
+            "max": 205.864
+          },
+          "candidate": {
+            "n": 7,
+            "median": 185.36,
+            "min": 154.342,
+            "max": 189.108
+          }
+        },
+        "one_task": {
+          "baseline": {
+            "n": 7,
+            "median": 26.152,
+            "min": 21.852,
+            "max": 36.358
+          },
+          "candidate": {
+            "n": 7,
+            "median": 17.258,
+            "min": 17.012,
+            "max": 22.646
+          }
+        }
+      },
+      "note": "Separate local experiments with seven repetitions; percentages must not be added or applied to whole-application CPU."
+    }
+  ],
+  "cache_policies": {
+    "trial_count": 33,
+    "retained_policy": {
+      "contextRetentionMs": 600000,
+      "documentRetentionMs": 30000
+    },
+    "notes": [
+      "Worker PSS, not container memory. V8 heap limit is 268 MiB.",
+      "The retained scenario uses forced collection; the others do not.",
+      "Document-only trials ran later than their controls, not interleaved.",
+      "Zero retention and combined 30-second context/document retention were rejected."
+    ],
+    "scenarios": {
+      "reuse": {
+        "default": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 22.62649,
+            "min": 22.124064999999998,
+            "max": 23.43882
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 36.19380187988281,
+            "min": 36.14733123779297,
+            "max": 36.79252624511719
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 136.5234375,
+            "min": 132.328125,
+            "max": 138.30078125
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 123.05078125,
+            "min": 122.82421875,
+            "max": 125.8359375
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": -13.69921875,
+            "min": -15.25,
+            "max": -6.4921875
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 204.29150300000038,
+            "min": 203.6850830000003,
+            "max": 210.45525500000076
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 24.53375,
+            "min": 17.10425,
+            "max": 27.2955
+          }
+        },
+        "zero": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 27.442805,
+            "min": 26.424765,
+            "max": 28.2561
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 39.51530456542969,
+            "min": 38.623268127441406,
+            "max": 41.79309844970703
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 139.09765625,
+            "min": 136.671875,
+            "max": 140.12890625
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 129.0703125,
+            "min": 128.26953125,
+            "max": 132.6640625
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": -7.6015625,
+            "min": -10.828125,
+            "max": -7.46484375
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 212.5313010000009,
+            "min": 209.7427230000012,
+            "max": 230.52832599999965
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 27.793,
+            "min": 27.12925,
+            "max": 37.24975
+          }
+        },
+        "short": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 22.082095000000002,
+            "min": 21.738345000000002,
+            "max": 22.345285
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 35.334190368652344,
+            "min": 34.0760498046875,
+            "max": 36.39917755126953
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 137.8125,
+            "min": 130.66015625,
+            "max": 139.5390625
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 124.73046875,
+            "min": 124.171875,
+            "max": 127.046875
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": -13.640625,
+            "min": -14.80859375,
+            "max": -3.61328125
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 201.34974499999953,
+            "min": 200.32000100000005,
+            "max": 210.07395200000065
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 23.9875,
+            "min": 16.85875,
+            "max": 24.36225
+          }
+        }
+      },
+      "retained": {
+        "default": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 30.2386875,
+            "min": 24.0708125,
+            "max": 30.9708125
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 80.97247314453125,
+            "min": 80.97179412841797,
+            "max": 80.9727783203125
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 161.98046875,
+            "min": 159.6015625,
+            "max": 163.06640625
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 172.94921875,
+            "min": 170.71484375,
+            "max": 173.99609375
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": 10.96875,
+            "min": 10.9296875,
+            "max": 11.11328125
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 228.82508299999608,
+            "min": 214.05946000000404,
+            "max": 233.3626080000031
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 32.87,
+            "min": 28.64925,
+            "max": 32.99175
+          }
+        },
+        "short": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 28.383375,
+            "min": 24.503375,
+            "max": 33.493734375
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 41.532630920410156,
+            "min": 41.52630615234375,
+            "max": 41.540016174316406
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 131.05078125,
+            "min": 130.34765625,
+            "max": 131.49609375
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 136.8828125,
+            "min": 136.125,
+            "max": 137.0
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": 5.77734375,
+            "min": 5.50390625,
+            "max": 5.83203125
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 223.91926799999783,
+            "min": 216.82670700000017,
+            "max": 227.7901619999975
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 30.72875,
+            "min": 25.4,
+            "max": 31.43925
+          }
+        }
+      },
+      "natural": {
+        "default": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 27.036921875,
+            "min": 26.493921875,
+            "max": 29.003796875
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 81.0581283569336,
+            "min": 81.0322494506836,
+            "max": 81.06364440917969
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 162.08984375,
+            "min": 160.01171875,
+            "max": 162.18359375
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 175.05859375,
+            "min": 172.46875,
+            "max": 175.953125
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": 12.96875,
+            "min": 12.45703125,
+            "max": 13.76953125
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 227.1662290000022,
+            "min": 216.85608599999978,
+            "max": 242.85741499999858
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 32.595,
+            "min": 27.20925,
+            "max": 36.491
+          }
+        },
+        "short": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 28.484765625,
+            "min": 22.49175,
+            "max": 28.977109375
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 79.81370544433594,
+            "min": 78.76301574707031,
+            "max": 80.92450714111328
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 160.5703125,
+            "min": 159.80078125,
+            "max": 161.453125
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 146.54296875,
+            "min": 145.9609375,
+            "max": 146.70703125
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": -14.02734375,
+            "min": -15.4921875,
+            "max": -13.09375
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 236.37317500000063,
+            "min": 224.44031900000118,
+            "max": 243.3866979999948
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 32.01425,
+            "min": 29.147,
+            "max": 33.39075
+          }
+        },
+        "documents": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 28.8841875,
+            "min": 27.706578125,
+            "max": 29.59409375
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 79.82157135009766,
+            "min": 78.93181610107422,
+            "max": 81.67835235595703
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 159.68359375,
+            "min": 156.88671875,
+            "max": 162.0390625
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 158.75390625,
+            "min": 156.61328125,
+            "max": 159.08203125
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": -0.6015625,
+            "min": -3.28515625,
+            "max": -0.2734375
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 236.28751100000227,
+            "min": 223.85429199999635,
+            "max": 239.38669800000207
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 33.13575,
+            "min": 32.72625,
+            "max": 35.086
+          }
+        }
+      },
+      "long": {
+        "default": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 25.5305475,
+            "min": 23.0070675,
+            "max": 25.9623
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 30.801612854003906,
+            "min": 30.800086975097656,
+            "max": 30.826942443847656
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 110.140625,
+            "min": 109.4375,
+            "max": 118.140625
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 124.51953125,
+            "min": 124.34375,
+            "max": 132.96875
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": 14.828125,
+            "min": 14.37890625,
+            "max": 14.90625
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 222.75118400000065,
+            "min": 221.6451489999963,
+            "max": 265.1381149999943
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 29.87275,
+            "min": 29.446,
+            "max": 41.35525
+          }
+        },
+        "short": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 22.315292499999998,
+            "min": 20.571325,
+            "max": 27.326357499999997
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 30.895545959472656,
+            "min": 30.8907470703125,
+            "max": 30.89873504638672
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 116.21875,
+            "min": 115.3203125,
+            "max": 117.13671875
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 136.5,
+            "min": 135.6484375,
+            "max": 137.67578125
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": 20.328125,
+            "min": 20.28125,
+            "max": 20.5390625
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 244.20112700000027,
+            "min": 219.3355839999931,
+            "max": 267.2356010000003
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 35.7685,
+            "min": 32.798,
+            "max": 43.73025
+          }
+        },
+        "documents": {
+          "load_cpu_ms_per_task": {
+            "n": 3,
+            "median": 26.455857499999997,
+            "min": 26.217205000000003,
+            "max": 28.423287499999997
+          },
+          "heap_after_idle_mib": {
+            "n": 3,
+            "median": 30.86241912841797,
+            "min": 30.856216430664062,
+            "max": 30.87976837158203
+          },
+          "pss_after_idle_mib": {
+            "n": 3,
+            "median": 117.10546875,
+            "min": 116.9921875,
+            "max": 119.0390625
+          },
+          "pss_after_resume_mib": {
+            "n": 3,
+            "median": 132.11328125,
+            "min": 131.859375,
+            "max": 134.08984375
+          },
+          "pss_change_on_resume_mib": {
+            "n": 3,
+            "median": 15.0078125,
+            "min": 14.8671875,
+            "max": 15.05078125
+          },
+          "resume_batch_ms": {
+            "n": 3,
+            "median": 226.59257999999681,
+            "min": 215.0981249999968,
+            "max": 304.8020899999974
+          },
+          "resume_cpu_ms_per_task": {
+            "n": 3,
+            "median": 29.27225,
+            "min": 28.35925,
+            "max": 49.62625
+          }
+        }
+      }
+    }
+  },
+  "common": {
+    "balanced": {
+      "jcode": {
+        "task_seconds": {
+          "median": 12.643979059765115,
+          "min": 12.634816181613132,
+          "max": 13.646457185735926
+        },
+        "task_p50_ms": {
+          "median": 253.17706656642258,
+          "min": 252.60714848991483,
+          "max": 271.9494460616261
+        },
+        "task_p95_ms": {
+          "median": 260.33251313492656,
+          "min": 259.97201818972826,
+          "max": 284.44725601002574
+        },
+        "successful_runs": 3,
+        "failed_runs": 0,
+        "load": {
+          "app_pss_peak_mib": {
+            "median": 63.494140625,
+            "min": 62.12890625,
+            "max": 64.2587890625
+          },
+          "app_rss_peak_mib": {
+            "median": 68.7734375,
+            "min": 67.44921875,
+            "max": 69.91796875
+          },
+          "cgroup_peak_mib": {
+            "median": 44.41796875,
+            "min": 43.01171875,
+            "max": 44.5625
+          },
+          "driver_pss_peak_mib": {
+            "median": 23.26953125,
+            "min": 23.1953125,
+            "max": 23.33203125
+          },
+          "cpu_seconds": {
+            "median": 1.832641,
+            "min": 1.824684,
+            "max": 3.659413
+          },
+          "application_cpu_seconds_estimate": {
+            "median": 1.412641,
+            "min": 1.404684,
+            "max": 2.899413
+          },
+          "throttle_seconds": {
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      },
+      "peri": {
+        "task_seconds": {
+          "median": 8.79354052292183,
+          "min": 7.5546474838629365,
+          "max": 8.898949903901666
+        },
+        "task_p50_ms": {
+          "median": 177.3163820616901,
+          "min": 151.02287498302758,
+          "max": 177.88102303165942
+        },
+        "task_p95_ms": {
+          "median": 197.2090918570757,
+          "min": 156.69317613355815,
+          "max": 199.92950814776123
+        },
+        "successful_runs": 3,
+        "failed_runs": 0,
+        "load": {
+          "app_pss_peak_mib": {
+            "median": 115.400390625,
+            "min": 109.029296875,
+            "max": 117.240234375
+          },
+          "app_rss_peak_mib": {
+            "median": 116.3359375,
+            "min": 112.9140625,
+            "max": 118.16015625
+          },
+          "cgroup_peak_mib": {
+            "median": 128.71875,
+            "min": 119.78125,
+            "max": 129.9140625
+          },
+          "driver_pss_peak_mib": {
+            "median": 23.947265625,
+            "min": 23.837890625,
+            "max": 24.154296875
+          },
+          "cpu_seconds": {
+            "median": 4.072442,
+            "min": 2.018156,
+            "max": 4.375767
+          },
+          "application_cpu_seconds_estimate": {
+            "median": 3.2424419999999996,
+            "min": 1.588156,
+            "max": 3.4457669999999996
+          },
+          "throttle_seconds": {
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      },
+      "work-leaf": {
+        "task_seconds": {
+          "median": 9.131312317214906,
+          "min": 7.9813248419668525,
+          "max": 9.144476996269077
+        },
+        "task_p50_ms": {
+          "median": 180.5048924870789,
+          "min": 156.61245246883482,
+          "max": 182.40559054538608
+        },
+        "task_p95_ms": {
+          "median": 199.61149897426367,
+          "min": 168.46670885570347,
+          "max": 200.66383201628923
+        },
+        "successful_runs": 3,
+        "failed_runs": 0,
+        "load": {
+          "app_pss_peak_mib": {
+            "median": 125.4521484375,
+            "min": 124.8828125,
+            "max": 127.755859375
+          },
+          "app_rss_peak_mib": {
+            "median": 130.8515625,
+            "min": 130.05859375,
+            "max": 133.12890625
+          },
+          "cgroup_peak_mib": {
+            "median": 97.515625,
+            "min": 96.28515625,
+            "max": 97.75390625
+          },
+          "driver_pss_peak_mib": {
+            "median": 21.150390625,
+            "min": 21.134765625,
+            "max": 21.357421875
+          },
+          "cpu_seconds": {
+            "median": 3.910097,
+            "min": 2.118927,
+            "max": 3.933638
+          },
+          "application_cpu_seconds_estimate": {
+            "median": 3.260097,
+            "min": 1.7689269999999997,
+            "max": 3.2836380000000003
+          },
+          "throttle_seconds": {
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "later_final_application": {
+      "work-leaf": {
+        "task_seconds": {
+          "median": 7.9887686658184975,
+          "min": 7.979984157020226,
+          "max": 8.1106822330039
+        },
+        "task_p50_ms": {
+          "median": 156.7731760442257,
+          "min": 156.30167839117348,
+          "max": 157.9232650110498
+        },
+        "task_p95_ms": {
+          "median": 170.83166912198067,
+          "min": 170.0178300961852,
+          "max": 175.77932099811733
+        },
+        "successful_runs": 3,
+        "failed_runs": 0,
+        "load": {
+          "app_pss_peak_mib": {
+            "median": 127.1630859375,
+            "min": 121.69921875,
+            "max": 128.1689453125
+          },
+          "app_rss_peak_mib": {
+            "median": 132.22265625,
+            "min": 123.95703125,
+            "max": 133.53125
+          },
+          "cgroup_peak_mib": {
+            "median": 97.40234375,
+            "min": 93.6875,
+            "max": 99.08203125
+          },
+          "driver_pss_peak_mib": {
+            "median": 21.109375,
+            "min": 21.0107421875,
+            "max": 21.1923828125
+          },
+          "cpu_seconds": {
+            "median": 2.117068,
+            "min": 2.103117,
+            "max": 2.347867
+          },
+          "application_cpu_seconds_estimate": {
+            "median": 1.7631170000000003,
+            "min": 1.7570680000000003,
+            "max": 1.947867
+          },
+          "throttle_seconds": {
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          }
+        }
+      }
+    },
+    "notes": [
+      "Three runs per harness; 50 sequential tasks in one retained session, without an editor.",
+      "Application PSS excludes the driver/model substitute; CPU subtracts driver CPU and has sampling error.",
+      "Later final-application trials must not be pooled with the balanced comparison.",
+      "No multi-session, OAuth, recovery, cancellation, or editor feature parity claim.",
+      "Auxiliary calls receive valid empty results; final answer strings were not independently compared across harnesses."
+    ]
+  },
+  "notes": [
+    "This records tested changes, not the maximum efficiency possible with Pi.",
+    "Ranges are observed minimum and maximum, not confidence intervals.",
+    "The common comparison used one session. It does not establish comparative costs per additional session.",
+    "One shared Node/Pi worker has fixed costs and additional costs for session data and active work.",
+    "Preserved source copies and raw evidence are historical artifacts, not maintained test tools.",
+    "The original manifest preserves limitations of historical source hashes and rejected trials."
+  ],
+  "main_costs": {
+    "import_probe_pss_mib_after_forced_gc": {
+      "node": {
+        "n": 3,
+        "median": 46.4921875,
+        "min": 46.33203125,
+        "max": 46.51171875
+      },
+      "durable_import": {
+        "n": 3,
+        "median": 77.46484375,
+        "min": 77.3984375,
+        "max": 77.98828125
+      },
+      "provider_catalog_import": {
+        "n": 3,
+        "median": 80.4140625,
+        "min": 79.84765625,
+        "max": 80.890625
+      },
+      "adapter_import": {
+        "n": 3,
+        "median": 82.53515625,
+        "min": 82.32421875,
+        "max": 83.40625
+      },
+      "application_open": {
+        "n": 3,
+        "median": 84.20703125,
+        "min": 84.09765625,
+        "max": 85.1953125
+      },
+      "openai_api_import": {
+        "n": 3,
+        "median": 94.0390625,
+        "min": 93.33984375,
+        "max": 94.27734375
+      },
+      "anthropic_api_import": {
+        "n": 3,
+        "median": 97.078125,
+        "min": 96.14453125,
+        "max": 97.35546875
+      },
+      "application_closed": {
+        "n": 3,
+        "median": 97.07421875,
+        "min": 96.14453125,
+        "max": 97.359375
+      }
+    },
+    "long_workload_cpu": {
+      "sampled_cgroup_seconds": 42.536815000000004,
+      "owner_seconds": {
+        "worker": 27.62,
+        "server": 0.5700000000000001,
+        "client": 0.33,
+        "editor": 1.09,
+        "driver": 0.65,
+        "worker_waited_children": 12.26
+      },
+      "owner_fraction_of_cgroup": {
+        "worker": 0.6493198891360342,
+        "server": 0.013400157016927572,
+        "client": 0.00775798564137912,
+        "editor": 0.025624861663949217,
+        "driver": 0.015280880808777054,
+        "worker_waited_children": 0.28822092110093334
+      }
+    },
+    "notes": [
+      "Imports are cumulative and include probe code; they do not isolate exact ownership or establish a fixed memory floor.",
+      "Provider SDKs already load when required. Request serialization, Pi storage, runtime work, and real tools remain.",
+      "Task duration includes provider pacing and tool execution; it is not pure harness overhead."
+    ]
+  }
+}

@@ -70,6 +70,17 @@ impl Fixture {
         let socket = UnixStream::connect(&self.socket).ok()?;
         Some(process::peer_pid(&socket).unwrap().try_into().unwrap())
     }
+
+    fn wait_for_socket_removal(&self) -> bool {
+        let deadline = Instant::now() + Duration::from_secs(6);
+        while self.socket.exists() {
+            if Instant::now() >= deadline {
+                return false;
+            }
+            thread::sleep(Duration::from_millis(10));
+        }
+        true
+    }
 }
 
 impl Drop for Fixture {
@@ -77,10 +88,7 @@ impl Drop for Fixture {
         if let Some(pid) = self.peer() {
             // The peer came from this fixture's private socket, not from an unrelated PID lookup.
             unsafe { libc::kill(pid, libc::SIGTERM) };
-            let deadline = Instant::now() + Duration::from_secs(6);
-            while self.socket.exists() && Instant::now() < deadline {
-                thread::sleep(Duration::from_millis(20));
-            }
+            let _ = self.wait_for_socket_removal();
         }
         let _ = fs::remove_dir_all(&self.root);
     }
@@ -311,7 +319,7 @@ fn first_setup_is_explicit_cancellable_and_usable_without_credentials() {
 #[test]
 fn setup_preserves_raw_fields_and_rejects_concurrent_or_changed_files() {
     let fixture = Fixture::new();
-    let original = fixture.write(&json!({"provider":"anthropic","model":"old", "instructions":"Keep λ unchanged", "worker_path":"../../worker.mjs", "node_path":"../../node", "state_dir":"../../data", "socket_path":"../../socket"}));
+    let original = fixture.write(&json!({"provider":"anthropic","model":"old", "instructions":"Keep \u{3bb} unchanged", "worker_path":"../../worker.mjs", "node_path":"../../node", "state_dir":"../../data", "socket_path":"../../socket"}));
     let parent = fixture.path.parent().unwrap();
     fs::set_permissions(parent, fs::Permissions::from_mode(0o755)).unwrap();
     let config = fixture.config();
@@ -464,12 +472,14 @@ fn saved_keys_remain_private_and_are_reused_after_restart() {
     client.request("server.shutdown", json!({})).unwrap();
     drop(client);
     assert!(
-        fixture
-            .command(&["start"])
-            .output()
-            .unwrap()
-            .status
-            .success()
+        fixture.wait_for_socket_removal(),
+        "Server shutdown timed out"
+    );
+    let output = fixture.command(&["start"]).output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
     );
     let mut client = fixture.client();
     assert_eq!(
@@ -799,7 +809,7 @@ fn chat_configuration_and_parent_links_survive_restart_without_stopping_other_wo
             "--session",
             "parent",
             "--name",
-            "Review λ",
+            "Review \u{3bb}",
             "--instructions",
             "Keep my changes",
             "--provider",
@@ -824,7 +834,7 @@ fn chat_configuration_and_parent_links_survive_restart_without_stopping_other_wo
             "--workspace",
             workspace,
             "--name",
-            "Child λ",
+            "Child \u{3bb}",
         ])
         .env("HARNESS_SESSION_ID", "parent")
         .output()
@@ -874,10 +884,10 @@ fn chat_configuration_and_parent_links_survive_restart_without_stopping_other_wo
         .unwrap();
     client.request("server.shutdown", json!({})).unwrap();
     drop(client);
-    let deadline = Instant::now() + Duration::from_secs(5);
-    while fixture.socket.exists() && Instant::now() < deadline {
-        thread::sleep(Duration::from_millis(10));
-    }
+    assert!(
+        fixture.wait_for_socket_removal(),
+        "Server shutdown timed out"
+    );
     let output = fixture.command(&["start"]).output().unwrap();
     assert!(
         output.status.success(),

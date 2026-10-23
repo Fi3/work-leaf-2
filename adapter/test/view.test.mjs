@@ -30,7 +30,7 @@ test('provider failures give safe actions for authentication, access, limits and
 
 test('unknown provider details cannot become public diagnostic text', () => {
   const fallback = providerError(undefined);
-  for (const detail of [null, {}, 401, '', 'PRIVATE_PRIVATE', 'sk-secret', 'https://secret.test/token', '\x1b[2J', '秘密λ'.repeat(20000)]) {
+  for (const detail of [null, {}, 401, '', 'PRIVATE_PRIVATE', 'sk-secret', 'https://secret.test/token', '\x1b[2J', '\u79d8\u5bc6\u03bb'.repeat(20000)]) {
     assert.equal(providerError(detail), fallback);
   }
   assert.match(fallback, /\\model/);

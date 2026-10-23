@@ -50,7 +50,7 @@ fn editor_keeps_process_terminal_streams_and_exit_status() {
     )
     .unwrap();
     fs::set_permissions(editor, fs::Permissions::from_mode(0o700)).unwrap();
-    let config_name = "launch ' λ\n.json";
+    let config_name = "launch ' \u{3bb}\n.json";
     let config = fixture.0.join(config_name);
     fs::write(&config, "{}").unwrap();
     let mut child = fixture
@@ -66,7 +66,7 @@ fn editor_keeps_process_terminal_streams_and_exit_status() {
         .stdin
         .take()
         .unwrap()
-        .write_all("Input λ 世界\n".as_bytes())
+        .write_all("Input \u{3bb} \u{4e16}\u{754c}\n".as_bytes())
         .unwrap();
     let output = child.wait_with_output().unwrap();
     assert_eq!(output.status.code(), Some(23));
@@ -84,7 +84,7 @@ fn editor_keeps_process_terminal_streams_and_exit_status() {
             .to_str()
             .unwrap()
     );
-    assert_eq!(lines.next().unwrap(), "Input λ 世界");
+    assert_eq!(lines.next().unwrap(), "Input \u{3bb} \u{4e16}\u{754c}");
     assert!(!fixture.0.join("harness/owner.lock").exists());
 }
 

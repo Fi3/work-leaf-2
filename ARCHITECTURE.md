@@ -56,8 +56,10 @@ it must not cancel a later run by mistake.
 Saved transcript entries remain in SQLite. Public snapshots contain up to 50
 entry previews and fit within 512 KiB. Individual text previews have an 8 KiB
 limit. Older pages and complete text are available through separate requests.
-The adapter keeps Pi's default ten-minute retention for idle task context and
-unused document caches. It does not add a second cache of model context.
+The adapter keeps Pi's ten-minute idle context cache and sets unused document
+retention to 30 seconds. Pi reloads expired documents from its storage when
+needed. Active contexts and observed documents remain available. The adapter
+adds no context cache or expiry timer.
 
 The editor treats transcript text as generated data. It disables undo storage
 for transcripts and the sidebar, while editable prompts keep normal undo.
@@ -89,9 +91,10 @@ limit the worker's view memory. Releasing the selected hidden watch safely needs
 a smaller status interface or an equivalent Pi observation facility.
 
 The worker remains alive when sessions are idle and imports the provider catalog
-at startup. Automatic worker suspension and provider loading on demand are not
-implemented. Either change needs evidence that its memory saving justifies
-restart cost and preserves admission, recovery, authentication, and active tools.
+at startup. Provider SDKs and login implementations already load when required.
+Automatic worker suspension is not implemented. It needs evidence that its memory
+saving justifies restart cost and preserves admission, recovery, authentication,
+and active tools.
 
 The Rust server waits for socket or pipe readiness and actual deadlines. It does
 not wake every five milliseconds to check idle connections. Resource measurements

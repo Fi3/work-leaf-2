@@ -1,6 +1,18 @@
 """Send native input to the isolated test desktop."""
 import contextlib
 import ctypes
+import threading
+
+
+class _XErrorEvent(ctypes.Structure):
+    _fields_ = [('type', ctypes.c_int), ('display', ctypes.c_void_p),
+                ('resourceid', ctypes.c_ulong), ('serial', ctypes.c_ulong),
+                ('error_code', ctypes.c_ubyte), ('request_code', ctypes.c_ubyte),
+                ('minor_code', ctypes.c_ubyte)]
+
+
+_ErrorHandler = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_void_p, ctypes.POINTER(_XErrorEvent))
+_ERROR_HANDLER_LOCK = threading.RLock()
 
 
 class Desktop:
@@ -29,7 +41,8 @@ class Desktop:
             'XRaiseWindow': ([pointer, window], ctypes.c_int),
             'XSetInputFocus': ([pointer, window, ctypes.c_int, window], ctypes.c_int),
             'XKeysymToKeycode': ([pointer, window], ctypes.c_ubyte),
-            'XFlush': ([pointer], ctypes.c_int),
+            'XSync': ([pointer, ctypes.c_int], ctypes.c_int),
+            'XSetErrorHandler': ([pointer], pointer),
             'XCloseDisplay': ([pointer], ctypes.c_int),
             'XVendorRelease': ([pointer], ctypes.c_int),
         }
@@ -39,20 +52,52 @@ class Desktop:
         self.xtest.XTestFakeKeyEvent.argtypes = self.xtest.XTestFakeButtonEvent.argtypes = [pointer, ctypes.c_uint, ctypes.c_int, window]
         self.xtest.XTestFakeMotionEvent.argtypes = [pointer, ctypes.c_int, ctypes.c_int, ctypes.c_int, window]
 
+    def _check_errors(self, errors, missing_window=None):
+        for display, resource, code, request, serial in errors:
+            # A window can close after tree enumeration and before its next read.
+            if (missing_window is not None and display == self.connection and resource == missing_window
+                    and code == 3 and request in (15, 20)):
+                continue
+            raise RuntimeError(f'X11 error {code}, request {request}, window {resource:#x}, serial {serial}')
+
+    @contextlib.contextmanager
+    def _requests(self, missing_window=None):
+        errors = []
+        def record(display, pointer):
+            event = pointer.contents
+            errors.append((display, event.resourceid, event.error_code, event.request_code, event.serial))
+            return 0
+        handler = _ErrorHandler(record)
+        # Xlib has one process-wide handler, including when two desktops are open.
+        with _ERROR_HANDLER_LOCK:
+            previous = self.x11.XSetErrorHandler(ctypes.cast(handler, ctypes.c_void_p))
+            try:
+                self.x11.XSync(self.connection, 0)
+                self._check_errors(errors)
+                errors.clear()
+                try:
+                    yield
+                finally:
+                    self.x11.XSync(self.connection, 0)
+                    self._check_errors(errors, missing_window)
+            finally:
+                self.x11.XSetErrorHandler(previous)
+
     def title(self, window):
-        atom = self.x11.XInternAtom(self.connection, b'_NET_WM_NAME', 0)
-        kind, length, remaining = ctypes.c_ulong(), ctypes.c_ulong(), ctypes.c_ulong()
-        size, value = ctypes.c_int(), ctypes.c_void_p()
-        self.x11.XGetWindowProperty(self.connection, window, atom, 0, 1024, 0, 0, ctypes.byref(kind), ctypes.byref(size),
-                                   ctypes.byref(length), ctypes.byref(remaining), ctypes.byref(value))
-        if value.value:
-            try: title = ctypes.string_at(value, length.value).decode(errors='replace')
+        with self._requests(missing_window=window):
+            atom = self.x11.XInternAtom(self.connection, b'_NET_WM_NAME', 0)
+            kind, length, remaining = ctypes.c_ulong(), ctypes.c_ulong(), ctypes.c_ulong()
+            size, value = ctypes.c_int(), ctypes.c_void_p()
+            self.x11.XGetWindowProperty(self.connection, window, atom, 0, 1024, 0, 0, ctypes.byref(kind), ctypes.byref(size),
+                                       ctypes.byref(length), ctypes.byref(remaining), ctypes.byref(value))
+            if value.value:
+                try: title = ctypes.string_at(value, length.value).decode(errors='replace')
+                finally: self.x11.XFree(value)
+                if title: return title
+            value = ctypes.c_void_p()
+            if not self.x11.XFetchName(self.connection, window, ctypes.byref(value)) or not value.value: return ''
+            try: return ctypes.string_at(value).decode(errors='replace')
             finally: self.x11.XFree(value)
-            if title: return title
-        value = ctypes.c_void_p()
-        if not self.x11.XFetchName(self.connection, window, ctypes.byref(value)) or not value.value: return ''
-        try: return ctypes.string_at(value).decode(errors='replace')
-        finally: self.x11.XFree(value)
 
     def find(self, title, window=None, exact=False):
         window = window or self.x11.XDefaultRootWindow(self.connection)
@@ -60,16 +105,18 @@ class Desktop:
         if (current == title if exact else title in current): return window
         root, parent = ctypes.c_ulong(), ctypes.c_ulong()
         children, count = ctypes.POINTER(ctypes.c_ulong)(), ctypes.c_uint()
-        if not self.x11.XQueryTree(self.connection, window, ctypes.byref(root), ctypes.byref(parent), ctypes.byref(children), ctypes.byref(count)): return None
-        try: items = [children[index] for index in range(count.value)]
+        try:
+            with self._requests(missing_window=window):
+                if not self.x11.XQueryTree(self.connection, window, ctypes.byref(root), ctypes.byref(parent), ctypes.byref(children), ctypes.byref(count)): return None
+            items = [children[index] for index in range(count.value)]
         finally:
             if children: self.x11.XFree(children)
         return next((found for child in items if (found := self.find(title, child, exact))), None)
 
     def focus(self, window):
-        self.x11.XRaiseWindow(self.connection, window)
-        self.x11.XSetInputFocus(self.connection, window, 1, 0)
-        self.x11.XFlush(self.connection)
+        with self._requests():
+            self.x11.XRaiseWindow(self.connection, window)
+            self.x11.XSetInputFocus(self.connection, window, 1, 0)
 
     def _key_event(self, symbol, pressed):
         code = self.x11.XKeysymToKeycode(self.connection, symbol)
@@ -77,11 +124,11 @@ class Desktop:
 
     @contextlib.contextmanager
     def _modifiers(self, symbols):
-        for symbol in symbols: self._key_event(symbol, True)
-        try: yield
-        finally:
-            for symbol in reversed(symbols): self._key_event(symbol, False)
-            self.x11.XFlush(self.connection)
+        with self._requests():
+            for symbol in symbols: self._key_event(symbol, True)
+            try: yield
+            finally:
+                for symbol in reversed(symbols): self._key_event(symbol, False)
 
     def key(self, window, symbol, modifiers=()):
         self.focus(window)
@@ -93,10 +140,11 @@ class Desktop:
         root, child = ctypes.c_ulong(), ctypes.c_ulong()
         left, top = ctypes.c_int(), ctypes.c_int()
         width, height, border, depth = [ctypes.c_uint() for _ in range(4)]
-        assert self.x11.XGetGeometry(self.connection, window, ctypes.byref(root), ctypes.byref(left), ctypes.byref(top),
-                                    ctypes.byref(width), ctypes.byref(height), ctypes.byref(border), ctypes.byref(depth))
-        assert self.x11.XTranslateCoordinates(self.connection, window, self.x11.XDefaultRootWindow(self.connection), 0, 0,
-                                              ctypes.byref(left), ctypes.byref(top), ctypes.byref(child))
+        with self._requests():
+            assert self.x11.XGetGeometry(self.connection, window, ctypes.byref(root), ctypes.byref(left), ctypes.byref(top),
+                                        ctypes.byref(width), ctypes.byref(height), ctypes.byref(border), ctypes.byref(depth))
+            assert self.x11.XTranslateCoordinates(self.connection, window, self.x11.XDefaultRootWindow(self.connection), 0, 0,
+                                                  ctypes.byref(left), ctypes.byref(top), ctypes.byref(child))
         return left.value, top.value, width.value, height.value
 
     def click(self, window, column, row, columns, lines, modifiers=()):
@@ -113,8 +161,11 @@ class Desktop:
 
     def close(self):
         if self.connection:
-            self.x11.XCloseDisplay(self.connection)
-            self.connection = None
+            try:
+                with self._requests(): pass
+            finally:
+                self.x11.XCloseDisplay(self.connection)
+                self.connection = None
 
     def __enter__(self):
         return self

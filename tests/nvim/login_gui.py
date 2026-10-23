@@ -15,6 +15,7 @@ import urllib.request
 from pathlib import Path
 
 from real import RealEditor, EVIDENCE, RESULTS
+from interactive import run_tests
 from desktop import Desktop
 
 DESKTOP = {}
@@ -51,7 +52,7 @@ class Browser:
                             'button{font:inherit;padding:16px 30px}</style><h1>Connect the test account</h1>'
                             '<p>This local page uses a synthetic account. No real sign-in is sent.</p>'
                             '<p>Keep the login window open in Neovim. Continue when ready.</p>'
-                            f'<form action="/approve/{number}"><button autofocus>Continue to Neovim</button></form>').encode()
+                            f'<form action="/approve/{number}"><button accesskey="c">Continue to Neovim (Alt+Shift+C)</button></form>').encode()
                     self.send_response(200); self.send_header('Content-Type','text/html'); self.end_headers(); self.wfile.write(body)
                 elif self.path.startswith('/approve/') or self.path.startswith(owner.address+'/approve/'):
                     number = int(self.path.rsplit('/',1)[1].split('?')[0])
@@ -103,7 +104,7 @@ class Browser:
         self.desktop.focus(window)
 
     def approve(self, window):
-        self.key(window, 0xff0d)
+        self.key(window, ord('c'), modifiers=(0xffe9, 0xffe1))
 
     def key(self, window, symbol, modifiers=()):
         self.desktop.key(window, symbol, modifiers)
@@ -596,7 +597,7 @@ def browser_case(display):
     editor.screenshot('browser-return-draft')
     editor.mark('Send the retained task. The saved account replaces the environment API key.')
     editor.keys('\r')
-    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.'
+    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed \u03bb \u4e16\u754c and completed the task.'
                 and editor.snapshot()['state']=='idle','a task succeeds with the saved account and the selected model')
     generations = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
     assert len(generations)==1 and generations[0]['credential_kind']=='oauth'
@@ -697,7 +698,7 @@ def ssh_copy_case(display):
     editor.screenshot('ssh-return-draft')
     editor.mark('Send the retained task. Pi uses the saved account and returns the controlled model response.')
     editor.keys('\r')
-    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed λ 世界 and completed the task.' and editor.snapshot()['state']=='idle','a task succeeds after manual SSH login')
+    editor.wait(lambda:editor.snapshot()['assistant']['text']=='OpenAI streamed \u03bb \u4e16\u754c and completed the task.' and editor.snapshot()['state']=='idle','a task succeeds after manual SSH login')
     generations = [json.loads(line) for line in (editor.root/'generation-requests.jsonl').read_text().splitlines()]
     assert len(generations)==1 and generations[0]['credential_kind']=='oauth' and generations[0]['model']=='gpt-5.6-luna'
     editor.screenshot('ssh-account-reply')
@@ -736,9 +737,8 @@ def main():
         case['checks'] = json.loads((directory/'observed.json').read_text())
         case['screenshots'] = {path.name:hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(directory.glob('*.png'))}
         if (directory/'screen.mkv').exists(): case['video_sha256'] = hashlib.sha256((directory/'screen.mkv').read_bytes()).hexdigest()
-    (EVIDENCE/'results.json').write_text(json.dumps(report,indent=2)+'\n')
-    print(json.dumps({'passed':len(RESULTS),'evidence':str(EVIDENCE/'results.json')}))
+    return report
 
 
 if __name__=='__main__':
-    main()
+    run_tests(main, keep=bool(os.environ.get('HARNESS_GUI_VIDEO')))

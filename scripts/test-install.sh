@@ -23,7 +23,7 @@ await mkdir(workspace); await mkdir(state);
 await writeFile(join(workspace, 'installed.txt'), 'Installed source file.\n');
 await writeFile(config, JSON.stringify({ provider: 'faux', model: 'test', state_dir: state, socket_path: socket }));
 await writeFile(responses, JSON.stringify([
-  fauxAssistantMessage('Installed answer. é世界🙂'),
+  fauxAssistantMessage('Installed answer. \u00e9\u4e16\u754c🙂'),
   fauxAssistantMessage('Pending answer. '.repeat(2000)),
   fauxAssistantMessage('Installed Enter answer.'),
 ]));
@@ -79,7 +79,7 @@ try {
   const accepted = await json(['send', '--session', 'work', '--request-id', 'first', '--stdin'], 'First task');
   assert.equal(accepted.status, 'accepted');
   const answer = await cli(['wait', '--session', 'work', '--request-id', 'first', '--timeout-ms', '10000', '--text']);
-  assert.equal(answer, 'Installed answer. é世界🙂');
+  assert.equal(answer, 'Installed answer. \u00e9\u4e16\u754c🙂');
   const pending = await json(['send', '--session', 'work', '--request-id', 'second', '--stdin'], 'Second task');
   let streaming = false;
   for (let attempt = 0; attempt < 100 && !streaming; attempt++) {

@@ -51,7 +51,7 @@ test('OpenAI API-key and account requests use the real SDK, stream Unicode, exec
       if (type === 'oauth') assert.ok(!('max_output_tokens' in request.body), 'Subscription requests omit unsupported output limits');
     }
     assert.ok(mock.requests[1].body.input.some(item => item.type === 'function_call_output' && JSON.stringify(item).includes('provider tool ran')));
-    assert.ok(frames.some(frame => frame.active_submission_id && frame.assistant.text.includes('λ 世界')), 'A live snapshot must precede the final result');
+    assert.ok(frames.some(frame => frame.active_submission_id && frame.assistant.text.includes('\u03bb \u4e16\u754c')), 'A live snapshot must precede the final result');
     const snapshot = (await call('session.get', { session_id: 'chat' })).snapshot;
     assert.equal(snapshot.error, null);
     assert.ok(snapshot.entries.some(entry => entry.kind === 'tool' && entry.text.includes('provider tool ran')));
@@ -90,7 +90,7 @@ test('OpenAI HTTP and stream failures expose a safe remedy in outcomes, entries,
     assert.deepEqual(snapshot.error, { kind: 'provider_error', message: result.message });
     const entries = (await call('transcript.list', { session_id: 'chat' })).items;
     if (scenario.kind === 'incomplete') {
-      assert.ok(entries.some(entry => entry.kind === 'assistant' && entry.text.includes('λ 世界')), 'Partial output remains available');
+      assert.ok(entries.some(entry => entry.kind === 'assistant' && entry.text.includes('\u03bb \u4e16\u754c')), 'Partial output remains available');
     } else {
       const failure = entries.at(-1);
       assert.equal(failure.kind, 'error');
@@ -133,10 +133,10 @@ test('Stopping an actual OpenAI stream preserves cancellation and permits the ne
   t.after(() => mock.restore());
   const receipt = await send('stop');
   for (let tries = 0; tries < 100; tries++) {
-    if ((await call('session.get', { session_id: 'chat' })).snapshot.assistant.text.includes('λ 世界')) break;
+    if ((await call('session.get', { session_id: 'chat' })).snapshot.assistant.text.includes('\u03bb \u4e16\u754c')) break;
     await delay(50);
   }
-  assert.ok((await call('session.get', { session_id: 'chat' })).snapshot.assistant.text.includes('λ 世界'));
+  assert.ok((await call('session.get', { session_id: 'chat' })).snapshot.assistant.text.includes('\u03bb \u4e16\u754c'));
   const stopped = await call('run.stop', { session_id: 'chat', submission_id: receipt.submission_id });
   assert.equal(stopped.reason, 'cancelled');
   assert.deepEqual(await wait('stop'), stopped);

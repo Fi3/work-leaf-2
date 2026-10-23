@@ -549,7 +549,11 @@ fn invalid_records_preserve_error_codes_and_response_ids() {
         (json!({"id": 7}), Value::Null, -32600),
         (json!({"id": ""}), Value::Null, -32600),
         (json!({"id": "x".repeat(129)}), Value::Null, -32600),
-        (json!({"id": "λ/世界"}), json!("λ/世界"), -32600),
+        (
+            json!({"id": "\u{3bb}/\u{4e16}\u{754c}"}),
+            json!("\u{3bb}/\u{4e16}\u{754c}"),
+            -32600,
+        ),
         (
             json!({"jsonrpc":"2.0","id":"unknown","method":"unknown"}),
             json!("unknown"),
@@ -622,11 +626,11 @@ fn partial_and_combined_frames_preserve_correlation() {
     let mut server = Server::new();
     server.serve("");
     let mut client = raw(&server);
-    let record=protocol::encode(&json!({"jsonrpc":"2.0","id":"λ世界","method":"session.get","params":{"session_id":"work"}})).unwrap();
+    let record=protocol::encode(&json!({"jsonrpc":"2.0","id":"\u{3bb}\u{4e16}\u{754c}","method":"session.get","params":{"session_id":"work"}})).unwrap();
     for part in record.chunks(2) {
         client.get_mut().write_all(part).unwrap();
     }
-    assert_eq!(read(&mut client)["id"], "λ世界");
+    assert_eq!(read(&mut client)["id"], "\u{3bb}\u{4e16}\u{754c}");
     let records = ["first", "second"]
         .into_iter()
         .flat_map(|id| {

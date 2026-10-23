@@ -12,6 +12,7 @@ nvim --headless -u NONE -l tests/nvim/view.lua
 nvim --headless -u NONE -l tests/nvim/select.lua
 nvim --headless -u NONE -l tests/nvim/setup.lua
 sh scripts/check-dependencies.sh
+python3 tests/nvim/support_test.py
 test_logs=$(mktemp -d)
 trap 'rm -rf "$test_logs"' EXIT
 python3 tests/nvim/interactive.py >"$test_logs/fixture" 2>&1 & fixture_pid=$!

@@ -3952,7 +3952,7 @@ A jump table for the options with a short description can be found at |Q_op|.
 	applying to characters resulting from a mapping.
 
 	Example (for Greek, in UTF-8):				*greek*  >vim
-	    set langmap=ΑA,ΒB,ΨC,ΔD,ΕE,ΦF,ΓG,ΗH,ΙI,ΞJ,ΚK,ΛL,ΜM,ΝN,ΟO,ΠP,QQ,ΡR,ΣS,ΤT,ΘU,ΩV,WW,ΧX,ΥY,ΖZ,αa,βb,ψc,δd,εe,φf,γg,ηh,ιi,ξj,κk,λl,μm,νn,οo,πp,qq,ρr,σs,τt,θu,ωv,ςw,χx,υy,ζz
+	    let &langmap = "\u0391A,\u0392B,\u03A8C,\u0394D,\u0395E,\u03A6F,\u0393G,\u0397H,\u0399I,\u039EJ,\u039AK,\u039BL,\u039CM,\u039DN,\u039FO,\u03A0P,QQ,\u03A1R,\u03A3S,\u03A4T,\u0398U,\u03A9V,WW,\u03A7X,\u03A5Y,\u0396Z,\u03B1a,\u03B2b,\u03C8c,\u03B4d,\u03B5e,\u03C6f,\u03B3g,\u03B7h,\u03B9i,\u03BEj,\u03BAk,\u03BBl,\u03BCm,\u03BDn,\u03BFo,\u03C0p,qq,\u03C1r,\u03C3s,\u03C4t,\u03B8u,\u03C9v,\u03C2w,\u03C7x,\u03C5y,\u03B6z"
 <	Example (exchanges meaning of z and y for commands): >vim
 	    set langmap=zy,yz,ZY,YZ
 <

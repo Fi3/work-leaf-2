@@ -418,7 +418,7 @@
       "revision": "779c36969e31080503be2dfccbcc3f999e289606",
       "version": "v0.12.6",
       "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
-      "sha256": "22d23358a0c3f349d56fed119968d522fd58b1f54c347dd16ad350597aab8da0",
+      "sha256": "932def7d8798a8c9bb87343e3187d83208f0dfe4f380f7040cd81faedc080404",
       "format": "text",
       "topics": [
         "ui",
@@ -427,7 +427,9 @@
       ],
       "description": "Option definitions, including scratch buffers, buffer lifetime, wrapping, and status display.",
       "license_path": "neovim/LICENSE.txt",
-      "transform": "none; original upstream bytes"
+      "transform": "Unicode examples use escapes and code points; example values and help line numbers unchanged",
+      "original_sha256": "22d23358a0c3f349d56fed119968d522fd58b1f54c347dd16ad350597aab8da0",
+      "original_git_revision": "8ab2858f68d3488c2618256f1bd9b2db6c29d4d5"
     },
     {
       "id": "neovim-vimfn",
@@ -440,7 +442,7 @@
       "revision": "779c36969e31080503be2dfccbcc3f999e289606",
       "version": "v0.12.6",
       "retrieved_at": "2026-10-16T15:00:30.034149+00:00",
-      "sha256": "baf756ef9aa7973480b577577ebd481764f3391488d1faf7d568a9a678bdcc8a",
+      "sha256": "cb458f71e623c2e4c13b10d6571caca96153e1b44ddbe06b10a43c7647f44130",
       "format": "text",
       "topics": [
         "processes",
@@ -450,7 +452,9 @@
       ],
       "description": "Function definitions for jobs, sockets, channels, input, prompts, and quickfix lists.",
       "license_path": "neovim/LICENSE.txt",
-      "transform": "none; original upstream bytes"
+      "transform": "Unicode examples use escapes and code points; example values and help line numbers unchanged",
+      "original_sha256": "baf756ef9aa7973480b577577ebd481764f3391488d1faf7d568a9a678bdcc8a",
+      "original_git_revision": "8ab2858f68d3488c2618256f1bd9b2db6c29d4d5"
     },
     {
       "id": "neovim-diff",

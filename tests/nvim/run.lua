@@ -63,7 +63,7 @@ local function chat(value)
 end
 
 local fixture = vim.json.decode(table.concat(vim.fn.readfile(root .. '/tests/fixtures/protocol.json'), '\n'))
-check(fixture.notification.params.snapshot.assistant.text == 'Hello λ\n世界', 'Shared Unicode fixture')
+check(fixture.notification.params.snapshot.assistant.text == 'Hello \206\187\n\228\184\150\231\149\140', 'Shared Unicode fixture')
 require('harness').setup({ executable = root .. '/tests/nvim/fake.py', width = 40, prompt_height = 4 })
 check(not state(), 'Loading and setup must not start processes')
 vim.cmd('cd ' .. vim.fn.fnameescape(temp))
@@ -73,7 +73,7 @@ vim.ui.input = function(_, callback) input_count = input_count + 1; callback(nil
 vim.fn.writefile({ 'disk text', 'second line' }, temp .. '/source.txt')
 vim.cmd.edit(temp .. '/source.txt')
 local source = vim.api.nvim_get_current_buf()
-vim.api.nvim_buf_set_lines(source, 0, 1, false, { 'unsaved λ 世界' })
+vim.api.nvim_buf_set_lines(source, 0, 1, false, { 'unsaved \206\187 \228\184\150\231\149\140' })
 local tick = vim.api.nvim_buf_get_changedtick(source)
 vim.cmd('Harness login')
 wait(function() return named('select') end, 'Login before creating a chat lists the account providers')
@@ -126,13 +126,13 @@ check(vim.api.nvim_get_current_buf() == source, 'Hidden work leaves source focus
 vim.cmd('Harness')
 wait(function() return has('tool progress') end, 'Reopening a chat restores streamed tool activity')
 local envelope = calls('input.submit')[1].params
-check(envelope.context[1].text == 'unsaved λ 世界\nsecond line\n', 'Explicit unsaved buffer snapshot')
+check(envelope.context[1].text == 'unsaved \206\187 \228\184\150\231\149\140\nsecond line\n', 'Explicit unsaved buffer snapshot')
 check(envelope.context[1].modified and envelope.context[1].changedtick == tick, 'Context flags match source state')
 check(envelope.context[2].kind == 'selection' and envelope.context[2].start_line == 2 and envelope.context[2].text == 'second line\n', 'Complete selected lines')
 check(vim.bo[source].modified and vim.api.nvim_buf_get_changedtick(source) == tick, 'Source remains unchanged')
 check(vim.fn.readfile(temp .. '/source.txt')[1] == 'disk text', 'No implicit save')
 check(text(named('prompt')) == '', 'Confirmed admission clears the sent draft')
-check(has('Streaming λ 世界') and has('bash: running'), 'Streamed text and tool name')
+check(has('Streaming \206\187 \228\184\150\231\149\140') and has('bash: running'), 'Streamed text and tool name')
 vim.cmd('Harness stop')
 wait(function() return has('State: idle') end, 'Explicit stop reaches terminal state')
 
@@ -397,8 +397,8 @@ chat('\\model demo')
 wait(function() return state().sessions[child_id].metadata.model == 'test' end, 'Child settings can be selected')
 chat('\\context buffer')
 wait(function() return has('Context snapshot: source.txt') end, 'Chat context command uses the source file')
-chat('\\instructions Keep λ')
-wait(function() return state().sessions[child_id].metadata.instructions == 'Keep λ' end, 'Instructions are saved by the chat command')
+chat('\\instructions Keep \206\187')
+wait(function() return state().sessions[child_id].metadata.instructions == 'Keep \206\187' end, 'Instructions are saved by the chat command')
 chat('\\instructions')
 wait(function() return state().sessions[child_id].metadata.instructions == '' end, 'An empty instructions command clears instructions')
 local admitted = #calls('input.submit')
@@ -596,7 +596,7 @@ check(text(named('prompt')) == 'Keep this task after the model command', 'The la
 chat('\\model demo')
 wait(function() return #calls('session.configure') == configured_queued + 2 end, 'Restore the local model before the disconnect check')
 for _, capture in ipairs({
-  { kind = 'buffer', text = 'unsaved λ 世界\nsecond line\n' },
+  { kind = 'buffer', text = 'unsaved \206\187 \228\184\150\231\149\140\nsecond line\n' },
   { kind = 'selection', text = 'second line\n', start_line = 2, end_line = 2 },
 }) do
   show_file(source)

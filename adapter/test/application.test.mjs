@@ -9,7 +9,7 @@ import { createModels } from '@earendil-works/pi-ai/models';
 import { anthropicProvider } from '@earendil-works/pi-ai/providers/anthropic';
 import { openaiProvider } from '@earendil-works/pi-ai/providers/openai';
 import { fauxAssistantMessage, fauxToolCall } from '@earendil-works/pi-ai/providers/faux';
-import { LiveDoc } from '@earendil-works/pi-durable';
+import { Harness, LiveDoc } from '@earendil-works/pi-durable';
 import { openNodeSqliteStorage } from '@earendil-works/pi-durable/storage/sqlite/node';
 import { openApplication, SessionDoc } from '../pi.mjs';
 import { application } from '../../tests/fixtures/application.mjs';
@@ -154,7 +154,7 @@ test('an empty chat persists without a model and accepts settings before credent
   await assert.rejects(call('submission.get', { session_id: 'empty', request_id: 'first' }), isKind('not_found'));
   assert.deepEqual((await call('transcript.list', { session_id: 'empty' })).items, []);
   const auth = t.mock.method(app.models, 'getAuth', () => assert.fail('Choosing a model must not read credentials'));
-  await call('session.configure', { session_id: 'empty', provider: 'anthropic', model: 'claude-sonnet-4-6', name: 'Review λ' });
+  await call('session.configure', { session_id: 'empty', provider: 'anthropic', model: 'claude-sonnet-4-6', name: 'Review \u03bb' });
   auth.mock.restore();
   assert.equal((await call('configuration.get', { session_id: 'empty' })).model, 'claude-sonnet-4-6');
   await assert.rejects(call('session.configure', { session_id: 'empty', provider: 'anthropic', model: 'missing' }), { code: -32602 });
@@ -299,6 +299,53 @@ test('duplicate identifiers preserve input while busy and after restart; old sto
   await run('run.stop', { session_id: 'work', submission_id: next.submission_id });
 });
 
+test('expired idle caches preserve exact outcomes, history, settings, and targeted stops', async t => {
+  const open = Harness.open;
+  let fixture;
+  try {
+    Harness.open = (storage, options, context) => open(storage, {
+      ...options, settings: { ...options.settings, contextRetentionMs: 25, documentRetentionMs: 25 },
+    }, context);
+    fixture = await setup(t, [fauxAssistantMessage('Original answer'), fauxAssistantMessage('x'.repeat(1000))], 1000);
+  } finally { Harness.open = open; }
+  const { app, call, create } = fixture;
+  await create('work');
+  let watch_id;
+  {
+    const watch = await app.dispatch('session.watch', { session_id: 'work' }, 'watch', () => {});
+    watch_id = watch.result.watch_id; watch.start();
+  }
+  const receipt = await call('input.submit', input('work', 'first', 'Original input'));
+  const completed = await call('submission.wait', { session_id: 'work', request_id: 'first', timeout_ms: 3000 });
+  assert.equal(completed.status, 'done'); assert.equal(completed.submission_id, receipt.submission_id);
+  const history = await call('transcript.list', { session_id: 'work' });
+  assert.deepEqual(history.items.filter(entry => entry.kind === 'user' || entry.kind === 'assistant').map(entry => entry.text), ['Original input', 'Original answer']);
+  await call('session.unwatch', { watch_id });
+  // Real Pi timers release idle context and documents after the last observer leaves.
+  await delay(100);
+  assert.deepEqual(await call('submission.get', { session_id: 'work', request_id: 'first' }), completed);
+  assert.deepEqual(await call('transcript.list', { session_id: 'work' }), history);
+  const configured = await call('session.configure', {
+    session_id: 'work', name: 'Resumed work', provider: 'faux', model: 'test', instructions: 'Use saved history',
+  });
+  assert.deepEqual(await call('input.submit', input('work', 'first', 'Must not execute')), completed);
+  await delay(100);
+  assert.deepEqual(await call('transcript.list', { session_id: 'work' }), history);
+  assert.deepEqual((await call('session.get', { session_id: 'work' })).session, configured);
+  const next = await call('input.submit', input('work', 'next', 'New input'));
+  assert.notEqual(next.submission_id, completed.submission_id);
+  assert.deepEqual(await call('run.stop', { session_id: 'work', submission_id: completed.submission_id }), completed);
+  assert.equal((await call('submission.get', { session_id: 'work', request_id: 'next' })).status, 'accepted');
+  const stopped = await call('run.stop', { session_id: 'work', submission_id: next.submission_id });
+  assert.equal(stopped.reason, 'cancelled');
+  await delay(100);
+  assert.deepEqual(await call('submission.wait', { session_id: 'work', request_id: 'next' }), stopped);
+  assert.deepEqual(await call('submission.get', { session_id: 'work', request_id: 'first' }), completed);
+  const resumedHistory = await call('transcript.list', { session_id: 'work' });
+  assert.deepEqual(resumedHistory.items.slice(0, history.items.length), history.items);
+  assert.deepEqual(resumedHistory.items.filter(entry => entry.kind === 'user').map(entry => entry.text), ['Original input', 'New input']);
+});
+
 test('session admission permits concurrent input, creation, and consistent duplicate receipts', async t => {
   const { app, config, workspace } = await setup(t, [fauxAssistantMessage('a'.repeat(1000)), fauxAssistantMessage('b'.repeat(1000))], 20);
   await app.close();
@@ -334,7 +381,7 @@ test('session admission permits concurrent input, creation, and consistent dupli
 });
 
 test('watches start with complete state and converge; full answer is available as byte chunks', async t => {
-  const answer = 'λ世界😀'.repeat(2000);
+  const answer = '\u03bb\u4e16\u754c😀'.repeat(2000);
   const { app, call, create } = await setup(t, [fauxAssistantMessage(answer)], 10000000);
   await create('work'); const records = [];
   const watch = await app.dispatch('session.watch', { session_id: 'work' }, 'watch', record => records.push(record));
@@ -483,7 +530,7 @@ test('failed entries and exact stored outcomes keep safe diagnostics across late
   const { app, call, create, config } = await setup(t, [
     fauxAssistantMessage('', { stopReason: 'error', errorMessage: `OpenAI API error (401): ${secret}` }),
     fauxAssistantMessage(' \n', { stopReason: 'error', errorMessage: `OpenAI API error (404): ${secret}` }),
-    fauxAssistantMessage('Partial answer λ', { stopReason: 'error', errorMessage: `OpenAI API error (403): ${secret}` }),
+    fauxAssistantMessage('Partial answer \u03bb', { stopReason: 'error', errorMessage: `OpenAI API error (403): ${secret}` }),
     fauxAssistantMessage('Complete answer'),
   ]);
   await create('work'); const outcomes = [];
@@ -498,8 +545,8 @@ test('failed entries and exact stored outcomes keep safe diagnostics across late
       assert.deepEqual(await call('entry.read', { session_id: 'work', entry_id: entry.entry_id }),
         { text: entry.text, next_offset: Buffer.byteLength(entry.text), end: true });
     } else if (request_id === 'partial') {
-      assert.equal(entry.kind, 'assistant'); assert.equal(entry.text, 'Partial answer λ');
-      assert.equal(view.assistant.text, 'Partial answer λ'); assert.match(view.error.message, /denied access/);
+      assert.equal(entry.kind, 'assistant'); assert.equal(entry.text, 'Partial answer \u03bb');
+      assert.equal(view.assistant.text, 'Partial answer \u03bb'); assert.match(view.error.message, /denied access/);
     } else {
       assert.equal(view.error, null); assert.equal(entry.text, 'Complete answer');
     }

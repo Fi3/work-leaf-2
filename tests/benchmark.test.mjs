@@ -12,6 +12,16 @@ const runProvider = program => execute(process.execPath,
   ['--import', './benchmarks/provider.mjs', '--input-type=module', '--eval', program],
   { cwd: root, timeout: 15000, env: { ...process.env, OPENAI_API_KEY: 'sk-benchmark-synthetic' } });
 
+const runWorkload = program => execute('python3', ['-c', `
+import contextlib, importlib.util, io, json, pathlib, subprocess, sys, tempfile
+from unittest.mock import patch
+sys.path.insert(0, str(pathlib.Path('tests/fixtures').resolve()))
+spec = importlib.util.spec_from_file_location('workload', 'benchmarks/workload.py')
+workload = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(workload)
+${program}
+`], { cwd: root, timeout: 10000 });
+
 test('benchmark provider rejects other endpoints, credentials, models, and response modes', async () => {
   await runProvider(`
     import assert from 'node:assert/strict';
@@ -80,6 +90,7 @@ async function containerResult(settings) {
   const program = `
 import contextlib, importlib.util, io, json, pathlib, subprocess, sys, tempfile
 from unittest.mock import patch
+sys.path.insert(0, 'scripts')
 spec = importlib.util.spec_from_file_location('bench', 'scripts/bench.py')
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
@@ -89,7 +100,8 @@ profile.update(settings.get('profile', {}))
 resources = profile['resources']
 configuration = {'Image': 'sha256:' + 'a' * 64, 'HostConfig': {
     'NanoCpus': resources['cpus'] * 1000000000, 'Memory': resources['memory_bytes'],
-    'MemorySwap': resources['memory_swap_bytes'], 'PidsLimit': resources['pids_limit'], 'NetworkMode': 'none'}}
+    'MemorySwap': resources['memory_swap_bytes'], 'PidsLimit': resources['pids_limit'],
+    'NetworkMode': 'none', 'OomScoreAdj': -1000}}
 configuration['HostConfig'].update(settings.get('configuration', {}))
 final = {'State': {'OOMKilled': settings.get('oom', False), 'ExitCode': settings.get('exit_code', 137 if settings.get('oom') else 0)}}
 commands = []
@@ -108,11 +120,14 @@ class Process:
 with tempfile.TemporaryDirectory(prefix='harness-benchmark-runner-') as directory:
     with patch.object(bench, 'docker', docker), patch.object(bench, 'inspect_container', side_effect=[configuration, final]), patch.object(bench.subprocess, 'Popen', Process), contextlib.redirect_stdout(io.StringIO()):
         try:
-            result = bench.run_container('synthetic-image', profile, pathlib.Path(directory), 'source')
+            result = bench.run_container('synthetic-image', profile, pathlib.Path(directory), 'source', settings.get('cpuset'))
         except RuntimeError as error:
             result = {'error': str(error)}
     assert commands[-1] == ('rm', '--force', 'synthetic-container')
+    assert commands[0][commands[0].index('--oom-score-adj') + 1] == '-1000'
     assert any(command[0] == 'kill' for command in commands) == settings.get('timeout', False)
+    if settings.get('cpuset') and not result.get('error'):
+        assert '--cpuset-cpus' in commands[0] and settings['cpuset'] in commands[0]
     print(json.dumps(result))
 `;
   const { stdout } = await execute('python3', ['-c', program, JSON.stringify(settings)], { cwd: root, timeout: 5000 });
@@ -125,6 +140,126 @@ const samples = [
   { type: 'sample', phase: 'idle', elapsed_seconds: 1, cpu_usec: 100, memory_bytes: 1024, memory_events: { oom: 5, oom_kill: 3 } },
   { type: 'sample', phase: 'capacity', elapsed_seconds: 2, cpu_usec: 200, memory_bytes: 2048, memory_events: { oom: 8, oom_kill: 5 } },
 ];
+
+test('benchmark samples preserve separate cgroup and process memory counters without filling missing fields', async () => {
+  await runWorkload(`
+with tempfile.TemporaryDirectory(prefix='harness-benchmark-sampler-') as directory:
+    root = pathlib.Path(directory)
+    proc, cgroup = root / 'proc', root / 'cgroup'
+    proc.mkdir()
+    cgroup.mkdir()
+    worker = proc / '42'
+    worker.mkdir()
+    (worker / 'cmdline').write_bytes(b'node\\0/app/adapter/worker.mjs\\0')
+    memory = worker / 'smaps_rollup'
+    memory.write_text('Rss: 40 kB\\nPss: 30 kB\\nPss_Anon: 20 kB\\nPss_File: 9 kB\\nPss_Shmem: 1 kB\\n')
+    (worker / 'oom_score_adj').write_text('0')
+    (proc / 'self').mkdir()
+    for name, value in {
+        'cpu.stat': 'usage_usec 120\\nthrottled_usec 7\\n',
+        'memory.events': 'oom 0\\noom_kill 0\\n',
+        'memory.current': '123456', 'memory.peak': '234567',
+        'memory.stat': 'anon 4096\\nfile 8192\\nkernel 1024\\npgfault 45\\n',
+    }.items():
+        (cgroup / name).write_text(value)
+    with patch.object(workload, 'CGROUP', cgroup), patch.object(workload, 'Path',
+            side_effect=lambda value: proc if value == '/proc' else pathlib.Path(value)):
+        monitor = workload.Monitor({'sample_interval_ms': 500})
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            monitor.sample()
+        sample = monitor.samples[0]
+        assert json.loads(output.getvalue()) == {'type': 'sample', **sample}
+        assert sample['cpu_usec'] == 120 and sample['cpu_throttled_usec'] == 7
+        assert sample['memory_bytes'] == 123456 and sample['memory_peak_bytes'] == 234567
+        assert sample['memory_stat'] == {'anon': 4096, 'file': 8192, 'kernel': 1024, 'pgfault': 45}
+        assert sample['processes'] == [{'pid': 42, 'role': 'worker', 'rss_bytes': 40960,
+            'pss_bytes': 30720, 'pss_anon_bytes': 20480, 'pss_file_bytes': 9216, 'pss_shmem_bytes': 1024, 'oom_score_adj': 0}]
+        (worker / 'oom_score_adj').unlink()
+        memory.write_text('Rss: 40 kB\\nPss: 30 kB\\n')
+        assert workload.process_memory() == [{'pid': 42, 'role': 'worker', 'rss_bytes': 40960, 'pss_bytes': 30720}]
+        for contents, missing, present, value in [
+            ('Rss: 40 kB\\n', 'pss_bytes', 'rss_bytes', 40960),
+            ('Pss: 30 kB\\n', 'rss_bytes', 'pss_bytes', 30720),
+        ]:
+            memory.write_text(contents)
+            process = workload.process_memory()[0]
+            assert missing not in process, 'Missing kernel observations must not become zero'
+            assert process[present] == value
+`);
+});
+
+test('the benchmark refuses to start with an unprotected driver', async () => {
+  await runWorkload(`
+profile = json.loads(pathlib.Path('benchmarks/profile.json').read_text())
+with tempfile.TemporaryDirectory(prefix='harness-benchmark-protection-') as directory:
+    root = pathlib.Path(directory)
+    for name, value in {'cpu.max': '200000 100000', 'memory.max': '536870912',
+                        'memory.swap.max': '0', 'pids.max': '256'}.items():
+        (root / name).write_text(value)
+    score = root / 'oom_score_adj'
+    with patch.object(workload, 'CGROUP', root), patch.object(workload, 'Path',
+            side_effect=lambda value: score if value == '/proc/self/oom_score_adj' else pathlib.Path(value)):
+        for value in ['0', '-999', '1000', '']:
+            score.write_text(value)
+            try:
+                workload.verify_limits(profile)
+            except RuntimeError as error:
+                assert 'driver is not protected' in str(error)
+            else:
+                raise AssertionError('An unprotected driver must not begin measurement')
+        score.write_text('-1000\\n')
+        assert workload.verify_limits(profile) == profile['resources']
+`);
+});
+
+test('application launches reset OOM protection and preserve arguments, environment, and descendant eligibility', async () => {
+  await runWorkload(`
+import os
+from types import SimpleNamespace
+profile = json.loads(pathlib.Path('benchmarks/profile.json').read_text())
+observed = []
+real_popen = subprocess.Popen
+probe = "import json,os,pathlib,subprocess,sys; print(json.dumps({'args':sys.argv[1:],'score':pathlib.Path('/proc/self/oom_score_adj').read_text().strip(),'child_score':subprocess.check_output([sys.executable,'-c',\\"import pathlib; print(pathlib.Path('/proc/self/oom_score_adj').read_text().strip())\\"],text=True).strip(),'key':os.getenv('OPENAI_API_KEY'),'node_options':os.getenv('NODE_OPTIONS')}))"
+class Client:
+    def close(self): pass
+class Monitor:
+    def __init__(self, profile):
+        self.thread = SimpleNamespace(start=lambda: None, join=lambda **_: None)
+        self.done = SimpleNamespace(set=lambda: None)
+        self.phase, self.initial_events, self.samples = 'startup', {}, []
+    def sample(self): pass
+def launch(command, **options):
+    assert options['stdout'] is sys.stderr and options['stderr'] is sys.stderr
+    child = real_popen([*command[:4], sys.executable, '-c', probe, *command[4:]],
+                      env=options.get('env'), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    stdout, stderr = child.communicate(timeout=5)
+    assert child.returncode == 0, stderr
+    observed.append(json.loads(stdout))
+    return child
+with tempfile.TemporaryDirectory(prefix='harness-benchmark-application-launch-') as directory:
+    root = pathlib.Path(directory)
+    (root / 'benchmarks').mkdir()
+    (root / 'benchmarks/profile.json').write_text(json.dumps(profile))
+    work = root / 'work'
+    with patch.object(workload, 'ROOT', root), patch.object(workload, 'WORK', work), \\
+         patch.object(workload, 'verify_limits'), patch.object(workload, 'Monitor', Monitor), \\
+         patch.object(workload, 'Rpc', return_value=Client()), patch.object(workload, 'create'), \\
+         patch.object(workload, 'wait_server'), patch.object(workload, 'wait_editor', side_effect=RuntimeError('stop after launches')), \\
+         patch.object(workload, 'counters', return_value={}), patch.object(workload, 'emit'), \\
+         patch.object(workload.subprocess, 'Popen', side_effect=launch), \\
+         patch.object(workload.subprocess, 'check_output', return_value='test runtime'):
+        assert workload.main() == 1
+    assert len(observed) == 2
+    server, editor = observed
+    assert server['args'] == ['/app/target/release/harness', 'serve', '--config', str(work / 'config.json')]
+    assert server['key'] == 'sk-benchmark-synthetic'
+    assert server['node_options'] == '--import=/app/benchmarks/provider.mjs --max-old-space-size=1024'
+    assert editor['args'] == ['nvim', '--headless', '-u', 'NONE', '-c', 'luafile /app/benchmarks/editor.lua']
+    assert editor['key'] == os.getenv('OPENAI_API_KEY') and editor['node_options'] == os.getenv('NODE_OPTIONS')
+    assert all(item['score'] == '0' and item['child_score'] == '0' for item in observed)
+`);
+});
 
 test('benchmark resource summaries measure CPU and memory within each sampled phase', async () => {
   const measurements = [
@@ -230,4 +365,39 @@ test('benchmark host rejects unapplied resource and network limits', async () =>
     const result = await containerResult({ records: [], configuration });
     assert.match(result.error, /required resource and network limits/);
   }
+});
+
+test('benchmark host rejects missing or unapplied driver protection', async () => {
+  for (const OomScoreAdj of [null, 0, -999, 1000]) {
+    const result = await containerResult({ records: [], configuration: { OomScoreAdj } });
+    assert.match(result.error, /did not protect the benchmark driver/);
+  }
+});
+
+
+test('benchmark host applies selected CPU affinity and rejects a different Docker selection', async () => {
+  const records = [{ type: 'result', completed: false, measurements: [] }];
+  const result = await containerResult({ records, cpuset: '30,31', configuration: { CpusetCpus: '30,31' } });
+  assert.equal(result.cpu_affinity, '30,31');
+  for (const CpusetCpus of ['', '0,1']) {
+    const rejected = await containerResult({ records, cpuset: '30,31', configuration: { CpusetCpus } });
+    assert.match(rejected.error, /CPU affinity/);
+  }
+  await execute('python3', ['-c', `
+import importlib.util, sys
+from unittest.mock import patch
+sys.path.insert(0, 'scripts')
+spec = importlib.util.spec_from_file_location('bench', 'scripts/bench.py')
+bench = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(bench)
+with patch.object(bench.os, 'sched_getaffinity', return_value={30, 31, 32}):
+    assert bench.cpu_affinity('31,30') == '30,31'
+    for value in ['0,1', '30,30', '30', '30,31,32', '30-31', '30,x', '30,']:
+        try:
+            bench.cpu_affinity(value)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError(value)
+`], { cwd: root, timeout: 5000 });
 });

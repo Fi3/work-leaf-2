@@ -25,4 +25,5 @@ COPY plugin ./plugin
 COPY tests/fixtures ./tests/fixtures
 COPY benchmarks ./benchmarks
 RUN test "$(nvim --version | head -1)" = 'NVIM v0.12.6'
+RUN test -x /usr/bin/choom
 ENTRYPOINT ["python3", "-u", "/app/benchmarks/workload.py"]

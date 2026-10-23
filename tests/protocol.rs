@@ -21,7 +21,7 @@ fn shared_contract() {
 #[test]
 fn every_boundary_preserves_unicode_and_record_order() {
     let values = [
-        serde_json::json!({"text":"λ\n世界"}),
+        serde_json::json!({"text":"\u{3bb}\n\u{4e16}\u{754c}"}),
         serde_json::json!({"text":"😀a"}),
     ];
     let bytes: Vec<u8> = values
@@ -45,7 +45,7 @@ fn every_boundary_preserves_unicode_and_record_order() {
 
 #[test]
 fn input_and_frame_limits_are_byte_limits() {
-    let value = serde_json::json!({"session_id":"s","request_id":"r","text":"λ".repeat(protocol::MAX_INPUT / 2),"context":[]});
+    let value = serde_json::json!({"session_id":"s","request_id":"r","text":"\u{3bb}".repeat(protocol::MAX_INPUT / 2),"context":[]});
     protocol::validate("input.submit", &value).unwrap();
     let mut oversized = value;
     oversized["text"] = Value::String(format!("{}x", oversized["text"].as_str().unwrap()));

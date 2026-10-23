@@ -4,10 +4,10 @@ vim.o.columns, vim.o.lines = 100, 30
 vim.o.mouse = ''
 local select = require('harness.select').select
 local source, previous = vim.api.nvim_get_current_buf(), vim.api.nvim_get_current_win()
-vim.api.nvim_buf_set_lines(source, 0, -1, false, { 'Unsent draft λ 世界', 'Second line' })
+vim.api.nvim_buf_set_lines(source, 0, -1, false, { 'Unsent draft \206\187 \228\184\150\231\149\140', 'Second line' })
 local tick = vim.api.nvim_buf_get_changedtick(source)
 local items = {}
-for index = 1, 47 do items[index] = { name = 'Model ' .. index .. ' λ', id = index } end
+for index = 1, 47 do items[index] = { name = 'Model ' .. index .. ' \206\187', id = index } end
 local result, calls, window, buffer
 local function keys(value)
   feed_keys(value)

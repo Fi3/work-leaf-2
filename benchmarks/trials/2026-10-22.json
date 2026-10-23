@@ -1,0 +1,6523 @@
+{
+  "schema": 1,
+  "date": "2026-10-22",
+  "accepted_capacity_evidence": false,
+  "kind": "worker_session_and_history_growth",
+  "method": {
+    "cpu_affinity": [
+      30,
+      31
+    ],
+    "distinct_physical_cores": true,
+    "cpu_quota": 2,
+    "memory_bytes": 536870912,
+    "swap_bytes": 0,
+    "network": "none",
+    "v8_old_generation_mib": 1024,
+    "max_active_sessions": 4,
+    "accounting": "Worker PSS and V8 heap; separate cgroup memory, anonymous memory, and file cache.",
+    "scope": "Direct Application/Pi/provider SDK and actual tools; diagnostic and simulated provider share Node. No Rust server or editor.",
+    "forced_gc": false,
+    "policies": {
+      "default_documents_ms": 600000,
+      "current_documents_ms": 30000,
+      "context_ms": 600000
+    }
+  },
+  "scaling": [
+    {
+      "workload": {
+        "counts": [
+          1,
+          4,
+          16,
+          64
+        ],
+        "rounds": 2,
+        "input_bytes": 56,
+        "instructions_bytes": 0,
+        "history_steps": null,
+        "idle_seconds": [
+          2,
+          35
+        ],
+        "settle_seconds": 2,
+        "contextRetentionMs": 600000,
+        "profile": "small",
+        "forced_gc": false
+      },
+      "policy": "default",
+      "document_retention_ms": 600000,
+      "image": "sha256:d18f5189cc16c9b119a543ea24c1574a22c3b26e6a1ae069389a042975c108ca",
+      "source_sha256": {
+        "files": {
+          "adapter/auth.mjs": "99c305677654fd3ab4a35787eb13528f50418cb4ecbefa739bdf80dd2708411c",
+          "adapter/pi.mjs": "c73640d3ca9ffdc03deea62d9452a9e485e7c0c50c9de2e852cc0c3aadaccfd1",
+          "adapter/protocol.mjs": "973738ce52d618868fed6454cf9a1ff84d08c8f28cb981b052574a829e6731f9",
+          "adapter/terminal.mjs": "cc2e9f3f30c54d3b3f27912db3d158a63306ad4327e059dbf0cc248ebe03f72a",
+          "adapter/view.mjs": "267e1e9686b0356ea297601effa4442391cedca49f7ba5e40122f8f20dcd2c47",
+          "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+          "benchmarks/profile.json": "a21de9d3a4140908ef156fa79b8619eb334e52d7c4edf1b51b84a9aa7d94e1ce",
+          "benchmarks/provider.mjs": "84e9d4056810dcfef5eb92608639930b171a9421bce12e62affe4286f1cd7f7e",
+          "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041"
+        },
+        "probe_sha256": "d4762f725b8b245d82196fcd53db8b436a22ca6bad1e8ce4ca68c4a0a7fa00f2"
+      },
+      "n": 3,
+      "comparison_available": true,
+      "totals": {
+        "cgroup_cpu_ms_since_node": {
+          "n": 3,
+          "median": 3756.928,
+          "minimum": 3635.37,
+          "maximum": 3831.338,
+          "range": 195.9680000000003
+        },
+        "completed_tasks": {
+          "n": 3,
+          "median": 132,
+          "minimum": 132,
+          "maximum": 132,
+          "range": 0
+        },
+        "elapsed_seconds": {
+          "n": 3,
+          "median": 59.760545523,
+          "minimum": 59.66618739799999,
+          "maximum": 59.798303972,
+          "range": 0.1321165740000083
+        },
+        "request_body_bytes": {
+          "n": 3,
+          "median": 13843622,
+          "minimum": 13843622,
+          "maximum": 13843622,
+          "range": 0
+        },
+        "request_count": {
+          "n": 3,
+          "median": 264,
+          "minimum": 264,
+          "maximum": 264,
+          "range": 0
+        },
+        "worker_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 2610.795,
+          "minimum": 2532.219,
+          "maximum": 2667.716,
+          "range": 135.49699999999984
+        },
+        "worker_task_operation_cpu_ms_per_task": {
+          "n": 3,
+          "median": 16.53080303030303,
+          "minimum": 15.99884090909091,
+          "maximum": 16.869295454545455,
+          "range": 0.8704545454545443
+        },
+        "worker_task_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 2182.066,
+          "minimum": 2111.847,
+          "maximum": 2226.747,
+          "range": 114.89999999999964
+        }
+      },
+      "operational_16_to_64_session_slopes": {
+        "cgroup_anon_mib_per_added_session": {
+          "n": 3,
+          "median": 0.2569173177083333,
+          "minimum": 0.19840494791666666,
+          "maximum": 0.304443359375,
+          "range": 0.10603841145833334
+        },
+        "cgroup_file_mib_per_added_session": {
+          "n": 3,
+          "median": 0.10384114583333333,
+          "minimum": 0.10286458333333333,
+          "maximum": 0.10481770833333333,
+          "range": 0.001953125
+        },
+        "cgroup_memory_mib_per_added_session": {
+          "n": 3,
+          "median": 0.3741048177083333,
+          "minimum": 0.30712890625,
+          "maximum": 0.425048828125,
+          "range": 0.117919921875
+        },
+        "worker_heap_used_mib_per_added_session": {
+          "n": 3,
+          "median": 0.18139775594075522,
+          "minimum": 0.11474990844726562,
+          "maximum": 0.24082008997599283,
+          "range": 0.1260701815287272
+        },
+        "worker_pss_mib_per_added_session": {
+          "n": 3,
+          "median": 0.259033203125,
+          "minimum": 0.19970703125,
+          "maximum": 0.3057454427083333,
+          "range": 0.10603841145833331
+        }
+      },
+      "checkpoints": {
+        "application_open": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 87.5,
+            "minimum": 85.52734375,
+            "maximum": 87.64453125,
+            "range": 2.1171875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 18.355010986328125,
+            "minimum": 18.32928466796875,
+            "maximum": 18.389755249023438,
+            "range": 0.0604705810546875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 43.61328125,
+            "minimum": 41.28515625,
+            "maximum": 43.71484375,
+            "range": 2.4296875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 38.8203125,
+            "minimum": 36.703125,
+            "maximum": 38.88671875,
+            "range": 2.18359375
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 0.15234375,
+            "minimum": 0.15234375,
+            "maximum": 0.203125,
+            "range": 0.05078125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 271.567,
+            "minimum": 267.317,
+            "maximum": 286.392,
+            "range": 19.07499999999999
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 242.04311900000002,
+            "minimum": 237.907129,
+            "maximum": 250.593372,
+            "range": 12.68624299999999
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 2.252045936,
+            "minimum": 2.247868467,
+            "maximum": 2.260301765,
+            "range": 0.012433297999999926
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 0.24726300900000003,
+            "minimum": 0.243082763,
+            "maximum": 0.255999287,
+            "range": 0.012916524000000013
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_1": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 98.80078125,
+            "minimum": 98.34765625,
+            "maximum": 99.4609375,
+            "range": 1.11328125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 24.825584411621094,
+            "minimum": 24.822914123535156,
+            "maximum": 24.852020263671875,
+            "range": 0.02910614013671875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 54.140625,
+            "minimum": 52.92578125,
+            "maximum": 54.57421875,
+            "range": 1.6484375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 46.9921875,
+            "minimum": 46.37890625,
+            "maximum": 47.5234375,
+            "range": 1.14453125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 1.5234375,
+            "minimum": 1.5234375,
+            "maximum": 1.5703125,
+            "range": 0.046875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 185.827,
+            "minimum": 184.96,
+            "maximum": 191.716,
+            "range": 6.756
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 389.4842640000006,
+            "minimum": 386.7103299999999,
+            "maximum": 389.5561839999991,
+            "range": 2.8458539999992354
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 92.9135,
+            "minimum": 92.48,
+            "maximum": 95.858,
+            "range": 3.378
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 100538.0,
+            "minimum": 100538.0,
+            "maximum": 100538.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 2,
+            "minimum": 2,
+            "maximum": 2,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 6.658188255,
+            "minimum": 6.6519754,
+            "maximum": 6.667297757,
+            "range": 0.01532235699999962
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 4.6544966070000005,
+            "minimum": 4.6477891950000005,
+            "maximum": 4.663003898,
+            "range": 0.01521470299999983
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_4": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 102.91796875,
+            "minimum": 101.95703125,
+            "maximum": 104.66015625,
+            "range": 2.703125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 29.341758728027344,
+            "minimum": 29.17340850830078,
+            "maximum": 29.63593292236328,
+            "range": 0.4625244140625
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 61.52734375,
+            "minimum": 59.4140625,
+            "maximum": 63.01171875,
+            "range": 3.59765625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 51.109375,
+            "minimum": 49.96484375,
+            "maximum": 52.72265625,
+            "range": 2.7578125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 4.4296875,
+            "minimum": 4.4140625,
+            "maximum": 4.46484375,
+            "range": 0.05078125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 114.028,
+            "minimum": 106.827,
+            "maximum": 137.216,
+            "range": 30.38900000000001
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 347.15876800000115,
+            "minimum": 341.4278089999989,
+            "maximum": 349.02349499999946,
+            "range": 7.595686000000569
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 19.00466666666667,
+            "minimum": 17.8045,
+            "maximum": 22.869333333333334,
+            "range": 5.064833333333333
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 100539.83333333333,
+            "minimum": 100539.83333333333,
+            "maximum": 100539.83333333333,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 12,
+            "minimum": 12,
+            "maximum": 12,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 11.019210844000002,
+            "minimum": 11.006252647,
+            "maximum": 11.027441972999998,
+            "range": 0.021189325999998232
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 9.015761713,
+            "minimum": 9.001764407,
+            "maximum": 9.023050379,
+            "range": 0.021285972000001152
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_16": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 116.12890625,
+            "minimum": 115.3203125,
+            "maximum": 118.69140625,
+            "range": 3.37109375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 35.241783142089844,
+            "minimum": 30.83770751953125,
+            "maximum": 36.94776916503906,
+            "range": 6.1100616455078125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 76.4375,
+            "minimum": 75.66015625,
+            "maximum": 78.10546875,
+            "range": 2.4453125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 64.3203125,
+            "minimum": 63.3828125,
+            "maximum": 66.72265625,
+            "range": 3.33984375
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 5.890625,
+            "minimum": 5.85546875,
+            "maximum": 5.9765625,
+            "range": 0.12109375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 401.189,
+            "minimum": 399.866,
+            "maximum": 403.649,
+            "range": 3.7830000000000155
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1100.743751,
+            "minimum": 1093.8550809999997,
+            "maximum": 1115.6565389999996,
+            "range": 21.80145799999991
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 16.716208333333334,
+            "minimum": 16.661083333333334,
+            "maximum": 16.818708333333333,
+            "range": 0.15762499999999946
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 100545.0,
+            "minimum": 100545.0,
+            "maximum": 100545.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 48,
+            "minimum": 48,
+            "maximum": 48,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 16.148111490999998,
+            "minimum": 16.119236391,
+            "maximum": 16.15260798,
+            "range": 0.033371588999997925
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 14.143213315999999,
+            "minimum": 14.115198224,
+            "maximum": 14.148819746000001,
+            "range": 0.03362152200000068
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_64": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 128.5625,
+            "minimum": 128.27734375,
+            "maximum": 129.99609375,
+            "range": 1.71875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 42.45576477050781,
+            "minimum": 42.397071838378906,
+            "maximum": 43.948875427246094,
+            "range": 1.5518035888671875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 94.39453125,
+            "minimum": 92.84765625,
+            "maximum": 96.0625,
+            "range": 3.21484375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 76.65234375,
+            "minimum": 76.24609375,
+            "maximum": 77.99609375,
+            "range": 1.75
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 10.9140625,
+            "minimum": 10.83984375,
+            "maximum": 10.921875,
+            "range": 0.08203125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 1403.394,
+            "minimum": 1307.758,
+            "maximum": 1431.449,
+            "range": 123.69100000000003
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 4333.137125000001,
+            "minimum": 4279.086528,
+            "maximum": 4357.284447000002,
+            "range": 78.197919000002
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 14.6186875,
+            "minimum": 13.622479166666666,
+            "maximum": 14.910927083333334,
+            "range": 1.2884479166666676
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 100549.88541666667,
+            "minimum": 100549.88541666667,
+            "maximum": 100549.88541666667,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 192,
+            "minimum": 192,
+            "maximum": 192,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 24.525263482000003,
+            "minimum": 24.43626094,
+            "maximum": 24.549567988,
+            "range": 0.11330704799999936
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 22.520457224,
+            "minimum": 22.431305532000003,
+            "maximum": 22.545379943,
+            "range": 0.11407441099999716
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_2s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 128.56640625,
+            "minimum": 128.27734375,
+            "maximum": 130.0,
+            "range": 1.72265625
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 42.551353454589844,
+            "minimum": 42.492698669433594,
+            "maximum": 44.044471740722656,
+            "range": 1.5517730712890625
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 94.39453125,
+            "minimum": 92.84765625,
+            "maximum": 96.0625,
+            "range": 3.21484375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 76.65234375,
+            "minimum": 76.24609375,
+            "maximum": 77.99609375,
+            "range": 1.75
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 10.9140625,
+            "minimum": 10.83984375,
+            "maximum": 10.921875,
+            "range": 0.08203125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 0.184,
+            "minimum": 0.151,
+            "maximum": 0.186,
+            "range": 0.035
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1.2888239999992948,
+            "minimum": 1.2357369999990624,
+            "maximum": 1.2960759999987204,
+            "range": 0.06033899999965797
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 24.528224758,
+            "minimum": 24.438521518,
+            "maximum": 24.552503287,
+            "range": 0.11398176899999868
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 24.526629925,
+            "minimum": 24.437584037,
+            "maximum": 24.55094677,
+            "range": 0.11336273299999888
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_35s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 107.6171875,
+            "minimum": 107.38671875,
+            "maximum": 110.07421875,
+            "range": 2.6875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 32.269317626953125,
+            "minimum": 32.23302459716797,
+            "maximum": 32.35020446777344,
+            "range": 0.11717987060546875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 73.24609375,
+            "minimum": 71.36328125,
+            "maximum": 76.01171875,
+            "range": 4.6484375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 55.58203125,
+            "minimum": 55.47265625,
+            "maximum": 58.0703125,
+            "range": 2.59765625
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 10.9140625,
+            "minimum": 10.83984375,
+            "maximum": 10.921875,
+            "range": 0.08203125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 87.719,
+            "minimum": 87.564,
+            "maximum": 88.146,
+            "range": 0.5820000000000078
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 33006.167116,
+            "minimum": 33003.829492,
+            "maximum": 33017.405544,
+            "range": 13.576052000003983
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 57.53458388,
+            "minimum": 57.447148119,
+            "maximum": 57.572333956,
+            "range": 0.12518583700000363
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 57.532121109,
+            "minimum": 57.44472543,
+            "maximum": 57.569971367,
+            "range": 0.12524593700000253
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "resume": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 113.87890625,
+            "minimum": 113.57421875,
+            "maximum": 116.44140625,
+            "range": 2.8671875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 36.778167724609375,
+            "minimum": 36.75133514404297,
+            "maximum": 36.850555419921875,
+            "range": 0.09922027587890625
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 79.73828125,
+            "minimum": 78.2734375,
+            "maximum": 82.9140625,
+            "range": 4.640625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 61.84765625,
+            "minimum": 61.6640625,
+            "maximum": 64.44140625,
+            "range": 2.77734375
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 11.19140625,
+            "minimum": 11.1171875,
+            "maximum": 11.19921875,
+            "range": 0.08203125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 84.829,
+            "minimum": 82.047,
+            "maximum": 85.905,
+            "range": 3.858000000000004
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 197.9598679999981,
+            "minimum": 195.77838899999915,
+            "maximum": 199.40999999999622,
+            "range": 3.631610999997065
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 21.20725,
+            "minimum": 20.51175,
+            "maximum": 21.47625,
+            "range": 0.964500000000001
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 243359.5,
+            "minimum": 243359.5,
+            "maximum": 243359.5,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 8,
+            "minimum": 8,
+            "maximum": 8,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 59.739562529000004,
+            "minimum": 59.648204576999994,
+            "maximum": 59.776412331,
+            "range": 0.12820775400000883
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 57.735115997,
+            "minimum": 57.64415139,
+            "maximum": 57.77143418,
+            "range": 0.12728279000000242
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "reload": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 117.0078125,
+            "minimum": 116.703125,
+            "maximum": 119.5234375,
+            "range": 2.8203125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 38.105445861816406,
+            "minimum": 38.077537536621094,
+            "maximum": 38.13490295410156,
+            "range": 0.05736541748046875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 82.98828125,
+            "minimum": 81.5234375,
+            "maximum": 86.1640625,
+            "range": 4.640625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 64.9921875,
+            "minimum": 64.80859375,
+            "maximum": 67.5390625,
+            "range": 2.73046875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 11.19140625,
+            "minimum": 11.1171875,
+            "maximum": 11.19921875,
+            "range": 0.08203125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 6.702,
+            "minimum": 6.646,
+            "maximum": 6.718,
+            "range": 0.07200000000000006
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 6.426456000001053,
+            "minimum": 6.3241760000018985,
+            "maximum": 6.46543300000485,
+            "range": 0.14125700000295183
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 59.748135857,
+            "minimum": 59.656251237999996,
+            "maximum": 59.785049527999995,
+            "range": 0.12879828999999887
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 59.74608533800001,
+            "minimum": 59.654688119999996,
+            "maximum": 59.782800013,
+            "range": 0.12811189300000336
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        }
+      },
+      "runs": [
+        {
+          "label": "scaling-small-default-1",
+          "sha256": "6ddd72f3fae504dfe343b4b15074c2cde0b8bde51fa676700538762091175e8a"
+        },
+        {
+          "label": "scaling-small-default-2",
+          "sha256": "a9058fea87175119c6da11e1c50e12efc03465d2f7162228df61c3910e935c37"
+        },
+        {
+          "label": "scaling-small-default-3",
+          "sha256": "b027301a3c035c4d703b7609340cbc6b0c5b723feb36e42bccd3a9e5c0adbce7"
+        }
+      ]
+    },
+    {
+      "workload": {
+        "counts": [
+          1,
+          4,
+          16,
+          64
+        ],
+        "rounds": 2,
+        "input_bytes": 56,
+        "instructions_bytes": 0,
+        "history_steps": null,
+        "idle_seconds": [
+          2,
+          35
+        ],
+        "settle_seconds": 2,
+        "contextRetentionMs": 600000,
+        "profile": "small",
+        "forced_gc": false
+      },
+      "policy": "documents",
+      "document_retention_ms": 30000,
+      "image": "sha256:d18f5189cc16c9b119a543ea24c1574a22c3b26e6a1ae069389a042975c108ca",
+      "source_sha256": {
+        "files": {
+          "adapter/auth.mjs": "99c305677654fd3ab4a35787eb13528f50418cb4ecbefa739bdf80dd2708411c",
+          "adapter/pi.mjs": "c73640d3ca9ffdc03deea62d9452a9e485e7c0c50c9de2e852cc0c3aadaccfd1",
+          "adapter/protocol.mjs": "973738ce52d618868fed6454cf9a1ff84d08c8f28cb981b052574a829e6731f9",
+          "adapter/terminal.mjs": "cc2e9f3f30c54d3b3f27912db3d158a63306ad4327e059dbf0cc248ebe03f72a",
+          "adapter/view.mjs": "267e1e9686b0356ea297601effa4442391cedca49f7ba5e40122f8f20dcd2c47",
+          "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+          "benchmarks/profile.json": "a21de9d3a4140908ef156fa79b8619eb334e52d7c4edf1b51b84a9aa7d94e1ce",
+          "benchmarks/provider.mjs": "84e9d4056810dcfef5eb92608639930b171a9421bce12e62affe4286f1cd7f7e",
+          "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041"
+        },
+        "probe_sha256": "d4762f725b8b245d82196fcd53db8b436a22ca6bad1e8ce4ca68c4a0a7fa00f2"
+      },
+      "n": 3,
+      "comparison_available": true,
+      "totals": {
+        "cgroup_cpu_ms_since_node": {
+          "n": 3,
+          "median": 3713.367,
+          "minimum": 3643.024,
+          "maximum": 3761.995,
+          "range": 118.971
+        },
+        "completed_tasks": {
+          "n": 3,
+          "median": 132,
+          "minimum": 132,
+          "maximum": 132,
+          "range": 0
+        },
+        "elapsed_seconds": {
+          "n": 3,
+          "median": 59.739473976999996,
+          "minimum": 59.689078992000006,
+          "maximum": 59.752676315,
+          "range": 0.06359732299999621
+        },
+        "request_body_bytes": {
+          "n": 3,
+          "median": 13843622,
+          "minimum": 13843622,
+          "maximum": 13843622,
+          "range": 0
+        },
+        "request_count": {
+          "n": 3,
+          "median": 264,
+          "minimum": 264,
+          "maximum": 264,
+          "range": 0
+        },
+        "worker_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 2600.257,
+          "minimum": 2546.282,
+          "maximum": 2628.89,
+          "range": 82.60799999999972
+        },
+        "worker_task_operation_cpu_ms_per_task": {
+          "n": 3,
+          "median": 16.32621212121212,
+          "minimum": 15.979446969696967,
+          "maximum": 16.581325757575758,
+          "range": 0.6018787878787908
+        },
+        "worker_task_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 2155.06,
+          "minimum": 2109.287,
+          "maximum": 2188.735,
+          "range": 79.44800000000032
+        }
+      },
+      "operational_16_to_64_session_slopes": {
+        "cgroup_anon_mib_per_added_session": {
+          "n": 3,
+          "median": 0.29150390625,
+          "minimum": 0.2696126302083333,
+          "maximum": 0.3330078125,
+          "range": 0.06339518229166669
+        },
+        "cgroup_file_mib_per_added_session": {
+          "n": 3,
+          "median": 0.104248046875,
+          "minimum": 0.10294596354166667,
+          "maximum": 0.11043294270833333,
+          "range": 0.007486979166666657
+        },
+        "cgroup_memory_mib_per_added_session": {
+          "n": 3,
+          "median": 0.4125162760416667,
+          "minimum": 0.3817545572916667,
+          "maximum": 0.4591471354166667,
+          "range": 0.077392578125
+        },
+        "worker_heap_used_mib_per_added_session": {
+          "n": 3,
+          "median": 0.10464795430501302,
+          "minimum": 0.0927128791809082,
+          "maximum": 0.1918478012084961,
+          "range": 0.09913492202758789
+        },
+        "worker_pss_mib_per_added_session": {
+          "n": 3,
+          "median": 0.2928059895833333,
+          "minimum": 0.2709147135416667,
+          "maximum": 0.3343912760416667,
+          "range": 0.0634765625
+        }
+      },
+      "checkpoints": {
+        "application_open": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 86.77734375,
+            "minimum": 85.29296875,
+            "maximum": 87.84375,
+            "range": 2.55078125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 18.389747619628906,
+            "minimum": 18.32807159423828,
+            "maximum": 18.40032196044922,
+            "range": 0.0722503662109375
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 42.5859375,
+            "minimum": 41.328125,
+            "maximum": 43.45703125,
+            "range": 2.12890625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 38.0234375,
+            "minimum": 36.484375,
+            "maximum": 38.98828125,
+            "range": 2.50390625
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 0.15234375,
+            "minimum": 0.15234375,
+            "maximum": 0.15234375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 276.126,
+            "minimum": 269.202,
+            "maximum": 277.565,
+            "range": 8.363
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 244.36986199999998,
+            "minimum": 239.87649299999998,
+            "maximum": 252.288895,
+            "range": 12.412402000000014
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 2.256668549,
+            "minimum": 2.2488075600000004,
+            "maximum": 2.262208792,
+            "range": 0.013401231999999652
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 0.25264322699999997,
+            "minimum": 0.24490830899999996,
+            "maximum": 0.257739083,
+            "range": 0.012830774000000017
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_1": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 98.765625,
+            "minimum": 97.375,
+            "maximum": 99.40234375,
+            "range": 2.02734375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 24.83715057373047,
+            "minimum": 24.817588806152344,
+            "maximum": 24.926300048828125,
+            "range": 0.10871124267578125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 53.5078125,
+            "minimum": 52.0078125,
+            "maximum": 54.37109375,
+            "range": 2.36328125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 46.828125,
+            "minimum": 45.42578125,
+            "maximum": 47.41015625,
+            "range": 1.984375
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 1.5234375,
+            "minimum": 1.5234375,
+            "maximum": 1.5234375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 192.333,
+            "minimum": 181.628,
+            "maximum": 194.906,
+            "range": 13.27800000000002
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 390.80513599999995,
+            "minimum": 383.9675420000003,
+            "maximum": 395.1600580000004,
+            "range": 11.192516000000069
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 96.1665,
+            "minimum": 90.814,
+            "maximum": 97.453,
+            "range": 6.63900000000001
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 100538.0,
+            "minimum": 100538.0,
+            "maximum": 100538.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 2,
+            "minimum": 2,
+            "maximum": 2,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 6.6686972209999995,
+            "minimum": 6.649831870999999,
+            "maximum": 6.670262245000001,
+            "range": 0.020430374000001805
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 4.665239044,
+            "minimum": 4.645582625,
+            "maximum": 4.666112425000001,
+            "range": 0.020529800000000265
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_4": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 101.8515625,
+            "minimum": 99.94140625,
+            "maximum": 104.91015625,
+            "range": 4.96875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 29.196922302246094,
+            "minimum": 29.1634521484375,
+            "maximum": 29.252426147460938,
+            "range": 0.0889739990234375
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 59.640625,
+            "minimum": 57.6484375,
+            "maximum": 62.95703125,
+            "range": 5.30859375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 49.9140625,
+            "minimum": 47.9921875,
+            "maximum": 52.91796875,
+            "range": 4.92578125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 4.4375,
+            "minimum": 4.42578125,
+            "maximum": 4.4375,
+            "range": 0.01171875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 110.278,
+            "minimum": 104.52,
+            "maximum": 142.852,
+            "range": 38.33200000000001
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 342.54860200000076,
+            "minimum": 342.3722230000003,
+            "maximum": 343.8717319999996,
+            "range": 1.499508999999307
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 18.37966666666667,
+            "minimum": 17.419999999999998,
+            "maximum": 23.808666666666667,
+            "range": 6.388666666666669
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 100539.83333333333,
+            "minimum": 100539.83333333333,
+            "maximum": 100539.83333333333,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 12,
+            "minimum": 12,
+            "maximum": 12,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 11.023707039,
+            "minimum": 11.005833346,
+            "maximum": 11.024810771,
+            "range": 0.01897742500000099
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 9.019443110000001,
+            "minimum": 9.001691533999999,
+            "maximum": 9.021115471000002,
+            "range": 0.019423937000002667
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_16": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 115.63671875,
+            "minimum": 114.93359375,
+            "maximum": 115.77734375,
+            "range": 0.84375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 34.97260284423828,
+            "minimum": 30.726730346679688,
+            "maximum": 35.30751037597656,
+            "range": 4.580780029296875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 75.4453125,
+            "minimum": 74.58984375,
+            "maximum": 75.53515625,
+            "range": 0.9453125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 63.6484375,
+            "minimum": 62.99609375,
+            "maximum": 63.828125,
+            "range": 0.83203125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 5.875,
+            "minimum": 5.62109375,
+            "maximum": 5.91796875,
+            "range": 0.296875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 393.626,
+            "minimum": 387.679,
+            "maximum": 410.479,
+            "range": 22.80000000000001
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1102.8034779999998,
+            "minimum": 1092.8032949999997,
+            "maximum": 1104.6111740000015,
+            "range": 11.807879000001776
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 16.401083333333332,
+            "minimum": 16.153291666666664,
+            "maximum": 17.103291666666667,
+            "range": 0.9500000000000028
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 100545.0,
+            "minimum": 100545.0,
+            "maximum": 100545.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 48,
+            "minimum": 48,
+            "maximum": 48,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 16.135075378,
+            "minimum": 16.129121274,
+            "maximum": 16.148307988,
+            "range": 0.019186713999999938
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 14.13133579,
+            "minimum": 14.124911232,
+            "maximum": 14.143467356,
+            "range": 0.01855612399999984
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_64": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 129.83203125,
+            "minimum": 127.9375,
+            "maximum": 131.6875,
+            "range": 3.75
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 39.9354248046875,
+            "minimum": 39.422821044921875,
+            "maximum": 40.33061218261719,
+            "range": 0.9077911376953125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 95.3359375,
+            "minimum": 92.9140625,
+            "maximum": 97.484375,
+            "range": 4.5703125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 77.8203125,
+            "minimum": 75.9375,
+            "maximum": 79.6328125,
+            "range": 3.6953125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 10.87890625,
+            "minimum": 10.859375,
+            "maximum": 10.921875,
+            "range": 0.0625
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 1354.756,
+            "minimum": 1351.382,
+            "maximum": 1365.527,
+            "range": 14.144999999999982
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 4320.564022000002,
+            "minimum": 4306.912752,
+            "maximum": 4337.663457999999,
+            "range": 30.7507059999989
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 14.112041666666668,
+            "minimum": 14.076895833333333,
+            "maximum": 14.224239583333334,
+            "range": 0.147343750000001
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 100549.88541666667,
+            "minimum": 100549.88541666667,
+            "maximum": 100549.88541666667,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 192,
+            "minimum": 192,
+            "maximum": 192,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 24.510593361,
+            "minimum": 24.474579555000002,
+            "maximum": 24.530100208,
+            "range": 0.05552065299999853
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 22.505746771000002,
+            "minimum": 22.470246488,
+            "maximum": 22.525074753,
+            "range": 0.0548282649999976
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_2s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 129.83203125,
+            "minimum": 127.9375,
+            "maximum": 131.6875,
+            "range": 3.75
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 40.03089141845703,
+            "minimum": 39.51830291748047,
+            "maximum": 40.426292419433594,
+            "range": 0.907989501953125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 95.3359375,
+            "minimum": 92.9140625,
+            "maximum": 97.484375,
+            "range": 4.5703125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 77.8203125,
+            "minimum": 75.9375,
+            "maximum": 79.6328125,
+            "range": 3.6953125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 10.87890625,
+            "minimum": 10.859375,
+            "maximum": 10.921875,
+            "range": 0.0625
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 0.19,
+            "minimum": 0.148,
+            "maximum": 0.196,
+            "range": 0.048000000000000015
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1.2319280000010622,
+            "minimum": 1.1969150000004447,
+            "maximum": 1.3080950000003213,
+            "range": 0.1111799999998766
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 24.512727351000002,
+            "minimum": 24.477397195,
+            "maximum": 24.53320506,
+            "range": 0.05580786499999846
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 24.511873711,
+            "minimum": 24.475897651,
+            "maximum": 24.53149337,
+            "range": 0.05559571899999938
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_35s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 108.53125,
+            "minimum": 108.39453125,
+            "maximum": 109.46875,
+            "range": 1.07421875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 32.827972412109375,
+            "minimum": 32.80738067626953,
+            "maximum": 32.95301818847656,
+            "range": 0.14563751220703125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 73.3671875,
+            "minimum": 73.26953125,
+            "maximum": 73.94921875,
+            "range": 0.6796875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 56.51953125,
+            "minimum": 56.35546875,
+            "maximum": 57.46875,
+            "range": 1.11328125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 10.859375,
+            "minimum": 10.49609375,
+            "maximum": 10.87890625,
+            "range": 0.3828125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 99.088,
+            "minimum": 97.606,
+            "maximum": 101.176,
+            "range": 3.5700000000000074
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 32995.26427300001,
+            "minimum": 32992.713669000004,
+            "maximum": 32997.041384000004,
+            "range": 4.3277149999994435
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 57.512121687,
+            "minimum": 57.472555904000004,
+            "maximum": 57.530958289000004,
+            "range": 0.058402385000000834
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 57.509805839,
+            "minimum": 57.470178966,
+            "maximum": 57.52853820800001,
+            "range": 0.05835924200000875
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 239,
+            "minimum": 236,
+            "maximum": 239,
+            "range": 3
+          }
+        },
+        "resume": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 114.25,
+            "minimum": 114.19921875,
+            "maximum": 114.3125,
+            "range": 0.11328125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 36.89106750488281,
+            "minimum": 36.861244201660156,
+            "maximum": 36.910072326660156,
+            "range": 0.048828125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 79.48828125,
+            "minimum": 79.11328125,
+            "maximum": 80.2109375,
+            "range": 1.09765625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 62.23828125,
+            "minimum": 62.19921875,
+            "maximum": 62.25390625,
+            "range": 0.0546875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 11.16015625,
+            "minimum": 11.13671875,
+            "maximum": 11.19921875,
+            "range": 0.0625
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 88.315,
+            "minimum": 84.078,
+            "maximum": 90.723,
+            "range": 6.644999999999996
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 196.24524799999926,
+            "minimum": 191.2935970000035,
+            "maximum": 201.13334300000133,
+            "range": 9.839745999997831
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 22.07875,
+            "minimum": 21.0195,
+            "maximum": 22.68075,
+            "range": 1.661249999999999
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 243359.5,
+            "minimum": 243359.5,
+            "maximum": 243359.5,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 8,
+            "minimum": 8,
+            "maximum": 8,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 59.718313446,
+            "minimum": 59.66973161200001,
+            "maximum": 59.732056117,
+            "range": 0.062324504999992314
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 57.714358154,
+            "minimum": 57.664966478000004,
+            "maximum": 57.728330502000006,
+            "range": 0.06336402400000196
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 20,
+            "minimum": 20,
+            "maximum": 20,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 239,
+            "minimum": 236,
+            "maximum": 239,
+            "range": 3
+          }
+        },
+        "reload": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 117.390625,
+            "minimum": 117.3359375,
+            "maximum": 117.44140625,
+            "range": 0.10546875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 38.21165466308594,
+            "minimum": 38.210662841796875,
+            "maximum": 38.23822784423828,
+            "range": 0.02756500244140625
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 82.73828125,
+            "minimum": 82.36328125,
+            "maximum": 83.2421875,
+            "range": 0.87890625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 65.39453125,
+            "minimum": 65.3515625,
+            "maximum": 65.40234375,
+            "range": 0.05078125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 11.15625,
+            "minimum": 11.13671875,
+            "maximum": 11.19921875,
+            "range": 0.0625
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 6.641,
+            "minimum": 6.615,
+            "maximum": 6.675,
+            "range": 0.05999999999999961
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 6.378371999999217,
+            "minimum": 6.34046600000147,
+            "maximum": 6.389626999996835,
+            "range": 0.04916099999536527
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 59.726862268,
+            "minimum": 59.677996237,
+            "maximum": 59.739808438,
+            "range": 0.06181220099999507
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 59.724774722999996,
+            "minimum": 59.676166517,
+            "maximum": 59.738453345,
+            "range": 0.062286828000004846
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 20,
+            "minimum": 20,
+            "maximum": 20,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 239,
+            "minimum": 236,
+            "maximum": 239,
+            "range": 3
+          }
+        }
+      },
+      "runs": [
+        {
+          "label": "scaling-small-documents-1",
+          "sha256": "0d1fe6bb789ab98fb1154711f6d43a87872739bb953f4a3e56d0a79fc40cb127"
+        },
+        {
+          "label": "scaling-small-documents-2",
+          "sha256": "16a58d25528051dcff70f836e4363977c0e7781ccab9914c183aead91060220a"
+        },
+        {
+          "label": "scaling-small-documents-3",
+          "sha256": "d3d045493d94cd02b4551aca14439d64ceb04c5834065416452fdf9fde403295"
+        }
+      ]
+    },
+    {
+      "workload": {
+        "counts": [
+          1,
+          4,
+          16,
+          64
+        ],
+        "rounds": 2,
+        "input_bytes": 65536,
+        "instructions_bytes": 262144,
+        "history_steps": null,
+        "idle_seconds": [
+          2,
+          35
+        ],
+        "settle_seconds": 2,
+        "contextRetentionMs": 600000,
+        "profile": "large",
+        "forced_gc": false
+      },
+      "policy": "default",
+      "document_retention_ms": 600000,
+      "image": "sha256:d18f5189cc16c9b119a543ea24c1574a22c3b26e6a1ae069389a042975c108ca",
+      "source_sha256": {
+        "files": {
+          "adapter/auth.mjs": "99c305677654fd3ab4a35787eb13528f50418cb4ecbefa739bdf80dd2708411c",
+          "adapter/pi.mjs": "c73640d3ca9ffdc03deea62d9452a9e485e7c0c50c9de2e852cc0c3aadaccfd1",
+          "adapter/protocol.mjs": "973738ce52d618868fed6454cf9a1ff84d08c8f28cb981b052574a829e6731f9",
+          "adapter/terminal.mjs": "cc2e9f3f30c54d3b3f27912db3d158a63306ad4327e059dbf0cc248ebe03f72a",
+          "adapter/view.mjs": "267e1e9686b0356ea297601effa4442391cedca49f7ba5e40122f8f20dcd2c47",
+          "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+          "benchmarks/profile.json": "a21de9d3a4140908ef156fa79b8619eb334e52d7c4edf1b51b84a9aa7d94e1ce",
+          "benchmarks/provider.mjs": "84e9d4056810dcfef5eb92608639930b171a9421bce12e62affe4286f1cd7f7e",
+          "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041"
+        },
+        "probe_sha256": "d4762f725b8b245d82196fcd53db8b436a22ca6bad1e8ce4ca68c4a0a7fa00f2"
+      },
+      "n": 3,
+      "comparison_available": true,
+      "totals": {
+        "cgroup_cpu_ms_since_node": {
+          "n": 3,
+          "median": 4836.654,
+          "minimum": 4792.08,
+          "maximum": 5115.343,
+          "range": 323.2629999999999
+        },
+        "completed_tasks": {
+          "n": 3,
+          "median": 132,
+          "minimum": 132,
+          "maximum": 132,
+          "range": 0
+        },
+        "elapsed_seconds": {
+          "n": 3,
+          "median": 60.822460899000006,
+          "minimum": 60.794064823,
+          "maximum": 61.706353749,
+          "range": 0.9122889260000022
+        },
+        "request_body_bytes": {
+          "n": 3,
+          "median": 109765478,
+          "minimum": 109765478,
+          "maximum": 109765478,
+          "range": 0
+        },
+        "request_count": {
+          "n": 3,
+          "median": 264,
+          "minimum": 264,
+          "maximum": 264,
+          "range": 0
+        },
+        "worker_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 3675.352,
+          "minimum": 3646.294,
+          "maximum": 3897.674,
+          "range": 251.3800000000001
+        },
+        "worker_task_operation_cpu_ms_per_task": {
+          "n": 3,
+          "median": 21.907848484848483,
+          "minimum": 21.66431818181818,
+          "maximum": 23.41447727272727,
+          "range": 1.75015909090909
+        },
+        "worker_task_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 2891.836,
+          "minimum": 2859.69,
+          "maximum": 3090.711,
+          "range": 231.02099999999973
+        }
+      },
+      "operational_16_to_64_session_slopes": {
+        "cgroup_anon_mib_per_added_session": {
+          "n": 3,
+          "median": 1.2364095052083333,
+          "minimum": 1.2296549479166667,
+          "maximum": 1.3247884114583333,
+          "range": 0.09513346354166652
+        },
+        "cgroup_file_mib_per_added_session": {
+          "n": 3,
+          "median": 1.4898274739583333,
+          "minimum": 1.489501953125,
+          "maximum": 1.490234375,
+          "range": 0.000732421875
+        },
+        "cgroup_memory_mib_per_added_session": {
+          "n": 3,
+          "median": 2.8024088541666665,
+          "minimum": 2.7976888020833335,
+          "maximum": 2.89599609375,
+          "range": 0.09830729166666652
+        },
+        "worker_heap_used_mib_per_added_session": {
+          "n": 3,
+          "median": 1.044174353281657,
+          "minimum": 1.0048702557881672,
+          "maximum": 1.1153947512308757,
+          "range": 0.11052449544270848
+        },
+        "worker_pss_mib_per_added_session": {
+          "n": 3,
+          "median": 1.2377115885416667,
+          "minimum": 1.23095703125,
+          "maximum": 1.3260904947916667,
+          "range": 0.09513346354166674
+        }
+      },
+      "checkpoints": {
+        "application_open": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 86.328125,
+            "minimum": 85.98046875,
+            "maximum": 88.16015625,
+            "range": 2.1796875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 18.402297973632812,
+            "minimum": 18.382827758789062,
+            "maximum": 18.47692108154297,
+            "range": 0.09409332275390625
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 42.171875,
+            "minimum": 41.546875,
+            "maximum": 44.40234375,
+            "range": 2.85546875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 37.61328125,
+            "minimum": 37.19140625,
+            "maximum": 39.30078125,
+            "range": 2.109375
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 0.15234375,
+            "minimum": 0.15234375,
+            "maximum": 0.15234375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 275.871,
+            "minimum": 269.999,
+            "maximum": 285.729,
+            "range": 15.729999999999961
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 251.46672299999997,
+            "minimum": 242.046369,
+            "maximum": 251.74417599999998,
+            "range": 9.697806999999983
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 2.26122847,
+            "minimum": 2.25156521,
+            "maximum": 2.261551534,
+            "range": 0.009986324000000213
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 0.257128728,
+            "minimum": 0.24705384800000002,
+            "maximum": 0.25723936199999997,
+            "range": 0.010185513999999951
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_1": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 108.62890625,
+            "minimum": 108.1015625,
+            "maximum": 109.25,
+            "range": 1.1484375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 27.800765991210938,
+            "minimum": 27.800277709960938,
+            "maximum": 27.855178833007812,
+            "range": 0.054901123046875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 64.67578125,
+            "minimum": 63.70703125,
+            "maximum": 66.02734375,
+            "range": 2.3203125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 56.765625,
+            "minimum": 56.1484375,
+            "maximum": 57.22265625,
+            "range": 1.07421875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 2.49609375,
+            "minimum": 2.49609375,
+            "maximum": 2.49609375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 202.755,
+            "minimum": 194.369,
+            "maximum": 204.819,
+            "range": 10.449999999999989
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 398.19721200000004,
+            "minimum": 393.07618100000036,
+            "maximum": 400.1361020000004,
+            "range": 7.059921000000031
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 101.3775,
+            "minimum": 97.1845,
+            "maximum": 102.4095,
+            "range": 5.224999999999994
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 821266.0,
+            "minimum": 821266.0,
+            "maximum": 821266.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 2,
+            "minimum": 2,
+            "maximum": 2,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 6.6808194620000005,
+            "minimum": 6.666213821,
+            "maximum": 6.684405043000001,
+            "range": 0.01819122200000045
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 4.676636966,
+            "minimum": 4.661846824,
+            "maximum": 4.679134418,
+            "range": 0.017287593999999906
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_4": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 119.9140625,
+            "minimum": 118.2890625,
+            "maximum": 121.625,
+            "range": 3.3359375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 36.75312042236328,
+            "minimum": 35.454734802246094,
+            "maximum": 38.2818603515625,
+            "range": 2.8271255493164062
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 84.33984375,
+            "minimum": 81.26953125,
+            "maximum": 84.87890625,
+            "range": 3.609375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 67.88671875,
+            "minimum": 66.3359375,
+            "maximum": 69.76171875,
+            "range": 3.42578125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 9.40625,
+            "minimum": 9.359375,
+            "maximum": 9.421875,
+            "range": 0.0625
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 164.303,
+            "minimum": 160.946,
+            "maximum": 184.697,
+            "range": 23.751000000000005
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 377.26641200000086,
+            "minimum": 365.9863809999988,
+            "maximum": 386.48754499999995,
+            "range": 20.501164000001154
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 27.38383333333333,
+            "minimum": 26.824333333333332,
+            "maximum": 30.782833333333333,
+            "range": 3.958500000000001
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 821267.8333333334,
+            "minimum": 821267.8333333334,
+            "maximum": 821267.8333333334,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 12,
+            "minimum": 12,
+            "maximum": 12,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 11.086698629,
+            "minimum": 11.084215779,
+            "maximum": 11.12713103,
+            "range": 0.04291525099999838
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 9.081865043,
+            "minimum": 9.08040179,
+            "maximum": 9.122953756,
+            "range": 0.04255196599999955
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_16": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 139.9375,
+            "minimum": 139.4140625,
+            "maximum": 144.52734375,
+            "range": 5.11328125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 49.31922149658203,
+            "minimum": 49.022544860839844,
+            "maximum": 52.79901123046875,
+            "range": 3.7764663696289062
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 122.6796875,
+            "minimum": 121.875,
+            "maximum": 128.71484375,
+            "range": 6.83984375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 88.07421875,
+            "minimum": 87.4609375,
+            "maximum": 92.5,
+            "range": 5.0390625
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 27.8359375,
+            "minimum": 27.8125,
+            "maximum": 27.86328125,
+            "range": 0.05078125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 555.402,
+            "minimum": 545.723,
+            "maximum": 590.196,
+            "range": 44.47300000000007
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1212.1329870000009,
+            "minimum": 1197.2820410000004,
+            "maximum": 1392.5030060000008,
+            "range": 195.22096500000043
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 23.141750000000002,
+            "minimum": 22.73845833333333,
+            "maximum": 24.5915,
+            "range": 1.8530416666666696
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 821273.0,
+            "minimum": 821273.0,
+            "maximum": 821273.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 48,
+            "minimum": 48,
+            "maximum": 48,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 16.426334239000003,
+            "minimum": 16.403456192999997,
+            "maximum": 16.71587988,
+            "range": 0.31242368700000256
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 14.420971788000001,
+            "minimum": 14.399098847000001,
+            "maximum": 14.710884108,
+            "range": 0.3117852609999989
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_64": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 203.58984375,
+            "minimum": 198.82421875,
+            "maximum": 203.61328125,
+            "range": 4.7890625
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 101.03278350830078,
+            "minimum": 99.14291381835938,
+            "maximum": 102.85816955566406,
+            "range": 3.7152557373046875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 261.6875,
+            "minimum": 256.390625,
+            "maximum": 263.00390625,
+            "range": 6.61328125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 151.5234375,
+            "minimum": 146.80859375,
+            "maximum": 151.6640625,
+            "range": 4.85546875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.359375,
+            "minimum": 99.32421875,
+            "maximum": 99.3671875,
+            "range": 0.04296875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 1842.605,
+            "minimum": 1813.68,
+            "maximum": 1972.814,
+            "range": 159.13400000000001
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 4720.653339,
+            "minimum": 4710.730790000001,
+            "maximum": 5027.589046000001,
+            "range": 316.8582559999995
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 19.193802083333335,
+            "minimum": 18.892500000000002,
+            "maximum": 20.550145833333335,
+            "range": 1.6576458333333335
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 821277.8854166666,
+            "minimum": 821277.8854166666,
+            "maximum": 821277.8854166666,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 192,
+            "minimum": 192,
+            "maximum": 192,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 25.544572869000003,
+            "minimum": 25.528441831,
+            "maximum": 26.422309491,
+            "range": 0.8938676600000015
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 23.539195770000003,
+            "minimum": 23.522186501,
+            "maximum": 24.415914032,
+            "range": 0.8937275309999997
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_2s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 203.58984375,
+            "minimum": 198.82421875,
+            "maximum": 203.61328125,
+            "range": 4.7890625
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 101.12846374511719,
+            "minimum": 99.23865509033203,
+            "maximum": 102.95384979248047,
+            "range": 3.7151947021484375
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 261.6875,
+            "minimum": 256.390625,
+            "maximum": 263.00390625,
+            "range": 6.61328125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 151.5234375,
+            "minimum": 146.80859375,
+            "maximum": 151.6640625,
+            "range": 4.85546875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.359375,
+            "minimum": 99.32421875,
+            "maximum": 99.3671875,
+            "range": 0.04296875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 0.189,
+            "minimum": 0.17,
+            "maximum": 0.189,
+            "range": 0.01899999999999999
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1.2297199999993609,
+            "minimum": 1.2164350000020931,
+            "maximum": 1.2301189999998314,
+            "range": 0.013683999997738283
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 25.547844153000003,
+            "minimum": 25.531868361999997,
+            "maximum": 26.42727412,
+            "range": 0.8954057580000025
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 25.545891469,
+            "minimum": 25.529758776999998,
+            "maximum": 26.423620628000002,
+            "range": 0.893861851000004
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_35s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 171.13671875,
+            "minimum": 169.67578125,
+            "maximum": 172.0078125,
+            "range": 2.33203125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 88.65404510498047,
+            "minimum": 88.6236572265625,
+            "maximum": 88.79845428466797,
+            "range": 0.17479705810546875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 226.6953125,
+            "minimum": 226.140625,
+            "maximum": 228.625,
+            "range": 2.484375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 119.2109375,
+            "minimum": 117.66015625,
+            "maximum": 119.91796875,
+            "range": 2.2578125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.32421875,
+            "minimum": 95.73828125,
+            "maximum": 99.34765625,
+            "range": 3.609375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 96.439,
+            "minimum": 94.151,
+            "maximum": 97.087,
+            "range": 2.936000000000007
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 33016.697972,
+            "minimum": 33014.435280000005,
+            "maximum": 33018.040607999996,
+            "range": 3.60532799999055
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 58.569683631,
+            "minimum": 58.552185849000004,
+            "maximum": 59.445504525,
+            "range": 0.8933186759999927
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 58.565952249,
+            "minimum": 58.548641264000004,
+            "maximum": 59.441779206,
+            "range": 0.8931379419999956
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "resume": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 184.62890625,
+            "minimum": 183.21484375,
+            "maximum": 184.73828125,
+            "range": 1.5234375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 91.48506164550781,
+            "minimum": 91.41724395751953,
+            "maximum": 94.51536560058594,
+            "range": 3.0981216430664062
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 240.6015625,
+            "minimum": 240.42578125,
+            "maximum": 243.1640625,
+            "range": 2.73828125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 132.5390625,
+            "minimum": 131.19921875,
+            "maximum": 132.8125,
+            "range": 1.61328125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.86328125,
+            "minimum": 96.3515625,
+            "maximum": 99.90625,
+            "range": 3.5546875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 136.45,
+            "minimum": 135.293,
+            "maximum": 138.185,
+            "range": 2.891999999999996
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 216.70771300000342,
+            "minimum": 210.00543900000048,
+            "maximum": 226.23954200000298,
+            "range": 16.234103000002506
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 34.1125,
+            "minimum": 33.82325,
+            "maximum": 34.54625,
+            "range": 0.722999999999999
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 1160527.5,
+            "minimum": 1160527.5,
+            "maximum": 1160527.5,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 8,
+            "minimum": 8,
+            "maximum": 8,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 60.793320290000004,
+            "minimum": 60.769148493,
+            "maximum": 61.680466122999995,
+            "range": 0.9113176299999921
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 58.787879691,
+            "minimum": 58.763644243,
+            "maximum": 59.675162268,
+            "range": 0.9115180249999995
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "reload": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 185.56640625,
+            "minimum": 184.0859375,
+            "maximum": 186.18359375,
+            "range": 2.09765625
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 95.08765411376953,
+            "minimum": 93.57266998291016,
+            "maximum": 95.14933776855469,
+            "range": 1.5766677856445312
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 242.5234375,
+            "minimum": 241.6015625,
+            "maximum": 244.16015625,
+            "range": 2.55859375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 132.5390625,
+            "minimum": 131.19921875,
+            "maximum": 132.8125,
+            "range": 1.61328125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.86328125,
+            "minimum": 96.3515625,
+            "maximum": 99.90625,
+            "range": 3.5546875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 10.825,
+            "minimum": 10.37,
+            "maximum": 11.675,
+            "range": 1.3050000000000015
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 10.5604949999979,
+            "minimum": 10.126133999998274,
+            "maximum": 14.383751000001212,
+            "range": 4.257617000002938
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 60.811257845,
+            "minimum": 60.782598748000005,
+            "maximum": 61.694730664000005,
+            "range": 0.9121319159999999
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 60.807775191,
+            "minimum": 60.779343921,
+            "maximum": 61.69109618,
+            "range": 0.9117522590000036
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        }
+      },
+      "runs": [
+        {
+          "label": "scaling-large-default-1",
+          "sha256": "102902da3059ec8e3f0007c462ca0f3feaeb5a6fd5fd0f396c2ddb9966d47faa"
+        },
+        {
+          "label": "scaling-large-default-2",
+          "sha256": "87b2b55c15da16d073454be08706f2aebe0e3ca3f1fdc4bf595aba9dbf1a1011"
+        },
+        {
+          "label": "scaling-large-default-3",
+          "sha256": "459f7fef844d0923c31966145a13b4275ec2b1a7ef7ea196e331f85bd5cde056"
+        }
+      ]
+    },
+    {
+      "workload": {
+        "counts": [
+          1,
+          4,
+          16,
+          64
+        ],
+        "rounds": 2,
+        "input_bytes": 65536,
+        "instructions_bytes": 262144,
+        "history_steps": null,
+        "idle_seconds": [
+          2,
+          35
+        ],
+        "settle_seconds": 2,
+        "contextRetentionMs": 600000,
+        "profile": "large",
+        "forced_gc": false
+      },
+      "policy": "documents",
+      "document_retention_ms": 30000,
+      "image": "sha256:d18f5189cc16c9b119a543ea24c1574a22c3b26e6a1ae069389a042975c108ca",
+      "source_sha256": {
+        "files": {
+          "adapter/auth.mjs": "99c305677654fd3ab4a35787eb13528f50418cb4ecbefa739bdf80dd2708411c",
+          "adapter/pi.mjs": "c73640d3ca9ffdc03deea62d9452a9e485e7c0c50c9de2e852cc0c3aadaccfd1",
+          "adapter/protocol.mjs": "973738ce52d618868fed6454cf9a1ff84d08c8f28cb981b052574a829e6731f9",
+          "adapter/terminal.mjs": "cc2e9f3f30c54d3b3f27912db3d158a63306ad4327e059dbf0cc248ebe03f72a",
+          "adapter/view.mjs": "267e1e9686b0356ea297601effa4442391cedca49f7ba5e40122f8f20dcd2c47",
+          "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+          "benchmarks/profile.json": "a21de9d3a4140908ef156fa79b8619eb334e52d7c4edf1b51b84a9aa7d94e1ce",
+          "benchmarks/provider.mjs": "84e9d4056810dcfef5eb92608639930b171a9421bce12e62affe4286f1cd7f7e",
+          "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041"
+        },
+        "probe_sha256": "d4762f725b8b245d82196fcd53db8b436a22ca6bad1e8ce4ca68c4a0a7fa00f2"
+      },
+      "n": 3,
+      "comparison_available": true,
+      "totals": {
+        "cgroup_cpu_ms_since_node": {
+          "n": 3,
+          "median": 5053.05,
+          "minimum": 4858.294,
+          "maximum": 5077.531,
+          "range": 219.23700000000008
+        },
+        "completed_tasks": {
+          "n": 3,
+          "median": 132,
+          "minimum": 132,
+          "maximum": 132,
+          "range": 0
+        },
+        "elapsed_seconds": {
+          "n": 3,
+          "median": 60.912247141,
+          "minimum": 60.778278444,
+          "maximum": 61.692580711000005,
+          "range": 0.9143022670000036
+        },
+        "request_body_bytes": {
+          "n": 3,
+          "median": 109765478,
+          "minimum": 109765478,
+          "maximum": 109765478,
+          "range": 0
+        },
+        "request_count": {
+          "n": 3,
+          "median": 264,
+          "minimum": 264,
+          "maximum": 264,
+          "range": 0
+        },
+        "worker_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 3856.192,
+          "minimum": 3697.912,
+          "maximum": 3868.555,
+          "range": 170.64300000000003
+        },
+        "worker_task_operation_cpu_ms_per_task": {
+          "n": 3,
+          "median": 22.707780303030304,
+          "minimum": 21.902583333333332,
+          "maximum": 22.997833333333332,
+          "range": 1.09525
+        },
+        "worker_task_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 2997.427,
+          "minimum": 2891.141,
+          "maximum": 3035.714,
+          "range": 144.57299999999987
+        }
+      },
+      "operational_16_to_64_session_slopes": {
+        "cgroup_anon_mib_per_added_session": {
+          "n": 3,
+          "median": 1.3046875,
+          "minimum": 1.2325846354166667,
+          "maximum": 1.6871744791666667,
+          "range": 0.45458984375
+        },
+        "cgroup_file_mib_per_added_session": {
+          "n": 3,
+          "median": 1.4893391927083333,
+          "minimum": 1.4877115885416667,
+          "maximum": 1.4906412760416667,
+          "range": 0.0029296875
+        },
+        "cgroup_memory_mib_per_added_session": {
+          "n": 3,
+          "median": 2.8819986979166665,
+          "minimum": 2.8060709635416665,
+          "maximum": 3.274169921875,
+          "range": 0.4680989583333335
+        },
+        "worker_heap_used_mib_per_added_session": {
+          "n": 3,
+          "median": 1.1144741376241047,
+          "minimum": 1.089705467224121,
+          "maximum": 1.579557736714681,
+          "range": 0.4898522694905598
+        },
+        "worker_pss_mib_per_added_session": {
+          "n": 3,
+          "median": 1.3059895833333333,
+          "minimum": 1.23388671875,
+          "maximum": 1.6884765625,
+          "range": 0.45458984375
+        }
+      },
+      "checkpoints": {
+        "application_open": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 87.62109375,
+            "minimum": 87.140625,
+            "maximum": 87.6328125,
+            "range": 0.4921875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 18.40478515625,
+            "minimum": 18.403785705566406,
+            "maximum": 18.427230834960938,
+            "range": 0.02344512939453125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 43.88671875,
+            "minimum": 43.13671875,
+            "maximum": 44.0625,
+            "range": 0.92578125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 38.76953125,
+            "minimum": 38.3046875,
+            "maximum": 38.92578125,
+            "range": 0.62109375
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 0.15234375,
+            "minimum": 0.15234375,
+            "maximum": 0.15234375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 276.036,
+            "minimum": 275.263,
+            "maximum": 281.793,
+            "range": 6.53000000000003
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 246.356582,
+            "minimum": 245.16779100000002,
+            "maximum": 248.711759,
+            "range": 3.5439679999999782
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 2.255879296,
+            "minimum": 2.254060252,
+            "maximum": 2.257807395,
+            "range": 0.0037471430000000083
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 0.251327319,
+            "minimum": 0.25028635200000005,
+            "maximum": 0.254098535,
+            "range": 0.003812182999999969
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_1": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 108.54296875,
+            "minimum": 108.26953125,
+            "maximum": 108.64453125,
+            "range": 0.375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 27.863449096679688,
+            "minimum": 27.856765747070312,
+            "maximum": 28.212753295898438,
+            "range": 0.355987548828125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 65.44140625,
+            "minimum": 64.74609375,
+            "maximum": 65.53125,
+            "range": 0.78515625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 56.5546875,
+            "minimum": 56.2734375,
+            "maximum": 56.75390625,
+            "range": 0.48046875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 2.49609375,
+            "minimum": 2.49609375,
+            "maximum": 2.49609375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 197.408,
+            "minimum": 190.437,
+            "maximum": 204.126,
+            "range": 13.688999999999993
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 399.0047749999994,
+            "minimum": 391.17393099999936,
+            "maximum": 402.32926399999997,
+            "range": 11.15533300000061
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 98.704,
+            "minimum": 95.2185,
+            "maximum": 102.063,
+            "range": 6.8444999999999965
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 821266.0,
+            "minimum": 821266.0,
+            "maximum": 821266.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 2,
+            "minimum": 2,
+            "maximum": 2,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 6.676879095,
+            "minimum": 6.6712852830000005,
+            "maximum": 6.67744017,
+            "range": 0.006154886999999221
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 4.672218642,
+            "minimum": 4.666678709,
+            "maximum": 4.673306106,
+            "range": 0.006627396999999924
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_4": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 120.6875,
+            "minimum": 120.62109375,
+            "maximum": 120.94140625,
+            "range": 0.3203125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 36.917091369628906,
+            "minimum": 36.879486083984375,
+            "maximum": 37.04833984375,
+            "range": 0.168853759765625
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 85.09765625,
+            "minimum": 84.5,
+            "maximum": 85.19921875,
+            "range": 0.69921875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 68.69921875,
+            "minimum": 68.625,
+            "maximum": 69.05078125,
+            "range": 0.42578125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 9.40625,
+            "minimum": 9.37109375,
+            "maximum": 9.42578125,
+            "range": 0.0546875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 173.898,
+            "minimum": 165.89,
+            "maximum": 176.884,
+            "range": 10.994
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 370.85917899999913,
+            "minimum": 363.03512599999885,
+            "maximum": 377.7951359999988,
+            "range": 14.760009999999966
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 28.983,
+            "minimum": 27.64833333333333,
+            "maximum": 29.480666666666664,
+            "range": 1.8323333333333345
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 821267.8333333334,
+            "minimum": 821267.8333333334,
+            "maximum": 821267.8333333334,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 12,
+            "minimum": 12,
+            "maximum": 12,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 11.083075218999998,
+            "minimum": 11.079418489,
+            "maximum": 11.094496240999998,
+            "range": 0.015077751999998057
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 9.078225843999999,
+            "minimum": 9.074655264999999,
+            "maximum": 9.089993189,
+            "range": 0.015337924000000669
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_16": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 139.80859375,
+            "minimum": 139.19140625,
+            "maximum": 147.76171875,
+            "range": 8.5703125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 47.381492614746094,
+            "minimum": 47.313926696777344,
+            "maximum": 57.991943359375,
+            "range": 10.678016662597656
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 123.3671875,
+            "minimum": 122.91796875,
+            "maximum": 131.640625,
+            "range": 8.72265625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 87.8125,
+            "minimum": 87.203125,
+            "maximum": 95.87109375,
+            "range": 8.66796875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 27.8359375,
+            "minimum": 27.828125,
+            "maximum": 27.859375,
+            "range": 0.03125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 562.701,
+            "minimum": 545.104,
+            "maximum": 568.799,
+            "range": 23.694999999999936
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1201.7478709999996,
+            "minimum": 1185.6457050000008,
+            "maximum": 1233.5978969999996,
+            "range": 47.95219199999883
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 23.445875,
+            "minimum": 22.712666666666667,
+            "maximum": 23.69995833333333,
+            "range": 0.987291666666664
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 821273.0,
+            "minimum": 821273.0,
+            "maximum": 821273.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 48,
+            "minimum": 48,
+            "maximum": 48,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 16.423397111,
+            "minimum": 16.385128713,
+            "maximum": 16.443388958,
+            "range": 0.0582602449999996
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 14.418231768,
+            "minimum": 14.379098748,
+            "maximum": 14.438183881999999,
+            "range": 0.05908513399999826
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_64": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 201.87890625,
+            "minimum": 199.03515625,
+            "maximum": 228.80859375,
+            "range": 29.7734375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 100.87625122070312,
+            "minimum": 99.61978912353516,
+            "maximum": 133.8107147216797,
+            "range": 34.19092559814453
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 261.25390625,
+            "minimum": 258.05859375,
+            "maximum": 288.80078125,
+            "range": 30.7421875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 149.828125,
+            "minimum": 146.9765625,
+            "maximum": 176.85546875,
+            "range": 29.87890625
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.32421875,
+            "minimum": 99.26953125,
+            "maximum": 99.37890625,
+            "range": 0.109375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 1908.947,
+            "minimum": 1837.719,
+            "maximum": 1947.555,
+            "range": 109.83600000000001
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 4813.513129999999,
+            "minimum": 4722.073161,
+            "maximum": 5539.488235000001,
+            "range": 817.4150740000005
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 19.884864583333332,
+            "minimum": 19.14290625,
+            "maximum": 20.287031250000002,
+            "range": 1.1441250000000025
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 821277.8854166666,
+            "minimum": 821277.8854166666,
+            "maximum": 821277.8854166666,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 192,
+            "minimum": 192,
+            "maximum": 192,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 25.655077219,
+            "minimum": 25.519304616000003,
+            "maximum": 26.434267695,
+            "range": 0.9149630789999961
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 23.648382158,
+            "minimum": 23.513101193999997,
+            "maximum": 24.428446,
+            "range": 0.9153448060000038
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_2s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 201.87890625,
+            "minimum": 199.03515625,
+            "maximum": 228.80859375,
+            "range": 29.7734375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 100.97174072265625,
+            "minimum": 99.71527862548828,
+            "maximum": 133.90623474121094,
+            "range": 34.190956115722656
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 261.25390625,
+            "minimum": 258.05859375,
+            "maximum": 288.80078125,
+            "range": 30.7421875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 149.828125,
+            "minimum": 146.9765625,
+            "maximum": 176.85546875,
+            "range": 29.87890625
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.32421875,
+            "minimum": 99.26953125,
+            "maximum": 99.37890625,
+            "range": 0.109375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 0.174,
+            "minimum": 0.159,
+            "maximum": 0.186,
+            "range": 0.026999999999999996
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1.222036000002845,
+            "minimum": 1.2044849999983853,
+            "maximum": 1.293045999998867,
+            "range": 0.08856100000048173
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 25.657661451,
+            "minimum": 25.522654427000003,
+            "maximum": 26.439468979999997,
+            "range": 0.9168145529999947
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 25.656371737999997,
+            "minimum": 25.520684801999998,
+            "maximum": 26.435588895000002,
+            "range": 0.9149040930000041
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_35s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 170.48046875,
+            "minimum": 167.890625,
+            "maximum": 172.10546875,
+            "range": 4.21484375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 89.37300109863281,
+            "minimum": 88.73902130126953,
+            "maximum": 89.38007354736328,
+            "range": 0.64105224609375
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 229.171875,
+            "minimum": 226.08984375,
+            "maximum": 231.67578125,
+            "range": 5.5859375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 118.53515625,
+            "minimum": 115.828125,
+            "maximum": 120.05078125,
+            "range": 4.22265625
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.30078125,
+            "minimum": 99.23828125,
+            "maximum": 99.37890625,
+            "range": 0.140625
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 111.883,
+            "minimum": 108.35,
+            "maximum": 117.453,
+            "range": 9.103000000000009
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 32994.660889,
+            "minimum": 32993.785753000004,
+            "maximum": 32995.935908,
+            "range": 2.1501549999957206
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 58.655893446,
+            "minimum": 58.522314488999996,
+            "maximum": 59.436809221,
+            "range": 0.9144947320000014
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 58.652363627999996,
+            "minimum": 58.518663359,
+            "maximum": 59.433329031,
+            "range": 0.9146656719999982
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 306,
+            "minimum": 306,
+            "maximum": 309,
+            "range": 3
+          }
+        },
+        "resume": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 168.33203125,
+            "minimum": 167.6015625,
+            "maximum": 170.4453125,
+            "range": 2.84375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 77.94261932373047,
+            "minimum": 76.21662902832031,
+            "maximum": 81.11402893066406,
+            "range": 4.89739990234375
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 227.18359375,
+            "minimum": 226.66015625,
+            "maximum": 230.4140625,
+            "range": 3.75390625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 116.2734375,
+            "minimum": 115.6484375,
+            "maximum": 118.39453125,
+            "range": 2.74609375
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.90234375,
+            "minimum": 99.85546875,
+            "maximum": 99.9140625,
+            "range": 0.05859375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 147.434,
+            "minimum": 145.02,
+            "maximum": 152.36,
+            "range": 7.340000000000003
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 222.51795100000163,
+            "minimum": 218.47353699999803,
+            "maximum": 225.66441900000063,
+            "range": 7.190882000002603
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 36.8585,
+            "minimum": 36.255,
+            "maximum": 38.09,
+            "range": 1.8350000000000009
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 1160527.5,
+            "minimum": 1160527.5,
+            "maximum": 1160527.5,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 8,
+            "minimum": 8,
+            "maximum": 8,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 60.88254951,
+            "minimum": 60.755897401,
+            "maximum": 61.666672209,
+            "range": 0.9107748079999993
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 58.876910589,
+            "minimum": 58.749698583,
+            "maximum": 59.660843564000004,
+            "range": 0.9111449810000067
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 20,
+            "minimum": 20,
+            "maximum": 20,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 306,
+            "minimum": 306,
+            "maximum": 309,
+            "range": 3
+          }
+        },
+        "reload": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 170.73046875,
+            "minimum": 169.578125,
+            "maximum": 172.70703125,
+            "range": 3.12890625
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 80.11283111572266,
+            "minimum": 79.9275131225586,
+            "maximum": 81.72240447998047,
+            "range": 1.794891357421875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 229.66015625,
+            "minimum": 228.43359375,
+            "maximum": 232.9140625,
+            "range": 4.48046875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 118.39453125,
+            "minimum": 116.2734375,
+            "maximum": 118.77734375,
+            "range": 2.50390625
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 99.90234375,
+            "minimum": 99.85546875,
+            "maximum": 99.9140625,
+            "range": 0.05859375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 11.434,
+            "minimum": 10.602,
+            "maximum": 11.666,
+            "range": 1.064
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 11.048000000002503,
+            "minimum": 10.514362999994773,
+            "maximum": 11.352644999999029,
+            "range": 0.8382820000042557
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 60.897311265,
+            "minimum": 60.769530224,
+            "maximum": 61.680865,
+            "range": 0.9113347759999968
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 60.893977551999996,
+            "minimum": 60.766480306,
+            "maximum": 61.67778882,
+            "range": 0.9113085140000052
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 20,
+            "minimum": 20,
+            "maximum": 20,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 306,
+            "minimum": 306,
+            "maximum": 309,
+            "range": 3
+          }
+        }
+      },
+      "runs": [
+        {
+          "label": "scaling-large-documents-1",
+          "sha256": "de98a42f1a5b495a79ce36f35977f66cb9f6c11a048d2d84ee53e454d590eb9b"
+        },
+        {
+          "label": "scaling-large-documents-2",
+          "sha256": "201376f482cce8b69526ffb4fa66e879cace3d654e578305c4126fb09d518235"
+        },
+        {
+          "label": "scaling-large-documents-3",
+          "sha256": "4f8c20b5ff2dd431641405e48e587ba7921f47c077c333494750d96afb9add7b"
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "workload": {
+        "counts": [
+          4
+        ],
+        "rounds": 2,
+        "input_bytes": 56,
+        "instructions_bytes": 0,
+        "history_steps": [
+          1,
+          10,
+          25,
+          50
+        ],
+        "idle_seconds": [
+          2,
+          35
+        ],
+        "settle_seconds": 2,
+        "contextRetentionMs": 600000,
+        "profile": "history",
+        "forced_gc": false
+      },
+      "policy": "documents",
+      "document_retention_ms": 30000,
+      "image": "sha256:d18f5189cc16c9b119a543ea24c1574a22c3b26e6a1ae069389a042975c108ca",
+      "source_sha256": {
+        "files": {
+          "adapter/auth.mjs": "99c305677654fd3ab4a35787eb13528f50418cb4ecbefa739bdf80dd2708411c",
+          "adapter/pi.mjs": "c73640d3ca9ffdc03deea62d9452a9e485e7c0c50c9de2e852cc0c3aadaccfd1",
+          "adapter/protocol.mjs": "973738ce52d618868fed6454cf9a1ff84d08c8f28cb981b052574a829e6731f9",
+          "adapter/terminal.mjs": "cc2e9f3f30c54d3b3f27912db3d158a63306ad4327e059dbf0cc248ebe03f72a",
+          "adapter/view.mjs": "267e1e9686b0356ea297601effa4442391cedca49f7ba5e40122f8f20dcd2c47",
+          "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+          "benchmarks/profile.json": "a21de9d3a4140908ef156fa79b8619eb334e52d7c4edf1b51b84a9aa7d94e1ce",
+          "benchmarks/provider.mjs": "84e9d4056810dcfef5eb92608639930b171a9421bce12e62affe4286f1cd7f7e",
+          "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041"
+        },
+        "probe_sha256": "d4762f725b8b245d82196fcd53db8b436a22ca6bad1e8ce4ca68c4a0a7fa00f2"
+      },
+      "n": 3,
+      "comparison_available": false,
+      "totals": {
+        "cgroup_cpu_ms_since_node": {
+          "n": 3,
+          "median": 6471.888,
+          "minimum": 6450.929,
+          "maximum": 6642.462,
+          "range": 191.53300000000036
+        },
+        "completed_tasks": {
+          "n": 3,
+          "median": 204,
+          "minimum": 204,
+          "maximum": 204,
+          "range": 0
+        },
+        "elapsed_seconds": {
+          "n": 3,
+          "median": 57.616041186000004,
+          "minimum": 57.613433643,
+          "maximum": 57.692237041,
+          "range": 0.07880339799999803
+        },
+        "request_body_bytes": {
+          "n": 3,
+          "median": 194252270,
+          "minimum": 194252270,
+          "maximum": 194252270,
+          "range": 0
+        },
+        "request_count": {
+          "n": 3,
+          "median": 416,
+          "minimum": 416,
+          "maximum": 416,
+          "range": 0
+        },
+        "worker_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 4739.413,
+          "minimum": 4704.238,
+          "maximum": 4873.629,
+          "range": 169.39099999999962
+        },
+        "worker_task_operation_cpu_ms_per_task": {
+          "n": 3,
+          "median": 21.350230392156863,
+          "minimum": 21.150053921568627,
+          "maximum": 21.952338235294118,
+          "range": 0.8022843137254903
+        },
+        "worker_task_operation_cpu_ms_sum": {
+          "n": 3,
+          "median": 4355.447,
+          "minimum": 4314.611,
+          "maximum": 4478.277,
+          "range": 163.66600000000017
+        }
+      },
+      "operational_16_to_64_session_slopes": {},
+      "checkpoints": {
+        "application_open": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 85.23046875,
+            "minimum": 84.90234375,
+            "maximum": 85.85546875,
+            "range": 0.953125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 18.462020874023438,
+            "minimum": 18.381134033203125,
+            "maximum": 18.83948516845703,
+            "range": 0.45835113525390625
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 41.10546875,
+            "minimum": 40.94140625,
+            "maximum": 41.3828125,
+            "range": 0.44140625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 36.4375,
+            "minimum": 36.05078125,
+            "maximum": 37.03125,
+            "range": 0.98046875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 0.15234375,
+            "minimum": 0.15234375,
+            "maximum": 0.15234375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 278.699,
+            "minimum": 278.007,
+            "maximum": 280.953,
+            "range": 2.9459999999999695
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 254.378964,
+            "minimum": 252.54486200000002,
+            "maximum": 258.925567,
+            "range": 6.380704999999978
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 2.264040132,
+            "minimum": 2.261634653,
+            "maximum": 2.2684442209999998,
+            "range": 0.006809567999999544
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 0.259885282,
+            "minimum": 0.25761080300000005,
+            "maximum": 0.264581131,
+            "range": 0.00697032799999997
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "history_1": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 100.27734375,
+            "minimum": 99.77734375,
+            "maximum": 100.28125,
+            "range": 0.50390625
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 27.935752868652344,
+            "minimum": 27.00707244873047,
+            "maximum": 27.940956115722656,
+            "range": 0.9338836669921875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 56.4453125,
+            "minimum": 56.30859375,
+            "maximum": 56.73828125,
+            "range": 0.4296875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 48.2890625,
+            "minimum": 47.7734375,
+            "maximum": 48.3125,
+            "range": 0.5390625
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 3.23046875,
+            "minimum": 3.22265625,
+            "maximum": 3.3125,
+            "range": 0.08984375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 226.816,
+            "minimum": 224.502,
+            "maximum": 231.605,
+            "range": 7.10299999999998
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 293.31857800000034,
+            "minimum": 291.5012829999996,
+            "maximum": 296.70388100000037,
+            "range": 5.202598000000762
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 56.704,
+            "minimum": 56.1255,
+            "maximum": 57.90125,
+            "range": 1.775749999999995
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 52935.0,
+            "minimum": 52935.0,
+            "maximum": 52935.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 8,
+            "minimum": 8,
+            "maximum": 8,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 6.581085685,
+            "minimum": 6.5732644350000005,
+            "maximum": 6.581531942000001,
+            "range": 0.00826750700000023
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 4.577826256000001,
+            "minimum": 4.569780742,
+            "maximum": 4.578416695,
+            "range": 0.008635952999999752
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "history_10": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 132.4921875,
+            "minimum": 130.75,
+            "maximum": 132.9375,
+            "range": 2.1875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 39.209442138671875,
+            "minimum": 39.159141540527344,
+            "maximum": 39.990509033203125,
+            "range": 0.8313674926757812
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 92.62890625,
+            "minimum": 90.9765625,
+            "maximum": 93.28515625,
+            "range": 2.30859375
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 80.5234375,
+            "minimum": 78.76171875,
+            "maximum": 80.93359375,
+            "range": 2.171875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 6.21875,
+            "minimum": 6.20703125,
+            "maximum": 6.2890625,
+            "range": 0.08203125
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 727.833,
+            "minimum": 717.963,
+            "maximum": 754.98,
+            "range": 37.01700000000005
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1726.8914619999996,
+            "minimum": 1721.3208489999997,
+            "maximum": 1761.686243000001,
+            "range": 40.36539400000129
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 20.217583333333334,
+            "minimum": 19.943416666666664,
+            "maximum": 20.971666666666668,
+            "range": 1.0282500000000034
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 528998.5833333334,
+            "minimum": 528998.5833333334,
+            "maximum": 528998.5833333334,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 72,
+            "minimum": 72,
+            "maximum": 72,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 36,
+            "minimum": 36,
+            "maximum": 36,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 10.306476948,
+            "minimum": 10.304786489999998,
+            "maximum": 10.348174983000002,
+            "range": 0.04338849300000369
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 8.302486812,
+            "minimum": 8.300237031999998,
+            "maximum": 8.343300381,
+            "range": 0.043063349000002304
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "history_25": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 142.453125,
+            "minimum": 136.671875,
+            "maximum": 145.56640625,
+            "range": 8.89453125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 43.773193359375,
+            "minimum": 39.404083251953125,
+            "maximum": 50.915313720703125,
+            "range": 11.51123046875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 105.76171875,
+            "minimum": 99.953125,
+            "maximum": 109.15234375,
+            "range": 9.19921875
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 90.44921875,
+            "minimum": 84.703125,
+            "maximum": 93.578125,
+            "range": 8.875
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 9.23828125,
+            "minimum": 9.21484375,
+            "maximum": 9.2890625,
+            "range": 0.07421875
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 1313.001,
+            "minimum": 1292.11,
+            "maximum": 1366.144,
+            "range": 74.0340000000001
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 3115.8629250000013,
+            "minimum": 3107.0071050000006,
+            "maximum": 3145.653204,
+            "range": 38.646098999999595
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 21.88335,
+            "minimum": 21.535166666666665,
+            "maximum": 22.769066666666667,
+            "range": 1.233900000000002
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 1213086.6833333333,
+            "minimum": 1213086.6833333333,
+            "maximum": 1213086.6833333333,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 124,
+            "minimum": 124,
+            "maximum": 124,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 60,
+            "minimum": 60,
+            "maximum": 60,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 15.427041841,
+            "minimum": 15.416035997,
+            "maximum": 15.498145831,
+            "range": 0.0821098340000006
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 13.422425122,
+            "minimum": 13.41187474,
+            "maximum": 13.49391537,
+            "range": 0.08204062999999984
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "history_50": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 154.05078125,
+            "minimum": 148.796875,
+            "maximum": 155.88671875,
+            "range": 7.08984375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 38.03401184082031,
+            "minimum": 35.72563171386719,
+            "maximum": 38.10944366455078,
+            "range": 2.3838119506835938
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 122.8203125,
+            "minimum": 117.14453125,
+            "maximum": 124.45703125,
+            "range": 7.3125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 102.046875,
+            "minimum": 96.828125,
+            "maximum": 103.859375,
+            "range": 7.03125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 14.0234375,
+            "minimum": 14.00390625,
+            "maximum": 14.09375,
+            "range": 0.08984375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 1980.779,
+            "minimum": 1977.557,
+            "maximum": 2006.048,
+            "range": 28.490999999999985
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 4946.928911999999,
+            "minimum": 4938.729902000001,
+            "maximum": 4955.648648,
+            "range": 16.918745999999373
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 19.80779,
+            "minimum": 19.775570000000002,
+            "maximum": 20.06048,
+            "range": 0.28490999999999644
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 989172.4,
+            "minimum": 989172.4,
+            "maximum": 989172.4,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 204,
+            "minimum": 204,
+            "maximum": 204,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 100,
+            "minimum": 100,
+            "maximum": 100,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 22.375345441999997,
+            "minimum": 22.371277762000002,
+            "maximum": 22.449640770000002,
+            "range": 0.07836300800000018
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 20.371763335,
+            "minimum": 20.365849822,
+            "maximum": 20.44515985,
+            "range": 0.07931002799999831
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_2s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 154.18359375,
+            "minimum": 148.9296875,
+            "maximum": 156.01171875,
+            "range": 7.08203125
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 38.13612365722656,
+            "minimum": 35.830902099609375,
+            "maximum": 38.214576721191406,
+            "range": 2.3836746215820312
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 122.8203125,
+            "minimum": 117.14453125,
+            "maximum": 124.45703125,
+            "range": 7.3125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 102.046875,
+            "minimum": 96.828125,
+            "maximum": 103.859375,
+            "range": 7.03125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 14.0234375,
+            "minimum": 14.00390625,
+            "maximum": 14.09375,
+            "range": 0.08984375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 0.105,
+            "minimum": 0.064,
+            "maximum": 0.118,
+            "range": 0.05399999999999999
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 1.2201069999973697,
+            "minimum": 1.109534999999596,
+            "maximum": 1.2285250000022643,
+            "range": 0.11899000000266824
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 22.378531801999998,
+            "minimum": 22.374305442,
+            "maximum": 22.453345506,
+            "range": 0.07904006400000085
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 22.37698987,
+            "minimum": 22.372888609999997,
+            "maximum": 22.451301960000002,
+            "range": 0.07841335000000527
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_35s": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 104.80078125,
+            "minimum": 104.41015625,
+            "maximum": 105.87109375,
+            "range": 1.4609375
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 27.749923706054688,
+            "minimum": 27.74755859375,
+            "maximum": 27.88428497314453,
+            "range": 0.13672637939453125
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 72.01171875,
+            "minimum": 71.48828125,
+            "maximum": 73.6015625,
+            "range": 2.11328125
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 52.70703125,
+            "minimum": 52.296875,
+            "maximum": 53.7421875,
+            "range": 1.4453125
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 14.0234375,
+            "minimum": 14.00390625,
+            "maximum": 14.09375,
+            "range": 0.08984375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 83.156,
+            "minimum": 78.364,
+            "maximum": 86.687,
+            "range": 8.322999999999993
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 32997.56329599999,
+            "minimum": 32996.582488,
+            "maximum": 32999.132766,
+            "range": 2.550278000002436
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 55.380157059999995,
+            "minimum": 55.374022376,
+            "maximum": 55.453276116,
+            "range": 0.07925373999999863
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 55.37775084,
+            "minimum": 55.370948548,
+            "maximum": 55.450992321,
+            "range": 0.08004377299999987
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 15,
+            "minimum": 14,
+            "maximum": 16,
+            "range": 2
+          }
+        },
+        "resume": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 115.19140625,
+            "minimum": 114.58984375,
+            "maximum": 115.875,
+            "range": 1.28515625
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 32.128265380859375,
+            "minimum": 32.12181854248047,
+            "maximum": 34.452964782714844,
+            "range": 2.331146240234375
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 82.98046875,
+            "minimum": 82.19921875,
+            "maximum": 84.046875,
+            "range": 1.84765625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 63.07421875,
+            "minimum": 62.49609375,
+            "maximum": 63.74609375,
+            "range": 1.25
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 14.375,
+            "minimum": 14.35546875,
+            "maximum": 14.4453125,
+            "range": 0.08984375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 119.5,
+            "minimum": 87.073,
+            "maximum": 122.424,
+            "range": 35.35100000000001
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 206.82697500000359,
+            "minimum": 205.59107100000256,
+            "maximum": 209.35115199999564,
+            "range": 3.760080999993079
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 3,
+            "median": 29.875,
+            "minimum": 21.76825,
+            "maximum": 30.606,
+            "range": 8.837750000000003
+          },
+          "request_bytes_per_task": {
+            "n": 3,
+            "median": 823535.0,
+            "minimum": 823535.0,
+            "maximum": 823535.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 3,
+            "median": 8,
+            "minimum": 8,
+            "maximum": 8,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 57.591658965,
+            "minimum": 57.58777737700001,
+            "maximum": 57.667714887,
+            "range": 0.0799375099999935
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 55.586951575,
+            "minimum": 55.58300337000001,
+            "maximum": 55.663837402999995,
+            "range": 0.08083403299998793
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 20,
+            "minimum": 20,
+            "maximum": 20,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 15,
+            "minimum": 14,
+            "maximum": 16,
+            "range": 2
+          }
+        },
+        "reload": {
+          "worker_pss_mib": {
+            "n": 3,
+            "median": 117.51953125,
+            "minimum": 116.8671875,
+            "maximum": 118.00390625,
+            "range": 1.13671875
+          },
+          "worker_heap_used_mib": {
+            "n": 3,
+            "median": 33.77196502685547,
+            "minimum": 33.74259948730469,
+            "maximum": 36.19181823730469,
+            "range": 2.44921875
+          },
+          "cgroup_memory_mib": {
+            "n": 3,
+            "median": 85.48046875,
+            "minimum": 84.69921875,
+            "maximum": 86.296875,
+            "range": 1.59765625
+          },
+          "cgroup_anon_mib": {
+            "n": 3,
+            "median": 63.07421875,
+            "minimum": 62.49609375,
+            "maximum": 63.74609375,
+            "range": 1.25
+          },
+          "cgroup_file_mib": {
+            "n": 3,
+            "median": 14.375,
+            "minimum": 14.35546875,
+            "maximum": 14.4453125,
+            "range": 0.08984375
+          },
+          "worker_operation_cpu_ms": {
+            "n": 3,
+            "median": 12.37,
+            "minimum": 12.138,
+            "maximum": 12.738,
+            "range": 0.5999999999999996
+          },
+          "operation_wall_ms": {
+            "n": 3,
+            "median": 11.446362999995472,
+            "minimum": 11.109245999999985,
+            "maximum": 11.939624999999069,
+            "range": 0.830378999999084
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 3,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 3,
+            "median": 57.605527332,
+            "minimum": 57.601240141000005,
+            "maximum": 57.682122602,
+            "range": 0.08088246099999452
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 3,
+            "median": 57.603168167999996,
+            "minimum": 57.598952884000006,
+            "maximum": 57.679716637999995,
+            "range": 0.08076375399998881
+          },
+          "pi_documents_cached": {
+            "n": 3,
+            "median": 20,
+            "minimum": 20,
+            "maximum": 20,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 3,
+            "median": 15,
+            "minimum": 14,
+            "maximum": 16,
+            "range": 2
+          }
+        }
+      },
+      "runs": [
+        {
+          "label": "history-history-documents-1",
+          "sha256": "856922d96c24961f9cc5888ac2df6ee5bfc16c56e6bf71adf337863220733107"
+        },
+        {
+          "label": "history-history-documents-2",
+          "sha256": "b63b80aea6c32b603d3f734ed96de52eee5e736ed2358d65520a8aac1b500a1c"
+        },
+        {
+          "label": "history-history-documents-3",
+          "sha256": "6c9f98a34dacbdeac234b76167403f3cae1840459f501d30d979296dcb8c94d6"
+        }
+      ]
+    }
+  ],
+  "expiry": [
+    {
+      "workload": {
+        "counts": [
+          1,
+          4,
+          16,
+          64
+        ],
+        "rounds": 2,
+        "input_bytes": 65536,
+        "instructions_bytes": 262144,
+        "history_steps": null,
+        "idle_seconds": [
+          2,
+          35,
+          660
+        ],
+        "settle_seconds": 2,
+        "contextRetentionMs": 600000,
+        "profile": "large",
+        "forced_gc": false
+      },
+      "policy": "documents",
+      "document_retention_ms": 30000,
+      "image": "sha256:d18f5189cc16c9b119a543ea24c1574a22c3b26e6a1ae069389a042975c108ca",
+      "source_sha256": {
+        "files": {
+          "adapter/auth.mjs": "99c305677654fd3ab4a35787eb13528f50418cb4ecbefa739bdf80dd2708411c",
+          "adapter/pi.mjs": "c73640d3ca9ffdc03deea62d9452a9e485e7c0c50c9de2e852cc0c3aadaccfd1",
+          "adapter/protocol.mjs": "973738ce52d618868fed6454cf9a1ff84d08c8f28cb981b052574a829e6731f9",
+          "adapter/terminal.mjs": "cc2e9f3f30c54d3b3f27912db3d158a63306ad4327e059dbf0cc248ebe03f72a",
+          "adapter/view.mjs": "267e1e9686b0356ea297601effa4442391cedca49f7ba5e40122f8f20dcd2c47",
+          "adapter/worker.mjs": "8b267e19acc954ea801f125df0fee5aff27ded5c6fd1ec64b9d8cc4577e7de57",
+          "benchmarks/profile.json": "a21de9d3a4140908ef156fa79b8619eb334e52d7c4edf1b51b84a9aa7d94e1ce",
+          "benchmarks/provider.mjs": "84e9d4056810dcfef5eb92608639930b171a9421bce12e62affe4286f1cd7f7e",
+          "package-lock.json": "32a2e46fcecba1bed270685530acee81ded75c8f9a05fc982ceafc5a1fe7b041"
+        },
+        "probe_sha256": "d4762f725b8b245d82196fcd53db8b436a22ca6bad1e8ce4ca68c4a0a7fa00f2"
+      },
+      "n": 1,
+      "comparison_available": false,
+      "totals": {
+        "cgroup_cpu_ms_since_node": {
+          "n": 1,
+          "median": 4771.945,
+          "minimum": 4771.945,
+          "maximum": 4771.945,
+          "range": 0.0
+        },
+        "completed_tasks": {
+          "n": 1,
+          "median": 132,
+          "minimum": 132,
+          "maximum": 132,
+          "range": 0
+        },
+        "elapsed_seconds": {
+          "n": 1,
+          "median": 685.82618155,
+          "minimum": 685.82618155,
+          "maximum": 685.82618155,
+          "range": 0.0
+        },
+        "request_body_bytes": {
+          "n": 1,
+          "median": 109765478,
+          "minimum": 109765478,
+          "maximum": 109765478,
+          "range": 0
+        },
+        "request_count": {
+          "n": 1,
+          "median": 264,
+          "minimum": 264,
+          "maximum": 264,
+          "range": 0
+        },
+        "worker_operation_cpu_ms_sum": {
+          "n": 1,
+          "median": 3601.63,
+          "minimum": 3601.63,
+          "maximum": 3601.63,
+          "range": 0.0
+        },
+        "worker_task_operation_cpu_ms_per_task": {
+          "n": 1,
+          "median": 21.20506060606061,
+          "minimum": 21.20506060606061,
+          "maximum": 21.20506060606061,
+          "range": 0.0
+        },
+        "worker_task_operation_cpu_ms_sum": {
+          "n": 1,
+          "median": 2799.068,
+          "minimum": 2799.068,
+          "maximum": 2799.068,
+          "range": 0.0
+        }
+      },
+      "operational_16_to_64_session_slopes": {
+        "cgroup_anon_mib_per_added_session": {
+          "n": 1,
+          "median": 2.044921875,
+          "minimum": 2.044921875,
+          "maximum": 2.044921875,
+          "range": 0.0
+        },
+        "cgroup_file_mib_per_added_session": {
+          "n": 1,
+          "median": 1.4891764322916667,
+          "minimum": 1.4891764322916667,
+          "maximum": 1.4891764322916667,
+          "range": 0.0
+        },
+        "cgroup_memory_mib_per_added_session": {
+          "n": 1,
+          "median": 3.616455078125,
+          "minimum": 3.616455078125,
+          "maximum": 3.616455078125,
+          "range": 0.0
+        },
+        "worker_heap_used_mib_per_added_session": {
+          "n": 1,
+          "median": 1.9334967931111653,
+          "minimum": 1.9334967931111653,
+          "maximum": 1.9334967931111653,
+          "range": 0.0
+        },
+        "worker_pss_mib_per_added_session": {
+          "n": 1,
+          "median": 2.0462239583333335,
+          "minimum": 2.0462239583333335,
+          "maximum": 2.0462239583333335,
+          "range": 0.0
+        }
+      },
+      "checkpoints": {
+        "application_open": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 85.37109375,
+            "minimum": 85.37109375,
+            "maximum": 85.37109375,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 18.391799926757812,
+            "minimum": 18.391799926757812,
+            "maximum": 18.391799926757812,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 41.3515625,
+            "minimum": 41.3515625,
+            "maximum": 41.3515625,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 36.64453125,
+            "minimum": 36.64453125,
+            "maximum": 36.64453125,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 0.15234375,
+            "minimum": 0.15234375,
+            "maximum": 0.15234375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 272.945,
+            "minimum": 272.945,
+            "maximum": 272.945,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 243.55174599999998,
+            "minimum": 243.55174599999998,
+            "maximum": 243.55174599999998,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 2.254187357,
+            "minimum": 2.254187357,
+            "maximum": 2.254187357,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 0.24967934599999997,
+            "minimum": 0.24967934599999997,
+            "maximum": 0.24967934599999997,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_1": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 107.3984375,
+            "minimum": 107.3984375,
+            "maximum": 107.3984375,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 27.867538452148438,
+            "minimum": 27.867538452148438,
+            "maximum": 27.867538452148438,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 63.62890625,
+            "minimum": 63.62890625,
+            "maximum": 63.62890625,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 55.546875,
+            "minimum": 55.546875,
+            "maximum": 55.546875,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 2.49609375,
+            "minimum": 2.49609375,
+            "maximum": 2.49609375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 196.77,
+            "minimum": 196.77,
+            "maximum": 196.77,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 397.55063599999994,
+            "minimum": 397.55063599999994,
+            "maximum": 397.55063599999994,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 1,
+            "median": 98.385,
+            "minimum": 98.385,
+            "maximum": 98.385,
+            "range": 0.0
+          },
+          "request_bytes_per_task": {
+            "n": 1,
+            "median": 821266.0,
+            "minimum": 821266.0,
+            "maximum": 821266.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 1,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 2,
+            "minimum": 2,
+            "maximum": 2,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 6.672958636000001,
+            "minimum": 6.672958636000001,
+            "maximum": 6.672958636000001,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 4.669247422000001,
+            "minimum": 4.669247422000001,
+            "maximum": 4.669247422000001,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_4": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 118.1796875,
+            "minimum": 118.1796875,
+            "maximum": 118.1796875,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 36.80326843261719,
+            "minimum": 36.80326843261719,
+            "maximum": 36.80326843261719,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 81.7734375,
+            "minimum": 81.7734375,
+            "maximum": 81.7734375,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 66.328125,
+            "minimum": 66.328125,
+            "maximum": 66.328125,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 9.3828125,
+            "minimum": 9.3828125,
+            "maximum": 9.3828125,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 159.368,
+            "minimum": 159.368,
+            "maximum": 159.368,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 371.78176800000074,
+            "minimum": 371.78176800000074,
+            "maximum": 371.78176800000074,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 1,
+            "median": 26.561333333333334,
+            "minimum": 26.561333333333334,
+            "maximum": 26.561333333333334,
+            "range": 0.0
+          },
+          "request_bytes_per_task": {
+            "n": 1,
+            "median": 821267.8333333334,
+            "minimum": 821267.8333333334,
+            "maximum": 821267.8333333334,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 1,
+            "median": 12,
+            "minimum": 12,
+            "maximum": 12,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 6,
+            "minimum": 6,
+            "maximum": 6,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 11.08469135,
+            "minimum": 11.08469135,
+            "maximum": 11.08469135,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 9.079882805999999,
+            "minimum": 9.079882805999999,
+            "maximum": 9.079882805999999,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_16": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 136.60546875,
+            "minimum": 136.60546875,
+            "maximum": 136.60546875,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 47.39186096191406,
+            "minimum": 47.39186096191406,
+            "maximum": 47.39186096191406,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 119.6484375,
+            "minimum": 119.6484375,
+            "maximum": 119.6484375,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 84.75390625,
+            "minimum": 84.75390625,
+            "maximum": 84.75390625,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 27.8359375,
+            "minimum": 27.8359375,
+            "maximum": 27.8359375,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 541.842,
+            "minimum": 541.842,
+            "maximum": 541.842,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 1199.5250500000002,
+            "minimum": 1199.5250500000002,
+            "maximum": 1199.5250500000002,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 1,
+            "median": 22.57675,
+            "minimum": 22.57675,
+            "maximum": 22.57675,
+            "range": 0.0
+          },
+          "request_bytes_per_task": {
+            "n": 1,
+            "median": 821273.0,
+            "minimum": 821273.0,
+            "maximum": 821273.0,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 1,
+            "median": 48,
+            "minimum": 48,
+            "maximum": 48,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 24,
+            "minimum": 24,
+            "maximum": 24,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 16.411022508000002,
+            "minimum": 16.411022508000002,
+            "maximum": 16.411022508000002,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 14.405798150999999,
+            "minimum": 14.405798150999999,
+            "maximum": 14.405798150999999,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "tasks_64": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 234.82421875,
+            "minimum": 234.82421875,
+            "maximum": 234.82421875,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 140.19970703125,
+            "minimum": 140.19970703125,
+            "maximum": 140.19970703125,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 293.23828125,
+            "minimum": 293.23828125,
+            "maximum": 293.23828125,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 182.91015625,
+            "minimum": 182.91015625,
+            "maximum": 182.91015625,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 99.31640625,
+            "minimum": 99.31640625,
+            "maximum": 99.31640625,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 1768.898,
+            "minimum": 1768.898,
+            "maximum": 1768.898,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 4691.897023999998,
+            "minimum": 4691.897023999998,
+            "maximum": 4691.897023999998,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 1,
+            "median": 18.426020833333332,
+            "minimum": 18.426020833333332,
+            "maximum": 18.426020833333332,
+            "range": 0.0
+          },
+          "request_bytes_per_task": {
+            "n": 1,
+            "median": 821277.8854166666,
+            "minimum": 821277.8854166666,
+            "maximum": 821277.8854166666,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 1,
+            "median": 192,
+            "minimum": 192,
+            "maximum": 192,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 96,
+            "minimum": 96,
+            "maximum": 96,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 25.500050529,
+            "minimum": 25.500050529,
+            "maximum": 25.500050529,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 23.494345779,
+            "minimum": 23.494345779,
+            "maximum": 23.494345779,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_2s": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 234.82421875,
+            "minimum": 234.82421875,
+            "maximum": 234.82421875,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 140.29519653320312,
+            "minimum": 140.29519653320312,
+            "maximum": 140.29519653320312,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 293.23828125,
+            "minimum": 293.23828125,
+            "maximum": 293.23828125,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 182.91015625,
+            "minimum": 182.91015625,
+            "maximum": 182.91015625,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 99.31640625,
+            "minimum": 99.31640625,
+            "maximum": 99.31640625,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 0.193,
+            "minimum": 0.193,
+            "maximum": 0.193,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 1.296838000002026,
+            "minimum": 1.296838000002026,
+            "maximum": 1.296838000002026,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 25.503634709000004,
+            "minimum": 25.503634709000004,
+            "maximum": 25.503634709000004,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 25.501432274000003,
+            "minimum": 25.501432274000003,
+            "maximum": 25.501432274000003,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 384,
+            "minimum": 384,
+            "maximum": 384,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          }
+        },
+        "idle_35s": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 170.67578125,
+            "minimum": 170.67578125,
+            "maximum": 170.67578125,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 89.49382019042969,
+            "minimum": 89.49382019042969,
+            "maximum": 89.49382019042969,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 227.69140625,
+            "minimum": 227.69140625,
+            "maximum": 227.69140625,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 118.7578125,
+            "minimum": 118.7578125,
+            "maximum": 118.7578125,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 99.31640625,
+            "minimum": 99.31640625,
+            "maximum": 99.31640625,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 121.887,
+            "minimum": 121.887,
+            "maximum": 121.887,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 32995.236458,
+            "minimum": 32995.236458,
+            "maximum": 32995.236458,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 58.502382006,
+            "minimum": 58.502382006,
+            "maximum": 58.502382006,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 58.498940193,
+            "minimum": 58.498940193,
+            "maximum": 58.498940193,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 303,
+            "minimum": 303,
+            "maximum": 303,
+            "range": 0
+          }
+        },
+        "idle_660s": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 170.61328125,
+            "minimum": 170.61328125,
+            "maximum": 170.61328125,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 88.79996490478516,
+            "minimum": 88.79996490478516,
+            "maximum": 88.79996490478516,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 209.06640625,
+            "minimum": 209.06640625,
+            "maximum": 209.06640625,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 118.91796875,
+            "minimum": 118.91796875,
+            "maximum": 118.91796875,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 81.5546875,
+            "minimum": 81.5546875,
+            "maximum": 81.5546875,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 1.193,
+            "minimum": 1.193,
+            "maximum": 1.193,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 625051.654216,
+            "minimum": 625051.654216,
+            "maximum": 625051.654216,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 683.557915225,
+            "minimum": 683.557915225,
+            "maximum": 683.557915225,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 683.554113777,
+            "minimum": 683.554113777,
+            "maximum": 683.554113777,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 303,
+            "minimum": 303,
+            "maximum": 303,
+            "range": 0
+          }
+        },
+        "resume": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 157.06640625,
+            "minimum": 157.06640625,
+            "maximum": 157.06640625,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 50.091102600097656,
+            "minimum": 50.091102600097656,
+            "maximum": 50.091102600097656,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 197.55859375,
+            "minimum": 197.55859375,
+            "maximum": 197.55859375,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 105.3515625,
+            "minimum": 105.3515625,
+            "maximum": 105.3515625,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 84.34765625,
+            "minimum": 84.34765625,
+            "maximum": 84.34765625,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 132.19,
+            "minimum": 132.19,
+            "maximum": 132.19,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 237.7251179999439,
+            "minimum": 237.7251179999439,
+            "maximum": 237.7251179999439,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": {
+            "n": 1,
+            "median": 33.0475,
+            "minimum": 33.0475,
+            "maximum": 33.0475,
+            "range": 0.0
+          },
+          "request_bytes_per_task": {
+            "n": 1,
+            "median": 1160527.5,
+            "minimum": 1160527.5,
+            "maximum": 1160527.5,
+            "range": 0.0
+          },
+          "requests_in_operation": {
+            "n": 1,
+            "median": 8,
+            "minimum": 8,
+            "maximum": 8,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 4,
+            "minimum": 4,
+            "maximum": 4,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 685.8032531489999,
+            "minimum": 685.8032531489999,
+            "maximum": 685.8032531489999,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 683.7975615549999,
+            "minimum": 683.7975615549999,
+            "maximum": 683.7975615549999,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 20,
+            "minimum": 20,
+            "maximum": 20,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 303,
+            "minimum": 303,
+            "maximum": 303,
+            "range": 0
+          }
+        },
+        "reload": {
+          "worker_pss_mib": {
+            "n": 1,
+            "median": 157.08984375,
+            "minimum": 157.08984375,
+            "maximum": 157.08984375,
+            "range": 0.0
+          },
+          "worker_heap_used_mib": {
+            "n": 1,
+            "median": 49.57286834716797,
+            "minimum": 49.57286834716797,
+            "maximum": 49.57286834716797,
+            "range": 0.0
+          },
+          "cgroup_memory_mib": {
+            "n": 1,
+            "median": 197.80859375,
+            "minimum": 197.80859375,
+            "maximum": 197.80859375,
+            "range": 0.0
+          },
+          "cgroup_anon_mib": {
+            "n": 1,
+            "median": 105.3515625,
+            "minimum": 105.3515625,
+            "maximum": 105.3515625,
+            "range": 0.0
+          },
+          "cgroup_file_mib": {
+            "n": 1,
+            "median": 84.34765625,
+            "minimum": 84.34765625,
+            "maximum": 84.34765625,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms": {
+            "n": 1,
+            "median": 10.351,
+            "minimum": 10.351,
+            "maximum": 10.351,
+            "range": 0.0
+          },
+          "operation_wall_ms": {
+            "n": 1,
+            "median": 10.14465199992992,
+            "minimum": 10.14465199992992,
+            "maximum": 10.14465199992992,
+            "range": 0.0
+          },
+          "worker_operation_cpu_ms_per_task": null,
+          "request_bytes_per_task": null,
+          "requests_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "tasks_in_operation": {
+            "n": 1,
+            "median": 0,
+            "minimum": 0,
+            "maximum": 0,
+            "range": 0
+          },
+          "elapsed_seconds": {
+            "n": 1,
+            "median": 685.816552194,
+            "minimum": 685.816552194,
+            "maximum": 685.816552194,
+            "range": 0.0
+          },
+          "operation_finished_elapsed_seconds": {
+            "n": 1,
+            "median": 685.8134626089999,
+            "minimum": 685.8134626089999,
+            "maximum": 685.8134626089999,
+            "range": 0.0
+          },
+          "pi_documents_cached": {
+            "n": 1,
+            "median": 20,
+            "minimum": 20,
+            "maximum": 20,
+            "range": 0
+          },
+          "pi_documents_sweeps": {
+            "n": 1,
+            "median": 303,
+            "minimum": 303,
+            "maximum": 303,
+            "range": 0
+          }
+        }
+      },
+      "runs": [
+        {
+          "label": "expiry-large-documents-1",
+          "sha256": "5a8197cb00f4c97c4d4ccdcb62dbae318f6e1582eaeeb642d7370ac3df6a38ac"
+        }
+      ]
+    }
+  ],
+  "correctness": {
+    "new_application_changes": false,
+    "prior_gate": "tests/evidence/performance.json",
+    "prior_gate_sha256": "99db9702620d4c15264f737bcd974ea424813ac64813ee6fa681c278810685a7",
+    "source_files_verified_unchanged": 81,
+    "verified_at_unix_seconds": 1792656855.5842352,
+    "trial_checks": "All tasks completed; resume, saved receipt, stored history, limits, source identities, and no OOM verified."
+  },
+  "decisions": [
+    "Keep the existing 30-second document setting and 600-second context setting.",
+    "The interleaved large-session comparison supports lower post-resume worker memory with a small measured resume CPU cost.",
+    "No active-load or small-session benefit is established. No new application optimization was retained.",
+    "Defer on-demand instruction metadata: broad changes to configuration, inheritance, recovery and watches for a workload-dependent saving.",
+    "Defer more formatting changes until a whole-workload profile supports them."
+  ],
+  "limits": [
+    "These diagnostics do not replace the standard benchmark or establish comparable competitor session-growth rates.",
+    "Three-run ranges are descriptive, not confidence intervals; CPU affinity does not reserve an exclusive host.",
+    "Stages accumulate sessions; allocation, shared code and session idle age prevent a universal linear per-session charge.",
+    "Cache expiry removes references; resident memory need not fall until later collection and allocation.",
+    "CPU includes Pi, SDK serialization and the synthetic provider. Worker CPU excludes child tool CPU.",
+    "Batch elapsed time divided by task count is inverse throughput, not individual task latency.",
+    "History and expiry runs use only the current policy and do not prove a causal retention effect.",
+    "The synthetic provider also supplies any compaction summary; these runs do not prove real-conversation summary quality or long-term stability.",
+    "The 660-second expiry result is one observation, not a repeated estimate."
+  ],
+  "archive": {
+    "path": "benchmarks/trials/2026-10-22.tar.gz",
+    "sha256": "2b1f5586370524416ace1bda76fccacdbc00763e800d89452062f4e6dfe28abc",
+    "bytes": 582221,
+    "file_count": 143,
+    "manifest": "archive-manifest.json",
+    "manifest_sha256": "19eb05ed02c88cbdf71c70772f888046081223b8119f5d6909fdd49f0715d3fc"
+  }
+}

@@ -121,8 +121,12 @@ impl TerminalSession {
 impl Drop for TerminalSession {
     fn drop(&mut self) {
         // Restore the original terminal even after worker failure or client interruption.
-        // TCSAFLUSH discards incomplete secret input from a cancelled prompt.
-        unsafe { libc::tcsetattr(0, libc::TCSAFLUSH, &self.settings) };
+        // Flush queued PTY input before enabling echo. TCSAFLUSH alone can leave
+        // bytes queued for the line discipline and echo them after restoration.
+        unsafe {
+            libc::tcflush(0, libc::TCIFLUSH);
+            libc::tcsetattr(0, libc::TCSAFLUSH, &self.settings);
+        }
     }
 }
 

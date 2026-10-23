@@ -133,7 +133,7 @@ for line in sys.stdin:
             session['active'] = state['receipts'][key]['submission_id']
             session['state'] = 'running'
             session['entries'] = [{'entry_id': 'user-' + params['request_id'], 'kind': 'user', 'text': params['text'], 'truncated': False}]
-            session['assistant'] = {'text': 'Streaming λ 世界', 'truncated': False}
+            session['assistant'] = {'text': 'Streaming \u03bb \u4e16\u754c', 'truncated': False}
             session['tools'] = [{'name': 'bash', 'status': 'running', 'text': 'tool progress', 'truncated': False}]
             if params['text'] == 'drop':
                 save(state)
