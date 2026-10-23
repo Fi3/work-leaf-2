@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-22T08:31:32.158912Z",
+  "generated_at": "2026-10-23T03:20:57.001340Z",
   "path_base": "dev-docs",
-  "description": "Saved upstream references and licenses. Collection manifests preserve original acquisition records.",
+  "description": "Saved external references and licenses. Collection manifests record acquisition details and translations.",
   "collections": [
     {
       "id": "interfaces",
@@ -2645,7 +2645,7 @@
       "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
       "version": null,
       "retrieved_at": "2026-10-21T17:25:24Z",
-      "sha256": "00e39e0b20837af11b8295ebec41c2fbea9bde1747d127cf43066b92e250759e",
+      "sha256": "c4985c6d088d3979513f6924cb090a45d759d6a18abd898d0ff1a889846ba40a",
       "format": "text",
       "topics": [
         "performance",
@@ -2654,12 +2654,14 @@
       "description": "Saved upstream measurement reference.",
       "license_path": null,
       "license": "not declared",
-      "transform": "verbatim",
+      "transform": "English comment translation; executable code and string literals unchanged",
       "kind": "reference",
       "collection": "performance",
       "repository": "https://github.com/KonghaYao/harness-perf-benchmark",
-      "bytes": 20949,
-      "lines": 507
+      "bytes": 21711,
+      "lines": 520,
+      "original_sha256": "00e39e0b20837af11b8295ebec41c2fbea9bde1747d127cf43066b92e250759e",
+      "original_git_revision": "e16895724a0f3c55112d0aa73f702263677b174f"
     },
     {
       "id": "performance-harness-perf-benchmark-scripts-perf-score-ts",
@@ -2671,7 +2673,7 @@
       "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
       "version": null,
       "retrieved_at": "2026-10-21T17:25:24Z",
-      "sha256": "9680906f034691878d9c5698da8b6d48634a6375918381d92a8b3c617a45d1f8",
+      "sha256": "d9c7a02dd0f5d8fda11bf3c3c50112e86d36b0ae93bfb721d549a8f794459718",
       "format": "text",
       "topics": [
         "performance",
@@ -2680,12 +2682,14 @@
       "description": "Saved upstream measurement reference.",
       "license_path": null,
       "license": "not declared",
-      "transform": "verbatim",
+      "transform": "English comment translation; executable code and string literals unchanged",
       "kind": "reference",
       "collection": "performance",
       "repository": "https://github.com/KonghaYao/harness-perf-benchmark",
-      "bytes": 25785,
-      "lines": 540
+      "bytes": 27368,
+      "lines": 579,
+      "original_sha256": "9680906f034691878d9c5698da8b6d48634a6375918381d92a8b3c617a45d1f8",
+      "original_git_revision": "e16895724a0f3c55112d0aa73f702263677b174f"
     },
     {
       "id": "performance-harness-perf-benchmark-scripts-perf-gen-long-run-ts",
@@ -2697,7 +2701,7 @@
       "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
       "version": null,
       "retrieved_at": "2026-10-21T17:25:24Z",
-      "sha256": "b37026c1cef5a8731fed3e6b4709d82a28f103588e466689b8bd684b30f1f00b",
+      "sha256": "5164f204fa6732157803630f2a8815167e57baedf6ff601711ea072d7f40b00b",
       "format": "text",
       "topics": [
         "performance",
@@ -2706,12 +2710,14 @@
       "description": "Saved upstream measurement reference.",
       "license_path": null,
       "license": "not declared",
-      "transform": "verbatim",
+      "transform": "English comment translation; executable code and string literals unchanged",
       "kind": "reference",
       "collection": "performance",
       "repository": "https://github.com/KonghaYao/harness-perf-benchmark",
-      "bytes": 26165,
-      "lines": 431
+      "bytes": 26258,
+      "lines": 442,
+      "original_sha256": "b37026c1cef5a8731fed3e6b4709d82a28f103588e466689b8bd684b30f1f00b",
+      "original_git_revision": "e16895724a0f3c55112d0aa73f702263677b174f"
     },
     {
       "id": "performance-harness-perf-benchmark-playground-peri-perf-demo-ts",
@@ -2723,7 +2729,7 @@
       "revision": "e89a895a27a6634bded08f93c886b1a70bb15d63",
       "version": null,
       "retrieved_at": "2026-10-21T17:25:24Z",
-      "sha256": "0ccadba698c9e14e53625b0c184bd6b10be159ec4c01003a73b0add540698dc2",
+      "sha256": "f9da1bfdab96d4d01bf16b045b0261fede6cfc4675a545a6c6e61942d962c3bf",
       "format": "text",
       "topics": [
         "performance",
@@ -2732,12 +2738,14 @@
       "description": "Saved upstream measurement reference.",
       "license_path": null,
       "license": "not declared",
-      "transform": "verbatim",
+      "transform": "English comment translation; executable code and string literals unchanged",
       "kind": "reference",
       "collection": "performance",
       "repository": "https://github.com/KonghaYao/harness-perf-benchmark",
-      "bytes": 4756,
-      "lines": 92
+      "bytes": 4620,
+      "lines": 93,
+      "original_sha256": "0ccadba698c9e14e53625b0c184bd6b10be159ec4c01003a73b0add540698dc2",
+      "original_git_revision": "e16895724a0f3c55112d0aa73f702263677b174f"
     },
     {
       "id": "performance-peri-readme-md",

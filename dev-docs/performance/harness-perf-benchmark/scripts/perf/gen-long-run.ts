@@ -1,30 +1,36 @@
 #!/usr/bin/env bun
 /**
- * 生成「长剧本」压测剧本 —— 一个有限长、能跑到自然结束的多轮任务：
- * N 轮「中等正文 + 一次工具调用」，配 `--exhausted stop` 使用：主流程吃到尾部的
- * 「任务结束」纯文本即自行收尾退出，于是能测到**端到端时长**（跑完整个剧本要多久）
- * 与整段的资源消耗。
+ * Generate a long load-test script: a finite task with multiple turns that ends naturally.
+ * Each of the N turns has a medium text body and one tool call. Use `--exhausted stop`:
+ * the main process finishes and exits when it receives the final plain-text task-end message.
+ * This measures the full duration and resource use of the complete script.
  *
- * 每轮把历史随 messages 回传，上下文逐轮累积（第 N 轮的请求体里躺着前 N-1 轮的正文），
- * 时长与内存曲线都由此产生。
+ * Each turn sends the history in messages, so context grows with each turn. The request for
+ * turn N contains the text from the preceding N-1 turns. This affects duration and memory use.
  *
- *   bun run scripts/perf/gen-long-run.ts                            # 50 轮 × 约 4KB
+ *   bun run scripts/perf/gen-long-run.ts                            # 50 turns, about 4KB each
  *   bun run scripts/perf/gen-long-run.ts --turns 100 --body-kb 8
  *   bun run scripts/perf/gen-long-run.ts --turns 100 --args exec --out data/scenarios/long-run-codex.json
  *
- * 工具形状用 `--tool`（工具名）+ `--args`（参数形状）指定，各家各一份的生成命令见 USAGE。
+ * Select the tool name with `--tool` and the argument format with `--args`.
+ * See USAGE for generation commands for each harness.
  *
- * 剧本尾部固定带**两条**收尾条（正文轮数之外）：
- *   1. 与 mock 的 stop 策略同文的「任务结束」纯文本——主流程吃到它才收敛（文本取自
- *      src/script.ts 的 STOP_MESSAGE，两边不会各自漂移）；
- *   2. 一条空白响应——给 peri 的「预测下一步输入」留的。
- * 第 2 条是把 peri 的 5.0s 收尾等待消掉的关键：预测请求在**主流程结束之后**才发，若它
- * 也吃到非空文本，预测分支会回落成 Placeholder 动作、一路走到写 session 标题，与 host
- * 关闭流程互锁到 cooperative_grace 超时（实测固定多 5.0s，机制见 docs/perf-compare.md）；
- * 拿到空白（trim 后为空）则在拿锁之前就返回空动作。顺序不可反：主流程得先吃到文本收尾。
- * 其余各家的辅助请求大多在途中取号（dsh 的会话标题生成、pi 的压缩摘要）；收尾之后还会再发
- * 一条的也有——pi 实测末条 `messages=2` 的总结请求就落在空白上，对它同样无害。
- * 输出默认写到 data/scenarios/long-run.json（data/ 已 gitignore）。
+ * The script always has two final entries, in addition to the text turns:
+ *   1. A plain-text task-end message, identical to the mock's stop response. The main process
+ *      finishes when it receives this text. Both use STOP_MESSAGE from src/script.ts.
+ *   2. A blank response for peri's prediction of the next input.
+ * The second entry removes peri's 5.0s shutdown wait. Its prediction request occurs after
+ * the main process ends. If that request receives nonempty text, the prediction path falls
+ * back to a Placeholder action and continues to write the session title. It then blocks
+ * against host shutdown until cooperative_grace expires. Measurements show a fixed extra
+ * 5.0s; see docs/perf-compare.md. With text that is empty after trim, it returns an empty
+ * action before it acquires the lock. Keep this order: the main process must receive the
+ * task-end text first.
+ * Other harnesses usually consume entries for auxiliary requests during the run, such as
+ * dsh's session titles and pi's compaction summaries. Some also send a request after the end:
+ * pi's final summary request with `messages=2` received the blank entry in measurements,
+ * with no adverse effect.
+ * Output defaults to data/scenarios/long-run.json (data/ is excluded by gitignore).
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -215,11 +221,11 @@ const chunkDelayMs = positiveInt(values["chunk-delay-ms"], "--chunk-delay-ms", 0
 const delayMs = positiveInt(values["delay-ms"], "--delay-ms", 0);
 
 /**
- * 各 harness 的工具形状（重测各家时逐个核过，原先记在各自的 scenario 文件 note 里，
- * 文件删掉后固化在这里）：
+ * Tool formats for each harness, checked individually during repeat measurements.
+ * These were recorded in the scenario notes before those files were removed:
  *   peri 3.17 / opencode 1.17 / Claude Code 2.1   Bash                   {command}
  *   opencode2 2.0.10                              shell                   {command}
- *   codex 0.155                                   exec                    裸 JS 源码（custom 工具）
+ *   codex 0.155                                   exec                    raw JS source (custom tool)
  *   pi 0.85.1                                     bash                    {command}
  *   dsh 0.1.5-rc.2                                bash                    {command, description}
  *   agy 1.2.7                                     run_command             {CommandLine, Cwd, …}
@@ -227,16 +233,16 @@ const delayMs = positiveInt(values["delay-ms"], "--delay-ms", 0);
  *   cline 3.0.62                                  run_commands            {commands: [command]}
  *   kimi 2.0.0                                    Bash                   {command}
  *   grok 1.0.41                                   run_terminal_command   {command, description}
- *   ccode c8fb352（make ccode-cli）               bash                    {command}
+ *   ccode c8fb352 (make ccode-cli)                 bash                    {command}
  *   GitHub Copilot CLI 1.0.88                     bash                    {command}
- * opencode v2 的 shell 工具就叫 `shell`（v1 的 `bash` 没了）：名字换了，形状还是 {command}。
- * 注意 v1（opencode）与 v2（opencode2）是**两个 harness**，各自一份剧本，别把这份形状混过去。
- * dsh 的 description 是**必填**：缺了会被工具自己拒掉
- * （tool result: invalid arguments: missing required property "description"），
- * 所以生成器必须能把这一项补上，不能只写 command。
- * agy 的 run_command 同理——实测缺 Cwd / WaitMsBeforeAsync / toolSummary / toolAction 会被工具
- * 拒掉（tool result: missing properties 'Cwd', 'WaitMsBeforeAsync', 'toolSummary', 'toolAction'），
- * 五项都要给全，形状见 toolCall()。
+ * The opencode v2 shell tool is named `shell`, not v1's `bash`. Its format is still {command}.
+ * Treat v1 (opencode) and v2 (opencode2) as separate harnesses, each with its own script.
+ * dsh requires description. The tool rejects requests without it:
+ * "invalid arguments: missing required property \"description\"".
+ * The generator must therefore supply description as well as command.
+ * agy's run_command also rejects missing Cwd, WaitMsBeforeAsync, toolSummary, or toolAction:
+ * "missing properties 'Cwd', 'WaitMsBeforeAsync', 'toolSummary', 'toolAction'".
+ * Supply all five properties; see toolCall() for their format.
  */
 type ArgShape =
     | "command"
@@ -254,14 +260,14 @@ const ARG_SHAPES: readonly ArgShape[] = [
 ];
 
 function argShapeOf(raw: string | undefined, tool: string): ArgShape {
-    // `--tool exec` 是 codex 那条老用法，保持兼容：没给 --args 时按 exec 形状走。
+    // Keep the old codex usage: `--tool exec` selects the exec format when --args is absent.
     if (raw === undefined || raw === "") return tool === "exec" ? "exec" : "command";
     if ((ARG_SHAPES as readonly string[]).includes(raw)) return raw as ArgShape;
     throw new Error(`--args 必须是 ${ARG_SHAPES.join(" | ")}，收到 ${JSON.stringify(raw)}`);
 }
 
 const argShape = argShapeOf(values.args, values.tool ?? "Bash");
-// exec / run_command / run_commands 是 codex、agy、cline 各自的工具名，形状定了名字就没有第二个选择。
+// The argument format fixes the tool name: exec for codex, run_command for agy, run_commands for cline.
 const toolName =
     argShape === "exec"
         ? "exec"
@@ -273,21 +279,24 @@ const toolName =
 const outPath = resolve(REPO_ROOT, values.out ?? "data/scenarios/long-run.json");
 
 /**
- * commandline 形状（agy 的 run_command）里的工作目录：工具要求 Cwd 落在 workspace 内，
- * 所以默认写死到 agy 的沙盒目录（playground/antigravity），可用 --cwd 改。
- * 只在生成时定格——剧本是现生成的（data/ 不入库），换人换机器各生成一份即可。
+ * The working directory for the commandline format (agy's run_command) must be inside
+ * the workspace. Default to agy's sandbox directory, playground/antigravity; --cwd can
+ * override it. Resolve this path at generation time. Scripts are generated locally and
+ * data/ is not committed, so each user or machine can generate its own copy.
  */
 const toolCwd = resolve(REPO_ROOT, values.cwd ?? "playground/antigravity");
 
 /**
- * command+description 形状里那句 description：harness 只拿它当展示文案，内容不参与测量，
- * 用固定串是为了让两份剧本除了轮号以外逐字可比（每次生成都换文案的话，diff 里全是噪声）。
+ * The harness displays description from the command+description format; it is not part
+ * of the measurement. A fixed string lets two scripts be compared exactly except for
+ * the turn numbers, without unrelated changes from generated descriptions.
  */
 const TOOL_DESCRIPTION = "长剧本压测：只读检查当前目录（llm-mock perf）";
 
 /**
- * 轮转的只读轻量命令：四条一循环，带上轮号便于在 harness.log / mock.log 里数到第几轮
- * （命令本身不做任何写操作，沙盒里不会留副作用）。
+ * Cycle through four small read-only commands. Include the turn number where applicable
+ * so turns can be counted in harness.log and mock.log. The commands do not write files
+ * or leave changes in the sandbox.
  */
 function commandFor(round: number): string {
     const probe = `long-run-tick-${round}`;
@@ -304,15 +313,16 @@ function commandFor(round: number): string {
 }
 
 /**
- * 一条工具调用，按 `--args` 选形状：
- * - `command`：arguments 是 `{command}` 的 JSON 对象（peri / opencode / Claude Code / pi）；
- * - `command+description`：再多一项必填的 description（dsh）；
- * - `exec`：按 codex 的 custom 工具写，参数是**裸 JavaScript 源码**（不是 JSON，也不是被引号
- *   包起来的字符串），见 src/responses.ts 头注释里 exec 的声明形状；
- * - `commandline`：按 agy 的 run_command 写（五项全必填，见 ArgShape 注释）。参数名是
- *   大驼峰（`CommandLine`），与其余各家的 snake_case 不同，别顺手改小写；
- * - `commands`：按 cline 的 run_commands 写——参数是**字符串数组** `{commands: [...]}`，
- *   一次能排多条命令（实测 schema：required 只有 commands，items 是 string）。
+ * Generate one tool call in the format selected by `--args`:
+ * - `command`: arguments is a `{command}` JSON object (peri / opencode / Claude Code / pi).
+ * - `command+description`: also includes the required description property (dsh).
+ * - `exec`: uses codex's custom tool. Arguments is raw JavaScript source, not JSON or
+ *   a quoted string. See the exec declaration in the header comment of src/responses.ts.
+ * - `commandline`: uses agy's run_command with all five required properties; see ArgShape.
+ *   Its property names use an initial capital, as in `CommandLine`, instead of the other
+ *   harnesses' snake_case. Preserve this case.
+ * - `commands`: uses cline's run_commands with a string array, `{commands: [...]}`.
+ *   It can queue several commands. Its measured schema requires only commands, with string items.
  */
 function toolCall(round: number): {
     id: string;
@@ -342,7 +352,7 @@ function toolCall(round: number): {
                     Cwd: toolCwd,
                     WaitMsBeforeAsync: 10000,
                     toolSummary: TOOL_DESCRIPTION,
-                    // toolAction 是给 harness 自己展示「这一步在干什么」的，与 CommandLine 同源最自然。
+                    // The harness displays toolAction to explain this step; use the same command as CommandLine.
                     toolAction: command,
                 },
             },
@@ -355,7 +365,7 @@ function toolCall(round: number): {
             function: { name: toolName, arguments: { commands: [command] } },
         };
     }
-    // 字段顺序与各家实测请求一致：command 在前、description 在后，便于肉眼比对抓包。
+    // Match the observed requests: command before description, for easier visual comparison.
     const args: Record<string, string> = { command };
     if (argShape === "command+description") args.description = TOOL_DESCRIPTION;
     return {
@@ -366,7 +376,7 @@ function toolCall(round: number): {
 }
 
 const targetBytes = bodyKb * 1024;
-/** N 轮正文 + 工具调用（正文合计与上下文估算都只数这部分）。 */
+/** N text turns with tool calls. Text totals and context estimates count only these turns. */
 const roundEntries = Array.from({ length: turns }, (_, i) => {
     const round = i + 1;
     return {
@@ -384,10 +394,11 @@ const roundEntries = Array.from({ length: turns }, (_, i) => {
 });
 
 /**
- * 尾部两条（顺序不可换，理由见文件头）：
- * - 收尾文本：与 mock 的 stop 策略同文，主流程吃到即收敛；
- * - 空白响应：peri 的预测请求拿到它 → execute_prediction 判定空文本、拿锁前返回空动作。
- *   给一个空格而不是空串：实测空格足以让预测分支判空；空串没验过，有的桥接会当异常响应。
+ * The final two entries must stay in this order; see the file header:
+ * - Task-end text: the same text as the mock's stop response; it ends the main process.
+ * - Blank response: peri's execute_prediction treats it as empty and returns an empty
+ *   action before it acquires the lock. Use one space, which was tested, instead of an
+ *   empty string, which was not tested and can be treated as an invalid response by some adapters.
  */
 const tailEntries = [
     { message: { role: "assistant", content: STOP_MESSAGE }, finish_reason: "stop" },

@@ -1,87 +1,96 @@
 /**
- * 进程采样：按固定间隔读取 harness 进程的累计 CPU 时间与常驻内存（RSS）。
+ * Process sampling: read the harness process's cumulative CPU time and resident memory (RSS)
+ * at fixed intervals.
  *
- * ## 为什么用 proc_pid_rusage
+ * ## Why use proc_pid_rusage
  *
- * macOS 的 `ps -o %cpu` 是**进程生命周期均值**，不能当瞬时值；可行的做法是对累计 CPU
- * 时间做差分。两个候选方案的实测对比（macOS 26.5.1 / Apple Silicon，可用
- * `bun run scripts/perf/verify.ts` 复现）：
+ * On macOS, `ps -o %cpu` is the **average over the process lifetime**, not an instantaneous
+ * value. Instead, calculate differences in cumulative CPU time. Measurements of two methods
+ * on macOS 26.5.1 / Apple Silicon (reproduce with `bun run scripts/perf/verify.ts`):
  *
- *   方案                        单次开销   读数分辨率   对单核满转的读数
- *   ps -p <pid> -o time= 差分    1.2 ms    50 ms       98.5%（±50ms 量化误差）
- *   proc_pid_rusage 差分         0.8 µs    ~1 µs       98.0%
+ *   Method                            Cost per read   Resolution   Reading at full use of one core
+ *   ps -p <pid> -o time= differences   1.2 ms          50 ms        98.5% (±50 ms quantization error)
+ *   proc_pid_rusage differences        0.8 µs          ~1 µs        98.0%
  *
- * 100ms 采样窗口下 ps 的 50ms 量化误差相当于 ±50%，因此默认用 rusage；ps 仅作兜底
- * （FFI 不可用时）。rsusage 是纯函数调用，不 spawn 子进程，对被测对象几乎无干扰。
+ * For a 100 ms sample window, the 50 ms quantization error from ps is equivalent to ±50%.
+ * Thus, rusage is the default; ps is only a fallback when FFI is unavailable. rusage is a
+ * direct function call, creates no child process, and has almost no effect on the measured process.
  *
- * ## 陷阱：返回值不是纳秒
+ * ## Pitfall: returned values are not nanoseconds
  *
- * 文档称 ri_user_time / ri_system_time 为纳秒，但本机实测是 **Mach 绝对时基的 tick 数**
- * （mach_timebase_info: numer=125 denom=3 → 1 tick ≈ 41.67 ns）。不换算会把 CPU 低估
- * 41.7 倍（单核满转读成 2.4%）。这里始终用 mach_timebase_info 动态换算：Intel 机器
- * timebase 为 1/1，换算退化为恒等，不影响正确性。
+ * The documentation gives nanoseconds as the units for ri_user_time / ri_system_time, but
+ * local measurements show **ticks of the Mach absolute timebase** (mach_timebase_info:
+ * numer=125 denom=3 → 1 tick ≈ 41.67 ns). Without conversion, CPU use is underestimated
+ * by a factor of 41.7 (full use of one core reads as 2.4%). Always convert with the actual
+ * mach_timebase_info value. On Intel, the timebase is 1/1, so conversion leaves the value unchanged.
  *
- * CPU% 的单位是「单核 100%」，多线程进程可超过 100%。
+ * CPU% uses 100% for one core. Processes with multiple threads can exceed 100%.
  */
 
 import { dlopen, FFIType, ptr } from "bun:ffi";
 
 export type SamplerKind = "rusage" | "ps";
 
-/** Mach 时基：1 tick = numer / denom 纳秒。 */
+/** Mach timebase: 1 tick = numer / denom nanoseconds. */
 export interface MachTimebase {
     numer: number;
     denom: number;
 }
 
-/** 一次累计读数：CPU 累计时间（纳秒）与常驻内存（字节）。 */
+/** One cumulative reading: cumulative CPU time (nanoseconds) and resident memory (bytes). */
 export interface CumulativeReading {
     cpuNs: number;
     rssBytes: number;
     /**
-     * **本进程已回收的子进程**累计 CPU（纳秒）——来自 rusage 的 ri_child_* 字段。
+     * Cumulative CPU time (nanoseconds) of **child processes reaped by this process**,
+     * from the rusage ri_child_* fields.
      *
-     * 为什么需要它：进程树口径靠「每隔 treeRefreshMs 刷一次 pid 集合」抓后代，而 harness
-     * 每轮工具调用拉起的 shell 只活几十毫秒，几乎不可能出现在 pid 集合里（实测：合成负载
-     * 下默认 2000ms 刷新只捕获到子进程真实 CPU 的 33%）。而这些 shell 都是被 harness **回收**
-     * 的，其 CPU 会累加进父进程的 ri_child_*，读一次就精确拿到，不受采样频率影响。
+     * This is needed because process tree measurement finds descendants by refreshing the PID
+     * set every treeRefreshMs. Shells started for each tool call live only tens of milliseconds
+     * and almost never appear in that set. In a synthetic workload, the default 2000 ms refresh
+     * captured only 33% of actual child CPU time. The harness **reaps** these shells, so their
+     * CPU time accumulates in the parent's ri_child_* fields. One read obtains the exact total,
+     * regardless of sampling frequency.
      *
-     * ps 后端拿不到这个值，返回 0（该后端只用于 FFI 不可用的兜底）。
+     * The ps backend cannot read this value and returns 0. It is only a fallback when FFI is unavailable.
      */
     childCpuNs: number;
 }
 
-/** 一个采样点。 */
+/** One sample. */
 export interface ProcessSample {
-    /** 采样时刻（epoch 毫秒）。 */
+    /** Sample time (milliseconds since the epoch). */
     ts: number;
-    /** 距采样开始的毫秒数。 */
+    /** Milliseconds since sampling started. */
     elapsedMs: number;
-    /** 根进程瞬时 CPU（单核为 100%）。 */
+    /** Instantaneous root process CPU use (100% for one core). */
     cpuPercent: number;
     rssBytes: number;
-    /** 根进程 + 采样窗口内可见后代的瞬时 CPU 合计（不含已回收子进程计数器）。 */
+    /** Total instantaneous CPU use of the root and visible descendants, excluding reaped-child counters. */
     treeCpuPercent: number;
     /**
-     * 根进程**已回收子进程**的瞬时 CPU（单核为 100%），来自 rusage 计数器差分。
+     * Instantaneous CPU use of **children reaped by the root process** (100% for one core),
+     * calculated from differences in rusage counters.
      *
-     * 与父进程「可见后代」是两套互补的下界：这个覆盖短命子进程（进程表刷新来不及抓），
-     * 那个覆盖采样期间一直活着、尚未被回收的后代。两者可能重叠（被看见过的子进程之后
-     * 被回收，其全生命周期都会进计数器），**不能相加**——要更紧的下界就取两者较大者
-     * （见 score.ts 的 resourceCost）。
+     * This and the parent's visible-descendant reading are complementary lower bounds. This
+     * value covers short-lived children missed by process table refreshes. The other covers
+     * descendants that remain alive throughout sampling and have not been reaped. They can
+     * overlap: a previously visible child can later be reaped, adding its whole lifetime to
+     * the counter. **Do not add them.** Use the larger value for a tighter lower bound
+     * (see resourceCost in score.ts).
      */
     childCpuPercent: number;
     treeRssBytes: number;
-    /** 进程树内成功读到读数的进程数（含根进程）。 */
+    /** Number of processes in the tree with successful readings, including the root. */
     procs: number;
 }
 
-/** 采样读数来源；可注入假后端以便测试。 */
+/** Source of sample readings; tests can supply a fake backend. */
 export interface SamplerBackend {
     kind: SamplerKind;
-    /** 供日志说明的一行描述。 */
+    /** One-line description for logs. */
     describe(): string;
-    /** 读取累计读数；进程不存在时返回 null。 */
+    /** Read cumulative values; return null if the process does not exist. */
     read(pid: number): CumulativeReading | null;
 }
 
@@ -93,7 +102,7 @@ export const CSV_COLUMNS = [
     "tree_cpu_pct",
     "tree_rss_kb",
     "procs",
-    // 2026-09-19 追加（**只能往后加**：读取端按表头名取列，老产物缺这列时按 0 处理）
+    // Added 2026-09-19. Append columns only: readers use header names and treat this missing column as 0.
     "child_cpu_pct",
 ] as const;
 
@@ -102,21 +111,21 @@ export type CsvColumn = (typeof CSV_COLUMNS)[number];
 export const CSV_HEADER = CSV_COLUMNS.join(",");
 
 // ---------------------------------------------------------------------------
-// 纯计算：便于单测
+// Pure calculations for unit testing
 // ---------------------------------------------------------------------------
 
-/** Mach tick → 纳秒。 */
+/** Mach ticks → nanoseconds. */
 export function ticksToNs(ticks: number, timebase: MachTimebase): number {
     return ticks * (timebase.numer / timebase.denom);
 }
 
-/** 累计 CPU 时间差 → 瞬时 CPU 百分比（单核 100%）。 */
+/** Difference in cumulative CPU time → instantaneous CPU percentage (100% for one core). */
 export function cpuPercent(deltaNs: number, elapsedMs: number): number {
     if (!(elapsedMs > 0) || !(deltaNs > 0)) return 0;
     return (deltaNs / (elapsedMs * 1e6)) * 100;
 }
 
-/** 解析 `ps -o time=` 的 `[[HH:]MM:]SS[.cc]`，得到毫秒；空值/异常返回 null。 */
+/** Parse `[[HH:]MM:]SS[.cc]` from `ps -o time=` into milliseconds; return null for empty or invalid input. */
 export function parsePsTimeToMs(raw: string): number | null {
     const text = raw.trim();
     if (text === "" || text === "-") return null;
@@ -131,7 +140,7 @@ export function parsePsTimeToMs(raw: string): number | null {
     return seconds * 1000;
 }
 
-/** 依据 pid/ppid 表收集根进程及其全部后代（广度优先，纯函数）。 */
+/** Collect the root and all descendants from a pid/ppid table (breadth-first, pure function). */
 export function collectTree(
     rootPid: number,
     processes: ReadonlyArray<{ pid: number; ppid: number }>,
@@ -155,7 +164,7 @@ export function collectTree(
     return [...seen];
 }
 
-/** CSV 行（不含换行）。 */
+/** CSV row without a newline. */
 export function formatCsvRow(sample: ProcessSample): string {
     return [
         new Date(sample.ts).toISOString(),
@@ -170,22 +179,23 @@ export function formatCsvRow(sample: ProcessSample): string {
 }
 
 /**
- * 可选列：老产物没有它们，读取端按缺省值处理（不能因此报错）。
- * `child_cpu_pct` 是 2026-09-19 追加的，之前的产物一律按 0 读——那批的进程树口径偏低，
- * 由读取端（score.ts / gen-chart-data.ts）标注，不在这里猜。
+ * Optional columns: older results lack them, so readers must use defaults instead of errors.
+ * `child_cpu_pct` was added on 2026-09-19. Earlier results always read as 0, and their process
+ * tree measurements are too low. Readers (score.ts / gen-chart-data.ts) mark that limitation;
+ * do not infer values here.
  */
 const OPTIONAL_COLUMNS = new Set<CsvColumn>(["child_cpu_pct"]);
 
-/** 该 CSV 是否带某一列（判断老产物口径用）。 */
+/** Check whether a CSV has a column, to identify the measurement method of older results. */
 export function csvHasColumn(text: string, name: CsvColumn): boolean {
     const header = (text.trim().split("\n")[0] ?? "").split(",").map((entry) => entry.trim());
     return header.includes(name);
 }
 
 /**
- * 采样 CSV → 采样点。**按表头名映射列，不按下标写死**：
- * 加一列指标不该让读取端失效，但**必需列缺失必须报错**——宁可炸，
- * 也不要把 cpu 读成内存、画出一张看起来很正常但完全错的图。
+ * Sample CSV → samples. **Map columns by header name, not by fixed index.**
+ * Adding a measure must not break readers, but **a missing required column must cause an error**.
+ * An error is better than reading CPU as memory and drawing a plausible but incorrect chart.
  */
 export function parseSamplesCsv(text: string): ProcessSample[] {
     const lines = text.trim().split("\n");
@@ -235,7 +245,7 @@ export interface SampleSummary {
     treeRssMaxBytes: number;
 }
 
-/** 汇总：均值 / 峰值；空样本集返回全 0。 */
+/** Summary: averages and peaks; return zeros for an empty sample set. */
 export function summarize(samples: readonly ProcessSample[]): SampleSummary {
     const empty: SampleSummary = {
         count: 0,
@@ -272,26 +282,28 @@ export function summarize(samples: readonly ProcessSample[]): SampleSummary {
 }
 
 // ---------------------------------------------------------------------------
-// 后端实现
+// Backend implementations
 // ---------------------------------------------------------------------------
 
-/** rusage 结构体（rusage_info_v4）中我们用到的字段偏移，已实机核对。 */
+/** Field offsets used in rusage_info_v4, verified on real hardware. */
 const RUSAGE_INFO_V4 = 4;
 const OFF_RI_USER_TIME = 16;
 const OFF_RI_SYSTEM_TIME = 24;
 const OFF_RI_RESIDENT_SIZE = 64;
 /**
- * 已回收子进程的累计 CPU（rusage_info_v4 里 ri_child_user_time / ri_child_system_time）。
- * 2026-09-19 实测钉死：让子进程用 Time::HiRes 精确烧 2s CPU 并被父进程回收，父进程
- * 读 [96]+[104] = 1.995s，而 [32]/[40]（ri_pkg_idle_wkups / ri_interrupt_wkups）≈ 0。
- * **单位同样是 Mach tick 而不是文档说的纳秒**，必须走 timebase 换算（同 [16]/[24]）。
+ * Cumulative CPU time of reaped children (ri_child_user_time / ri_child_system_time in rusage_info_v4).
+ * Verified on 2026-09-19: a child used Time::HiRes to consume exactly 2 s of CPU time and was
+ * reaped by its parent. The parent read [96]+[104] = 1.995 s, while [32]/[40]
+ * (ri_pkg_idle_wkups / ri_interrupt_wkups) were approximately 0.
+ * **The units are also Mach ticks, not the documented nanoseconds.** Convert with the timebase,
+ * as for [16]/[24].
  */
 const OFF_RI_CHILD_USER_TIME = 96;
 const OFF_RI_CHILD_SYSTEM_TIME = 104;
-/** 结构体足够容纳 v4 的全部字段（v4 约 296 字节）。 */
+/** Buffer large enough for all v4 fields (v4 is approximately 296 bytes). */
 const RUSAGE_BUFFER_BYTES = 512;
 
-/** libSystem 里我们用到的两个符号；失败（非 macOS / 无符号）时返回 null。 */
+/** Load the two required libSystem symbols; return null on failure (not macOS or missing symbols). */
 function loadLibSystem(): {
     proc_pid_rusage: (pid: number, flavor: number, buffer: unknown) => number;
     mach_timebase_info: (out: unknown) => number;
@@ -310,7 +322,7 @@ function loadLibSystem(): {
     }
 }
 
-/** 读取 Mach 时基；失败返回 null。 */
+/** Read the Mach timebase; return null on failure. */
 function readTimebase(symbols: {
     mach_timebase_info: (out: unknown) => number;
 }): MachTimebase | null {
@@ -323,7 +335,7 @@ function readTimebase(symbols: {
     return { numer, denom };
 }
 
-/** 首选后端：FFI 调 proc_pid_rusage，不 spawn 任何子进程。 */
+/** Preferred backend: call proc_pid_rusage through FFI without creating child processes. */
 export function createRusageBackend(): SamplerBackend | null {
     const symbols = loadLibSystem();
     if (symbols === null) return null;
@@ -354,7 +366,7 @@ export function createRusageBackend(): SamplerBackend | null {
     };
 }
 
-/** 兜底后端：`ps -p <pid> -o time=,rss=` 差分（单次约 1.2ms，读数分辨率约 50ms）。 */
+/** Fallback backend: differences from `ps -p <pid> -o time=,rss=` (about 1.2 ms per read, 50 ms resolution). */
 export function createPsBackend(): SamplerBackend {
     return {
         kind: "ps",
@@ -367,14 +379,14 @@ export function createPsBackend(): SamplerBackend {
             const cpuMs = parsePsTimeToMs(fields[0] as string);
             const rssKb = Number(fields[1]);
             if (cpuMs === null || !Number.isFinite(rssKb)) return null;
-            // ps 拿不到「已回收子进程」的累计量（那是 rusage 专有字段），记 0：
-            // 该后端只是 FFI 不可用时的兜底，此时 child_cpu_pct 列恒为 0。
+            // ps cannot read cumulative values for reaped children; only rusage has those fields. Use 0.
+            // This backend is only a fallback when FFI is unavailable, so child_cpu_pct is always 0.
             return { cpuNs: cpuMs * 1e6, childCpuNs: 0, rssBytes: rssKb * 1024 };
         },
     };
 }
 
-/** 枚举全部进程的 pid/ppid（一次 `ps -axo`，约 13ms）。 */
+/** List pid/ppid for all processes (one `ps -axo` call, about 13 ms). */
 export function listProcesses(): Array<{ pid: number; ppid: number }> {
     const result = Bun.spawnSync(["ps", "-axo", "pid=,ppid="]);
     if (result.exitCode !== 0) return [];
@@ -390,20 +402,20 @@ export function listProcesses(): Array<{ pid: number; ppid: number }> {
 }
 
 // ---------------------------------------------------------------------------
-// 采样器
+// Sampler
 // ---------------------------------------------------------------------------
 
 export interface SamplerOptions {
-    /** 根进程（harness）。 */
+    /** Root process (the harness). */
     pid: number;
     backend: SamplerBackend;
-    /** 是否连带统计后代进程（如 harness 拉起的 MCP 子进程）。 */
+    /** Include descendant processes, such as MCP children started by the harness. */
     withTree?: boolean;
-    /** 进程树刷新间隔（毫秒），默认 2000；期间沿用上次的 pid 集合。 */
+    /** Process tree refresh interval in milliseconds, default 2000; reuse the last PID set between refreshes. */
     treeRefreshMs?: number;
-    /** 进程表来源，测试可注入。 */
+    /** Source of the process table; tests can supply it. */
     listProcesses?: () => Array<{ pid: number; ppid: number }>;
-    /** 时间源，测试可固定。 */
+    /** Time source; tests can fix its value. */
     now?: () => number;
 }
 
@@ -412,7 +424,7 @@ export class ProcessSampler {
     private readonly options: Required<Omit<SamplerOptions, "now">> & { now: () => number };
     private tree: number[] = [];
     private treeRefreshedAt = Number.NEGATIVE_INFINITY;
-    /** 根进程「已回收子进程」计数器的上一次读数（差分基线），prime 时建立。 */
+    /** Previous root process counter for reaped children, set by prime as the baseline for differences. */
     private childCpuBaselineNs: number | null = null;
 
     constructor(options: SamplerOptions) {
@@ -426,7 +438,7 @@ export class ProcessSampler {
         this.tree = [options.pid];
     }
 
-    /** 建立基线读数：必须在第一次 sample 之前调用，否则首拍差值为 0。 */
+    /** Set baseline readings before the first sample; otherwise the first difference is 0. */
     prime(): boolean {
         const reading = this.options.backend.read(this.options.pid);
         if (reading === null) return false;
@@ -435,7 +447,7 @@ export class ProcessSampler {
         return true;
     }
 
-    /** 刷新进程树；读不到全表时退回只有根进程。 */
+    /** Refresh the process tree; use only the root if the full table cannot be read. */
     refreshTree(): number[] {
         if (!this.options.withTree) {
             this.tree = [this.options.pid];
@@ -449,9 +461,10 @@ export class ProcessSampler {
     }
 
     /**
-     * 取一拍。elapsedMs 是距采样开始的实测时长（进 CSV 用于画图）；deltaMs 是距上一拍的
-     * 实测间隔（作为 CPU 差分的分母，别用名义间隔，否则定时器抖动会被算成 CPU 变化）。
-     * 根进程已不存在时返回 null。
+     * Take one sample. elapsedMs is the measured time since sampling started, saved to CSV for
+     * charts. deltaMs is the measured interval since the last sample and is the denominator
+     * for CPU differences. Do not use the nominal interval, or timer variation will appear
+     * as changes in CPU use. Return null if the root process no longer exists.
      */
     sample(timing: { elapsedMs: number; deltaMs: number }): ProcessSample | null {
         const now = this.options.now();
@@ -474,13 +487,13 @@ export class ProcessSampler {
             procs += 1;
             treeRssBytes += reading.rssBytes;
             const before = this.previous.get(pid);
-            // 中途新出现的进程没有基线，本拍记 0，避免把「自启动以来的总量」当成瞬时值。
+            // A new process has no baseline. Use 0 for this sample, not its cumulative time since startup.
             const delta = before === undefined ? 0 : Math.max(0, reading.cpuNs - before.cpuNs);
             treeCpuNs += delta;
             if (pid === this.options.pid) {
                 root = reading;
                 rootCpuNs = delta;
-                // 已回收子进程：计数器是单调累计量，差分即本拍新增（含进程表没抓到的短命子进程）。
+                // Reaped-child counters only increase. The difference includes short-lived children missed by the table.
                 childCpuNs =
                     this.childCpuBaselineNs === null
                         ? 0
@@ -498,7 +511,7 @@ export class ProcessSampler {
             cpuPercent: cpuPercent(rootCpuNs, timing.deltaMs),
             rssBytes: root.rssBytes,
             treeCpuPercent: cpuPercent(treeCpuNs, timing.deltaMs),
-            // --no-tree 的语义是「只看主进程」，那一列就不该有后代读数。
+            // --no-tree means only the main process, so exclude descendant readings from this column.
             childCpuPercent: this.options.withTree ? cpuPercent(childCpuNs, timing.deltaMs) : 0,
             treeRssBytes,
             procs,

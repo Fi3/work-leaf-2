@@ -1,27 +1,28 @@
 #!/usr/bin/env bun
 /**
- * llm-mock 压测 demo —— 在 playground/peri 目录里直接启动一次 harness 压测。
+ * llm-mock load-test demo: start one harness load test from playground/peri.
  *
  *   cd playground/peri
- *   bun perf-demo.ts                      # 起 mock → 起 peri → 每 100ms 采样 → 出记录
- *   bun perf-demo.ts --timeout-ms 600000  # 默认跑长剧本（data/scenarios/long-run.json），
- *                                         # 剧本走完 harness 自行退出，测到的是端到端时长
- *   bun perf-demo.ts --timeout-ms 30000   # 参数与 scripts/perf/run.ts 完全一致
+ *   bun perf-demo.ts                      # Start mock, start peri, sample every 100ms, write records.
+ *   bun perf-demo.ts --timeout-ms 600000  # Default: data/scenarios/long-run.json.
+ *                                         # The harness exits when the script ends; measure the full duration.
+ *   bun perf-demo.ts --timeout-ms 30000   # Same arguments as scripts/perf/run.ts.
  *   bun perf-demo.ts --help
  *
- * peri 的 provider 配置：3.17 起**不再读 `{cwd}/.peri/settings.json`**（那是旧版行为），
- * 只认 `~/.peri/settings.json` 或 `--settings <文件|JSON 字符串>`。demo 因此在运行时用
- * `--settings` 传一段 JSON（provider 指向本 mock 的实际端口），不去动用户的全局配置；
- * 同目录的 `.peri/settings.json` 保留为同结构的手工参考。
+ * Since version 3.17, peri no longer reads `{cwd}/.peri/settings.json` for provider settings.
+ * It reads only `~/.peri/settings.json` or `--settings <file|JSON string>`. The demo passes
+ * JSON through --settings at runtime, with the provider set to this mock's actual port,
+ * so the user's global settings stay unchanged. The local .peri/settings.json remains
+ * as a manual reference with the same structure.
  *
- * 产物：<仓库>/data/runs/<harness>/<runId>/{run.json,perf.log,samples.csv,harness.log,mock.log}
+ * Output: <repository>/data/runs/<harness>/<runId>/{run.json,perf.log,samples.csv,harness.log,mock.log}
  */
 import { join } from "node:path";
 import { REPO_ROOT, loadPerfConfig } from "../../scripts/perf/config";
 import { EXIT_OK, EXIT_SETUP, USAGE, runPerf } from "../../scripts/perf/run";
 
 const argv = process.argv.slice(2);
-/** 用户显式给了某个选项就不再插手（下面按各家默认值补的那些项都这么判断）。 */
+/** Do not replace an explicit user option. Use this check before adding defaults below. */
 const given = (name: string): boolean =>
     argv.some((arg) => arg === name || arg.startsWith(`${name}=`));
 
@@ -34,7 +35,7 @@ if (argv.includes("-h") || argv.includes("--help")) {
     process.exit(EXIT_OK);
 }
 
-/** peri 的沙盒 settings：provider 指向本次 mock 的端口，别名全映射到 llm-mock 模型。 */
+/** Sandbox settings for peri: use this mock's port and map every alias to the llm-mock model. */
 function sandboxSettings(port: number): string {
     const models = { fable: "llm-mock", opus: "llm-mock", sonnet: "llm-mock", haiku: "llm-mock" };
     return JSON.stringify({
@@ -61,22 +62,22 @@ function sandboxSettings(port: number): string {
 
 try {
     const config = loadPerfConfig(argv, REPO_ROOT, {
-        // 默认剧本：长剧本生成器用 Bash 形状造的那份（peri / opencode / Claude Code 共用）。
-        // 必须在**解析时**交出去：--script 的必填校验发生在解析里（见 PerfConfigDefaults）。
+        // Default script: the long script with Bash calls, shared by peri, opencode, and Claude Code.
+        // Supply it during parsing, which checks that --script is present; see PerfConfigDefaults.
         scriptPath: "data/scenarios/long-run.json",
     });
-    // 产物目录的身份：`data/runs/<harness>/<runId>/`。不给也能从启动命令推断，
-    // 但 demo 明确写出来更稳（命令被包装、换路径都不会影响落点）。
+    // Select the harness name in `data/runs/<harness>/<runId>/`. It can be inferred from
+    // the launch command, but an explicit name stays stable with wrappers or path changes.
     if (!argv.some((arg) => arg === "--harness" || arg.startsWith("--harness="))) {
         config.harnessId = "peri";
     }
 
-    // 耗尽策略跟着默认剧本走：长剧本要跑到自然结束才测得到端到端时长；loop 会一直供压
-    // 到兜底超时，那是已经废弃的固定窗口口径。
+    // Let the default long script end naturally to measure its full duration. Loop mode
+    // continues until the timeout and uses the obsolete fixed-duration measurement method.
     if (!given("--exhausted")) config.exhausted = "stop";
-    // 全局会话库 ~/.peri/threads/threads.db 里 playground/peri 的 workspace 快照已过期，
-    // 直接启动 peri 会报 "workspace identity changed"；demo 默认换用沙盒内的独立库。
-    // 想指定别的库：自行传 --peri-arg=--db-path --peri-arg=<path>。
+    // The playground/peri workspace snapshot in ~/.peri/threads/threads.db is stale.
+    // Direct startup reports "workspace identity changed", so use a separate sandbox database.
+    // To select another database, pass --peri-arg=--db-path --peri-arg=<path>.
     const userArgs = argv.filter((arg) => arg.startsWith("--peri-arg"));
     if (!userArgs.some((arg) => arg.includes("db-path"))) {
         config.periArgs.push("--db-path", join(import.meta.dir, ".peri/perf-threads.db"));

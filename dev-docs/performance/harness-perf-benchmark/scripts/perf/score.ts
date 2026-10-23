@@ -1,142 +1,168 @@
 /**
- * 统一计分：把 CPU 与内存混成一个标量，回答「跑完同一部剧本，谁的整段资源成本更小」。
+ * English translation of comments from the external harness-perf-benchmark reference.
+ * Combined score: express CPU and memory as one number to compare the total resource cost
+ * of running the same script.
  *
- * ## 状态：Beta（2026-09-19 起试行）
+ * ## Status: Beta (trial started on 2026-09-19)
  *
- * 实现是稳的（逐拍积分、后代 CPU 取大、尾部补齐都有验证），但**这套口径本身还没定稿**：
- * 「后代 CPU 算不算 harness 的开销」「时长按端到端还是按可控执行时长」都还在讨论。
- * 所以它是个**候选口径**，用来把「整段资源成本」摊开对比，不是对 harness 的裁决。
- * 改口径 = 换指标，先在下游文档里写明、重跑一个完整批次。
+ * The implementation is stable: integration at each sample, selection of the larger descendant
+ * CPU value, and estimation of the final unsampled interval have been verified. However,
+ * **the measurement method is not final**. Whether descendant CPU counts as harness overhead,
+ * and whether duration means elapsed time or controlled execution time, are still under discussion.
+ * This is a **candidate method** for comparing total resource costs, not a verdict on a harness.
+ * A change to the method changes the metric: document it in the consuming project first,
+ * then repeat a complete batch.
  *
- * ## 口径：CPU 与内存 1:1
+ * ## Method: CPU and memory at 1:1
  *
- *     CU    = 1.0 × 核·秒 + 1.0 × GB·秒
- *     核·秒 = ∫(cpu_pct/100) dt      GB·秒 = ∫(rss_kb/2^20) dt     ← 时间积分，含时长
- *     分数  = 100 × 本批次最小 CU / 本次 CU    （最优 100 分；只在同一批次内可比）
+ *     CU     = 1.0 × core·s + 1.0 × GB·s
+ *     core·s = ∫(cpu_pct/100) dt      GB·s = ∫(rss_kb/2^20) dt     (integrate over time)
+ *     score  = 100 × smallest CU in this batch / this run's CU
+ *              (best = 100; comparisons are valid only within the same batch)
  *
- * 公式结构借自阿里云函数计算（FC）的「CU使用量 = ∑(资源使用量 × CU转换系数)」——它把 CPU、
- * 内存折成同一个单位再加总，正好对应我们要问的问题。FC 弹性实例（活跃）的系数表（2026-09-19
- * 核对官方计费页）是：vCPU 1.0 CU/(vCPU·秒)、内存 0.15 CU/(GB·秒)、调用次数 75 CU/万次、
- * 磁盘 0.05 CU/(GB·秒)。
+ * The formula structure comes from Alibaba Cloud Function Compute (FC):
+ * "CU usage = ∑(resource usage × CU conversion coefficient)". It converts CPU and memory to
+ * one unit, then adds them, which matches the question here. The FC coefficients for active
+ * elastic instances, checked against its official pricing page on 2026-09-19, are:
+ * vCPU 1.0 CU/(vCPU·s), memory 0.15 CU/(GB·s), invocations 75 CU per 10,000,
+ * and disk 0.05 CU/(GB·s).
  *
- * **系数是本项目自己定的：CPU 与内存逐秒同价（1 核·秒 = 1 GB·秒），不是 FC 的 0.15。**
- * FC 的 0.15 等于说「1 个核 ≈ 6.67 GB 内存」，那是云厂商的出价；照它算，内存项在总账里只占
- * 1%~8%，「谁更省内存」几乎不参与计分（实测把内存权重压到 0，名次几乎不动）。本项目问的是
- * **资源负担**，所以明说一次：单位时间内核与内存各算一份，谁也不比谁便宜。（行业参考：AWS
- * Lambda 新版 vCPU 价折算 ≈7.6、Cloud Run ≈9，都在 FC 那条线上——想按某家的价重算，改
- * `CU_COEFFICIENTS.gbSecond` 一个数即可，别在别处另写一套。）
+ * **This reference project sets its own coefficients: CPU and memory have the same cost per
+ * second (1 core·s = 1 GB·s), instead of FC's memory coefficient of 0.15.**
+ * FC's 0.15 means "1 core ≈ 6.67 GB of memory". That is a cloud provider's price. With those
+ * rates, memory is only 1%–8% of the total, so memory efficiency has almost no effect on the
+ * score. In measurements, reducing the memory weight to zero barely changed the rankings.
+ * This reference project measures **resource burden**: per unit of time, one core and one GB
+ * of memory each count as one unit; neither is cheaper. For industry context, the newer AWS
+ * Lambda vCPU rates imply ≈7.6, and Cloud Run ≈9, in the same direction as FC. To recalculate
+ * with a provider's price, change only `CU_COEFFICIENTS.gbSecond`; do not add another formula.
  *
- * ## 压力口径（峰值）不折算
+ * ## Peak resource use is not converted to a score
  *
- * 面积答「总共烧多少」，峰值答「最坏一刻要占多少」——机器的内存水位与规格是照峰值配的，
- * 两个问题都真实。峰值（`resourcePeaks`：MB、%）是**绝对量**，本来就能横比，再套一层批内
- * 相对分只会多一个「我们拍的」数字，所以它不计分，只与 CU 并列显示。
+ * The integral answers "how much is used in total"; the peak answers "how much is needed at
+ * the worst moment". Memory capacity is selected for the peak, so both questions matter.
+ * Peaks (`resourcePeaks`: MB, %) are **absolute quantities** that can be compared directly.
+ * A relative score within a batch would add another arbitrary number, so peaks are shown
+ * beside CU without conversion to scores.
  *
- * ## 与 FC 的四处刻意偏差
+ * ## Four deliberate differences from FC
  *
- * 1. **系数不是 FC 的 0.15**：本项目按「资源负担」读，CPU 与内存逐秒同价（理由见上）；
- * 2. **内存用实测 RSS**，不是 FC 的「申报规格 × 时长」——我们只有实测值，实测也更公平；
- * 3. **不含磁盘项**（无数据）与 **GPU 项**（本项目不采 GPU）；时长取**自然结束的端到端时长**，
- *    不是 FC 那种「可控执行时长」；
- * 4. **调用次数项一律不折算**：请求数由剧本决定，不是 harness 的开销。
+ * 1. **The memory coefficient is not FC's 0.15**: this reference project measures resource
+ *    burden, with the same cost per second for CPU and memory, for the reasons above.
+ * 2. **Memory is measured RSS**, not FC's "declared capacity × duration". Only measured data
+ *    is available here, and actual measurements also make the comparison fairer.
+ * 3. **Disk is excluded** because there is no data, and **GPU is excluded** because this
+ *    reference project does not sample GPUs. Duration is **elapsed time through normal exit**,
+ *    rather than FC's controlled execution time.
+ * 4. **Invocation counts are not converted**: the script determines the number of requests;
+ *    this is not harness overhead.
  *
- * ## 后代 CPU 取哪一路（重要）
+ * ## Which descendant CPU measurement to use
  *
- * harness 每轮工具调用拉起的 shell 只活几十毫秒，靠「每隔 2s 刷一次进程表」基本抓不到；
- * 而这些 shell 都是被 harness **回收**的，其 CPU 会进父进程 rusage 的 ri_child_* 计数器。
- * 两条路都是真值的下界，且可能重叠（被看见过的子进程之后被回收，同一段 CPU 会在计数器里
- * 再出现一次），所以**取两者较大者，不求和**。
+ * Shells created for tool calls live for only tens of milliseconds. A process table sampled
+ * every 2 seconds will usually miss them. The harness **reaps** these shells, so their CPU
+ * time enters the parent process's rusage ri_child_* counters. Both methods give lower bounds
+ * on the true value, and they can overlap: a sampled child can later be reaped, causing the
+ * same CPU time to appear in the counters. **Use the larger value, not their sum.**
  */
 
 import type { ProcessSample } from "./sampler";
 
 /**
- * CU 转换系数——**改这两个数等于换了一套计分口径**，不要为了「让排名好看」微调它们。
+ * CU conversion coefficients: **changing these two numbers changes the scoring method**.
+ * Do not adjust them to improve the rankings.
  *
- * 结构借自阿里云 FC，取值是本项目定的 **CPU 与内存 1:1**（理由见文件头）；FC 原表的内存项是
- * 0.15 CU/(GB·秒)。要按别的价重算就改这里一处，并在 docs/perf-compare.md 里写明。
+ * The structure comes from Alibaba Cloud FC; the values are this reference project's own
+ * **CPU-to-memory ratio of 1:1** (see the file header). FC's memory coefficient is
+ * 0.15 CU/(GB·s). To recalculate with other prices, change only this location and document
+ * the change in docs/perf-compare.md.
  */
 export const CU_COEFFICIENTS = {
-    /** CU/(vCPU·秒)：核·秒与 CU 1:1。 */
+    /** CU/(vCPU·s): core·s and CU have a 1:1 ratio. */
     vCpuSecond: 1.0,
-    /** CU/(GB·秒)：与 CPU 同价（1 核·秒 = 1 GB·秒）；FC 原表这里是 0.15。 */
+    /** CU/(GB·s): the same cost as CPU (1 core·s = 1 GB·s); FC uses 0.15 here. */
     gbSecond: 1.0,
 } as const;
 
-/** 尾部补齐的默认上限：采样循环停在进程消失前最后一拍，正常空档 ≈ 一个采样间隔。 */
+/** Default limit for the final unsampled interval: normally about one sampling interval before exit. */
 export const DEFAULT_MAX_TAIL_MS = 500;
 
 export interface CostOptions {
-    /** 统计范围：`tree`（根进程 + 后代，默认）还是 `root`（只看主进程）。 */
+    /** Measurement scope: `tree` (root process and descendants, default) or `root` (main process only). */
     scope?: "tree" | "root";
-    /** 末次采样到进程退出之间的空档（毫秒），按末尾若干拍的速率补齐。 */
+    /** Gap from the final sample to process exit, in milliseconds; estimated from the final sample rates. */
     tailMs?: number;
-    /** 补齐速率取末尾几拍的均值（默认 3）。 */
+    /** Number of final samples whose mean rate is used for the estimate (default 3). */
     tailWindow?: number;
-    /** 空档上限：超过就截断，免得被强杀/异常退出时把外推放大（默认 500ms）。 */
+    /** Maximum gap, in milliseconds; cap estimates after a forced or abnormal exit (default 500). */
     maxTailMs?: number;
     /**
-     * 首拍之前那一拍的 elapsedMs —— 它决定首拍的 dt。
-     * 整段计价时是 0；按段计价时传上一段末拍的时刻，否则首拍的 dt 会被算成「从 0 到它」。
+     * The elapsedMs of the sample before the first sample here; this determines the first dt.
+     * Use 0 for the complete run. For a segment, use the final sample time of the previous
+     * segment; otherwise the first dt is measured from zero.
      */
     originMs?: number;
     /**
-     * CPU 校准系数（`cpuScale`，来自 calibrate.ts，默认 1 = 不校准）。
+     * CPU calibration coefficient (`cpuScale`, from calibrate.ts; default 1 means no calibration).
      *
-     * 它**只乘在 CPU 项上**：内存是本机实测的字节·秒，没有「机器快慢」这回事，不折算。
-     * 方向是**乘**——机器越快，同样的核·秒折出的标准秒越多。写反会让快机器显得更便宜。
-     * 系数为 1 时所有折算字段退化成原值（`standardCpuSeconds === cpuSeconds`、`rawCu === cu`）。
+     * **Multiply only the CPU term**. Memory is measured locally in byte·s; machine speed does
+     * not affect its units, so it is not rescaled. **Multiply**, rather than divide: on a faster
+     * machine, the same core·s corresponds to more standard seconds. Reversing this would make
+     * a faster machine appear cheaper. With a coefficient of 1, rescaled fields equal their
+     * original values (`standardCpuSeconds === cpuSeconds`, `rawCu === cu`).
      */
     cpuScale?: number;
 }
 
 export interface ResourceCost {
-    /** 核·秒（scope=tree 时含后代）——**本机的秒**，未折算。 */
+    /** Core·s (including descendants when scope=tree): **local machine seconds**, without rescaling. */
     cpuSeconds: number;
-    /** GB·秒（常驻内存 × 时长）。 */
+    /** GB·s (resident memory × duration). */
     gbSeconds: number;
-    /** 总分：`cpuCu + memoryCu`。 */
+    /** Total score: `cpuCu + memoryCu`. */
     cu: number;
     cpuCu: number;
     memoryCu: number;
     /**
-     * 折算后的 CPU 项：`cpuSeconds × cpuScale`，单位是**项目标准 CPU 单位·秒**
-     * （= 7-Zip 口径的 benchmark MIPS × 秒 / baseline）。
+     * Rescaled CPU term: `cpuSeconds × cpuScale`, in **project standard CPU unit·s**
+     * (= 7-Zip benchmark MIPS × seconds / baseline).
      *
-     * baseline 是本项目自定的换算基准，**没有一台真实参考机器被测量过**：这个数只表示
-     * 「按本机 7-Zip Rating 折算，本机这一秒相当于多少个项目标准 CPU 单位秒」。
-     * 旧 fixture 没这一项时按未折算读（= `cpuSeconds`）。
+     * The baseline is a conversion reference set by this reference project;
+     * **no real reference machine was measured**. The value expresses how many project
+     * standard CPU unit seconds equal one local machine second, based on its 7-Zip Rating.
+     * For old fixtures without this field, use the value without rescaling (= `cpuSeconds`).
      */
     standardCpuSeconds?: number;
     /**
-     * CPU 校准系数（**乘**进 core·秒；1 = 未校准）。旧 fixture 没这一项时按 1 读。
+     * CPU calibration coefficient (**multiply** core·s; 1 means no calibration).
+     * For old fixtures without this field, use 1.
      */
     cpuScale?: number;
     /**
-     * **未折算**的 CU：`CU_COEFFICIENTS.vCpuSecond × cpuSeconds + memoryCu`。
-     * `cpuScale === 1` 时与 `cu` 相等。校准只乘 CPU 项，所以 `cu - rawCu` 恰好是
-     * `cpuCu × (cpuScale − 1)`——这一条留给读取端自检。
+     * CU **without rescaling**: `CU_COEFFICIENTS.vCpuSecond × cpuSeconds + memoryCu`.
+     * Equals `cu` when `cpuScale === 1`. Calibration multiplies only the CPU term, so
+     * `cu - rawCu` is exactly `cpuCu × (cpuScale − 1)`; consumers can use this as a check.
      */
     rawCu?: number;
-    /** 主进程自身的核·秒。 */
+    /** Core·s used by the main process itself. */
     rootCpuSeconds: number;
-    /** 后代核·秒（= max(采样到的, 已回收计数器)）。 */
+    /** Descendant core·s (= max(sampled value, reaped-child counter)). */
     childCpuSeconds: number;
-    /** 采样窗口内可见后代的核·秒（进程表抓到的）。 */
+    /** Core·s of descendants visible in process-table samples during the sampling window. */
     childSampledSeconds: number;
-    /** 已回收子进程计数器的核·秒（需要采样数据带 child_cpu_pct 列，老产物恒为 0）。 */
+    /** Core·s from reaped-child counters; requires child_cpu_pct in samples, otherwise 0 for old data. */
     childCounterSeconds: number;
-    /** 后代 CPU 最终取自哪一路——`counter` 说明短命子进程是主要来源。 */
+    /** Selected descendant CPU source; `counter` indicates that short-lived children dominate. */
     childCpuFrom: "counter" | "sampled";
-    /** 采样窗口时长（毫秒，末次采样时刻）。 */
+    /** Sampling window duration in milliseconds, given by the final sample time. */
     samplingMs: number;
-    /** 实际用于补齐的尾部时长（毫秒，已按 maxTailMs 截断）。 */
+    /** Final unsampled duration actually estimated, in milliseconds, capped by maxTailMs. */
     tailAppliedMs: number;
-    /** 采样点数量。 */
+    /** Number of samples. */
     sampleCount: number;
 }
 
-/** 相邻采样点的实测间隔（秒）；首拍的 dt 从 `originMs` 算到它的 elapsed。 */
+/** Measured intervals between samples, in seconds; the first dt starts at `originMs`. */
 function intervalsSeconds(samples: readonly ProcessSample[], originMs: number): number[] {
     const out: number[] = [];
     let previous = originMs;
@@ -148,9 +174,10 @@ function intervalsSeconds(samples: readonly ProcessSample[], originMs: number): 
 }
 
 /**
- * 采样序列 → 资源成本（核心公式）。
+ * Convert a sample sequence to resource cost (the central formula).
  *
- * 空样本集返回全 0（调用方负责判断「这次运行没采到样」，不要在这里抛）。
+ * Return zero values for an empty sequence. The caller must detect runs without samples;
+ * do not throw an error here.
  */
 export function resourceCost(
     samples: readonly ProcessSample[],
@@ -195,7 +222,7 @@ export function resourceCost(
         const dt = deltas[index] as number;
         rootCpuSeconds += (sample.cpuPercent / 100) * dt;
         if (scope === "tree") {
-            // tree 列含根进程，所以要减掉根进程自身才是「后代」。
+            // The tree value includes the root process; subtract it to obtain descendant CPU use.
             childSampledSeconds += Math.max(0, sample.treeCpuPercent - sample.cpuPercent) / 100 * dt;
             childCounterSeconds += (sample.childCpuPercent / 100) * dt;
             gbSeconds += (sample.treeRssBytes / 2 ** 30) * dt;
@@ -204,8 +231,8 @@ export function resourceCost(
         }
     });
 
-    // 尾部补齐：采样循环在进程消失的那一刻停，最后一拍与退出之间还有约一个采样间隔的账没记。
-    // 实测（2026-09-19）这段空档固定 ≈100ms，对 pi 这种 1.5s 的快 harness 相当于漏计 ~7% CPU。
+    // Estimate the final unsampled interval: sampling stops when the process disappears, leaving about one interval.
+    // Measurements on 2026-09-19 found a consistent ≈100 ms gap, or ≈7% missed CPU for a fast 1.5 s harness such as pi.
     let tailAppliedMs = 0;
     if (tailMs > 0) {
         const tail = samples.slice(-tailWindow);
@@ -227,12 +254,12 @@ export function resourceCost(
         tailAppliedMs = tailMs;
     }
 
-    // 两个后代口径都是下界、且可能重叠 → 取大者，不求和。
+    // Both descendant measurements are lower bounds and can overlap; use the larger value, not their sum.
     const childCpuSeconds =
         scope === "tree" ? Math.max(childSampledSeconds, childCounterSeconds) : 0;
     const cpuSeconds = rootCpuSeconds + childCpuSeconds;
-    // 折算只乘 CPU 项：标准 CPU 单位·秒 = 本机核·秒 × cpuScale。
-    // 内存是本机实测的字节·秒，不折算——**两项量纲因此不同，名次可能变**（不是等比例缩放）。
+    // Rescale only the CPU term: standard CPU unit·s = local core·s × cpuScale.
+    // Memory stays in locally measured byte·s. The two terms therefore have different units, so rankings can change.
     const standardCpuSeconds = cpuSeconds * cpuScale;
     const cpuCu = CU_COEFFICIENTS.vCpuSecond * standardCpuSeconds;
     const memoryCu = CU_COEFFICIENTS.gbSecond * gbSeconds;
@@ -258,65 +285,69 @@ export function resourceCost(
     };
 }
 
-/** 成本里默认的校准系数（旧 fixture / 未校准一律按 1 读）。 */
+/** Calibration coefficient from the cost; use 1 for old fixtures and uncalibrated data. */
 export function scaleOf(cost: ResourceCost): number {
     return cost.cpuScale ?? 1;
 }
 
-/** 折算后的核·秒，单位是项目标准 CPU 单位（旧 fixture 没这一项时按未折算读）。 */
+/** Rescaled core·s in project standard CPU units; old fixtures without this field use unscaled values. */
 export function standardCpuSeconds(cost: ResourceCost): number {
     return cost.standardCpuSeconds ?? cost.cpuSeconds * scaleOf(cost);
 }
 
-/** 未折算的 CU（旧 fixture 没这一项时按 `cu` 读——它是未校准时才成立）。 */
+/** CU without rescaling; old fixtures fall back to `cu`, which is valid only without calibration. */
 export function rawCu(cost: ResourceCost): number {
     return cost.rawCu ?? cost.cu;
 }
 
 /**
- * `cpuScale` 的显示形式（**只格式化，不改计算**）：`9.386899999999999` → `9.3869`。
- * 浮点尾巴不是信息，是二进制小数的副作用；日志与页面上都该按这个显示。
+ * Display format for `cpuScale` (**format only; do not change calculations**):
+ * `9.386899999999999` → `9.3869`. Extra digits are an effect of binary fractions, not useful
+ * information. Use this format in logs and pages.
  */
 export function formatCpuScale(scale: number): string {
     if (!Number.isFinite(scale)) return String(scale);
     return String(Number(scale.toFixed(4)));
 }
 
-/** 人读的字节数（MB、一位小数）。 */
+/** Display a byte count in MB with one decimal place. */
 export function formatBytesMb(bytes: number): string {
     return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
 }
 
 /**
- * 压力口径：整个窗口里的峰值（「最坏一刻」），与成本口径的面积互补。
+ * Peak resource use over the complete window (the worst moment), which complements the
+ * integral used for resource cost.
  *
- * 为什么单独给一份而不是让读取端各自 `Math.max`：峰值也是**口径**——取进程树还是主进程、
- * 峰值那一拍要不要连进程数一起记下来（判「峰值是不是工具子进程顶出来的」），这些说法得和
- * 积分一样只有一处。它**不折算成分数**：MB 与 % 本来是绝对量、可直接横比。
+ * Provide this centrally instead of making each consumer use `Math.max`: peak measurement
+ * also needs one method. Define in one place whether to use the process tree or main process,
+ * and whether to record the process count at the peak to identify tool-child contributions.
+ * As with integration, these choices need one owner. **Do not convert peaks to scores**:
+ * MB and % are absolute quantities that can be compared directly.
  */
 export interface ResourcePeaks {
-    /** 进程树 RSS 峰值（字节）。 */
+    /** Peak process-tree RSS, in bytes. */
     treeRssBytes: number;
-    /** 进程树 CPU 峰值（%，单核 100% 口径）。 */
+    /** Peak process-tree CPU use, as a percentage where one core is 100%. */
     treeCpuPercent: number;
-    /** 主进程 RSS 峰值（字节）。 */
+    /** Peak main-process RSS, in bytes. */
     rootRssBytes: number;
-    /** 主进程 CPU 峰值（%，单核 100% 口径）。 */
+    /** Peak main-process CPU use, as a percentage where one core is 100%. */
     rootCpuPercent: number;
-    /** 进程树 RSS 峰值出现在第几毫秒（看它是运转中堆起来的还是收尾时定格的）。 */
+    /** Time of peak process-tree RSS, in milliseconds, to distinguish growth during work from a final peak. */
     treeRssAtMs: number;
-    /** 峰值那一拍的进程数（>1 说明当时有工具子进程在，峰值含它）。 */
+    /** Process count at the RSS peak; >1 means tool children were present and included in the peak. */
     treeRssProcs: number;
     sampleCount: number;
 }
 
-/** 峰值口径的选项：只挑范围，别的都不参与（峰值与时长、尾部补齐都无关）。 */
+/** Peak options select only the scope; duration and estimates of the final interval do not affect peaks. */
 export interface PeakOptions {
-    /** 统计范围：`tree`（默认）还是 `root`。 */
+    /** Measurement scope: `tree` (default) or `root`. */
     scope?: "tree" | "root";
 }
 
-/** 采样序列 → 峰值（空样本集返回全 0）。 */
+/** Convert samples to peaks; return zero values for an empty sequence. */
 export function resourcePeaks(
     samples: readonly ProcessSample[],
     options: PeakOptions = {},
@@ -345,7 +376,7 @@ export function resourcePeaks(
     return peaks;
 }
 
-/** 三段成本：启动 → 首个请求、首个请求 → 末次请求、末次请求 → 结束。 */
+/** Three cost segments: startup to first request, first to last request, and last request to exit. */
 export interface SegmentCosts {
     startup: ResourceCost;
     span: ResourceCost;
@@ -353,16 +384,22 @@ export interface SegmentCosts {
 }
 
 /**
- * 按「首个 / 末次请求」把采样切成三段各自计价。
+ * Split samples at the first and last request, and calculate each of the three segment costs.
  *
- * 为什么值钱：peri / Codex 的所谓启动开销几乎全是**收尾等待**（peri 固定等 ~5s、Codex 等
- * dns 超时 ~10s），那段时间 CPU 接近于零但内存照样按 GB·秒 计费，拆开才看得见。
+ * This matters because almost all of peri / Codex's apparent startup overhead is **waiting
+ * at shutdown**: peri waits a fixed ≈5 s, and Codex waits ≈10 s for a DNS timeout. CPU use
+ * is nearly zero during that time, but memory still contributes GB·s. Separate segments
+ * make that cost visible.
  *
- * 「三段之和 ≠ `resourceCost` 的总分」是**故意的**，差额只有一笔：尾部外推只在总成本那一份里
- * 算（六家实测「三段之和 + 尾部补齐 = 总分」逐笔成立）。后代 CPU 的「取较大者」同样只在整段上
- * 取一次——逐段各取一次看着更紧，却会把被采样看到的子进程 CPU 在它被回收的那一段里再算一遍。
+ * **The sum of the three segments deliberately differs from the `resourceCost` total**.
+ * The difference is the final unsampled interval, which is estimated only in the total.
+ * Measurements of six harnesses confirmed that the three segments plus that estimate equal
+ * the total in each case. Likewise, select the larger descendant CPU value only once for
+ * the complete run. Selecting it separately per segment can count sampled child CPU again
+ * in the segment where the child is reaped.
  *
- * `cpuScale` 照 `options` 原样转发：折算必须逐段同一系数，否则三段之和与总分对不上。
+ * Forward `cpuScale` unchanged from `options`: each segment must use the same coefficient
+ * for the segment sum to agree with the total.
  */
 export function segmentCosts(
     samples: readonly ProcessSample[],
@@ -377,10 +414,10 @@ export function segmentCosts(
     const sampleAt = (list: readonly ProcessSample[], fallback: number) =>
         list.length > 0 ? (list[list.length - 1] as ProcessSample).elapsedMs : fallback;
 
-    // 每段的首拍 dt 要接在上一段末拍之后，否则首拍会被算成「从 0 到它」。
+    // Start the first dt of each segment at the previous segment's final sample, rather than at zero.
     const startupEnd = sampleAt(startupSamples, 0);
     const spanEnd = sampleAt(spanSamples, startupEnd);
-    // 分段核算不做尾部外推：它是整个窗口的性质，塞进某一段会重复计（总成本那一份里才有）。
+    // Do not estimate the final unsampled interval per segment; it belongs to the full window and would be counted twice.
     const base = { ...options, tailMs: 0 };
     return {
         startup: resourceCost(startupSamples, { ...base, originMs: options.originMs ?? 0 }),
@@ -389,36 +426,36 @@ export function segmentCosts(
     };
 }
 
-/** 一条待计分的记录：只要 id 与 CU。 */
+/** A record to score requires only an id and CU. */
 export interface ScoredInput {
     id: string;
     cu: number;
 }
 
-/** 一行的公式（生成 payload 与日志都用它，免得日志和页面各记一份）。 */
+/** Formula for one row, shared by generated payloads and logs to avoid separate definitions. */
 export interface ScoreFormulaCalibration {
-    /** 这一批/这一次用的折算系数（**乘**进 core·秒）。 */
+    /** Conversion coefficient for this batch or run; **multiply** core·s by this value. */
     cpuScale: number;
     baselineMips: number;
-    /** 折算用的原始值（单线程 R/U 均值）。 */
+    /** Raw calibration value: the mean of single-thread R/U. */
     cpuScaleValue: number;
     toolVersion: string;
     measuredAt: string;
-    /** 是否来自本机这次运行自己记下的校准（false = 事后用一份外部 JSON 重算的预览）。 */
+    /** Whether calibration came from this local run; false means a later preview recalculated from external JSON. */
     appliedFromRunMeta?: boolean;
 }
 
 export interface ScoreFormula {
-    /** 公式结构的出处（借了谁的形状）。 */
+    /** Source of the formula structure. */
     source: string;
     expression: string;
-    /** 可直接印在页面/日志上的逐行说明。 */
+    /** Explanation lines ready for display on pages or in logs. */
     lines: string[];
     coefficients: typeof CU_COEFFICIENTS;
     scope: string;
     score: string;
     deviations: string[];
-    /** 折算那一段；没校准就是 null。 */
+    /** Calibration details, or null if no calibration was applied. */
     calibration: {
         cpuScale: number;
         baselineMips: number;
@@ -432,8 +469,8 @@ export interface ScoreFormula {
 }
 
 /**
- * 公式块（**口径只有这一处**）：日志、图表 payload、页面文案都从这里取，
- * 不许各自再写一遍——两处公式是两套口径的开始。
+ * Formula block: **one definition of the measurement method** for logs, chart payloads,
+ * and page text. Do not duplicate it; separate formulas can produce separate methods.
  */
 export function scoreFormula(calibration: ScoreFormulaCalibration | null = null): ScoreFormula {
     const scale = calibration === null ? 1 : calibration.cpuScale;
@@ -520,10 +557,12 @@ export function scoreFormula(calibration: ScoreFormulaCalibration | null = null)
 }
 
 /**
- * 相对分：`100 × 本批次最小 CU / 本次 CU`——最优 100 分，越贵越低。
+ * Relative score: `100 × smallest CU in this batch / this run's CU`.
+ * The best score is 100; higher cost gives a lower score.
  *
- * 只在**同一批次内**可比：系数是绝对的，但机器状态、后台负载、剧本都跟着批次走。
- * cu ≤ 0 的记录记 0 分（没采到样，不该因此得满分）。
+ * Compare scores **only within the same batch**: coefficients are absolute, but machine
+ * state, background load, and scripts depend on the batch. Give records with cu ≤ 0 a score
+ * of 0; missing samples must not produce a perfect score.
  */
 export function relativeScores(entries: readonly ScoredInput[]): Map<string, number> {
     const scores = new Map<string, number>();
