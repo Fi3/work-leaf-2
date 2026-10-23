@@ -18,7 +18,7 @@ spec = importlib.util.spec_from_file_location('bench', 'scripts/bench.py')
 bench = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bench)
 settings = json.loads(sys.argv[1])
-sys.argv = ['scripts/bench.py', *settings.get('arguments', ['--publish'])]
+sys.argv = ['scripts/bench.py', *settings.get('arguments', [])]
 calls = {'builds': 0, 'measurements': 0}
 original_run = subprocess.run
 def run(command, *arguments, **options):
@@ -26,10 +26,12 @@ def run(command, *arguments, **options):
         calls['builds'] += 1
         return subprocess.CompletedProcess(command, 0)
     return original_run(command, *arguments, **options)
-def measure(*arguments, **options):
+def measure(image, profile, directory, source, cpuset=None):
     calls['measurements'] += 1
+    calls['cpuset'] = cpuset
     result = json.loads(pathlib.Path('${baselinePath}').read_text())
     result.update(settings.get('result', {}))
+    result['cpu_affinity'] = cpuset
     change = settings.get('during_measurement')
     if change == 'source':
         pathlib.Path('README.md').write_text('Changed during measurement.\\n')
@@ -50,7 +52,7 @@ def measure(*arguments, **options):
     calls['index_after_measurement'] = subprocess.check_output(['git', 'write-tree'], text=True).strip()
     return result
 try:
-    with patch.object(bench.subprocess, 'run', run), patch.object(bench, 'run_container', measure):
+    with patch.object(bench.subprocess, 'run', run), patch.object(bench, 'run_container', measure), patch.object(bench.os, 'sched_getaffinity', return_value=set(settings.get('available_cpus', [30, 31, 32, 33]))):
         if settings.get('repeat_commit'):
             evidence = bench.evidence_module()
             root = evidence.project_root()
@@ -107,7 +109,7 @@ async function repository(t) {
   return { directory, command, git, fingerprint, id, resultPath, head, run, calls };
 }
 
-test('a passing published benchmark commits only its evidence and keeps unrelated staged evidence', async t => {
+test('the default benchmark pins CPUs 30 and 31 and commits only passing evidence', async t => {
   const repo = await repository(t);
   await writeFile(join(repo.directory, 'benchmarks/results/other.json'), 'Unrelated staged evidence.\n');
   repo.git('add', 'benchmarks/results/other.json');
@@ -129,10 +131,35 @@ test('a passing published benchmark commits only its evidence and keeps unrelate
   assert.equal(saved.source_fingerprint, repo.id);
   assert.equal(saved.source_revision, repo.head);
   assert.equal(saved.comparison.status, 'PASS');
+  assert.equal(saved.cpu_affinity, '30,31');
+  assert.equal((await repo.calls()).cpuset, '30,31');
   assert.match(repo.git('log', '-1', '--format=%s'), /^(ADD|UPDATE) .*benchmark.*(evidence|resource)/);
   const verified = repo.command('python3', ['scripts/bench-evidence.py', 'validate', '--ref', 'HEAD']);
   assert.equal(verified.status, 0, verified.stderr);
   assert.match(verified.stdout, /HEAD:benchmarks\/results\//);
+});
+
+test('explicit publication accepts a different available CPU pair', async t => {
+  const repo = await repository(t);
+  const result = repo.run({ arguments: ['--publish', '--cpuset-cpus', '33,32'] });
+  assert.equal(result.status, 0, result.stderr);
+  assert.notEqual(repo.git('rev-parse', 'HEAD'), repo.head);
+  assert.equal(repo.git('diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD'), repo.resultPath);
+  assert.equal((await repo.calls()).cpuset, '32,33');
+  const saved = JSON.parse(repo.git('show', `HEAD:${repo.resultPath}`));
+  assert.equal(saved.cpu_affinity, '32,33');
+  assert.equal(saved.comparison.status, 'PASS');
+});
+
+test('unavailable default CPUs stop before measurement and explain how to select another pair', async t => {
+  const repo = await repository(t);
+  const result = repo.run({ available_cpus: [0, 1, 2, 3] });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /available/i);
+  assert.match(result.stderr, /--cpuset-cpus/);
+  assert.deepEqual(await repo.calls(), { builds: 0, measurements: 0 });
+  assert.equal(repo.git('rev-parse', 'HEAD'), repo.head);
+  assert.equal(repo.git('status', '--porcelain'), '');
 });
 
 test('a complete benchmark regression is saved but never committed', async t => {
@@ -264,10 +291,11 @@ test('a local benchmark measures working changes without committing or publishin
   const repo = await repository(t);
   await writeFile(join(repo.directory, 'README.md'), 'Local candidate source.\n');
   const originalStatus = repo.git('status', '--porcelain');
-  const result = repo.run({ arguments: [] });
+  const result = repo.run({ arguments: ['--no-publish'] });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(repo.git('rev-parse', 'HEAD'), repo.head);
   assert.equal(repo.git('status', '--porcelain'), originalStatus);
   assert.equal((await repo.calls()).measurements, 1);
+  assert.equal((await repo.calls()).cpuset, '30,31');
   await assert.rejects(readFile(join(repo.directory, repo.resultPath)), { code: 'ENOENT' });
 });

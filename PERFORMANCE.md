@@ -43,27 +43,30 @@ Complete normal correctness checks first. Commit source, documentation, and
 check evidence on the branch to measure. Then run:
 
 ```sh
-python3 scripts/bench.py --publish
+python3 scripts/bench.py
 ```
 
-On PASS, `--publish` automatically commits only the matching result and validates
+Publication is enabled by default; the explicit `--publish` option remains
+supported. On PASS, the command automatically commits only the matching result and validates
 the new commit. It requires an attached branch and no uncommitted source changes.
 It checks the source and branch again before the commit. Unrelated staged
 benchmark evidence stays staged. Normal Git commit hooks run; a rejected commit
 leaves the result available and makes the command fail. No push is automatic.
 
-To measure uncommitted work as a local trial, omit `--publish`. Stage new source
+To measure uncommitted work as a local trial, use `--no-publish`. Stage new source
 files or use `git add -N PATH` so the snapshot includes them. Local trials do not
 create commits.
 
-To select two available logical CPUs, add `--cpuset-cpus`. For example, this
-host uses the higher-numbered CPUs 30 and 31:
+The default logical CPUs are 30 and 31. To select another pair, replace
+`CPU1,CPU2` with two available CPU IDs:
 
 ```sh
-python3 scripts/bench.py --publish --cpuset-cpus 30,31
+python3 scripts/bench.py --cpuset-cpus CPU1,CPU2
 ```
 
-The runner checks Docker's CPU selection and records it. The two-core quota and
+If either CPU is unavailable, the command stops before the Docker build and
+explains how to select another pair. The runner checks Docker's CPU selection
+and records it. The two-core quota and
 standard workload stay the same. Use the same CPU selection for repeated trials.
 Select separate physical cores when possible; two logical CPUs can share a core.
 
@@ -117,8 +120,8 @@ staged or added with `git add -N`. Only `.bench-results/` and
 measured source identity.
 
 Local results are stored under `.bench-results/`. Reviewable baseline results
-are also stored under `benchmarks/results/` when `--publish` is used. Omit that
-option for a local trial. Each result uses its source fingerprint as
+are also stored under `benchmarks/results/` by default. Use `--no-publish`
+for a local trial. Each result uses its source fingerprint as
 the file name and records the profile hash, complete profile, Docker image ID,
 actual limits, measurements, and exhaustion evidence. Source or profile changes
 require a new result; an evidence-only commit does not.

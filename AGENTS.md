@@ -86,7 +86,7 @@ or important implementation notes, but keep the first line strong enough to stan
 - Run `sh scripts/check.sh` for the complete local release gate.
 - Use the exact runtimes and locked installation in README.md. Terminal tests use Python 3 standard-library tools only.
 - Keep dependency changes subject to `scripts/check-dependencies.sh` and review its recorded baseline.
-- Run `python3 scripts/bench.py --publish` only when a human completes a PR, or when the user explicitly requests a baseline.
+- Run `python3 scripts/bench.py` only when a human completes a PR, or when the user explicitly requests a baseline.
   It runs the fixed Docker load to memory exhaustion. It is not part of the routine release gate.
 - Install the local push check with `sh scripts/install-hooks.sh`. Missing benchmark evidence for an outgoing source
   tree requires an explicit human confirmation. Never supply that confirmation for the user. See `PERFORMANCE.md` when needed.

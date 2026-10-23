@@ -695,12 +695,13 @@ values, duplicate versions, and scripts:
 
 ## Verification
 
-When a human completes a PR, run `python3 scripts/bench.py --publish` to record
+When a human completes a PR, run `python3 scripts/bench.py` to record
 CPU and RAM use under the fixed Docker limits, through memory exhaustion.
 Commit source, documentation, and check evidence before measurement. On PASS,
-`--publish` automatically commits only the benchmark result and validates that
+the command automatically commits only the benchmark result and validates that
 commit. A failed run keeps its report without an automatic commit. Unrelated
-staged benchmark evidence is preserved. Omit `--publish` for a local trial.
+staged benchmark evidence is preserved. Use `--no-publish` for a local trial.
+The explicit `--publish` option remains supported.
 This benchmark uses simulated model responses and is separate from the release
 checks below. Install the push warning with `sh scripts/install-hooks.sh`.
 The hook checks each outgoing source tree and asks for explicit confirmation
@@ -710,8 +711,10 @@ over local files, including a failed or invalid result. A measured result outsid
 the 20% resource budget stops the push without a confirmation override. See
 [PERFORMANCE.md](PERFORMANCE.md) for setup, evidence, and comparison rules.
 
-Use `--cpuset-cpus 30,31` to select those two CPUs on a host where they are
-available. The benchmark prints CPU, RAM, task, and session tables, with
+The benchmark uses CPUs 30 and 31 by default. Use `--cpuset-cpus CPU1,CPU2` to
+select a different pair. If either CPU is unavailable, the command stops before
+the Docker build and tells you how to select another pair.
+The benchmark prints CPU, RAM, task, and session tables, with
 pass/fail checks against the first baseline. It also shows separately sourced
 published figures for 14 harness projects. To render saved results without
 running a benchmark, use:
@@ -760,9 +763,10 @@ adapter syntax checks, and 166 Node tests. The Node tests include 75 adapter tes
 35 OAuth tests, 15 OpenAI generation tests, three actual server script tests,
 ten actual server recovery tests, one process exit test, and 27 benchmark, report,
 and push-evidence tests. These 27 tests do not run the Docker capacity benchmark.
-Automatic publication adds 19 checks with temporary Git repositories and
+Automatic publication adds 21 checks with temporary Git repositories and
 controlled measurement data. They cover passing and failed results, changes
-during measurement, normal commit hooks, and preservation of staged evidence.
+during measurement, normal commit hooks, preservation of staged evidence,
+default publication and CPU selection, explicit overrides, and unavailable CPUs.
 Independent Node test files run concurrently with separate temporary directories
 and sockets.
 The added application tests cover generated Unicode preview limits and saved

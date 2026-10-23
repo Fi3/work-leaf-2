@@ -77,7 +77,8 @@ def cpu_affinity(value):
         raise ValueError('CPU affinity needs two distinct logical CPU IDs, for example 30,31')
     cpus = set(map(int, parts))
     if len(cpus) != 2 or not cpus.issubset(os.sched_getaffinity(0)):
-        raise ValueError('Both selected CPUs must be distinct and available to this process')
+        raise ValueError(f'CPUs {value} must be distinct and available to this process; '
+                         'use --cpuset-cpus CPU,CPU to select two available CPUs')
     return ','.join(map(str, sorted(cpus)))
 
 
@@ -85,12 +86,12 @@ def publication_context(evidence, root):
     try:
         branch = evidence.git(root, 'symbolic-ref', '--quiet', 'HEAD').decode().strip()
     except ValueError as error:
-        raise RuntimeError('--publish requires a checked-out branch, not a detached HEAD') from error
+        raise RuntimeError('Publishing requires a checked-out branch, not a detached HEAD') from error
     changes = evidence.git(root, 'status', '--porcelain', '-z', '--untracked-files=all', '--',
                            '.', ':(exclude).bench-results', ':(exclude)benchmarks/results')
     if changes:
-        raise RuntimeError('--publish requires committed source and documentation. Commit those changes first, '
-                           'or omit --publish for a local trial')
+        raise RuntimeError('Publishing requires committed source and documentation. Commit those changes first, '
+                           'or use --no-publish for a local trial')
     return branch, evidence.git(root, 'rev-parse', 'HEAD').decode().strip()
 
 
@@ -172,12 +173,14 @@ def run_container(image, profile, directory, source, cpuset=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--publish', action='store_true', help='Save reviewable evidence and automatically commit a passing result; source must be committed')
-    parser.add_argument('--cpuset-cpus', help='Use two available logical CPU IDs, for example 30,31; the two-core quota stays fixed')
+    parser.add_argument('--publish', action=argparse.BooleanOptionalAction, default=True,
+                        help='Publish and automatically commit a passing result (default); --no-publish keeps a local trial')
+    parser.add_argument('--cpuset-cpus', default='30,31',
+                        help='Use two available logical CPU IDs (default: 30,31); the two-core quota stays fixed')
     args = parser.parse_args()
     if platform.system() != 'Linux' or platform.machine() != 'x86_64':
         raise RuntimeError('The capacity-v1 baseline requires a native Linux x86_64 host')
-    cpuset = cpu_affinity(args.cpuset_cpus) if args.cpuset_cpus else None
+    cpuset = cpu_affinity(args.cpuset_cpus)
     evidence = evidence_module()
     root = evidence.project_root()
     baseline = load_baseline(root)
@@ -191,7 +194,7 @@ def main():
         snapshot = Path(temporary) / 'source'
         source = evidence.snapshot(root, snapshot)
         if publication and evidence.fingerprint(evidence.source_files(root, revision)) != source:
-            raise RuntimeError('The source changed while preparing the benchmark; commit changes before --publish')
+            raise RuntimeError('The source changed while preparing the benchmark; commit changes before a published measurement')
         profile_bytes = (snapshot / evidence.PROFILE_PATH).read_bytes()
         profile = json.loads(profile_bytes)
         profile_hash = hashlib.sha256(profile_bytes).hexdigest()

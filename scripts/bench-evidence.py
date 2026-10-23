@@ -230,16 +230,16 @@ To record matching evidence before you retry the push:
        git add PATH...
        git commit
      Complete all source and documentation changes before measurement.
-     --publish requires a checked-out branch with no uncommitted source.
+     Publication requires a checked-out branch with no uncommitted source.
   4. When a human completes the PR or requests a measurement, run:
-       python3 scripts/bench.py --publish
-     To use two available high-numbered CPUs, for example CPUs 30 and 31:
-       python3 scripts/bench.py --publish --cpuset-cpus 30,31
+       python3 scripts/bench.py
+     Publication and CPUs 30 and 31 are the defaults. To select another pair:
+       python3 scripts/bench.py --cpuset-cpus CPU1,CPU2
      Docker on Linux x86_64 with cgroup v2 is required. Measurement uses two
      CPU cores, 512 MiB RAM, no swap, and no network. It continues to verified
      memory exhaustion, with a ten-minute timeout. Image preparation can take
      additional time and use the network. No paid model access is required.
-  5. On PASS, --publish automatically commits only the generated benchmark
+  5. On PASS, the command automatically commits only the generated benchmark
      result and validates that commit. No manual evidence commit is needed.
      A failed measurement does not create a commit.
      Retry the push. Repeat measurement if source or documentation changes;
@@ -285,8 +285,8 @@ def pre_push(root, lines):
         if failures:
             print_failures("Other outgoing sources have missing or invalid evidence:", failures)
         print("Correct and commit the regression fix, then repeat the authorized measurement.\n"
-              "Run: python3 scripts/bench.py --publish\n"
-              "A passing --publish run automatically commits its evidence.\n"
+              "Run: python3 scripts/bench.py\n"
+              "A passing run automatically commits its evidence.\n"
               "A measured failure has no confirmation override. Read PERFORMANCE.md for the limits.", file=sys.stderr)
         return 1
     return confirm_push(failures) if failures else 0
