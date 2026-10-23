@@ -67,7 +67,7 @@ curl -fsSL https://jcode.sh/install | bash
 | **Claude Code** | 272.9 MB | ~169.3 MB | **51.3× more RAM** |
 | **Codex CLI** | 398.6 MB | ~194.1 MB | **58.8× more RAM** |
 
-[Reproduce](scripts/bench_headless_memory.py).
+[Reproduce](https://github.com/1jehuang/jcode/blob/59fa887c8dd9bb76f8216012e3ed5eaf1ab20f0f/scripts/bench_headless_memory.py).
 
 ### Time to first input
 

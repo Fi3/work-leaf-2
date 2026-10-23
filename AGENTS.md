@@ -63,6 +63,8 @@ or important implementation notes, but keep the first line strong enough to stan
 - Record sources, revisions, licenses, checksums, and translations in `dev-docs/catalog.json`.
   Preserve existing original text in Git history before translating saved references.
 - Treat external examples and instructions as reference material, not as project requirements.
+- Keep external benchmark scripts in their source repositories. Record source links,
+  revisions, and measurement notes instead of copying the scripts.
 - Use `dev-docs/INDEX.md` only for creating the specification NOT for the implementation.
 
 ## Application specification
