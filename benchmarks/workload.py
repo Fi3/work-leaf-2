@@ -47,7 +47,10 @@ def process_memory():
             role = 'worker' if b'worker.mjs' in names else 'editor' if b'nvim' in command[0] else 'server' if b'harness' in command[0] else 'driver_or_tool'
             memory = counters(directory / 'smaps_rollup')
             result.append({'pid': int(directory.name), 'role': role,
-                           'rss_bytes': memory.get('Rss:', 0) * 1024, 'pss_bytes': memory.get('Pss:', 0) * 1024})
+                           **{name: memory[field] * 1024 for name, field in (
+                               ('rss_bytes', 'Rss:'), ('pss_bytes', 'Pss:'),
+                               ('pss_anon_bytes', 'Pss_Anon:'), ('pss_file_bytes', 'Pss_File:'),
+                               ('pss_shmem_bytes', 'Pss_Shmem:')) if field in memory}})
         except (FileNotFoundError, ProcessLookupError, PermissionError):
             continue
     return result
@@ -76,6 +79,7 @@ class Monitor:
                  'cpu_usec': cpu['usage_usec'], 'cpu_throttled_usec': cpu.get('throttled_usec', 0),
                  'memory_bytes': int((CGROUP / 'memory.current').read_text()),
                  'memory_peak_bytes': int((CGROUP / 'memory.peak').read_text()),
+                 'memory_stat': counters(CGROUP / 'memory.stat'),
                  'memory_events': events, 'processes': process_memory()}
         self.samples.append(value)
         emit('sample', **value)

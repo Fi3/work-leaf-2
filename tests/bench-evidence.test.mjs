@@ -54,6 +54,7 @@ async function repository(t) {
     const body = {
       ...structuredClone(baseline), source_fingerprint: id,
       profile_sha256: createHash('sha256').update(git('show', `${ref}:benchmarks/profile.json`) + '\n').digest('hex'),
+      comparison: { policy: 'process-pss-v2' },
       ...change,
     };
     await writeFile(file, JSON.stringify(body));
@@ -161,6 +162,26 @@ test('invalid committed evidence cannot be hidden by a passing local result', as
   assert.doesNotMatch(pushed.stderr, /measured benchmark regressions/);
 });
 
+test('a new comparison policy requires new evidence and cannot accept a committed old failure', async t => {
+  const repo = await repository(t);
+  const measurements = baseline.measurements.map(sample => ({
+    ...sample, memory_bytes: sample.phase === 'capacity' ? sample.memory_bytes : sample.memory_bytes * 2,
+  }));
+  for (const comparison of [{ status: 'FAIL' }, { status: 'FAIL', policy: 'cgroup-v1' }]) {
+    const file = await repo.evidence('HEAD', { measurements, comparison }, true);
+    repo.git('add', file); repo.git('commit', '-qm', 'ADD old measured failure to test comparison policy changes');
+    await repo.evidence('HEAD', { measurements });
+    const local = repo.run('validate', '--ref', 'HEAD', '--evidence-dir', '.bench-results');
+    assert.equal(local.status, 0, local.stderr);
+    for (const result of [repo.run('validate', '--ref', 'HEAD'), repo.push(repo.record())]) {
+      assert.notEqual(result.status, 0);
+      assert.match(result.stderr, /current memory comparison policy/);
+      assert.match(result.stderr, /process-pss-v2/);
+      assert.match(result.stderr, /run python3 scripts\/bench\.py to record a new measurement/);
+    }
+  }
+});
+
 test('missing, malformed, incomplete, and stale benchmark evidence fail without human confirmation', async t => {
   const repo = await repository(t);
   let result = repo.push(repo.record());
@@ -189,6 +210,7 @@ test('missing, malformed, incomplete, and stale benchmark evidence fail without 
   assert.match(result.stderr, /This hook does not run\n+it automatically/);
   for (const invalid of [
     { schema: 2 }, { schema: true }, { completed: false }, { source_fingerprint: '0'.repeat(64) },
+    { comparison: null }, { comparison: {} }, { comparison: { policy: 'cgroup-v1' } },
     { profile_sha256: '0'.repeat(64) }, { docker_image_id: 'harness:latest' },
     { profile: { ...profile, resources: { cpus: 8 } } }, { measurements: [] },
     { measurements: [{ memory_bytes: 1 }] }, { measurements: [1] },
@@ -245,13 +267,16 @@ test('measured regressions stop outgoing refs without confirmation and ignore sa
   const repo = await repository(t);
   repo.git('branch', 'regressed');
   const measurements = baseline.measurements.map(sample => ({
-    ...sample, memory_bytes: sample.phase === 'load-4' ? Math.ceil(sample.memory_bytes * 1.21) : sample.memory_bytes,
+    ...sample, processes: sample.processes.map(process => sample.phase === 'load-4' ? {
+      ...process, pss_bytes: Math.ceil(process.pss_bytes * 1.21), rss_bytes: Math.ceil(process.rss_bytes * 1.21),
+    } : process),
   }));
   await repo.evidence('regressed', { measurements, comparison: { status: 'PASS' }, regression: { status: 'PASS' } });
   let result = repo.run('validate', '--ref', 'regressed');
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /benchmark regression limit exceeded/);
   assert.match(result.stderr, /load-4/);
+  assert.match(result.stderr, /peak total process PSS MiB/);
   assert.match(result.stderr, /\+21\.0%/);
   assert.match(result.stderr, /FAIL/);
   await writeFile(join(repo.directory, 'README.md'), 'Another outgoing source with no evidence.\n');

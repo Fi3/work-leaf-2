@@ -12,6 +12,9 @@ import sys
 BASELINE_PATH = 'benchmarks/results/1d1ae9a4246cbc06cc54e7c2701309bd30433b3ffb20d54fcc137248177aba87.json'
 BASELINE_SHA256 = '744a8b0b470b30dd4d7aad82661197244cd3c13572d28f99763a58575114db1e'
 MAX_REGRESSION_PERCENT = 20
+MEMORY_POLICY = 'process-pss-v2'
+# The fixed profile has a Rust server and editor command client, plus a Python driver and Docker init.
+PROCESS_MINIMUMS = {'server': 2, 'worker': 1, 'editor': 1, 'driver_or_tool': 2}
 MIB = 1024 * 1024
 
 
@@ -77,6 +80,30 @@ def positive_integer(value, label):
     return value
 
 
+def process_pss(sample):
+    processes = sample.get('processes')
+    if not isinstance(processes, list) or not processes:
+        raise ValueError(f"{sample['phase']} process memory samples are missing")
+    pids, roles, total = set(), {}, 0
+    for process in processes:
+        pid = positive_integer(process.get('pid'), 'Process PID')
+        if pid in pids:
+            raise ValueError('Process memory samples contain a duplicate PID')
+        pids.add(pid)
+        role = process.get('role')
+        if not isinstance(role, str) or role not in PROCESS_MINIMUMS:
+            raise ValueError('Process memory samples contain an unknown role')
+        roles[role] = roles.get(role, 0) + 1
+        rss = number(process.get('rss_bytes'), 'Process RSS', positive=True)
+        pss = number(process.get('pss_bytes'), 'Process PSS', positive=True)
+        if pss > rss:
+            raise ValueError('Process PSS must not exceed RSS')
+        total += pss
+    if any(roles.get(role, 0) < count for role, count in PROCESS_MINIMUMS.items()):
+        raise ValueError(f"{sample['phase']} process memory samples lack the server, editor client, worker, editor, driver, or init")
+    return number(total, 'Total process PSS', positive=True)
+
+
 def measurements(result, baseline):
     if type(result.get('schema')) is not int or result['schema'] != 1:
         raise ValueError('Unsupported benchmark evidence schema')
@@ -116,7 +143,7 @@ def measurements(result, baseline):
         samples = groups.get(phase, [])
         if len(samples) < 2 or samples[-1]['elapsed_seconds'] <= samples[0]['elapsed_seconds']:
             raise ValueError(f'{phase} needs at least two samples with a positive time span')
-        metrics[(phase, 'peak memory MiB')] = max(item['memory_bytes'] for item in samples) / MIB
+        metrics[(phase, 'peak total process PSS MiB')] = max(process_pss(item) for item in samples) / MIB
         if phase in tasks:
             cpu_ms = number((samples[-1]['cpu_usec'] - samples[0]['cpu_usec']) / 1000,
                             f'{phase} CPU time', positive=True)
@@ -169,9 +196,10 @@ def evaluate(result, baseline):
                            'change_percent': (after / before - 1) * 100 if before else None,
                            'limit': limit, 'direction': '>=' if lower else '<=', 'status': 'PASS' if passed else 'FAIL'})
         return {'status': 'PASS' if all(check['status'] == 'PASS' for check in checks) else 'FAIL',
-                'max_regression_percent': MAX_REGRESSION_PERCENT, 'checks': checks, 'reasons': []}
+                'policy': MEMORY_POLICY, 'max_regression_percent': MAX_REGRESSION_PERCENT,
+                'checks': checks, 'reasons': []}
     except (ValueError, KeyError, TypeError, AttributeError) as error:
-        return {'status': 'UNAVAILABLE', 'max_regression_percent': MAX_REGRESSION_PERCENT,
+        return {'status': 'UNAVAILABLE', 'policy': MEMORY_POLICY, 'max_regression_percent': MAX_REGRESSION_PERCENT,
                 'checks': [], 'reasons': [str(error)]}
 
 
@@ -219,6 +247,28 @@ def resource_table(result):
                   'RAM left MiB', 'Tasks', 'Tasks / configured second'], rows)
 
 
+def container_comparison(result, baseline):
+    reference = resource_summary(baseline['measurements'])
+    current = sample_groups(result['measurements'])
+    phases = ['idle', *[stage['phase'] for stage in result['stages']]]
+    rows = []
+    for phase in phases:
+        before = reference[phase]['peak_sampled_memory_bytes'] / MIB
+        peak = max(current[phase], key=lambda sample: sample['memory_bytes'])
+        after = peak['memory_bytes'] / MIB
+        components = []
+        stats = peak.get('memory_stat')
+        for field in ('anon', 'file', 'kernel'):
+            value = stats.get(field) if isinstance(stats, dict) else None
+            try:
+                components.append(formatted(number(value, f'Container {field}') / MIB))
+            except ValueError:
+                components.append('not reported')
+        rows.append([phase, formatted(before), formatted(after), f'{(after / before - 1) * 100:+.1f}%', *components])
+    return table(['Phase', 'Baseline container peak MiB', 'Run container peak MiB', 'Change',
+                  'Run anon MiB', 'Run file MiB', 'Run kernel MiB'], rows)
+
+
 def published_tables(published):
     parts = ['Published harness figures — not reproduced', published['warning']]
     for source in published['sources']:
@@ -248,7 +298,12 @@ def render(result, baseline, published):
     parts = [f"Benchmark resource report: {evaluation['status']}",
              f"Source: {identity.get('source_fingerprint', 'unknown')}; run: {identity.get('started_at', 'unknown')}; "
              f"CPU affinity: {identity.get('cpu_affinity') or 'not recorded'}.",
-             f"Reference: {BASELINE_PATH}. Maximum allowed regression: {MAX_REGRESSION_PERCENT}%."]
+             f"Reference: {BASELINE_PATH}. Maximum allowed regression: {MAX_REGRESSION_PERCENT}%.",
+             f"Memory policy: {MEMORY_POLICY}. The memory percentage gate compares sampled total process PSS, "
+             'calculated from the same raw process measurements in the first baseline and this run.']
+    saved = identity.get('comparison')
+    if not isinstance(saved, dict) or saved.get('policy') != MEMORY_POLICY:
+        parts.append('Historical data recalculated under current policy; a new measurement is required for push evidence.')
     if evaluation['status'] == 'UNAVAILABLE':
         parts.extend(evaluation['reasons'])
     else:
@@ -258,13 +313,22 @@ def render(result, baseline, published):
             'CPU and RAM values cover the whole container: Rust server, shared Node/Pi worker, driver, tools, editor, '
             'charged shared pages and file cache. RAM left is observed headroom, not a promise of more sessions. '
             'No session count is extrapolated from CPU or RAM.',
+            'Container RAM comparison (diagnostic, not the percentage gate). File-page charges can change with host '
+            'cache ownership. These measured differences remain visible; a process-memory PASS does not mean container RAM decreased. '
+            'The anon, file, and kernel values come from the same sample as the run peak; they are not separate component peaks. '
+            'Missing components are not reported. Kernel counters can update at different times.',
+            container_comparison(result, baseline),
+            'The process PSS sum includes the server, shared Node/Pi worker, driver, tools, and editor. '
+            'PSS divides mapped pages among processes that share them. It excludes unmapped file cache and kernel memory, '
+            'and can vary when processes outside the container share mapped pages. The container memory limit and retained-capacity '
+            'check remain in effect.',
             check_table(evaluation['checks']),
             'CPU per task is an estimate: CPU counters cover the interval between samples, while task counts cover the full stage. '
             'Task durations include simulated model delays, tools, storage and editor work; they are not pure harness overhead. '
             'Tasks per second use the configured stage duration because the old profile has no exact stage timer.',
             'PASS means this run is within the 20% budget. FAIL means at least one limit was exceeded. '
             'One run does not establish a regression or an improvement: repeat the same profile and compare medians and variation. '
-            'Idle CPU and the forced memory-exhaustion peak have no percentage gate.'])
+            'Container RAM, idle CPU, and the forced memory-exhaustion peak have no percentage gate.'])
     parts.append(published_tables(published))
     return '\n\n'.join(parts) + '\n'
 

@@ -166,6 +166,9 @@ Valid evidence must also pass the resource budget below. A measured failure
 stops the push and has no confirmation override. The hook recomputes the checks
 from raw samples and stage results. A saved `PASS` field or resource summary is
 not accepted as proof. Missing or invalid comparison data cannot pass.
+Push evidence must also record the current comparison policy. A result from the
+old policy needs a new measurement; recalculating its report does not make it
+valid push evidence.
 
 Inspect the evidence independently with:
 
@@ -205,11 +208,30 @@ regression is **20%**, with these directions:
 
 | Measure | Phases | Passing limit relative to the first baseline |
 | --- | --- | --- |
-| Sampled container memory peak | Idle, one/two/four active chats, hidden editor. | At most 120%. |
+| Peak total process PSS | Idle, one/two/four active chats, hidden editor. | At most 120%. |
 | Estimated CPU time per completed task | Each active-load phase, including hidden editor. | At most 120%. |
 | 95th percentile task duration | Each active-load phase, including hidden editor. | At most 120%. |
 | Completed tasks in the configured ten seconds | Each active-load phase, including hidden editor. | At least 80%. |
 | Retained sessions before verified exhaustion | Capacity. | At least 80%; at least 285 against the reference count of 356. |
+
+The memory comparison uses proportional set size (PSS), which divides mapped
+shared pages among the processes that use them. For each sample, add the PSS
+of all measured processes, including the driver, tools, server, worker, and
+editor. Use the largest sample total in each phase. Do not add independent
+process peaks. The reference values come from the original baseline's raw
+process samples; the reference file and the 20% limit have not changed.
+Missing process data, invalid values, duplicate process IDs, or missing
+persistent process roles prevent a pass.
+
+The comparison policy is `process-pss-v2`. It replaces the original gate on
+container memory charges. The [accounting investigation](#memory-accounting-correction-2026-10-23)
+reproduced that gate's failure with the unchanged baseline image. Reports keep
+container RAM, headroom, and differences from the first run visible, separately
+from the PSS gate. A PASS does not mean container RAM stayed within 20%.
+PSS excludes unmapped file cache and kernel memory, and sharing with other
+processes can change PSS. The capacity gate still checks retained sessions
+under the full 512 MiB container limit, but it cannot detect every increase in
+file cache or kernel memory during normal load.
 
 Equality at a limit passes. All checks must pass. Idle CPU is too close to zero
 for a useful percentage gate. The capacity memory peak is forced toward the
@@ -265,9 +287,68 @@ Use the recorded cgroup `memory_peak_bytes` for the whole-container peak.
 
 RSS is resident memory for one process; shared pages can appear in several
 processes. PSS divides shared pages among those processes. Container accounting
-also includes memory such as file cache. Released JavaScript or Lua objects do
+also includes memory such as file cache. New samples record `memory.stat`
+counters and the anonymous, file, and shared-memory PSS components when the
+kernel supplies them. Some counters overlap; do not add all of them together.
+Released JavaScript or Lua objects do
 not guarantee an immediate RSS decrease, so use repeated bounded workloads and
 observe retention as well as peaks.
+
+## Memory accounting correction: 2026-10-23
+
+The published run for `c1b7c2a` failed the former container-memory percentage
+gate: idle rose from 57.62 to 117.64 MiB, and four-chat load rose from 158.17
+to 226.98 MiB. Its sampled process PSS was 105.27 MiB idle and 189.85 MiB at
+four chats, compared with 108.99 and 189.53 MiB in the original baseline.
+These are separate accounting methods; their difference does not assign memory
+to a particular owner.
+
+We ran the retained original image and the reported candidate image three times
+each, in order baseline/current/current/baseline/baseline/current. All six runs
+used the unchanged standard workload, CPUs 30 and 31, two cores, 512 MiB,
+no swap, and no network. Each reached verified memory exhaustion. A host-side
+observer recorded `memory.stat`; it did not add a process to the measured
+container. We did not clear global caches or prewarm images to obtain a pass.
+The host was not exclusive. Values below are medians with minimum–maximum ranges.
+
+| Measure | First baseline | Original image repeated | Current image repeated |
+| --- | ---: | ---: | ---: |
+| Idle container peak, MiB | 57.62 | 100.36 (100.05–119.61) | 98.60 (97.69–99.56) |
+| Four-chat container peak, MiB | 158.17 | 208.52 (202.49–227.04) | 205.50 (203.36–207.91) |
+| Idle total process PSS peak, MiB | 108.99 | 106.28 (105.30–107.49) | 105.55 (105.23–106.07) |
+| Four-chat total process PSS peak, MiB | 189.53 | 188.22 (186.43–190.60) | 182.99 (181.72–191.09) |
+| Retained sessions before exhaustion | 356 | 312 (312–352) | 312 (312–344) |
+
+The unchanged original image also fails the old container-memory gate. Thus
+the reported increase does not establish an application regression. The Linux
+kernel assigns shared memory charges according to which cgroup first brings
+the pages into memory; later sharing does not move those charges. See
+[memory ownership](https://docs.kernel.org/admin-guide/cgroup-v2.html#memory-ownership).
+The original result lacks `memory.stat`, so we cannot assign the exact historical
+difference to file cache or kernel memory. The control results and process
+measurements support a change in accounting conditions.
+
+The corrected gate compares peak total process PSS with the same measure in
+the original baseline. See the kernel's
+[PSS description](https://docs.kernel.org/filesystems/proc.html).
+Container figures remain visible, and new samples record their components.
+The 20% limit, 512 MiB limit, workload, capacity gate, and original baseline
+file remain unchanged. PSS is not a substitute for total container RAM; its
+limits are stated in the resource-budget section. No application memory
+reduction is claimed. The repeated process-memory ranges overlap.
+
+Two of the three original-image controls and one current-image trial exceeded
+at least one existing CPU or task-duration limit. Those checks remain enforced.
+The first baseline has no CPU-affinity record; this host also has different
+CPU core types. These trials do not establish that 20% exceeds normal variation,
+and the memory-method correction does not guarantee that every later run passes.
+
+The [summary](benchmarks/trials/2026-10-23-memory-accounting.json) records every
+run and image identity. The [archive](benchmarks/trials/2026-10-23-memory-accounting.tar.gz)
+contains raw results, external counters, the observer script, image information,
+and a checksum manifest. These diagnostic trials do not satisfy the push check.
+The original failed result remains saved without changing its recorded FAIL.
+Current-policy evidence requires a new measurement after the correction is committed.
 
 ## Resource investigation: 2026-10-21
 

@@ -20,16 +20,19 @@ ${code}`], { cwd: root, timeout: 5000 });
 test('resource budget compares saved raw observations to the immutable first baseline', async () => {
   await python(`
 assert report.evaluate(baseline, baseline)['status'] == 'PASS'
+assert report.evaluate(baseline, baseline)['policy'] == 'process-pss-v2'
 result = copy.deepcopy(baseline)
 result['comparison'] = {'status': 'PASS'}
 result['resources_by_phase'] = baseline['resources_by_phase']
 for sample in result['measurements']:
     if sample['phase'] == 'load-4':
-        sample['memory_bytes'] *= 1.21
+        for process in sample['processes']:
+            process['pss_bytes'] *= 1.21
+            process['rss_bytes'] *= 1.21
 evaluation = report.evaluate(result, baseline)
 assert evaluation['status'] == 'FAIL'
 failed = [item for item in evaluation['checks'] if item['status'] == 'FAIL']
-assert [(item['phase'], item['metric']) for item in failed] == [('load-4', 'peak memory MiB')]
+assert [(item['phase'], item['metric']) for item in failed] == [('load-4', 'peak total process PSS MiB')]
 assert 'load-4' in report.render_failures(evaluation)
 import tempfile
 with tempfile.TemporaryDirectory() as directory:
@@ -47,13 +50,15 @@ with tempfile.TemporaryDirectory() as directory:
 
 test('memory, CPU and task duration pass at twenty percent and fail beyond it', async () => {
   await python(`
-for metric in ['peak memory MiB', 'estimated CPU ms/task', 'task p95 ms']:
+for metric in ['peak total process PSS MiB', 'estimated CPU ms/task', 'task p95 ms']:
     for factor, expected in [(1.2, 'PASS'), (1.2001, 'FAIL')]:
         result = copy.deepcopy(baseline)
-        if metric == 'peak memory MiB':
+        if metric == 'peak total process PSS MiB':
             for sample in result['measurements']:
                 if sample['phase'] != 'capacity':
-                    sample['memory_bytes'] *= factor
+                    for process in sample['processes']:
+                        process['pss_bytes'] *= factor
+                        process['rss_bytes'] *= factor
         elif metric == 'estimated CPU ms/task':
             for sample in result['measurements']:
                 sample['cpu_usec'] *= factor
@@ -64,6 +69,94 @@ for metric in ['peak memory MiB', 'estimated CPU ms/task', 'task p95 ms']:
         evaluation = report.evaluate(result, baseline)
         assert evaluation['status'] == expected, (metric, evaluation)
         assert all(item['status'] == expected for item in evaluation['checks'] if item['metric'] == metric)
+`);
+});
+
+test('process memory uses simultaneous totals and permits incomplete startup and exhaustion samples', async () => {
+  await python(`
+result = copy.deepcopy(baseline)
+idle = [sample for sample in result['measurements'] if sample['phase'] == 'idle']
+for index, sample in enumerate(idle):
+    sample['processes'] = [
+        {'pid': 1, 'role': 'driver_or_tool', 'rss_bytes': 40, 'pss_bytes': 40 if index % 2 else 10},
+        {'pid': 2, 'role': 'worker', 'rss_bytes': 40, 'pss_bytes': 10 if index % 2 else 40},
+        {'pid': 3, 'role': 'server', 'rss_bytes': 10, 'pss_bytes': 10},
+        {'pid': 4, 'role': 'editor', 'rss_bytes': 10, 'pss_bytes': 10},
+        {'pid': 5, 'role': 'driver_or_tool', 'rss_bytes': 10, 'pss_bytes': 10},
+        {'pid': 6, 'role': 'server', 'rss_bytes': 10, 'pss_bytes': 10},
+    ]
+for sample in result['measurements']:
+    if sample['phase'] in ('startup', 'capacity'):
+        sample.pop('processes', None)
+evaluation = report.evaluate(result, baseline)
+assert evaluation['status'] == 'PASS', evaluation
+check = next(item for item in evaluation['checks'] if item['phase'] == 'idle' and item['metric'] == 'peak total process PSS MiB')
+assert check['current'] == 90 / 1048576, check
+`);
+});
+
+test('missing or invalid normal-load process memory prevents a passing comparison', async () => {
+  await python(`
+mutations = [
+    lambda s: s.pop('processes'),
+    lambda s: s.update(processes=[]),
+    lambda s: s.update(processes={}),
+    lambda s: s['processes'].append(None),
+    lambda s: s['processes'].append(s['processes'][0].copy()),
+    lambda s: s['processes'][0].update(role='unknown'),
+    lambda s: s['processes'][0].pop('pss_bytes'),
+    lambda s: s['processes'][0].pop('rss_bytes'),
+    lambda s: s['processes'][0].update(pss_bytes=s['processes'][0]['rss_bytes'] + 1),
+]
+for role in ['server', 'worker', 'editor', 'driver_or_tool']:
+    mutations.append(lambda s, role=role: s.update(processes=[p for p in s['processes'] if p['role'] != role]))
+for role in ['server', 'driver_or_tool']:
+    mutations.append(lambda s, role=role: s.update(processes=[p for p in s['processes'] if p['role'] != role]
+                     + [next(p for p in s['processes'] if p['role'] == role)]))
+for value in [None, True, 0, -1, 1.5, '1']:
+    mutations.append(lambda s, value=value: s['processes'][0].update(pid=value))
+for field in ['pss_bytes', 'rss_bytes']:
+    for value in [None, True, 0, -1, float('nan'), float('inf'), 10**400]:
+        mutations.append(lambda s, field=field, value=value: s['processes'][0].update({field: value}))
+for phase in ['idle', 'load-1', 'load-2', 'load-4', 'hidden-editor']:
+    for mutate in mutations:
+        result = copy.deepcopy(baseline)
+        sample = next(sample for sample in reversed(result['measurements']) if sample['phase'] == phase)
+        mutate(sample)
+        evaluation = report.evaluate(result, baseline)
+        assert evaluation['status'] == 'UNAVAILABLE', (phase, evaluation)
+        assert evaluation['policy'] == 'process-pss-v2'
+        assert evaluation['reasons']
+`);
+});
+
+test('container memory increases remain visible when the process memory gate passes', async () => {
+  await python(`
+result = copy.deepcopy(baseline)
+for sample in result['measurements']:
+    if sample['phase'] not in ('startup', 'capacity'):
+        sample['memory_bytes'] *= 2
+evaluation = report.evaluate(result, baseline)
+assert evaluation['status'] == 'PASS', evaluation
+published = json.loads(pathlib.Path('benchmarks/published-harnesses.json').read_text())
+text = report.render(result, baseline, published)
+assert 'Memory policy: process-pss-v2' in text
+assert 'Container RAM comparison (diagnostic, not the percentage gate)' in text
+assert '| idle | 57.62 | 115.24 | +100.0% |' in text
+assert '| idle | 57.62 | 115.24 | +100.0% | not reported | not reported | not reported |' in text
+assert 'process-memory PASS does not mean container RAM decreased' in text
+assert 'excludes unmapped file cache and kernel memory' in text
+assert 'outside the container share mapped pages' in text
+assert 'container memory limit and retained-capacity check remain in effect' in text
+idle = [sample for sample in result['measurements'] if sample['phase'] == 'idle']
+for sample in idle:
+    sample['memory_stat'] = {'anon': 999 * 1048576, 'file': 888 * 1048576, 'kernel': 777 * 1048576}
+idle[0]['memory_bytes'] = 300 * 1048576
+idle[0]['memory_stat'] = {'anon': 150 * 1048576, 'file': 140 * 1048576, 'kernel': 10 * 1048576}
+text = report.render(result, baseline, published)
+assert '| idle | 57.62 | 300.00 |' in text
+assert '| 150.00 | 140.00 | 10.00 |' in text
+assert 'same sample as the run peak; they are not separate component peaks' in text
 `);
 });
 
@@ -135,6 +228,10 @@ test('offline report displays resource tables and sourced harness figures withou
   assert.match(stdout, /356 retained sessions.*at most 4 active chats/);
   assert.match(stdout, /RAM left MiB/);
   assert.match(stdout, /20%/);
+  assert.match(stdout, /Memory policy: process-pss-v2/);
+  assert.match(stdout, /peak total process PSS MiB/);
+  assert.match(stdout, /Baseline container peak MiB/);
+  assert.match(stdout, /Historical data recalculated under current policy; a new measurement is required for push evidence/);
   assert.match(stdout, /CPU per task is an estimate/);
   assert.match(stdout, /not pure harness overhead/);
   assert.match(stdout, /Published figures only; not reproduced/);

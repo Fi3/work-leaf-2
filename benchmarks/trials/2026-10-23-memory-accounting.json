@@ -1,0 +1,633 @@
+{
+  "schema": 1,
+  "date": "2026-10-23",
+  "kind": "container_memory_accounting",
+  "accepted_capacity_evidence": false,
+  "reference": {
+    "path": "benchmarks/results/1d1ae9a4246cbc06cc54e7c2701309bd30433b3ffb20d54fcc137248177aba87.json",
+    "sha256": "744a8b0b470b30dd4d7aad82661197244cd3c13572d28f99763a58575114db1e",
+    "image": "sha256:ba8b11fddafe63717b67da87e651edc88b6a8ad185b42f2662a6fa51774ac855"
+  },
+  "reported_failure": {
+    "path": "benchmarks/results/a044e90caed6a759919d0008d92b03717970313aedb7ba90340a01643980add7.json",
+    "sha256": "8a855b762e524e2edc3d2bd8748eb4e6132d6ea717f35a075db2b1bc665861e5",
+    "source_revision": "c1b7c2ac49ff01e6e99015e45b11f3ab122fa3c8",
+    "image": "sha256:f433af31900898f52845266abb5cd3de7e7d6e547cb6bb0481892fa2a7bd8d4d",
+    "stored_status": "FAIL"
+  },
+  "method": {
+    "profile": {
+      "schema": 1,
+      "name": "capacity-v1",
+      "platform": "linux/amd64",
+      "resources": {
+        "cpus": 2,
+        "memory_bytes": 536870912,
+        "memory_swap_bytes": 536870912,
+        "pids_limit": 256
+      },
+      "sample_interval_ms": 500,
+      "idle_seconds": 5,
+      "load_seconds": 10,
+      "concurrent_sessions": [
+        1,
+        2,
+        4
+      ],
+      "capacity_input_bytes": 65536,
+      "capacity_instructions_bytes": 262144,
+      "capacity_batch_size": 4,
+      "max_capacity_sessions": 10000,
+      "timeout_seconds": 600,
+      "provider": "openai",
+      "model": "gpt-5.6-luna",
+      "simulated_output_bytes": 2048,
+      "simulated_chunk_delay_ms": 3,
+      "node_max_old_space_mib": 1024
+    },
+    "cpu_affinity": "30,31",
+    "order": [
+      "baseline-1",
+      "current-1",
+      "current-2",
+      "baseline-2",
+      "baseline-3",
+      "current-3"
+    ],
+    "full_standard_workload": true,
+    "external_monitor": "Host reads memory.stat every 500ms; no extra process inside measured cgroup. External samples use last observed workload sample phase, so edge samples can lag a phase transition.",
+    "cache_control": "No global cache eviction, forced prewarm, or other change to host cache state.",
+    "host_exclusive": false
+  },
+  "runs": [
+    {
+      "label": "baseline-1",
+      "image": "sha256:ba8b11fddafe63717b67da87e651edc88b6a8ad185b42f2662a6fa51774ac855",
+      "phases": {
+        "idle": {
+          "cgroup_peak_mib": 119.609375,
+          "process_pss_peak_mib": 105.3017578125,
+          "mean_cpu_cores": 0.006309
+        },
+        "load-1": {
+          "cgroup_peak_mib": 187.84375,
+          "process_pss_peak_mib": 164.818359375,
+          "mean_cpu_cores": 0.261251,
+          "tasks": 63,
+          "task_p95_ms": 171.635
+        },
+        "load-2": {
+          "cgroup_peak_mib": 204.86328125,
+          "process_pss_peak_mib": 175.912109375,
+          "mean_cpu_cores": 0.403554,
+          "tasks": 121,
+          "task_p95_ms": 182.145
+        },
+        "load-4": {
+          "cgroup_peak_mib": 227.04296875,
+          "process_pss_peak_mib": 188.224609375,
+          "mean_cpu_cores": 0.66005,
+          "tasks": 214,
+          "task_p95_ms": 211.191
+        },
+        "hidden-editor": {
+          "cgroup_peak_mib": 235.23828125,
+          "process_pss_peak_mib": 193.595703125,
+          "mean_cpu_cores": 0.21703,
+          "tasks": 64,
+          "task_p95_ms": 169.854
+        }
+      },
+      "retained_sessions": 312,
+      "verified_exhaustion": {
+        "observed": true,
+        "reason": "memory_limit",
+        "phase": "capacity",
+        "oom_delta": 1,
+        "oom_kill_delta": 1
+      }
+    },
+    {
+      "label": "current-1",
+      "image": "sha256:f433af31900898f52845266abb5cd3de7e7d6e547cb6bb0481892fa2a7bd8d4d",
+      "phases": {
+        "idle": {
+          "cgroup_peak_mib": 98.6015625,
+          "process_pss_peak_mib": 105.2314453125,
+          "mean_cpu_cores": 0.00636
+        },
+        "load-1": {
+          "cgroup_peak_mib": 175.58984375,
+          "process_pss_peak_mib": 172.33203125,
+          "mean_cpu_cores": 0.247177,
+          "tasks": 63,
+          "task_p95_ms": 167.28
+        },
+        "load-2": {
+          "cgroup_peak_mib": 182.50390625,
+          "process_pss_peak_mib": 174.6103515625,
+          "mean_cpu_cores": 0.430377,
+          "tasks": 116,
+          "task_p95_ms": 199.137
+        },
+        "load-4": {
+          "cgroup_peak_mib": 205.50390625,
+          "process_pss_peak_mib": 182.9892578125,
+          "mean_cpu_cores": 0.644807,
+          "tasks": 206,
+          "task_p95_ms": 226.916
+        },
+        "hidden-editor": {
+          "cgroup_peak_mib": 217.00390625,
+          "process_pss_peak_mib": 194.1533203125,
+          "mean_cpu_cores": 0.240831,
+          "tasks": 62,
+          "task_p95_ms": 175.908
+        }
+      },
+      "retained_sessions": 312,
+      "verified_exhaustion": {
+        "observed": true,
+        "reason": "memory_limit",
+        "phase": "capacity",
+        "oom_delta": 1,
+        "oom_kill_delta": 1
+      }
+    },
+    {
+      "label": "current-2",
+      "image": "sha256:f433af31900898f52845266abb5cd3de7e7d6e547cb6bb0481892fa2a7bd8d4d",
+      "phases": {
+        "idle": {
+          "cgroup_peak_mib": 99.55859375,
+          "process_pss_peak_mib": 105.552734375,
+          "mean_cpu_cores": 0.014181
+        },
+        "load-1": {
+          "cgroup_peak_mib": 177.59765625,
+          "process_pss_peak_mib": 174.205078125,
+          "mean_cpu_cores": 0.380024,
+          "tasks": 57,
+          "task_p95_ms": 199.164
+        },
+        "load-2": {
+          "cgroup_peak_mib": 182.6640625,
+          "process_pss_peak_mib": 174.490234375,
+          "mean_cpu_cores": 0.47417,
+          "tasks": 113,
+          "task_p95_ms": 197.778
+        },
+        "load-4": {
+          "cgroup_peak_mib": 203.359375,
+          "process_pss_peak_mib": 181.720703125,
+          "mean_cpu_cores": 0.641655,
+          "tasks": 214,
+          "task_p95_ms": 204.367
+        },
+        "hidden-editor": {
+          "cgroup_peak_mib": 215.89453125,
+          "process_pss_peak_mib": 194.384765625,
+          "mean_cpu_cores": 0.198309,
+          "tasks": 64,
+          "task_p95_ms": 164.727
+        }
+      },
+      "retained_sessions": 312,
+      "verified_exhaustion": {
+        "observed": true,
+        "reason": "memory_limit",
+        "phase": "capacity",
+        "oom_delta": 1,
+        "oom_kill_delta": 1
+      }
+    },
+    {
+      "label": "baseline-2",
+      "image": "sha256:ba8b11fddafe63717b67da87e651edc88b6a8ad185b42f2662a6fa51774ac855",
+      "phases": {
+        "idle": {
+          "cgroup_peak_mib": 100.05078125,
+          "process_pss_peak_mib": 106.275390625,
+          "mean_cpu_cores": 0.014614
+        },
+        "load-1": {
+          "cgroup_peak_mib": 174.60546875,
+          "process_pss_peak_mib": 172.244140625,
+          "mean_cpu_cores": 0.420182,
+          "tasks": 55,
+          "task_p95_ms": 200.441
+        },
+        "load-2": {
+          "cgroup_peak_mib": 176.5390625,
+          "process_pss_peak_mib": 167.7138671875,
+          "mean_cpu_cores": 0.520213,
+          "tasks": 109,
+          "task_p95_ms": 197.456
+        },
+        "load-4": {
+          "cgroup_peak_mib": 202.4921875,
+          "process_pss_peak_mib": 186.4326171875,
+          "mean_cpu_cores": 0.718729,
+          "tasks": 188,
+          "task_p95_ms": 264.471
+        },
+        "hidden-editor": {
+          "cgroup_peak_mib": 212.9453125,
+          "process_pss_peak_mib": 192.8193359375,
+          "mean_cpu_cores": 0.346538,
+          "tasks": 55,
+          "task_p95_ms": 225.383
+        }
+      },
+      "retained_sessions": 352,
+      "verified_exhaustion": {
+        "observed": true,
+        "reason": "memory_limit",
+        "phase": "capacity",
+        "oom_delta": 1,
+        "oom_kill_delta": 1
+      }
+    },
+    {
+      "label": "baseline-3",
+      "image": "sha256:ba8b11fddafe63717b67da87e651edc88b6a8ad185b42f2662a6fa51774ac855",
+      "phases": {
+        "idle": {
+          "cgroup_peak_mib": 100.35546875,
+          "process_pss_peak_mib": 107.4892578125,
+          "mean_cpu_cores": 0.016308
+        },
+        "load-1": {
+          "cgroup_peak_mib": 174.5390625,
+          "process_pss_peak_mib": 171.9833984375,
+          "mean_cpu_cores": 0.358869,
+          "tasks": 58,
+          "task_p95_ms": 199.305
+        },
+        "load-2": {
+          "cgroup_peak_mib": 172.47265625,
+          "process_pss_peak_mib": 166.7685546875,
+          "mean_cpu_cores": 0.53652,
+          "tasks": 109,
+          "task_p95_ms": 198.776
+        },
+        "load-4": {
+          "cgroup_peak_mib": 208.515625,
+          "process_pss_peak_mib": 190.6005859375,
+          "mean_cpu_cores": 0.693379,
+          "tasks": 207,
+          "task_p95_ms": 218.489
+        },
+        "hidden-editor": {
+          "cgroup_peak_mib": 205.0703125,
+          "process_pss_peak_mib": 183.5341796875,
+          "mean_cpu_cores": 0.346344,
+          "tasks": 56,
+          "task_p95_ms": 198.056
+        }
+      },
+      "retained_sessions": 312,
+      "verified_exhaustion": {
+        "observed": true,
+        "reason": "memory_limit",
+        "phase": "capacity",
+        "oom_delta": 1,
+        "oom_kill_delta": 1
+      }
+    },
+    {
+      "label": "current-3",
+      "image": "sha256:f433af31900898f52845266abb5cd3de7e7d6e547cb6bb0481892fa2a7bd8d4d",
+      "phases": {
+        "idle": {
+          "cgroup_peak_mib": 97.69140625,
+          "process_pss_peak_mib": 106.072265625,
+          "mean_cpu_cores": 0.014017
+        },
+        "load-1": {
+          "cgroup_peak_mib": 175.88671875,
+          "process_pss_peak_mib": 175.439453125,
+          "mean_cpu_cores": 0.413271,
+          "tasks": 55,
+          "task_p95_ms": 199.956
+        },
+        "load-2": {
+          "cgroup_peak_mib": 178.15625,
+          "process_pss_peak_mib": 170.8525390625,
+          "mean_cpu_cores": 0.506569,
+          "tasks": 111,
+          "task_p95_ms": 193.699
+        },
+        "load-4": {
+          "cgroup_peak_mib": 207.91015625,
+          "process_pss_peak_mib": 191.0888671875,
+          "mean_cpu_cores": 0.689371,
+          "tasks": 203,
+          "task_p95_ms": 216.968
+        },
+        "hidden-editor": {
+          "cgroup_peak_mib": 219.51953125,
+          "process_pss_peak_mib": 195.888671875,
+          "mean_cpu_cores": 0.355028,
+          "tasks": 56,
+          "task_p95_ms": 197.664
+        }
+      },
+      "retained_sessions": 344,
+      "verified_exhaustion": {
+        "observed": true,
+        "reason": "memory_limit",
+        "phase": "capacity",
+        "oom_delta": 1,
+        "oom_kill_delta": 1
+      }
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "phases": {
+        "idle": {
+          "cgroup_peak_mib": {
+            "median": 100.35546875,
+            "minimum": 100.05078125,
+            "maximum": 119.609375
+          },
+          "process_pss_peak_mib": {
+            "median": 106.275390625,
+            "minimum": 105.3017578125,
+            "maximum": 107.4892578125
+          },
+          "mean_cpu_cores": {
+            "median": 0.014614,
+            "minimum": 0.006309,
+            "maximum": 0.016308
+          }
+        },
+        "load-1": {
+          "cgroup_peak_mib": {
+            "median": 174.60546875,
+            "minimum": 174.5390625,
+            "maximum": 187.84375
+          },
+          "process_pss_peak_mib": {
+            "median": 171.9833984375,
+            "minimum": 164.818359375,
+            "maximum": 172.244140625
+          },
+          "mean_cpu_cores": {
+            "median": 0.358869,
+            "minimum": 0.261251,
+            "maximum": 0.420182
+          },
+          "tasks": {
+            "median": 58,
+            "minimum": 55,
+            "maximum": 63
+          },
+          "task_p95_ms": {
+            "median": 199.305,
+            "minimum": 171.635,
+            "maximum": 200.441
+          }
+        },
+        "load-2": {
+          "cgroup_peak_mib": {
+            "median": 176.5390625,
+            "minimum": 172.47265625,
+            "maximum": 204.86328125
+          },
+          "process_pss_peak_mib": {
+            "median": 167.7138671875,
+            "minimum": 166.7685546875,
+            "maximum": 175.912109375
+          },
+          "mean_cpu_cores": {
+            "median": 0.520213,
+            "minimum": 0.403554,
+            "maximum": 0.53652
+          },
+          "tasks": {
+            "median": 109,
+            "minimum": 109,
+            "maximum": 121
+          },
+          "task_p95_ms": {
+            "median": 197.456,
+            "minimum": 182.145,
+            "maximum": 198.776
+          }
+        },
+        "load-4": {
+          "cgroup_peak_mib": {
+            "median": 208.515625,
+            "minimum": 202.4921875,
+            "maximum": 227.04296875
+          },
+          "process_pss_peak_mib": {
+            "median": 188.224609375,
+            "minimum": 186.4326171875,
+            "maximum": 190.6005859375
+          },
+          "mean_cpu_cores": {
+            "median": 0.693379,
+            "minimum": 0.66005,
+            "maximum": 0.718729
+          },
+          "tasks": {
+            "median": 207,
+            "minimum": 188,
+            "maximum": 214
+          },
+          "task_p95_ms": {
+            "median": 218.489,
+            "minimum": 211.191,
+            "maximum": 264.471
+          }
+        },
+        "hidden-editor": {
+          "cgroup_peak_mib": {
+            "median": 212.9453125,
+            "minimum": 205.0703125,
+            "maximum": 235.23828125
+          },
+          "process_pss_peak_mib": {
+            "median": 192.8193359375,
+            "minimum": 183.5341796875,
+            "maximum": 193.595703125
+          },
+          "mean_cpu_cores": {
+            "median": 0.346344,
+            "minimum": 0.21703,
+            "maximum": 0.346538
+          },
+          "tasks": {
+            "median": 56,
+            "minimum": 55,
+            "maximum": 64
+          },
+          "task_p95_ms": {
+            "median": 198.056,
+            "minimum": 169.854,
+            "maximum": 225.383
+          }
+        }
+      },
+      "retained_sessions": {
+        "median": 312,
+        "minimum": 312,
+        "maximum": 352
+      }
+    },
+    "current": {
+      "phases": {
+        "idle": {
+          "cgroup_peak_mib": {
+            "median": 98.6015625,
+            "minimum": 97.69140625,
+            "maximum": 99.55859375
+          },
+          "process_pss_peak_mib": {
+            "median": 105.552734375,
+            "minimum": 105.2314453125,
+            "maximum": 106.072265625
+          },
+          "mean_cpu_cores": {
+            "median": 0.014017,
+            "minimum": 0.00636,
+            "maximum": 0.014181
+          }
+        },
+        "load-1": {
+          "cgroup_peak_mib": {
+            "median": 175.88671875,
+            "minimum": 175.58984375,
+            "maximum": 177.59765625
+          },
+          "process_pss_peak_mib": {
+            "median": 174.205078125,
+            "minimum": 172.33203125,
+            "maximum": 175.439453125
+          },
+          "mean_cpu_cores": {
+            "median": 0.380024,
+            "minimum": 0.247177,
+            "maximum": 0.413271
+          },
+          "tasks": {
+            "median": 57,
+            "minimum": 55,
+            "maximum": 63
+          },
+          "task_p95_ms": {
+            "median": 199.164,
+            "minimum": 167.28,
+            "maximum": 199.956
+          }
+        },
+        "load-2": {
+          "cgroup_peak_mib": {
+            "median": 182.50390625,
+            "minimum": 178.15625,
+            "maximum": 182.6640625
+          },
+          "process_pss_peak_mib": {
+            "median": 174.490234375,
+            "minimum": 170.8525390625,
+            "maximum": 174.6103515625
+          },
+          "mean_cpu_cores": {
+            "median": 0.47417,
+            "minimum": 0.430377,
+            "maximum": 0.506569
+          },
+          "tasks": {
+            "median": 113,
+            "minimum": 111,
+            "maximum": 116
+          },
+          "task_p95_ms": {
+            "median": 197.778,
+            "minimum": 193.699,
+            "maximum": 199.137
+          }
+        },
+        "load-4": {
+          "cgroup_peak_mib": {
+            "median": 205.50390625,
+            "minimum": 203.359375,
+            "maximum": 207.91015625
+          },
+          "process_pss_peak_mib": {
+            "median": 182.9892578125,
+            "minimum": 181.720703125,
+            "maximum": 191.0888671875
+          },
+          "mean_cpu_cores": {
+            "median": 0.644807,
+            "minimum": 0.641655,
+            "maximum": 0.689371
+          },
+          "tasks": {
+            "median": 206,
+            "minimum": 203,
+            "maximum": 214
+          },
+          "task_p95_ms": {
+            "median": 216.968,
+            "minimum": 204.367,
+            "maximum": 226.916
+          }
+        },
+        "hidden-editor": {
+          "cgroup_peak_mib": {
+            "median": 217.00390625,
+            "minimum": 215.89453125,
+            "maximum": 219.51953125
+          },
+          "process_pss_peak_mib": {
+            "median": 194.384765625,
+            "minimum": 194.1533203125,
+            "maximum": 195.888671875
+          },
+          "mean_cpu_cores": {
+            "median": 0.240831,
+            "minimum": 0.198309,
+            "maximum": 0.355028
+          },
+          "tasks": {
+            "median": 62,
+            "minimum": 56,
+            "maximum": 64
+          },
+          "task_p95_ms": {
+            "median": 175.908,
+            "minimum": 164.727,
+            "maximum": 197.664
+          }
+        }
+      },
+      "retained_sessions": {
+        "median": 312,
+        "minimum": 312,
+        "maximum": 344
+      }
+    }
+  },
+  "decisions": [
+    "Keep the original baseline, resource limits, standard workload and 20 percent threshold.",
+    "Compare peak summed process PSS against the same raw metric in the first baseline.",
+    "Keep cgroup memory, baseline differences, capacity and CPU measurements separate and visible.",
+    "Preserve the failed report and require a new current-policy measurement for push evidence."
+  ],
+  "limits": [
+    "The first baseline has no memory.stat counters, so the historical charge difference cannot be assigned exactly.",
+    "PSS excludes unmapped file cache and kernel memory and depends on sharing with other processes.",
+    "Capacity and timing vary; three runs do not establish confidence intervals.",
+    "Current-image results do not prove an application memory improvement."
+  ],
+  "archive": {
+    "path": "benchmarks/trials/2026-10-23-memory-accounting.tar.gz",
+    "sha256": "2f3574eaf66249400064dac15e30186d13e6c30023b57de71768819e8a1d4190",
+    "bytes": 280587
+  }
+}

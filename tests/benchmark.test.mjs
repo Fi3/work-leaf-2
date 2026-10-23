@@ -129,6 +129,58 @@ const samples = [
   { type: 'sample', phase: 'capacity', elapsed_seconds: 2, cpu_usec: 200, memory_bytes: 2048, memory_events: { oom: 8, oom_kill: 5 } },
 ];
 
+test('benchmark samples preserve separate cgroup and process memory counters without filling missing fields', async () => {
+  await execute('python3', ['-c', `
+import contextlib, importlib.util, io, json, pathlib, sys, tempfile
+from unittest.mock import patch
+sys.path.insert(0, str(pathlib.Path('tests/fixtures').resolve()))
+spec = importlib.util.spec_from_file_location('workload', 'benchmarks/workload.py')
+workload = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(workload)
+with tempfile.TemporaryDirectory(prefix='harness-benchmark-sampler-') as directory:
+    root = pathlib.Path(directory)
+    proc, cgroup = root / 'proc', root / 'cgroup'
+    proc.mkdir()
+    cgroup.mkdir()
+    worker = proc / '42'
+    worker.mkdir()
+    (worker / 'cmdline').write_bytes(b'node\\0/app/adapter/worker.mjs\\0')
+    memory = worker / 'smaps_rollup'
+    memory.write_text('Rss: 40 kB\\nPss: 30 kB\\nPss_Anon: 20 kB\\nPss_File: 9 kB\\nPss_Shmem: 1 kB\\n')
+    (proc / 'self').mkdir()
+    for name, value in {
+        'cpu.stat': 'usage_usec 120\\nthrottled_usec 7\\n',
+        'memory.events': 'oom 0\\noom_kill 0\\n',
+        'memory.current': '123456', 'memory.peak': '234567',
+        'memory.stat': 'anon 4096\\nfile 8192\\nkernel 1024\\npgfault 45\\n',
+    }.items():
+        (cgroup / name).write_text(value)
+    with patch.object(workload, 'CGROUP', cgroup), patch.object(workload, 'Path',
+            side_effect=lambda value: proc if value == '/proc' else pathlib.Path(value)):
+        monitor = workload.Monitor({'sample_interval_ms': 500})
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            monitor.sample()
+        sample = monitor.samples[0]
+        assert json.loads(output.getvalue()) == {'type': 'sample', **sample}
+        assert sample['cpu_usec'] == 120 and sample['cpu_throttled_usec'] == 7
+        assert sample['memory_bytes'] == 123456 and sample['memory_peak_bytes'] == 234567
+        assert sample['memory_stat'] == {'anon': 4096, 'file': 8192, 'kernel': 1024, 'pgfault': 45}
+        assert sample['processes'] == [{'pid': 42, 'role': 'worker', 'rss_bytes': 40960,
+            'pss_bytes': 30720, 'pss_anon_bytes': 20480, 'pss_file_bytes': 9216, 'pss_shmem_bytes': 1024}]
+        memory.write_text('Rss: 40 kB\\nPss: 30 kB\\n')
+        assert workload.process_memory() == [{'pid': 42, 'role': 'worker', 'rss_bytes': 40960, 'pss_bytes': 30720}]
+        for contents, missing, present, value in [
+            ('Rss: 40 kB\\n', 'pss_bytes', 'rss_bytes', 40960),
+            ('Pss: 30 kB\\n', 'rss_bytes', 'pss_bytes', 30720),
+        ]:
+            memory.write_text(contents)
+            process = workload.process_memory()[0]
+            assert missing not in process, 'Missing kernel observations must not become zero'
+            assert process[present] == value
+`], { cwd: root, timeout: 5000 });
+});
+
 test('benchmark resource summaries measure CPU and memory within each sampled phase', async () => {
   const measurements = [
     { phase: 'startup', elapsed_seconds: 0, cpu_usec: 100, memory_bytes: 256 },

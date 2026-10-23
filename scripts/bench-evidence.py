@@ -181,6 +181,10 @@ def check_evidence(root, reference=None, evidence_dir=None):
                                         + bench_report.render_failures(evaluation))
             if evaluation["status"] != "PASS":
                 raise ValueError("Benchmark comparison is unavailable: " + "; ".join(evaluation["reasons"]))
+            comparison = result.get("comparison")
+            if not isinstance(comparison, dict) or comparison.get("policy") != bench_report.MEMORY_POLICY:
+                raise ValueError(f"Benchmark evidence does not record the current memory comparison policy "
+                                 f"({bench_report.MEMORY_POLICY}); run python3 scripts/bench.py to record a new measurement")
             return source, name
         except RegressionFailure:
             raise

@@ -723,6 +723,16 @@ running a benchmark, use:
 python3 scripts/bench_report.py benchmarks/results/RESULT_FINGERPRINT.json
 ```
 
+The memory gate uses peak total process proportional set size (PSS). PSS divides
+shared mapped pages among processes. It compares the same measure from the first
+baseline, with the same 20% limit. Full container RAM and its change remain
+visible, but they are not the PSS gate. Container charges include file cache and
+kernel memory; PSS does not include all of those costs. The 512 MiB capacity test
+and its session-count limit remain enforced. The
+[accounting correction](PERFORMANCE.md#memory-accounting-correction-2026-10-23)
+explains why the unchanged original image also failed the former container-memory
+gate. This is a correction to the comparison method, not a memory reduction.
+
 The [resource investigation](PERFORMANCE.md#resource-investigation-2026-10-21)
 records repeated baseline and candidate trials, worker costs, cache tests, and
 common workloads for jcode and peri. Its [trial summary](benchmarks/trials/2026-10-21.json)
@@ -767,6 +777,9 @@ Automatic publication adds 21 checks with temporary Git repositories and
 controlled measurement data. They cover passing and failed results, changes
 during measurement, normal commit hooks, preservation of staged evidence,
 default publication and CPU selection, explicit overrides, and unavailable CPUs.
+The accounting correction adds five checks for complete process samples,
+simultaneous PSS totals, visible container charges, memory counters, and obsolete
+comparison policies. These checks use saved or controlled data, not Docker load.
 Independent Node test files run concurrently with separate temporary directories
 and sockets.
 The added application tests cover generated Unicode preview limits and saved
