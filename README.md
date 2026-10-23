@@ -755,6 +755,9 @@ Run `sh scripts/check.sh` for the deterministic release checks. Each integration
 test uses temporary workspaces, state directories, and sockets. No test needs
 paid provider access. The faux provider controls responses and actual coding
 tools execute local test commands.
+The benchmark control tests require `choom` from util-linux on the Linux host.
+They use it to check that application processes remain eligible for memory-limit
+kills when the test driver is protected.
 
 Successful routine terminal and desktop checks delete their temporary workspaces,
 browser profiles, caches, and reports. Failed checks retain their files and print
@@ -786,6 +789,8 @@ default publication and CPU selection, explicit overrides, and unavailable CPUs.
 The accounting correction adds five checks for complete process samples,
 simultaneous PSS totals, visible container charges, memory counters, and obsolete
 comparison policies. These checks use saved or controlled data, not Docker load.
+The memory-exhaustion evidence fix adds three checks for Docker settings, driver
+protection, and application child processes. These checks do not run Docker load.
 Independent Node test files run concurrently with separate temporary directories
 and sockets.
 The added application tests cover generated Unicode preview limits and saved

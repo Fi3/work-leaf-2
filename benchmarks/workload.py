@@ -46,11 +46,16 @@ def process_memory():
             names = b' '.join(command)
             role = 'worker' if b'worker.mjs' in names else 'editor' if b'nvim' in command[0] else 'server' if b'harness' in command[0] else 'driver_or_tool'
             memory = counters(directory / 'smaps_rollup')
-            result.append({'pid': int(directory.name), 'role': role,
-                           **{name: memory[field] * 1024 for name, field in (
-                               ('rss_bytes', 'Rss:'), ('pss_bytes', 'Pss:'),
-                               ('pss_anon_bytes', 'Pss_Anon:'), ('pss_file_bytes', 'Pss_File:'),
-                               ('pss_shmem_bytes', 'Pss_Shmem:')) if field in memory}})
+            sample = {'pid': int(directory.name), 'role': role,
+                      **{name: memory[field] * 1024 for name, field in (
+                          ('rss_bytes', 'Rss:'), ('pss_bytes', 'Pss:'),
+                          ('pss_anon_bytes', 'Pss_Anon:'), ('pss_file_bytes', 'Pss_File:'),
+                          ('pss_shmem_bytes', 'Pss_Shmem:')) if field in memory}}
+            try:
+                sample['oom_score_adj'] = int((directory / 'oom_score_adj').read_text())
+            except (FileNotFoundError, ProcessLookupError, PermissionError):
+                pass
+            result.append(sample)
         except (FileNotFoundError, ProcessLookupError, PermissionError):
             continue
     return result
@@ -108,6 +113,8 @@ def verify_limits(profile):
               'pids_limit': int((CGROUP / 'pids.max').read_text())}
     if actual != profile['resources']:
         raise RuntimeError(f'Container limits differ from profile: {actual}')
+    if Path('/proc/self/oom_score_adj').read_text().strip() != '-1000':
+        raise RuntimeError('Benchmark driver is not protected from the memory-limit kill')
     return actual
 
 
@@ -203,7 +210,8 @@ def main():
     capacity = 0
     failure = None
     try:
-        server = subprocess.Popen(['/app/target/release/harness', 'serve', '--config', str(WORK / 'config.json')],
+        # Keep application processes eligible for OOM kills while the driver records the result.
+        server = subprocess.Popen(['choom', '-n', '0', '--', '/app/target/release/harness', 'serve', '--config', str(WORK / 'config.json')],
                                   env=environment, stdout=sys.stderr, stderr=sys.stderr)
         children.append(server)
         wait_server(server)
@@ -211,7 +219,7 @@ def main():
             for index in range(max(profile['concurrent_sessions'])):
                 create(client, f'load{index}')
         write_json(WORK / 'editor-control.json', {'session': 'load0', 'visible': True})
-        editor = subprocess.Popen(['nvim', '--headless', '-u', 'NONE', '-c', 'luafile /app/benchmarks/editor.lua'],
+        editor = subprocess.Popen(['choom', '-n', '0', '--', 'nvim', '--headless', '-u', 'NONE', '-c', 'luafile /app/benchmarks/editor.lua'],
                                   stdout=sys.stderr, stderr=sys.stderr)
         children.append(editor)
         wait_editor(editor)

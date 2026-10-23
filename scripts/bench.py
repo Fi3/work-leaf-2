@@ -129,7 +129,8 @@ def run_container(image, profile, directory, source, cpuset=None):
     identifier = docker('create', '--init', '--network', 'none', '--cap-drop', 'ALL',
         '--security-opt', 'no-new-privileges', '--platform', profile['platform'],
         '--cpus', resources['cpus'], '--memory', resources['memory_bytes'],
-        '--memory-swap', resources['memory_swap_bytes'], '--pids-limit', resources['pids_limit'], *affinity_options, image)
+        '--memory-swap', resources['memory_swap_bytes'], '--pids-limit', resources['pids_limit'],
+        '--oom-score-adj', '-1000', *affinity_options, image)
     records = []
     timed_out = False
     try:
@@ -137,6 +138,8 @@ def run_container(image, profile, directory, source, cpuset=None):
         actual_limits = limits(configuration['HostConfig'])
         if actual_limits != resources or configuration['HostConfig']['NetworkMode'] != 'none':
             raise RuntimeError('Docker did not apply the required resource and network limits')
+        if configuration['HostConfig'].get('OomScoreAdj') != -1000:
+            raise RuntimeError('Docker did not protect the benchmark driver from the memory-limit kill')
         actual_affinity = configuration['HostConfig'].get('CpusetCpus') or None
         if actual_affinity != cpuset:
             raise RuntimeError('Docker did not apply the selected CPU affinity')
@@ -165,7 +168,8 @@ def run_container(image, profile, directory, source, cpuset=None):
             result.update(completed=False, error='Benchmark timed out; exhaustion was not established')
         result.pop('type', None)
         result.update(docker_image_id=configuration['Image'], docker_limits=actual_limits,
-                      docker_state=final['State'], cpu_affinity=actual_affinity, resources_by_phase=resource_summary(result.get('measurements', [])))
+                      docker_state=final['State'], docker_oom_score_adj=configuration['HostConfig']['OomScoreAdj'],
+                      cpu_affinity=actual_affinity, resources_by_phase=resource_summary(result.get('measurements', [])))
         return result
     finally:
         docker('rm', '--force', identifier)

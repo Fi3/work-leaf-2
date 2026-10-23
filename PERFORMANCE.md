@@ -104,6 +104,16 @@ individual processes where available. The capacity phase must observe an
 out-of-memory allocation failure and kill reported by the cgroup. A timeout, model error, or normal
 application limit is not proof of memory exhaustion.
 
+The benchmark protects its Python test driver and Docker init from selection by
+the OOM killer with `oom_score_adj=-1000`. It starts the Rust server and Neovim
+with `oom_score_adj=0`; their worker, client, and tool descendants inherit that
+value. The image uses its existing `choom` command to set the value before each
+application starts. The driver remains inside the measured container and counts
+toward its CPU and 512 MiB memory limits. This lets the driver record the actual
+`oom` and `oom_kill` counters after an application process is killed. A Docker
+OOM flag without positive cgroup counters still fails validation. This is a
+measurement reliability change, not an application resource saving.
+
 Keep normal-load results separate from the final exhaustion result. Capacity
 depends on the fixed synthetic instructions, input size, and retention time.
 It does not establish a universal maximum chat count or predict paid-model
