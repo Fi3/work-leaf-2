@@ -180,7 +180,6 @@ local function attach(id, callback, focus)
     attached[id] = true
     watch, watch_sequence = value.watch_id, 0
     update(value.snapshot)
-    render()
     if focus then
       view.focus()
     end
